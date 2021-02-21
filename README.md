@@ -245,7 +245,9 @@ See also Password Authentication below for how the password is retrieved.
 
 Only rely on signed tokens for authentication.
 A token certifies that a user is authenticated up to some time limit.
-The token syntax is: `<realm>:<user>:<limit>:<signature>`
+The token syntax is: `<realm>:<user>:<limit>:<signature>`,
+for instance: `kiva:calvin:20210221160258:4ee89cd4cc7afe0a86b26bdce6d11126`.
+The limit is a easily parsable UTC timestamp *YYYYMMDDHHmmSS*.
 
 The following configuration directives are available:
 
@@ -266,10 +268,13 @@ The following configuration directives are available:
 
 Function `create_token(user)` creates a token for the user.
 
+Note: token authentication is always attempted unless the secret is empty.
+Setting `FSA_TYPE` to `token` results in only token auth to be used.
+
 ### `fake` Authentication
 
 Trust a parameter for authentication claims.
-Only for local tests.
+Only for local tests, obviously. This is inforced.
 
 The following configuration directive is available:
 
