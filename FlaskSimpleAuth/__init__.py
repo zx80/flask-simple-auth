@@ -2,7 +2,7 @@
 # Debatable flask-side auth management
 #
 
-from typing import Optional, Callable, Dict, Any
+from typing import Optional, Union, Callable, Dict, List, Any
 from flask import Flask, request
 
 import datetime as dt
@@ -34,13 +34,16 @@ SECRET: Optional[str] = None
 # password management
 PM: Optional[CryptContext] = None
 get_user_password: Optional[Callable[[str], str]] = None
+user_in_group: Optional[Callable[[str, str], bool]] = None
 
 # local copy of authenticated user
 USER: Optional[str] = None
 
 
-def setConfig(app: Flask, gup: Callable[[str], str] = None):
-    global APP, CONF, REALM, SECRET, PM, get_user_password
+def setConfig(app: Flask,
+              gup: Callable[[str], str] = None,
+              uig: Callable[[str, str], bool] = None):
+    global APP, CONF, REALM, SECRET, PM, get_user_password, user_in_group
     # overall setup
     APP = app
     CONF = app.config
@@ -60,6 +63,8 @@ def setConfig(app: Flask, gup: Callable[[str], str] = None):
     options = CONF.get("FSA_PASSWORD_OPTIONS", {'bcrypt__default_rounds': 4})
     PM = CryptContext(schemes=[scheme], **options)
     get_user_password = gup
+    # autorization helper
+    user_in_group = uig
 
 
 #
@@ -278,3 +283,29 @@ def get_user():
     else:
 
         raise AuthException(f"unexpected FSA_TYPE: {auth_type}", 500)
+
+
+#
+# autorization helper
+#
+class autorize:
+    def __init__(self, groups: Union[List[str], str] = []):
+        assert user_in_group is not None, \
+            "user_in_group callback needed for autorize"
+        if isinstance(groups, str):
+            groups = [groups]
+        self.groups = groups
+    def __call__(self, fun):
+        def wrapper(*args, **kwargs):
+            if USER is None:
+                return "", 401
+            permitted = False
+            for g in self.groups:
+                if user_in_group(USER, g):
+                    permitted = True
+                    break
+            if not permitted:
+                return "", 403
+            else:
+                return fun(*args, **kwargs)
+        return wrapper
