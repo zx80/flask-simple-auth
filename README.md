@@ -72,14 +72,8 @@ with `FSA_*` (Flask simple authentication) directives:
 
 ```Python
 FSA_TYPE = 'httpd'     # inherit web-serveur authentication
-
 # OR others such as:
 FSA_TYPE = 'basic'     # HTTP Basic auth
-
-# authentication tokens (only SECRET is mandatory, others have defaults)
-FSA_TOKEN_REALM = 'fsa-demo'
-FSA_TOKEN_SECRET = 'super-secret-string-used-for-signing-tokens'
-FSA_TOKEN_DELAY = 10   # token expiration in minutes
 ```
 
 ## Documentation
