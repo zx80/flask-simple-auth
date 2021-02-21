@@ -288,7 +288,7 @@ The following configuration directives are available to configure
  - `FSA_PASSWORD_OPTIONS` relevant options (for `passlib.CryptContext`).
    Default is `{'bcrypt__default_rounds': 4}`.
 
-These defaults result in a manageable password checks of a few milliseconds.
+These defaults result in manageable password checks of a few milliseconds.
 
 Function `hash_password(pass)` computes the password salted digest compatible
 with the configuration.
