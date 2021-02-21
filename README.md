@@ -10,9 +10,10 @@ Help to manage authentication (*not* autorizations) in a Flask application.
 The idea is that the authentication is checked in a `before_request` hook,
 and can be made available through some global *à-la-Flask* variable.
 
-The module implements password authentication (HTTP Basic, or HTTP/JSON
-parameters), simple time-limited authentication tokens, and a fake
-authentication mode useful for application testing.
+The module implements inheriting the web-server authentication,
+password authentication (HTTP Basic, or HTTP/JSON parameters),
+simple time-limited authentication tokens, and
+a fake authentication mode useful for application testing.
 
 It allows to have a login route to generate authentication tokens.
 
@@ -25,6 +26,7 @@ is being used, so switching between modes only impacts the configuration.
 ```Python
 # app is a Flask application…
 
+# initialize module
 import FlaskSimpleAuth as auth
 auth.setConfig(app.config)
 
@@ -37,20 +39,26 @@ def set_login():
         LOGIN = auth.get_user()    
     except auth.AuthException as e:
         return Response(e.message, e.status)
+    assert LOGIN is not None
 
 app.before_request(set_login)
 
+# token creation route
 @app.route("/login", methods=["GET"])
 def get_login():
-    if LOGIN is None:
-        return "", 401
     return jsonify(auth.create_token(LOGIN)), 200
 ```
 
 ## Documentation
+
+WORK IN PROGRESS.
 
 ## Versions
 
 Sources are available on [GitHub](https://github.com/zx80/flask-simple-auth).
 
 No initial release yet.
+
+## TODO
+
+Should it be an object instead of a flat module?
