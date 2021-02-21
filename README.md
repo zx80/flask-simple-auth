@@ -16,11 +16,12 @@ simple time-limited authentication tokens, and
 a fake authentication mode useful for application testing.
 
 It allows to have a login route to generate authentication tokens.
-Support functions allow to hash new passwords.
+Support functions allow to hash new passwords consistently with password checks.
 
 Compared to [Flask HTTPAuth](https://github.com/miguelgrinberg/Flask-HTTPAuth),
 there is one code in the app which does not need to know about which mode
-is being used, so switching between modes only impacts the configuration.
+is being used, so switching between modes only impacts the configuration,
+not the application code.
 
 ## Example
 
