@@ -16,11 +16,14 @@ clean:
 install:
 	pip3 install -e .
 
+# for local testing
 venv:
 	python3 -m venv venv
-	venv/bin/pip3 install wheel ipython pytest
+	venv/bin/pip3 install wheel ipython mypy flake8 pytest
+	venv/bin/pip3 install hashlib bcrypt
 	venv/bin/pip3 install -e .
 
+# generate source and built distribution
 dist:
 	python3 setup.py sdist bdist_wheel
 

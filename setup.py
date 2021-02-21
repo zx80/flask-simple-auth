@@ -10,7 +10,7 @@ setup(
     author="Fabien Coelho",
     author_email="flask.auth@coelho.net",
     url="https://github.com/zx80/flask-simple-auth",
-    install_requires=[],
+    install_requires=["passlib"],
     description="Simple authentication for Flask, emphasizing configurability",
     long_description=long_description,
     long_description_content_type="text/markdown",
