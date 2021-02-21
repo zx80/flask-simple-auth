@@ -337,6 +337,12 @@ user belongs to any of the authorized groups.
 
 Sources are available on [GitHub](https://github.com/zx80/flask-simple-auth).
 
+### 1.0.0
+
+Add `authorize` decorator.
+Add `password` authentication scheme.
+Improved documentation.
+
 ### 0.9.0
 
 Initial release in beta.
