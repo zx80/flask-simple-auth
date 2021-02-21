@@ -16,12 +16,16 @@ simple time-limited authentication tokens, and
 a fake authentication mode useful for application testing.
 
 It allows to have a login route to generate authentication tokens.
+Support functions allow to hash new passwords.
 
 Compared to [Flask HTTPAuth](https://github.com/miguelgrinberg/Flask-HTTPAuth),
 there is one code in the app which does not need to know about which mode
 is being used, so switching between modes only impacts the configuration.
 
 ## Example
+
+There is no clue in the application code source about what kind of
+authentication is performed, which is the point.
 
 ```Python
 # app is a Flask application…
@@ -47,6 +51,21 @@ app.before_request(set_login)
 @app.route("/login", methods=["GET"])
 def get_login():
     return jsonify(auth.create_token(LOGIN)), 200
+```
+
+Authentication is manage from the application flask configuration
+with `FSA_*` (Flask simple authentication) directives:
+
+```Python
+FSA_TYPE = 'httpd'     # inherit web-serveur authentication
+
+# OR others such as:
+FSA_TYPE = 'basic-db'  # HTTP Basic auth
+
+# authentication tokens (only SECRET is mandatory, others have defaults)
+FSA_TOKEN_REALM = 'fsa-demo'
+FSA_TOKEN_SECRET = 'super-secret-string-used-for-signing-tokens'
+FSA_TOKEN_DELAY = 10  # token expiration
 ```
 
 ## Documentation
