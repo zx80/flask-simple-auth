@@ -108,7 +108,7 @@ def check_db_password(user, pwd):
     if ref is None:
         log.debug(f"LOGIN (password): no such user ({user})")
         raise AuthException(f"no such user: {user}", 401)
-    check_password(user, pwd, ref[0])
+    check_password(user, pwd, ref)
 
 
 #
