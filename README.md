@@ -84,11 +84,6 @@ See below for details.
 
 ## Documentation
 
-I have considered flask\_httpauth obviously, which provides many options,
-but I do not want to force their per-route model and explicit classes
-but rather rely on mandatory request hooks and have everything managed from
-the configuration file to easily switch between schemes.
-
 This simplistic module allows configurable authentication (`FSA_TYPE`):
 
 - `httpd` web-server checked authentication passed in the request.
@@ -108,6 +103,11 @@ This simplistic module allows configurable authentication (`FSA_TYPE`):
   user in a realm for some limited time. The token can be
   obtained by actually authenticating with previous methods.
 
+I have considered flask\_httpauth obviously, which provides many options,
+but I do not want to force their per-route model and explicit classes
+but rather rely on mandatory request hooks and have everything managed from
+the configuration file to easily switch between schemes.
+
 Note that this is intended for a REST API implementation serving
 a remote application. It does not make much sense to "login" and "logout"
 to/from a REST API because the point of the API is to serve and collect data
@@ -115,6 +115,81 @@ to all who deserve it, i.e. are authorized, unlike a web application
 which is served while the client is on the page and should disappear when
 disconnected as the web browser page is wiped out. However, there is still
 a "login" concept which is only dedicated at obtaining an auth token.
+
+### `httpd` Authentication
+
+Inherit web server supplied authentication through `request.remote_user`.
+This is the default.
+
+### `basic` Authentication
+
+HTTP Basic password authentication.
+
+See also Password Authentication below for how the password is retrieved.
+
+### `param` Authentication
+
+HTTP parameter or JSON password authentication.
+
+The following configuration directives are available:
+
+ - `FSA_PARAM_USER` parameter name for the user name.
+   Default is `USER`.
+ - `FSA_PARAM_PASS` parameter name for the password.
+   Default is `PASS`.
+
+See also Password Authentication below for how the password is retrieved.
+
+### `token` Authentication
+
+Only rely on signed tokens for authentication.
+A token certifies that a user is authenticated up to some time limit.
+The token syntax is: `<realm>:<user>:<limit>:<signature>`
+
+The following configuration directives are available:
+
+ - `FSA_TOKEN_REALM` realm of token.
+   Default is the simplified lower case application name.
+ - `FKA_TOKEN_NAME` name of parameter holding the auth token.
+   Default is `auth`.
+ - `FSA_TOKEN_SECRET` secret string used for signing tokens.
+   Default is a system-generated random string containing 128 bits.
+   This default with only work with itself.
+ - `FSA_TOKEN_DELAY` number of minutes a token validity.
+   Default is *60* minutes. 
+ - `FSA_TOKEN_HASH` hash algorithm used to sign the token.
+   Default is `blake2s`.
+ - `FSA_TOKEN_LENGTH` number of hash bytes kept for token signature.
+   Default is *32*.
+
+Function `create_token(user)` creates a token for the user.
+
+### `fake` Authentication
+
+Trust a parameter for authentication claims.
+Only for local tests.
+
+The following configuration directive is available:
+
+ - `FSA_FAKE_LOGIN` name of parameter holding the user name.
+   Default is `LOGIN`.
+
+### Password Authentication (`param` or `basic`)
+
+For checking passwords the password (hash) must be retrieved through
+`get_user_password(user)`. 
+This function must be provided by the application.
+
+The following configuration directives are available:
+
+ - `FSA_PASSWORD_SCHEME` password scheme to use for passwords.
+   Default is `bcrypt`.
+ - `FSA_PASSWORD_OPTIONS` relevant options (for `passlib.CryptContext`).
+   Default is `{'bcrypt__default_rounds': 4}`.
+
+These defaults result in a manageable password checks of a few milliseconds.
+
+ - `hash_password(pass)` compute the password salted digest.
 
 ## Versions
 
