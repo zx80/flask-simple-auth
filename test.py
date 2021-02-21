@@ -7,10 +7,13 @@ class Flask:
     def __init__(self, name: str = "app", config: Dict[str, Any] = {}):
         self.name = name
         self.config = config
+
 app = Flask('Test', { 'FSA_TYPE': 'fake' })
 
+AUTH = {'calvin': 'hobbes'}
+
 import FlaskSimpleAuth as auth
-auth.setConfig(app)
+auth.setConfig(app, AUTH.get)
 
 print(f"REALM: {auth.REALM}")
 

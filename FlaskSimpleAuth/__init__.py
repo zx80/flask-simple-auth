@@ -33,10 +33,10 @@ SECRET: Optional[str] = None
 
 # password management
 PM: Optional[CryptContext] = None
-get_user_password: Optional[Callable] = None
+get_user_password: Optional[Callable[[str], str]] = None
 
 
-def setConfig(app: Flask):
+def setConfig(app: Flask, gup: Callable[[str], str] = None):
     global APP, CONF, REALM, SECRET, PM, get_user_password
     APP = app
     CONF = app.config
@@ -53,7 +53,7 @@ def setConfig(app: Flask):
     scheme = CONF.get("FSA_PASSWORD_SCHEME", "bcrypt")
     options = CONF.get("FSA_PASSWORD_OPTIONS", {'bcrypt__default_rounds': 4})
     PM = CryptContext(schemes=[scheme], **options)
-    get_user_password = CONF.get("FSA_USER_PASSWORD")
+    get_user_password = gup
 
 
 #

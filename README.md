@@ -36,7 +36,7 @@ which is the whole point: authentication methods are managed elsewhere.
 
 # initialize module
 import FlaskSimpleAuth as auth
-auth.setConfig(app)
+auth.setConfig(app, user_to_password_function)
 
 # mandatory authentication
 # note: some routes may need to skip this, eg for registering new users.
@@ -180,7 +180,8 @@ For checking passwords the password (hash) must be retrieved through
 `get_user_password(user)`. 
 This function must be provided by the application.
 
-The following configuration directives are available:
+The following configuration directives are available to configure
+`passlib` password checks:
 
  - `FSA_PASSWORD_SCHEME` password scheme to use for passwords.
    Default is `bcrypt`.
@@ -189,7 +190,8 @@ The following configuration directives are available:
 
 These defaults result in a manageable password checks of a few milliseconds.
 
- - `hash_password(pass)` compute the password salted digest.
+Function `hash_password(pass)` computes the password salted digest compatible
+with the configuration.
 
 ## Versions
 
