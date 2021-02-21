@@ -325,7 +325,6 @@ Initial release in beta.
 ## TODO
 
 Features
- - test 'param'?
  - better control which schemes are attempted?
 
 Implementation
