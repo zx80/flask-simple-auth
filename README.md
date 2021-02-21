@@ -309,6 +309,7 @@ Features
  - implement 'password' which does anything with a password?
  - test 'param'?
  - better control which schemes are attempted?
+ - add a simple autorization decorator?  `@auth.autorize("group-name")`
 
 Implementation
  - should it be an object instead of a flat module?
