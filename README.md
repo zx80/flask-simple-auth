@@ -43,11 +43,12 @@ LOGIN = None
 
 def set_login():
     global LOGIN
+    LOGIN = None                  # remove previous value!
     try:
         LOGIN = auth.get_user()    
     except auth.AuthException as e:
         return Response(e.message, e.status)
-    assert LOGIN is not None
+    assert LOGIN is not None      # defensive check
 
 app.before_request(set_login)
 
