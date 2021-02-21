@@ -102,6 +102,8 @@ This simplistic module allows configurable authentication (`FSA_TYPE`):
 
 - `param` same with http parameter-provided login/password.
 
+- `password` tries both `param` and `basic`.
+
 - `token` auth uses a signed parameter to authenticate a
   user in a realm for some limited time. The token can be
   obtained by actually authenticating with previous methods.
@@ -311,7 +313,6 @@ Initial release in beta.
 ## TODO
 
 Features
- - implement 'password' which does anything with a password?
  - test 'param'?
  - better control which schemes are attempted?
  - add a simple autorization decorator?  `@auth.autorize("group-name")`

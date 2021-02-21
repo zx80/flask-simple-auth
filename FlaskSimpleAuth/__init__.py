@@ -244,7 +244,7 @@ def get_user():
         log.info(f"LOGIN (httpd): {request.remote_user}")
         USER = request.remote_user
 
-    elif auth_type in ("fake", "param", "basic", "token"):
+    elif auth_type in ("fake", "param", "basic", "token", "password"):
 
         # whether to attempt token auth
         token_name = CONF.get("FSA_TOKEN_NAME", "auth")
@@ -256,7 +256,7 @@ def get_user():
             if token is not None:
                 USER = get_token_auth(token)
 
-        # else try actual auth schemes
+        # else try other auth schemes
         if USER is None:
             if auth_type == "param":
                 USER = get_param_auth()
@@ -264,6 +264,11 @@ def get_user():
                 USER = get_basic_auth()
             elif auth_type == "fake":
                 USER = get_fake_auth()
+            elif auth_type == "password":
+                try:
+                    USER = get_basic_auth()
+                except AuthException:  # try param
+                    USER = get_param_auth()
             else:
                 raise AuthException("auth token is required", 401)
 
