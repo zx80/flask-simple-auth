@@ -38,8 +38,10 @@ get_user_password: Optional[Callable[[str], str]] = None
 
 def setConfig(app: Flask, gup: Callable[[str], str] = None):
     global APP, CONF, REALM, SECRET, PM, get_user_password
+    # overall setup
     APP = app
     CONF = app.config
+    # token setup
     import re
     realm = CONF.get("FSA_TOKEN_REALM", app.name).lower()
     # tr -cd "[a-z0-9_]" "": is there a better way to do that?
@@ -50,6 +52,7 @@ def setConfig(app: Flask, gup: Callable[[str], str] = None):
     chars = string.ascii_letters + string.digits + string.punctuation
     SECRET = CONF["FSA_TOKEN_SECRET"] if "FSA_TOKEN_SECRET" in CONF else \
         ''.join(random.SystemRandom().choices(chars, k=64))  # > 256 bits
+    # password setup
     scheme = CONF.get("FSA_PASSWORD_SCHEME", "bcrypt")
     options = CONF.get("FSA_PASSWORD_OPTIONS", {'bcrypt__default_rounds': 4})
     PM = CryptContext(schemes=[scheme], **options)
@@ -64,8 +67,8 @@ def setConfig(app: Flask, gup: Callable[[str], str] = None):
 # FSA_FAKE_LOGIN: name of parameter holding the login ("LOGIN")
 #
 def get_fake_auth():
-    assert request.remote_user is None
-    assert request.environ["REMOTE_ADDR"] == "127.0.0.1"
+    assert request.remote_user is None, "do not shadow web server auth"
+    assert request.environ["REMOTE_ADDR"][:4] == "127.", "fake auth only on localhost"
     params = request.values if request.json is None else request.json
     user = params.get(CONF.get("FSA_FAKE_LOGIN", "LOGIN"), None)
     # it could check that the user exists in db
