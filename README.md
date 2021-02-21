@@ -94,3 +94,8 @@ No initial release yet.
 ## TODO
 
 Should it be an object instead of a flat module?
+
+How not to forget autorizations?
+ - set a `autorization_checked` variable to False before the request
+ - reset it to True when autorization is checked
+ - check whether it was done and possibly abort after the request
