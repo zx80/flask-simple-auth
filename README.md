@@ -77,6 +77,7 @@ directives, with reasonable defaults provided so that not much is really
 needed beyond choosing the authentication scheme.
 See below for details.
 
+
 ## Documentation
 
 ### Install
@@ -117,6 +118,10 @@ to all who deserve it, i.e. are authorized, unlike a web application
 which is served while the client is on the page and should disappear when
 disconnected as the web browser page is wiped out. However, there is still
 a "login" concept which is only dedicated at obtaining an auth token.
+
+Note that web-oriented flask authentication modules are not really
+relevant in the REST API context, were the server does not care about
+presenting login forms for instance.
 
 ### Initialisation
 
@@ -172,7 +177,7 @@ autorizations:
 def post_somewhere():
     if not can_post_somewhere(LOGIN):
         return "", 403
-    # else permissions is granted, to the job!
+    # else permissions is granted, do the job!
     …
 ```
 
@@ -185,6 +190,7 @@ def post_register():
     params = request.values if request.json is None else request.json
     if "user" not in params or "pass" not in params:
         return "missing parameter", 404
+    # FIXME should handle an existing user and respond appropriately
     insert_new_user_with_hashed_pass(params["user"], auth.hash_pass(params["pass"]))
     return "", 201
 ```
@@ -209,6 +215,12 @@ methods used by the `get_user` function, as described in the following sections:
 
 Inherit web server supplied authentication through `request.remote_user`.
 This is the default.
+
+There are plenty authentication schemes available in a web server
+such as Apache or Nginx, all of which probably more efficiently implemented
+than python code, so this should be the prefered options.
+However, it could require significant configuration effort compared to
+the application-side approach.
 
 ### `basic` Authentication
 
