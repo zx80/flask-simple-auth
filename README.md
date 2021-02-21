@@ -63,7 +63,7 @@ app.before_request(set_login)
 @auth.authorize("patcher")
 def patch_whatever():
     # ok to do it
-    return "", 201
+    return "", 204
 ```
 
 Authentication is manage from the application flask configuration
