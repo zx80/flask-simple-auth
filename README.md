@@ -247,7 +247,7 @@ Only rely on signed tokens for authentication.
 A token certifies that a user is authenticated up to some time limit.
 The token syntax is: `<realm>:<user>:<limit>:<signature>`,
 for instance: `kiva:calvin:20210221160258:4ee89cd4cc7afe0a86b26bdce6d11126`.
-The limit is a easily parsable UTC timestamp *YYYYMMDDHHmmSS*.
+The limit is an easily parsable UTC timestamp *YYYYMMDDHHmmSS*.
 
 The following configuration directives are available:
 
