@@ -243,6 +243,10 @@ The following configuration directives are available:
 
 See also Password Authentication below for how the password is retrieved.
 
+### `password` Authentication
+
+Tries `basic` then `param` authentication.
+
 ### `token` Authentication
 
 Only rely on signed tokens for authentication.
