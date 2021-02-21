@@ -43,7 +43,7 @@ LOGIN = None
 
 def set_login():
     global LOGIN
-    LOGIN = None                  # remove previous value!
+    LOGIN = None                  # remove previous value, just in case
     try:
         LOGIN = auth.get_user()    
     except auth.AuthException as e:
