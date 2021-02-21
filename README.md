@@ -84,6 +84,13 @@ See below for details.
 
 ## Documentation
 
+### Install
+
+Use `pip install flask-simple-auth` to install the module, or whatever
+other installation method.
+
+### Features
+
 This simplistic module allows configurable authentication (`FSA_TYPE`):
 
 - `httpd` web-server checked authentication passed in the request.
@@ -115,6 +122,61 @@ to all who deserve it, i.e. are authorized, unlike a web application
 which is served while the client is on the page and should disappear when
 disconnected as the web browser page is wiped out. However, there is still
 a "login" concept which is only dedicated at obtaining an auth token.
+
+### Initialisation
+
+The module is initialized by calling `setConfig` with two arguments:
+
+ - `app` the Flask application object.
+ - `gup` a function to retrieve the password hash from the user name.
+
+Example:
+
+```Python
+# app is already initialized and configured the Flask application
+
+def get_user_password(user):
+    return …
+
+import FlaskSimpleAuth as auth
+auth.setConfig(app, get_user_password)
+```
+
+Then the module can be used to retrieve the authenticated user with `get_user`.
+This functions raises a `AuthException` exception on failures.
+
+A good practice (IMHO) is to use a before request hook to set a global variable
+with the value and warrant that the authentication is always checked.
+
+```Python
+LOGIN: Optional[str] = None
+
+def set_login():
+    global LOGIN
+    LOGIN = None  # not really needed, but this is safe
+    try:
+        LOGIN = get_user()
+    except auth.AuthException as e:
+        # before request hooks can return an alternate response
+        return Response(e.message, e.status)
+
+app.before_request(set_login)
+```
+
+Then all route functions can take advantage of this information to check for
+autorizations:
+
+```Python
+@app.route("/somewhere", methods=["POST"])
+def post_somewhere():
+    if not can_post_somewhere(LOGIN):
+        return "", 403
+    # else permissions is granted, to the job!
+    …
+```
+
+The main configuration directive is `FSA_TYPE` which governs authentication
+methods used by the `get_user` function, as described in the following:
 
 ### `httpd` Authentication
 
