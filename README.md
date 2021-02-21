@@ -65,7 +65,7 @@ FSA_TYPE = 'basic-db'  # HTTP Basic auth
 # authentication tokens (only SECRET is mandatory, others have defaults)
 FSA_TOKEN_REALM = 'fsa-demo'
 FSA_TOKEN_SECRET = 'super-secret-string-used-for-signing-tokens'
-FSA_TOKEN_DELAY = 10  # token expiration
+FSA_TOKEN_DELAY = 10  # token expiration in minutes
 ```
 
 ## Documentation
