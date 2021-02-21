@@ -35,6 +35,9 @@ SECRET: Optional[str] = None
 PM: Optional[CryptContext] = None
 get_user_password: Optional[Callable[[str], str]] = None
 
+# local copy of authenticated user
+USER: Optional[str] = None
+
 
 def setConfig(app: Flask, gup: Callable[[str], str] = None):
     global APP, CONF, REALM, SECRET, PM, get_user_password
@@ -68,7 +71,8 @@ def setConfig(app: Flask, gup: Callable[[str], str] = None):
 #
 def get_fake_auth():
     assert request.remote_user is None, "do not shadow web server auth"
-    assert request.environ["REMOTE_ADDR"][:4] == "127.", "fake auth only on localhost"
+    assert request.environ["REMOTE_ADDR"][:4] == "127.", \
+        "fake auth only on localhost"
     params = request.values if request.json is None else request.json
     user = params.get(CONF.get("FSA_FAKE_LOGIN", "LOGIN"), None)
     # it could check that the user exists in db
@@ -228,38 +232,43 @@ def get_token_auth(token):
 
 # return authenticated user or throw exception
 def get_user():
+
+    global USER
+    USER = None
+
     # default is to rely on the http server provided authentication
     auth_type = CONF.get("FSA_TYPE", "httpd")
 
     if auth_type == "httpd":
 
         log.info(f"LOGIN (httpd): {request.remote_user}")
-        return request.remote_user
+        USER = request.remote_user
 
     elif auth_type in ("fake", "param", "basic", "token"):
 
         # whether to attempt token auth
-        has_token = "FSA_TOKEN_SECRET" in CONF
         token_name = CONF.get("FSA_TOKEN_NAME", "auth")
 
         # first look for the token
-        if has_token:
+        if SECRET is not None and SECRET != "":
             params = request.values if request.json is None else request.json
             token = params.get(token_name, None)
             if token is not None:
-                user = get_token_auth(token)
-                if user is not None:
-                    return user
+                USER = get_token_auth(token)
 
         # else try actual auth schemes
-        if auth_type == "param":
-            return get_param_auth()
-        elif auth_type == "basic":
-            return get_basic_auth()
-        elif auth_type == "fake":
-            return get_fake_auth()
-        else:
-            raise AuthException("auth token is required", 401)
+        if USER is None:
+            if auth_type == "param":
+                USER = get_param_auth()
+            elif auth_type == "basic":
+                USER = get_basic_auth()
+            elif auth_type == "fake":
+                USER = get_fake_auth()
+            else:
+                raise AuthException("auth token is required", 401)
+
+        assert USER is not None  # otherwise a exception would have been raised
+        return USER
 
     else:
 
