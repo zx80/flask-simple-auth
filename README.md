@@ -60,7 +60,7 @@ with `FSA_*` (Flask simple authentication) directives:
 FSA_TYPE = 'httpd'     # inherit web-serveur authentication
 
 # OR others such as:
-FSA_TYPE = 'basic-db'  # HTTP Basic auth
+FSA_TYPE = 'basic'  # HTTP Basic auth
 
 # authentication tokens (only SECRET is mandatory, others have defaults)
 FSA_TOKEN_REALM = 'fsa-demo'
