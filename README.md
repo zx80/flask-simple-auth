@@ -130,8 +130,6 @@ The module is initialized by calling `setConfig` with two arguments:
  - the Flask application object.
  - a function to retrieve the password hash from the user name.
 
-Example:
-
 ```Python
 # app is already initialized and configured the Flask application
 
