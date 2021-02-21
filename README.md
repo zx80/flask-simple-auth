@@ -314,6 +314,25 @@ These defaults result in manageable password checks of a few milliseconds.
 Function `hash_password(pass)` computes the password salted digest compatible
 with the configuration.
 
+### `authorize` Decorator
+
+The decorator expects a list or possibly one group identifier.
+A group identifier can be either a name or a number.
+When several groups are specified, any will allow the operation to proceed.
+
+```Python
+# group ids
+ADMIN, READ, WRITE = 1, 2, 3
+
+@app.route("/some/place", methods=["POST"])
+@auth.authorize([ ADMIN, WRITE ])
+def post_some_place():
+    …
+```
+
+The check will call `user_in_group` function to check whether the authenticated
+user belongs to any of the authorized groups.
+
 ## Versions
 
 Sources are available on [GitHub](https://github.com/zx80/flask-simple-auth).
