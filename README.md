@@ -197,7 +197,9 @@ with the configuration.
 
 Sources are available on [GitHub](https://github.com/zx80/flask-simple-auth).
 
-No initial release yet.
+### 0.9.0
+
+Initial release in beta.
 
 ## TODO
 
