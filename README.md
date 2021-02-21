@@ -167,6 +167,8 @@ def set_login():
 app.before_request(set_login)
 ```
 
+### Using Authentication
+
 Then all route functions can take advantage of this information to check for
 autorizations:
 
