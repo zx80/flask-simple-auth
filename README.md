@@ -255,7 +255,8 @@ The following configuration directives are available:
    Default is `auth`.
  - `FSA_TOKEN_SECRET` secret string used for signing tokens.
    Default is a system-generated random string containing 128 bits.
-   This default with only work with itself.
+   This default with only work with itself, as it cannot be shared
+   across server instances.
  - `FSA_TOKEN_DELAY` number of minutes a token validity.
    Default is *60* minutes. 
  - `FSA_TOKEN_HASH` hash algorithm used to sign the token.
