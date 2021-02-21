@@ -53,16 +53,11 @@ def set_login():
 
 app.before_request(set_login)
 
-# token creation route
-@app.route("/login", methods=["GET"])
-def get_login():
-    return jsonify(auth.create_token(LOGIN)), 200
-
 # elsewhere
-@app.route("/whatever", methods=["POST"])
-def post_whatever():
+@app.route("/whatever", methods=["PATCH"])
+def patch_whatever():
     # check authorization
-    if not can_post_whatever(LOGIN):
+    if not can_patch_whatever(LOGIN):
         return "", 403
     # ok to do it
     return "", 201
@@ -127,14 +122,15 @@ a "login" concept which is only dedicated at obtaining an auth token.
 
 The module is initialized by calling `setConfig` with two arguments:
 
- - `app` the Flask application object.
- - `gup` a function to retrieve the password hash from the user name.
+ - the Flask application object.
+ - a function to retrieve the password hash from the user name.
 
 Example:
 
 ```Python
 # app is already initialized and configured the Flask application
 
+# return password hash if any, or None
 def get_user_password(user):
     return …
 
@@ -143,10 +139,13 @@ auth.setConfig(app, get_user_password)
 ```
 
 Then the module can be used to retrieve the authenticated user with `get_user`.
-This functions raises a `AuthException` exception on failures.
+This functions raises an `AuthException` exception on failures.
 
 A good practice (IMHO) is to use a before request hook to set a global variable
 with the value and warrant that the authentication is always checked.
+
+Some path may require to skip authentication, for instance registering a new user.
+This can be achieved simply by checking `request.path`.
 
 ```Python
 LOGIN: Optional[str] = None
@@ -154,8 +153,10 @@ LOGIN: Optional[str] = None
 def set_login():
     global LOGIN
     LOGIN = None  # not really needed, but this is safe
+    if request.path == "/register":
+        return
     try:
-        LOGIN = get_user()
+        LOGIN = auth.get_user()
     except auth.AuthException as e:
         # before request hooks can return an alternate response
         return Response(e.message, e.status)
@@ -175,8 +176,34 @@ def post_somewhere():
     …
 ```
 
+A non authenticated route for user registration could look like that:
+
+```Python
+@app.route("/register", methods=["POST"])
+def post_register():
+    assert LOGIN is None
+    params = request.values if request.json is None else request.json
+    if "user" not in params or "pass" not in params:
+        return "missing parameter", 404
+    insert_new_user_with_hashed_pass(params["user"], auth.hash_pass(params["pass"]))
+    return "", 201
+```
+
+For `token` authentication, a token can be created on a path authenticated
+by one of the other methods. The code for that would be as simple as:
+
+```Python
+# token creation route
+@app.route("/login", methods=["GET"])
+def get_login():
+    return jsonify(auth.create_token(LOGIN)), 200
+```
+
+The the client application will return the token as a parameter for
+authentication later requests, till it expires.
+
 The main configuration directive is `FSA_TYPE` which governs authentication
-methods used by the `get_user` function, as described in the following:
+methods used by the `get_user` function, as described in the following sections:
 
 ### `httpd` Authentication
 
