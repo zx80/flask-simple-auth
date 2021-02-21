@@ -216,7 +216,7 @@ This is the default.
 
 There are plenty authentication schemes available in a web server
 such as Apache or Nginx, all of which probably more efficiently implemented
-than python code, so this should be the prefered options.
+than python code, so this should be the preferred option.
 However, it could require significant configuration effort compared to
 the application-side approach.
 
