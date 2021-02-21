@@ -23,7 +23,7 @@ class AuthException(BaseException):
 #
 
 
-# application
+# application configuration
 APP: Optional[Flask] = None
 CONF: Optional[Dict[str, Any]] = None
 
@@ -33,16 +33,22 @@ SECRET: Optional[str] = None
 
 # password management
 PM: Optional[CryptContext] = None
-get_user_password: Optional[Callable[[str], str]] = None
-user_in_group: Optional[Callable[[str, str], bool]] = None
+
+GetUserPasswordType = Optional[Callable[[str], str]]
+get_user_password: GetUserPasswordType = None
+
+# autorisation management
+UserInGroupType = Optional[Union[Callable[[str, str], bool],
+                                 Callable[[str, int], bool]]]
+user_in_group: UserInGroupType = None
 
 # local copy of authenticated user
 USER: Optional[str] = None
 
 
 def setConfig(app: Flask,
-              gup: Callable[[str], str] = None,
-              uig: Callable[[str, str], bool] = None):
+              gup: GetUserPasswordType = None,
+              uig: UserInGroupType = None):
     global APP, CONF, REALM, SECRET, PM, get_user_password, user_in_group
     # overall setup
     APP = app
@@ -286,15 +292,19 @@ def get_user():
 
 
 #
-# autorization helper
+# authorization helper
 #
-class autorize:
-    def __init__(self, groups: Union[List[str], List[int], str, int] = []):
+class authorize:
+
+    def __init__(self, groups: Union[List[str], List[int], str, int] = None):
         assert user_in_group is not None, \
-            "user_in_group callback needed for autorize"
-        if isinstance(groups, str) or isinstance(groups, int):
+            "user_in_group callback needed for authorize"
+        if isinstance(groups, str):
+            groups = [groups]
+        elif isinstance(groups, int):
             groups = [groups]
         self.groups = groups
+
     def __call__(self, fun):
         def wrapper(*args, **kwargs):
             if USER is None:
@@ -308,4 +318,6 @@ class autorize:
                 return "", 403
             else:
                 return fun(*args, **kwargs)
+        # work around flask reliance on the function name
+        wrapper.__name__ = fun.__name__
         return wrapper

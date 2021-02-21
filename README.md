@@ -5,10 +5,11 @@ which is controled from Flask configuration.
 
 ## Description
 
-Help to manage authentication (*not* autorizations) in a Flask application.
+Help to manage authentication and authorizations in a Flask application.
 
-The idea is that the authentication is checked in a `before_request` hook,
-and can be made available through some global *à-la-Flask* variable.
+For authentication, the idea is that the authentication is checked in a
+`before_request` hook, and can be made available through some global
+*à-la-Flask* variable.
 
 The module implements inheriting the web-server authentication,
 password authentication (HTTP Basic, or HTTP/JSON parameters),
@@ -17,6 +18,10 @@ a fake authentication scheme useful for application testing.
 
 It allows to have a login route to generate authentication tokens.
 Support functions allow to hash new passwords consistently with password checks.
+
+For authorization, a simple decorator allows to declare required permissions
+on a route (eg a role name), and relies on a supplied function to check
+whether a user is in a given group.
 
 Compared to [Flask HTTPAuth](https://github.com/miguelgrinberg/Flask-HTTPAuth),
 there is one code in the app which does not need to know about which scheme
@@ -36,7 +41,7 @@ which is the whole point: authentication methods are managed elsewhere.
 
 # initialize module
 import FlaskSimpleAuth as auth
-auth.setConfig(app, user_to_password_function)
+auth.setConfig(app, user_to_password_function, user_in_group_function)
 
 # mandatory authentication
 # note: some routes may need to skip this, eg for registering new users.
@@ -55,10 +60,8 @@ app.before_request(set_login)
 
 # elsewhere
 @app.route("/whatever", methods=["PATCH"])
+@auth.authorize("patcher")
 def patch_whatever():
-    # check authorization
-    if not can_patch_whatever(LOGIN):
-        return "", 403
     # ok to do it
     return "", 201
 ```
@@ -131,6 +134,7 @@ The module is initialized by calling `setConfig` with two arguments:
 
  - the Flask application object.
  - a function to retrieve the password hash from the user name.
+ - a function which tells whether a user is in a group.
 
 ```Python
 # app is already initialized and configured the Flask application
@@ -139,8 +143,11 @@ The module is initialized by calling `setConfig` with two arguments:
 def get_user_password(user):
     return …
 
+def user_in_group(user, group):
+    return …
+
 import FlaskSimpleAuth as auth
-auth.setConfig(app, get_user_password)
+auth.setConfig(app, get_user_password, user_in_group)
 ```
 
 Then the module can be used to retrieve the authenticated user with `get_user`.
@@ -169,21 +176,22 @@ def set_login():
 app.before_request(set_login)
 ```
 
-### Using Authentication
+### Using Authentication and Authorization
 
 Then all route functions can take advantage of this information to check for
-autorizations:
+authorizations with a decorator:
 
 ```Python
 @app.route("/somewhere", methods=["POST"])
+@auth.authorize("posters")
 def post_somewhere():
-    if not can_post_somewhere(LOGIN):
-        return "", 403
-    # else permissions is granted, do the job!
     …
 ```
 
-A non authenticated route for user registration could look like that:
+Note that more advanced permissions (eg users can edit themselves) will
+still require manual permission checks at the beginning of the function.
+
+An opened route for user registration could look like that:
 
 ```Python
 @app.route("/register", methods=["POST"])
@@ -319,7 +327,6 @@ Initial release in beta.
 Features
  - test 'param'?
  - better control which schemes are attempted?
- - add a simple autorization decorator?  `@auth.autorize("group-name")`
 
 Implementation
  - should it be an object instead of a flat module?
