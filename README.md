@@ -85,7 +85,7 @@ See below for details.
 
 ### Install
 
-Use `pip install flask-simple-auth` to install the module, or whatever
+Use `pip install FlaskSimpleAuth` to install the module, or whatever
 other installation method.
 
 ### Features
