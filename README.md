@@ -76,6 +76,11 @@ FSA_TYPE = 'httpd'     # inherit web-serveur authentication
 FSA_TYPE = 'basic'     # HTTP Basic auth
 ```
 
+Various aspects of the implemented schemes can be configured with other
+directives, with reasonable defaults provided so that not much is really
+needed beyond choosing the authentication scheme.
+See below for details.
+
 ## Documentation
 
 WORK IN PROGRESS.
