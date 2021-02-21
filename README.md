@@ -24,17 +24,21 @@ is being used, so switching between modes only impacts the configuration.
 
 ## Example
 
-There is no clue in the application code source about what kind of
-authentication is performed, which is the point.
+The application code extract below maintains a `LOGIN` global variable which
+holds the authenticated user name for the current request.
+
+There is no clue in the source about what kind of authentication is used,
+which is the whole point: authentication methods are managed elsewhere.
 
 ```Python
 # app is a Flask application…
 
 # initialize module
 import FlaskSimpleAuth as auth
-auth.setConfig(app.config)
+auth.setConfig(app)
 
-# check authentication
+# mandatory authentication
+# note: some routes may need to skip this, eg for registering new users.
 LOGIN = None
 
 def set_login():
@@ -51,6 +55,15 @@ app.before_request(set_login)
 @app.route("/login", methods=["GET"])
 def get_login():
     return jsonify(auth.create_token(LOGIN)), 200
+
+# elsewhere
+@app.route("/whatever", methods=["POST"])
+def post_whatever():
+    # check authorization
+    if not can_post_whatever(LOGIN):
+        return "", 403
+    # ok to do it
+    return "", 201
 ```
 
 Authentication is manage from the application flask configuration
@@ -60,12 +73,12 @@ with `FSA_*` (Flask simple authentication) directives:
 FSA_TYPE = 'httpd'     # inherit web-serveur authentication
 
 # OR others such as:
-FSA_TYPE = 'basic'  # HTTP Basic auth
+FSA_TYPE = 'basic'     # HTTP Basic auth
 
 # authentication tokens (only SECRET is mandatory, others have defaults)
 FSA_TOKEN_REALM = 'fsa-demo'
 FSA_TOKEN_SECRET = 'super-secret-string-used-for-signing-tokens'
-FSA_TOKEN_DELAY = 10  # token expiration in minutes
+FSA_TOKEN_DELAY = 10   # token expiration in minutes
 ```
 
 ## Documentation
