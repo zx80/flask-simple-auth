@@ -309,6 +309,7 @@ Features
 
 Implementation
  - should it be an object instead of a flat module?
+ - expand tests
 
 How not to forget autorizations?
  - set a `autorization_checked` variable to False before the request
