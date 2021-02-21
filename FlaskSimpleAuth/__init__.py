@@ -289,10 +289,10 @@ def get_user():
 # autorization helper
 #
 class autorize:
-    def __init__(self, groups: Union[List[str], str] = []):
+    def __init__(self, groups: Union[List[str], List[int], str, int] = []):
         assert user_in_group is not None, \
             "user_in_group callback needed for autorize"
-        if isinstance(groups, str):
+        if isinstance(groups, str) or isinstance(groups, int):
             groups = [groups]
         self.groups = groups
     def __call__(self, fun):
