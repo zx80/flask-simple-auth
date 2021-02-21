@@ -84,7 +84,37 @@ See below for details.
 
 ## Documentation
 
-WORK IN PROGRESS.
+I have considered flask\_httpauth obviously, which provides many options,
+but I do not want to force their per-route model and explicit classes
+but rather rely on mandatory request hooks and have everything managed from
+the configuration file to easily switch between schemes.
+
+This simplistic module allows configurable authentication (`FSA_TYPE`):
+
+- `httpd` web-server checked authentication passed in the request.
+
+- `fake` parameter-based auth for fast and simple testing
+  the claimed login is coldly trusted…
+
+- `basic` http basic auth with a function hook for getting
+  the password hash. Beware that modern password checking is often pretty
+  expensive, so that you do not want to have to use that on
+  every request in real life (eg 400 ms for passlib bcrypt 12 rounds,
+  although 2 ms for 4 rounds is manageable).
+
+- `param` same with http parameter-provided login/password.
+
+- `token` auth uses a signed parameter to authenticate a
+  user in a realm for some limited time. The token can be
+  obtained by actually authenticating with previous methods.
+
+Note that this is intended for a REST API implementation serving
+a remote application. It does not make much sense to "login" and "logout"
+to/from a REST API because the point of the API is to serve and collect data
+to all who deserve it, i.e. are authorized, unlike a web application
+which is served while the client is on the page and should disappear when
+disconnected as the web browser page is wiped out. However, there is still
+a "login" concept which is only dedicated at obtaining an auth token.
 
 ## Versions
 
@@ -94,9 +124,15 @@ No initial release yet.
 
 ## TODO
 
-Should it be an object instead of a flat module?
+Features
+ - implement 'password' which does anything with a password?
+ - test 'param'?
+
+Implementation
+ - should it be an object instead of a flat module?
 
 How not to forget autorizations?
  - set a `autorization_checked` variable to False before the request
  - reset it to True when autorization is checked
  - check whether it was done and possibly abort after the request
+
