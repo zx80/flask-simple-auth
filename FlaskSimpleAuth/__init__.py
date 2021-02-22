@@ -39,6 +39,11 @@ GRACE: Optional[int] = None
 HASH: Optional[str] = None
 SIGLEN: Optional[int] = None
 
+# parameter names
+LOGIN: Optional[str] = None
+USERP: Optional[str] = None
+PASSP: Optional[str] = None
+
 # password management
 PM: Optional[CryptContext] = None
 
@@ -65,7 +70,9 @@ def auth_cleanup(res: Response):
 def setConfig(app: Flask,
               gup: GetUserPasswordType = None,
               uig: UserInGroupType = None):
-    global APP, CONF, AUTH, NAME, REALM, SECRET, DELAY, GRACE, HASH, SIGLEN, PM
+    global APP, CONF, AUTH
+    global NAME, REALM, SECRET, DELAY, GRACE, HASH, SIGLEN
+    global LOGIN, USERP, PASSP, PM
     global get_user_password, user_in_group
     # overall setup
     APP = app
@@ -88,6 +95,10 @@ def setConfig(app: Flask,
     GRACE = CONF.get("FSA_TOKEN_GRACE", 0)
     HASH = CONF.get("FSA_TOKEN_HASH", "blake2s")
     SIGLEN = CONF.get("FSA_TOKEN_LENGTH", 32)
+    # parameters
+    LOGIN = CONF.get("FSA_FAKE_LOGIN", "LOGIN")
+    USERP = CONF.get("FSA_PARAM_USER", "USER")
+    PASSP = CONF.get("FSA_PARAM_PASS", "PASS")
     # password setup
     scheme = CONF.get("FSA_PASSWORD_SCHEME", "bcrypt")
     options = CONF.get("FSA_PASSWORD_OPTIONS", {'bcrypt__default_rounds': 4})
@@ -183,13 +194,11 @@ def get_basic_auth():
 def get_param_auth():
     assert request.remote_user is None
     params = request.values if request.json is None else request.json
-    userp = CONF.get("FSA_PARAM_USER", "USER")
-    pwdp = CONF.get("FSA_PARAM_PASS", "PASS")
-    user, pwd = params.get(userp, None), params.get(pwdp, None)
+    user, pwd = params.get(USERP, None), params.get(PASSP, None)
     if user is None:
-        raise AuthException(f"missing login parameter: {userp}", 401)
+        raise AuthException(f"missing login parameter: {USERP}", 401)
     if pwd is None:
-        raise AuthException(f"missing password parameter: {pwdp}", 401)
+        raise AuthException(f"missing password parameter: {PASSP}", 401)
     if not request.is_secure:
         log.warning("password authentication over an insecure request")
     check_db_password(user, pwd)
