@@ -360,8 +360,8 @@ def post_some_place():
     …
 ```
 
-The check will call `user_in_group` function to check whether the authenticated
-user belongs to any of the authorized groups.
+The check will call `user_in_group(user, group)` function to check whether the
+authenticated user belongs to any of the authorized groups.
 
 Note that this simplistic model does is not enough for non-trivial applications,
 where permissions on objects often depend on the object owner.
