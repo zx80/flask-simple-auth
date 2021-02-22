@@ -27,7 +27,11 @@ class AuthException(BaseException):
 APP: Optional[Flask] = None
 CONF: Optional[Dict[str, Any]] = None
 
+# auth type
+AUTH: Optional[str] = None
+
 # auth token
+NAME: Optional[str] = None
 REALM: Optional[str] = None
 SECRET: Optional[str] = None
 DELAY: Optional[int] = None
@@ -59,13 +63,15 @@ def auth_cleanup(res: Response):
 def setConfig(app: Flask,
               gup: GetUserPasswordType = None,
               uig: UserInGroupType = None):
-    global APP, CONF, REALM, SECRET, DELAY, GRACE, PM
+    global APP, CONF, AUTH, NAME, REALM, SECRET, DELAY, GRACE, PM
     global get_user_password, user_in_group
     # overall setup
     APP = app
     CONF = app.config
     app.after_request(auth_cleanup)
+    AUTH = CONF.get("FSA_TYPE", "httpd")
     # token setup
+    NAME = CONF.get("FSA_TOKEN_NAME", "auth")
     import re
     realm = CONF.get("FSA_TOKEN_REALM", app.name).lower()
     # tr -cd "[a-z0-9_]" "": is there a better way to do that?
@@ -260,35 +266,31 @@ def get_user():
     global USER
     USER = None
 
-    # default is to rely on the http server provided authentication
-    auth_type = CONF.get("FSA_TYPE", "httpd")
+    if AUTH is None:
+        raise AuthException("FlaskSimpleAuth module not initialized", 500)
 
-    if auth_type == "httpd":
+    if AUTH == "httpd":
 
         log.info(f"LOGIN (httpd): {request.remote_user}")
         USER = request.remote_user
 
-    elif auth_type in ("fake", "param", "basic", "token", "password"):
+    elif AUTH in ("fake", "param", "basic", "token", "password"):
 
-        # whether to attempt token auth
-        token_name = CONF.get("FSA_TOKEN_NAME", "auth")
-
-        # first look for the token
         if SECRET is not None and SECRET != "":
             params = request.values if request.json is None else request.json
-            token = params.get(token_name, None)
+            token = params.get(NAME, None)
             if token is not None:
                 USER = get_token_auth(token)
 
         # else try other auth schemes
         if USER is None:
-            if auth_type == "param":
+            if AUTH == "param":
                 USER = get_param_auth()
-            elif auth_type == "basic":
+            elif AUTH == "basic":
                 USER = get_basic_auth()
-            elif auth_type == "fake":
+            elif AUTH == "fake":
                 USER = get_fake_auth()
-            elif auth_type == "password":
+            elif AUTH == "password":
                 try:
                     USER = get_basic_auth()
                 except AuthException:  # try param
@@ -301,7 +303,7 @@ def get_user():
 
     else:
 
-        raise AuthException(f"unexpected FSA_TYPE: {auth_type}", 500)
+        raise AuthException(f"unexpected authentication type: {AUTH}", 500)
 
 
 #
