@@ -4,8 +4,8 @@
 check: venv
 	. venv/bin/activate
 	type python3
-	mypy FlaskSimpleAuth
-	flake8 FlaskSimpleAuth
+	mypy FlaskSimpleAuth.py
+	flake8 FlaskSimpleAuth.py
 	pytest test.py
 
 .PHONY: clean
@@ -19,7 +19,7 @@ install:
 # for local testing
 venv:
 	python3 -m venv venv
-	venv/bin/pip3 install wheel ipython mypy flake8 pytest
+	venv/bin/pip3 install wheel mypy flake8 pytest
 	venv/bin/pip3 install flask bcrypt
 	venv/bin/pip3 install -e .
 
