@@ -276,13 +276,14 @@ def get_user():
 
     elif AUTH in ("fake", "param", "basic", "token", "password"):
 
+        # check for token
         if SECRET is not None and SECRET != "":
             params = request.values if request.json is None else request.json
             token = params.get(NAME, None)
             if token is not None:
                 USER = get_token_auth(token)
 
-        # else try other auth schemes
+        # else try other schemes
         if USER is None:
             if AUTH == "param":
                 USER = get_param_auth()
