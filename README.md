@@ -110,9 +110,6 @@ This simple module allows configurable authentication (`FSA_TYPE`):
 
 - `httpd` web-server checked authentication passed in the request.
 
-- `fake` parameter-based auth for fast and simple testing
-  the claimed login is coldly trusted…
-
 - `basic` http basic auth with a function hook for getting
   the password hash.
 
@@ -123,6 +120,9 @@ This simple module allows configurable authentication (`FSA_TYPE`):
 - `token` auth uses a signed parameter to authenticate a
   user in a realm for some limited time. The token can be
   obtained by actually authenticating with previous methods.
+
+- `fake` parameter-based auth for fast and simple testing
+  the claimed login is coldly trusted…
 
 I have considered flask\_httpauth obviously, which provides many options,
 but I do not want to force their per-route model and explicit classes
