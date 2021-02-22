@@ -3,6 +3,7 @@
 Simple authentication for [Flask](https://flask.palletsprojects.com/),
 which is controled from Flask configuration.
 
+
 ## Description
 
 Help to manage authentication and authorizations in a Flask application.
@@ -17,34 +18,39 @@ simple time-limited authentication tokens, and
 a fake authentication scheme useful for application testing.
 
 It allows to have a login route to generate authentication tokens.
-Support functions allow to hash new passwords consistently with password checks.
+Support functions allow to hash new passwords consistently with password
+checks performed by the module.
 
 For authorization, a simple decorator allows to declare required permissions
 on a route (eg a role name), and relies on a supplied function to check
-whether a user is in a given group.
+whether a user is in a given group. This is approach is enough for basic
+authorization management, but would be insufficient for most application where
+user can edit their own data but not those of others.
 
 Compared to [Flask HTTPAuth](https://github.com/miguelgrinberg/Flask-HTTPAuth),
 there is one code in the app which does not need to know about which scheme
 is being used, so switching between schemes only impacts the configuration,
 not the application code.
 
-## Example
+
+## Simple Example
 
 The application code extract below maintains a `LOGIN` global variable which
 holds the authenticated user name for the current request.
-
 There is no clue in the source about what kind of authentication is used,
-which is the whole point: authentication methods are managed elsewhere.
+which is the whole point: authentication schemes are managed elsewhere, not
+explicitely in the application code.
 
 ```Python
-# app is a Flask application…
+# app is the Flask application…
+# user_to_password_fun is a function returning the hashed password for a user.
+# user_in_group_fun is a function telling whether a user is in a group.
 
 # initialize module
 import FlaskSimpleAuth as auth
-auth.setConfig(app, user_to_password_function, user_in_group_function)
+auth.setConfig(app, user_to_password_fun, user_in_group_fun)
 
 # mandatory authentication
-# note: some routes may need to skip this, eg for registering new users.
 LOGIN = None
 
 def set_login():
@@ -58,11 +64,20 @@ def set_login():
 
 app.before_request(set_login)
 
-# elsewhere
+# elsewhere use the authentication
+# here implicitely by the authorize decorator
 @app.route("/whatever", methods=["PATCH"])
 @auth.authorize("patcher")
 def patch_whatever():
     # ok to do it
+    return "", 204
+
+# here explicitely at the beginning of the function
+@app.route("/something", methods=["PUT"])
+def put_something():
+    if not can_put_something(LOGIN):
+        return "", 403
+    # else ok to do it
     return "", 204
 ```
 
@@ -73,6 +88,7 @@ with `FSA_*` (Flask simple authentication) directives:
 FSA_TYPE = 'httpd'     # inherit web-serveur authentication
 # OR others such as:
 FSA_TYPE = 'basic'     # HTTP Basic auth
+FSA_TYPE = 'param'     # HTTP parameter auth
 ```
 
 Various aspects of the implemented schemes can be configured with other
@@ -86,11 +102,11 @@ See below for details.
 ### Install
 
 Use `pip install FlaskSimpleAuth` to install the module, or whatever
-other installation method.
+other installation method you prefer.
 
 ### Features
 
-This simplistic module allows configurable authentication (`FSA_TYPE`):
+This simple module allows configurable authentication (`FSA_TYPE`):
 
 - `httpd` web-server checked authentication passed in the request.
 
@@ -122,15 +138,16 @@ to/from a REST API because the point of the API is to serve and collect data
 to all who deserve it, i.e. are authorized, unlike a web application
 which is served while the client is on the page and should disappear when
 disconnected as the web browser page is wiped out. However, there is still
-a "login" concept which is only dedicated at obtaining an auth token.
+a "login" concept which is only dedicated at obtaining an auth token,
+that the application client needs to update from time to time.
 
 Note that web-oriented flask authentication modules are not really
-relevant in the REST API context, were the server does not care about
+relevant in the REST API context, where the server does not care about
 presenting login forms for instance.
 
 ### Initialisation
 
-The module is initialized by calling `setConfig` with two arguments:
+The module is initialized by calling `setConfig` with three arguments:
 
  - the Flask application object.
  - a function to retrieve the password hash from the user name.
@@ -143,6 +160,7 @@ The module is initialized by calling `setConfig` with two arguments:
 def get_user_password(user):
     return …
 
+# return whether user is in group
 def user_in_group(user, group):
     return …
 
@@ -151,7 +169,7 @@ auth.setConfig(app, get_user_password, user_in_group)
 ```
 
 Then the module can be used to retrieve the authenticated user with `get_user`.
-This functions raises an `AuthException` exception on failures.
+This functions raises `AuthException` on failures.
 
 A good practice (IMHO) is to use a before request hook to set a global variable
 with the value and warrant that the authentication is always checked.
@@ -164,7 +182,7 @@ LOGIN: Optional[str] = None
 
 def set_login():
     global LOGIN
-    LOGIN = None  # not really needed, but this is safe
+    LOGIN = None      # not really needed, but this is safe
     if request.path == "/register":
         return
     try:
@@ -215,8 +233,8 @@ def get_login():
     return jsonify(auth.create_token(LOGIN)), 200
 ```
 
-The the client application will return the token as a parameter for
-authentication later requests, till it expires.
+The client application will return the token as a parameter for
+authenticatiing later requests, till it expires.
 
 The main configuration directive is `FSA_TYPE` which governs authentication
 methods used by the `get_user` function, as described in the following sections:
@@ -333,9 +351,14 @@ def post_some_place():
 The check will call `user_in_group` function to check whether the authenticated
 user belongs to any of the authorized groups.
 
+
 ## Versions
 
 Sources are available on [GitHub](https://github.com/zx80/flask-simple-auth).
+
+### 1.1.0
+
+Add after request module cleanup.
 
 ### 1.0.0
 
@@ -346,6 +369,7 @@ Improved documentation.
 ### 0.9.0
 
 Initial release in beta.
+
 
 ## TODO
 

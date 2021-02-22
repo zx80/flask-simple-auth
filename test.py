@@ -7,6 +7,8 @@ class Flask:
     def __init__(self, name: str = "app", config: Dict[str, Any] = {}):
         self.name = name
         self.config = config
+    def after_request(self, hook):
+        pass
 
 app = Flask('Test', { 'FSA_TYPE': 'fake' })
 
