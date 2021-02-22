@@ -36,6 +36,8 @@ REALM: Optional[str] = None
 SECRET: Optional[str] = None
 DELAY: Optional[int] = None
 GRACE: Optional[int] = None
+HASH: Optional[str] = None
+SIGLEN: Optional[int] = None
 
 # password management
 PM: Optional[CryptContext] = None
@@ -63,7 +65,7 @@ def auth_cleanup(res: Response):
 def setConfig(app: Flask,
               gup: GetUserPasswordType = None,
               uig: UserInGroupType = None):
-    global APP, CONF, AUTH, NAME, REALM, SECRET, DELAY, GRACE, PM
+    global APP, CONF, AUTH, NAME, REALM, SECRET, DELAY, GRACE, HASH, SIGLEN, PM
     global get_user_password, user_in_group
     # overall setup
     APP = app
@@ -84,6 +86,8 @@ def setConfig(app: Flask,
         ''.join(random.SystemRandom().choices(chars, k=64))  # > 256 bits
     DELAY = CONF.get("FSA_TOKEN_DELAY", 60)
     GRACE = CONF.get("FSA_TOKEN_GRACE", 0)
+    HASH = CONF.get("FSA_TOKEN_HASH", "blake2s")
+    SIGLEN = CONF.get("FSA_TOKEN_LENGTH", 32)
     # password setup
     scheme = CONF.get("FSA_PASSWORD_SCHEME", "bcrypt")
     options = CONF.get("FSA_PASSWORD_OPTIONS", {'bcrypt__default_rounds': 4})
@@ -213,10 +217,9 @@ def get_param_auth():
 # sign data with secret
 def compute_signature(data, secret):
     import hashlib
-    h = hashlib.new(CONF.get("FSA_TOKEN_HASH", "blake2s"))
-    siglen = CONF.get("FSA_TOKEN_LENGTH", 32)
+    h = hashlib.new(HASH)
     h.update(f"{data}:{secret}".encode())
-    return h.digest()[:siglen].hex()
+    return h.digest()[:SIGLEN].hex()
 
 
 # build a timestamp string
