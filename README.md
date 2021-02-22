@@ -1,6 +1,6 @@
 # Flask Simple Auth
 
-Simple authentication for [Flask](https://flask.palletsprojects.com/),
+Simple authentication and authorization for [Flask](https://flask.palletsprojects.com/),
 which is controled from Flask configuration.
 
 
@@ -23,14 +23,14 @@ checks performed by the module.
 
 For authorization, a simple decorator allows to declare required permissions
 on a route (eg a role name), and relies on a supplied function to check
-whether a user is in a given group. This is approach is enough for basic
+whether a user has this role. This is approach is enough for basic
 authorization management, but would be insufficient for most application where
 user can edit their own data but not those of others.
 
 Compared to [Flask HTTPAuth](https://github.com/miguelgrinberg/Flask-HTTPAuth),
 there is one code in the app which does not need to know about which scheme
 is being used, so switching between schemes only impacts the configuration,
-not the application code.
+*not* the application code.
 
 
 ## Simple Example
@@ -69,7 +69,7 @@ app.before_request(set_login)
 @app.route("/whatever", methods=["PATCH"])
 @auth.authorize("patcher")
 def patch_whatever():
-    # ok to do it
+    # ok to do it, then
     return "", 204
 
 # here explicitely at the beginning of the function
@@ -77,7 +77,7 @@ def patch_whatever():
 def put_something():
     if not can_put_something(LOGIN):
         return "", 403
-    # else ok to do it
+    # else ok to do it, then
     return "", 204
 ```
 
@@ -119,7 +119,7 @@ This simple module allows configurable authentication (`FSA_TYPE`):
 
 - `token` auth uses a signed parameter to authenticate a
   user in a realm for some limited time. The token can be
-  obtained by actually authenticating with previous methods.
+  obtained by actually authenticating with other methods.
 
 - `fake` parameter-based auth for fast and simple testing
   the claimed login is coldly trusted…
@@ -128,16 +128,17 @@ I have considered [Flask HTTPAuth](https://github.com/miguelgrinberg/Flask-HTTPA
 obviously, which provides many options, but I do not want to force their
 per-route model and explicit classes but rather rely on mandatory request hooks
 and have everything managed from the configuration file to easily switch
-between schemes.
+between schemes, without impact on the application code.
 
 Note that this is intended for a REST API implementation serving
 a remote application. It does not make much sense to "login" and "logout"
 to/from a REST API because the point of the API is to serve and collect data
 to all who deserve it, i.e. are authorized, unlike a web application
-which is served while the client is on the page and should disappear when
-disconnected as the web browser page is wiped out. However, there is still
-a "login" concept which is only dedicated at obtaining an auth token,
-that the application client needs to update from time to time.
+which is served while the client is on the page which maintains a session
+and should disappear when disconnected as the web browser page is wiped out.
+However, there is still a "login" concept which is only dedicated at
+obtaining an auth token, that the application client needs to update from
+time to time.
 
 Note that web-oriented flask authentication modules are not really
 relevant in the REST API context, where the server does not care about
@@ -149,7 +150,7 @@ The module is initialized by calling `setConfig` with three arguments:
 
  - the Flask application object.
  - a function to retrieve the password hash from the user name.
- - a function which tells whether a user is in a group.
+ - a function which tells whether a user is in a group or role.
 
 ```Python
 # app is already initialized and configured the Flask application
@@ -300,19 +301,20 @@ The following configuration directives are available:
 
 Function `create_token(user)` creates a token for the user.
 
-Note: token authentication is always attempted unless the secret is empty.
+Note that token authentication is always attempted unless the secret is empty.
 Setting `FSA_TYPE` to `token` results in *only* token auth to be used.
 
-Note: token authentication is much faster than password verification because
-password checks are designed to be slow so as to hinder password cracking.
-Also, it avoids sending passwords again and again.
-The rational is to use a password scheme to retrieve a token and then to
+Also note that token authentication is much faster than password verification
+because password checks are designed to be slow so as to hinder password cracking,
+and it avoids sending passwords again and again.
+The rational option is to use a password scheme to retrieve a token and then to
 use it till it expires.
 
 ### `fake` Authentication
 
 Trust a parameter for authentication claims.
-Only for local tests, obviously. This is inforced.
+Only for local tests, obviously.
+This is inforced.
 
 The following configuration directive is available:
 
@@ -337,7 +339,7 @@ Beware that modern password checking is often pretty expensive in order to
 thwart password cracking if the hashed passwords are leaked, so that you
 do not want to have to use that on every request in real life (eg hundreds
 milliseconds for passlib bcrypt 12 rounds).
-These defaults result in manageable password checks of a few milliseconds.
+The above defaults result in manageable password checks of a few milliseconds.
 
 Function `hash_password(pass)` computes the password salted digest compatible
 with the configuration.
@@ -350,7 +352,7 @@ When several groups are specified, any will allow the operation to proceed.
 
 ```Python
 # group ids
-ADMIN, READ, WRITE = 1, 2, 3
+ADMIN, WRITE, READ = 1, 2, 3
 
 @app.route("/some/place", methods=["POST"])
 @auth.authorize([ ADMIN, WRITE ])
@@ -362,13 +364,17 @@ The check will call `user_in_group` function to check whether the authenticated
 user belongs to any of the authorized groups.
 
 Note that this simplistic model does is not enough for non-trivial applications,
-where permissions on objects often depend on the object owner. For those, careful
-per-operation authorization will still be needed.
+where permissions on objects often depend on the object owner.
+For those, careful per-operation authorization will still be needed.
 
 
 ## Versions
 
 Sources are available on [GitHub](https://github.com/zx80/flask-simple-auth).
+
+### dev
+
+Improved documentation.
 
 ### 1.2.0
 
