@@ -100,6 +100,8 @@ def setConfig(app: Flask,
     USERP = CONF.get("FSA_PARAM_USER", "USER")
     PASSP = CONF.get("FSA_PARAM_PASS", "PASS")
     # password setup
+    # passlib context is a pain, you have to know the scheme name to set its round
+    # which make it impossible to configure directly.
     scheme = CONF.get("FSA_PASSWORD_SCHEME", "bcrypt")
     options = CONF.get("FSA_PASSWORD_OPTIONS", {'bcrypt__default_rounds': 4})
     PM = CryptContext(schemes=[scheme], **options)
@@ -136,9 +138,6 @@ def get_fake_auth():
 #
 # note: passlib bcrypt is Apache compatible
 #
-
-# passlib context is a pain, you have to know the scheme name to set its round
-# which make it impossible to configure directly.
 
 # verify password
 def check_password(user, pwd, ref):
