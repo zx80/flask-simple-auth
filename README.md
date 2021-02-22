@@ -293,6 +293,8 @@ The following configuration directives are available:
    across server instances.
  - `FSA_TOKEN_DELAY` number of minutes a token validity.
    Default is *60* minutes. 
+ - `FSA_TOKEN_GRACE` number of minutes of grace time for token validity.
+   Default is *0* minutes.
  - `FSA_TOKEN_HASH` hash algorithm used to sign the token.
    Default is `blake2s`.
  - `FSA_TOKEN_LENGTH` number of hash bytes kept for token signature.
@@ -359,6 +361,10 @@ per-operation authorization will still be needed.
 ## Versions
 
 Sources are available on [GitHub](https://github.com/zx80/flask-simple-auth).
+
+### dev
+
+Add grace time for auth token validity.
 
 ### 1.1.0
 

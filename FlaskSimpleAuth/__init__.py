@@ -30,6 +30,8 @@ CONF: Optional[Dict[str, Any]] = None
 # auth token
 REALM: Optional[str] = None
 SECRET: Optional[str] = None
+DELAY: Optional[int] = None
+GRACE: Optional[int] = None
 
 # password management
 PM: Optional[CryptContext] = None
@@ -57,7 +59,8 @@ def auth_cleanup(res: Response):
 def setConfig(app: Flask,
               gup: GetUserPasswordType = None,
               uig: UserInGroupType = None):
-    global APP, CONF, REALM, SECRET, PM, get_user_password, user_in_group
+    global APP, CONF, REALM, SECRET, DELAY, GRACE, PM
+    global get_user_password, user_in_group
     # overall setup
     APP = app
     CONF = app.config
@@ -73,6 +76,8 @@ def setConfig(app: Flask,
     chars = string.ascii_letters + string.digits + string.punctuation
     SECRET = CONF["FSA_TOKEN_SECRET"] if "FSA_TOKEN_SECRET" in CONF else \
         ''.join(random.SystemRandom().choices(chars, k=64))  # > 256 bits
+    DELAY = CONF.get("FSA_TOKEN_DELAY", 60)
+    GRACE = CONF.get("FSA_TOKEN_GRACE", 0)
     # password setup
     scheme = CONF.get("FSA_PASSWORD_SCHEME", "bcrypt")
     options = CONF.get("FSA_PASSWORD_OPTIONS", {'bcrypt__default_rounds': 4})
@@ -194,6 +199,7 @@ def get_param_auth():
 # FSA_TOKEN_HASH: hashlib algorithm for token authentication ("blake2s")
 # FSA_TOKEN_LENGTH: number of signature bytes (32)
 # FSA_TOKEN_DELAY: token validity in minutes (60)
+# FSA_TOKEN_GRACE: grace delay for token validity in minutes (0)
 # FSA_TOKEN_SECRET: signature secret for tokens (mandatory!)
 # FSA_TOKEN_REALM: token realm (lc simplified app name)
 #
@@ -222,8 +228,7 @@ def compute_token(realm, user, delay, secret):
 
 # create a new token for user depending on the configuration
 def create_token(user):
-    delay = CONF.get("FSA_TOKEN_DELAY", 60)
-    return compute_token(REALM, user, delay, SECRET)
+    return compute_token(REALM, user, DELAY, SECRET)
 
 
 # tell whether token is ok: return validated user or None
@@ -240,8 +245,8 @@ def get_token_auth(token):
     if ref != sig:
         log.info("LOGIN (token): invalid signature")
         raise AuthException("invalid auth token signature", 401)
-    # check limit
-    now = get_timestamp(dt.datetime.utcnow())
+    # check limit with a grace time
+    now = get_timestamp(dt.datetime.utcnow() - dt.timedelta(minutes=GRACE))
     if now > limit:
         log.info("LOGIN (token): token {token} has expired")
         raise AuthException("expired auth token", 401)
