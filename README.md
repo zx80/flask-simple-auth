@@ -114,14 +114,11 @@ This simple module allows configurable authentication (`FSA_TYPE`):
   the claimed login is coldly trusted…
 
 - `basic` http basic auth with a function hook for getting
-  the password hash. Beware that modern password checking is often pretty
-  expensive, so that you do not want to have to use that on
-  every request in real life (eg 400 ms for passlib bcrypt 12 rounds,
-  although 2 ms for 4 rounds is manageable).
+  the password hash.
 
 - `param` same with http parameter-provided login/password.
 
-- `password` tries both `param` and `basic`.
+- `password` tries `basic` then `param`.
 
 - `token` auth uses a signed parameter to authenticate a
   user in a realm for some limited time. The token can be
@@ -329,6 +326,10 @@ The following configuration directives are available to configure
  - `FSA_PASSWORD_OPTIONS` relevant options (for `passlib.CryptContext`).
    Default is `{'bcrypt__default_rounds': 4}`.
 
+Beware that modern password checking is often pretty expensive in order to
+thwart password cracking if the hashed passwords are leaked, so that you
+do not want to have to use that on every request in real life (eg hundreds
+milliseconds for passlib bcrypt 12 rounds).
 These defaults result in manageable password checks of a few milliseconds.
 
 Function `hash_password(pass)` computes the password salted digest compatible
