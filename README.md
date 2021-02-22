@@ -364,7 +364,7 @@ per-operation authorization will still be needed.
 
 Sources are available on [GitHub](https://github.com/zx80/flask-simple-auth).
 
-### dev
+### 1.2.0
 
 Add grace time for auth token validity.
 Some code refactoring.
