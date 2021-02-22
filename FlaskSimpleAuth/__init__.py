@@ -122,7 +122,7 @@ def get_fake_auth():
     assert request.environ["REMOTE_ADDR"][:4] == "127.", \
         "fake auth only on localhost"
     params = request.values if request.json is None else request.json
-    user = params.get(CONF.get("FSA_FAKE_LOGIN", "LOGIN"), None)
+    user = params.get(LOGIN), None)
     # it could check that the user exists in db
     if user is None:
         raise AuthException("missing login parameter", 401)
