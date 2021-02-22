@@ -240,8 +240,7 @@ def get_token_auth(token):
         log.info(f"LOGIN (token): unexpected realm {realm}")
         raise AuthException(f"unexpected realm: {realm}", 401)
     # check signature
-    ref = compute_signature(f"{realm}:{user}:{limit}",
-                            CONF["FSA_TOKEN_SECRET"])
+    ref = compute_signature(f"{realm}:{user}:{limit}", SECRET)
     if ref != sig:
         log.info("LOGIN (token): invalid signature")
         raise AuthException("invalid auth token signature", 401)
