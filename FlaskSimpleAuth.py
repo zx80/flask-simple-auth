@@ -1,6 +1,8 @@
 #
 # Debatable flask-side auth management
 #
+# This code is public domain.
+#
 
 from typing import Optional, Union, Callable, Dict, List, Any
 from flask import Flask, request, Response
