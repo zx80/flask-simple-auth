@@ -300,7 +300,7 @@ The following configuration directives are available:
 Function `create_token(user)` creates a token for the user.
 
 Note: token authentication is always attempted unless the secret is empty.
-Setting `FSA_TYPE` to `token` results in only token auth to be used.
+Setting `FSA_TYPE` to `token` results in *only* token auth to be used.
 
 ### `fake` Authentication
 
