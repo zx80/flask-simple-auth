@@ -124,10 +124,11 @@ This simple module allows configurable authentication (`FSA_TYPE`):
 - `fake` parameter-based auth for fast and simple testing
   the claimed login is coldly trusted…
 
-I have considered flask\_httpauth obviously, which provides many options,
-but I do not want to force their per-route model and explicit classes
-but rather rely on mandatory request hooks and have everything managed from
-the configuration file to easily switch between schemes.
+I have considered [Flask HTTPAuth](https://github.com/miguelgrinberg/Flask-HTTPAuth),
+obviously, which provides many options, but I do not want to force their
+per-route model and explicit classes but rather rely on mandatory request hooks
+and have everything managed from the configuration file to easily switch
+between schemes.
 
 Note that this is intended for a REST API implementation serving
 a remote application. It does not make much sense to "login" and "logout"
