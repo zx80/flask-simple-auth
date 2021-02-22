@@ -3,7 +3,7 @@
 #
 
 from typing import Optional, Union, Callable, Dict, List, Any
-from flask import Flask, request
+from flask import Flask, request, Response
 
 import datetime as dt
 from passlib.context import CryptContext  # type: ignore
@@ -46,6 +46,13 @@ user_in_group: UserInGroupType = None
 USER: Optional[str] = None
 
 
+# wipe out current authentication
+def auth_cleanup(res: Response):
+    global USER
+    USER = None
+
+
+# initialize module
 def setConfig(app: Flask,
               gup: GetUserPasswordType = None,
               uig: UserInGroupType = None):
@@ -53,6 +60,7 @@ def setConfig(app: Flask,
     # overall setup
     APP = app
     CONF = app.config
+    app.after_request(auth_cleanup)
     # token setup
     import re
     realm = CONF.get("FSA_TOKEN_REALM", app.name).lower()
