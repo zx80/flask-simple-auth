@@ -90,7 +90,7 @@ def setConfig(app: Flask,
     # list of 94 chars, about 6.5 bits per char
     chars = string.ascii_letters + string.digits + string.punctuation
     SECRET = CONF["FSA_TOKEN_SECRET"] if "FSA_TOKEN_SECRET" in CONF else \
-        ''.join(random.SystemRandom().choices(chars, k=64))  # > 256 bits
+        ''.join(random.SystemRandom().choices(chars, k=40))  # > 256 bits
     DELAY = CONF.get("FSA_TOKEN_DELAY", 60)
     GRACE = CONF.get("FSA_TOKEN_GRACE", 0)
     HASH = CONF.get("FSA_TOKEN_HASH", "blake2s")
