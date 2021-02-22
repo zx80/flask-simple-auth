@@ -219,7 +219,7 @@ def post_register():
     if "user" not in params or "pass" not in params:
         return "missing parameter", 404
     # FIXME should handle an existing user and respond appropriately
-    insert_new_user_with_hashed_pass(params["user"], auth.hash_pass(params["pass"]))
+    insert_new_user_with_hashed_pass(params["user"], auth.hash_password(params["pass"]))
     return "", 201
 ```
 
