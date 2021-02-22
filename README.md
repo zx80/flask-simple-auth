@@ -365,6 +365,7 @@ Sources are available on [GitHub](https://github.com/zx80/flask-simple-auth).
 ### dev
 
 Add grace time for auth token validity.
+Some code refactoring.
 
 ### 1.1.0
 
