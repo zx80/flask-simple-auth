@@ -124,7 +124,7 @@ This simple module allows configurable authentication (`FSA_TYPE`):
 - `fake` parameter-based auth for fast and simple testing
   the claimed login is coldly trusted…
 
-I have considered [Flask HTTPAuth](https://github.com/miguelgrinberg/Flask-HTTPAuth),
+I have considered [Flask HTTPAuth](https://github.com/miguelgrinberg/Flask-HTTPAuth)
 obviously, which provides many options, but I do not want to force their
 per-route model and explicit classes but rather rely on mandatory request hooks
 and have everything managed from the configuration file to easily switch
@@ -302,6 +302,12 @@ Function `create_token(user)` creates a token for the user.
 
 Note: token authentication is always attempted unless the secret is empty.
 Setting `FSA_TYPE` to `token` results in *only* token auth to be used.
+
+Note: token authentication is much faster than password verification because
+password checks are designed to be slow so as to hinder password cracking.
+Also, it avoids sending passwords again and again.
+The rational is to use a password scheme to retrieve a token and then to
+use it till it expires.
 
 ### `fake` Authentication
 
