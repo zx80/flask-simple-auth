@@ -50,6 +50,7 @@ USER: Optional[str] = None
 def auth_cleanup(res: Response):
     global USER
     USER = None
+    return res
 
 
 # initialize module
