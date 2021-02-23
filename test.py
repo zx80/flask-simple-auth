@@ -28,6 +28,35 @@ def test_token():
     assert calvin_token[:12] == "test:calvin:"
     assert auth.get_token_auth(calvin_token) == "calvin"
 
+def test_expired_token():
+    hobbes_token = auth.create_token("hobbes")
+    grace, auth.GRACE = auth.GRACE, -100
+    try:
+        user = auth.get_token_auth(hobbes_token)
+        assert False, "token should be invalid"
+    except auth.AuthException as e:
+        assert e.status == 401
+    auth.GRACE = grace
+
+def test_invalid_token():
+    susie_token = auth.create_token("susie")
+    susie_token = susie_token[:-1] + "z"
+    try:
+        user = auth.get_token_auth(susie_token)
+        assert False, "token should be invalid"
+    except auth.AuthException as e:
+        assert e.status == 401
+
+def test_wrong_token():
+    realm, auth.REALM = auth.REALM, "elsewhere"
+    moe_token = auth.create_token("moe")
+    auth.REALM = realm
+    try:
+        user = auth.get_token_auth(moe_token)
+        assert False, "token should be invalid"
+    except auth.AuthException as e:
+        assert e.status == 401
+
 def test_password_check():
     try:
         ref = auth.hash_password(AUTH['calvin'])
