@@ -317,7 +317,7 @@ def get_user():
             else:
                 raise AuthException("auth token is required", 401)
 
-        assert USER is not None  # otherwise an exception would have been raised
+        assert USER is not None  # else an exception would have been raised
         return USER
 
     else:
