@@ -343,6 +343,7 @@ class authorize:
 
     def __call__(self, fun):
         def wrapper(*args, **kwargs):
+            global USER
             if USER is None:
                 # no current user, try to get one?
                 if LAZY:
