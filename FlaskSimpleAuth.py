@@ -86,7 +86,7 @@ def setConfig(app: Flask,
     import re
     realm = CONF.get("FSA_TOKEN_REALM", app.name).lower()
     # tr -cd "[a-z0-9_]" "": is there a better way to do that?
-    REALM = "".join(c for c in realm if re.match("[a-z0-9_]", c))
+    REALM = "".join(c for c in realm if re.match("[-a-z0-9_]", c))
     import random
     import string
     # list of 94 chars, about 6.5 bits per char
