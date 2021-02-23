@@ -31,6 +31,7 @@ CONF: Optional[Dict[str, Any]] = None
 
 # auth type
 AUTH: Optional[str] = None
+LAZY: Optional[bool] = None
 
 # auth token
 NAME: Optional[str] = None
@@ -72,7 +73,7 @@ def auth_cleanup(res: Response):
 def setConfig(app: Flask,
               gup: GetUserPasswordType = None,
               uig: UserInGroupType = None):
-    global APP, CONF, AUTH
+    global APP, CONF, AUTH, LAZY
     global NAME, REALM, SECRET, DELAY, GRACE, HASH, SIGLEN
     global LOGIN, USERP, PASSP, PM
     global get_user_password, user_in_group
@@ -81,6 +82,7 @@ def setConfig(app: Flask,
     CONF = app.config
     app.after_request(auth_cleanup)
     AUTH = CONF.get("FSA_TYPE", "httpd")
+    LAZY = CONF.get("FSA_LAZY", True)
     # token setup
     NAME = CONF.get("FSA_TOKEN_NAME", "auth")
     import re
@@ -342,7 +344,14 @@ class authorize:
     def __call__(self, fun):
         def wrapper(*args, **kwargs):
             if USER is None:
-                return "", 401
+                # no current user, try to get one?
+                if LAZY:
+                    try:
+                        USER = get_user()
+                    except AuthException:
+                        return "", 401
+                else:
+                    return "", 401
             for g in self.groups:
                 if user_in_group(USER, g):
                     return fun(*args, **kwargs)

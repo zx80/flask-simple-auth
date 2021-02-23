@@ -374,6 +374,12 @@ def post_some_place():
 The check will call `user_in_group(user, group)` function to check whether the
 authenticated user belongs to any of the authorized groups.
 
+The following configuration directive is available:
+
+ - `FSA_LAZY` allows the `authorize` decorator to perform the authentication
+   when needed, which mean that the before request hook can be skipped.
+   Default is *True*.
+
 Note that this simplistic model does is not enough for non-trivial applications,
 where permissions on objects often depend on the object owner.
 For those, careful per-operation authorization will still be needed.
@@ -386,7 +392,8 @@ and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 
 ### dev
 
-Simplified code.
+Add `FSA_LAZY` configuration directive.
+Simplify code.
 Improve warning on short secrets.
 
 ### 1.3.0
