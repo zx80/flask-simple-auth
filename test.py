@@ -17,8 +17,6 @@ AUTH = {'calvin': 'hello world!'}
 import FlaskSimpleAuth as auth
 auth.setConfig(app, AUTH.get)
 
-print(f"REALM: {auth.REALM}")
-
 def test_sanity():
     assert auth.REALM == "test"
     assert 'FSA_TYPE' in auth.CONF
