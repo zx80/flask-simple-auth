@@ -398,11 +398,12 @@ For those, careful per-operation authorization will still be needed.
 Sources are available on [GitHub](https://github.com/zx80/flask-simple-auth)
 and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 
-### dev
+### 1.4.0
 
 Add `FSA_LAZY` configuration directive.
 Simplify code.
 Improve warning on short secrets.
+Repackage…
 
 ### 1.3.0
 
