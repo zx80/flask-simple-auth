@@ -91,12 +91,17 @@ def setConfig(app: Flask,
     import string
     # list of 94 chars, about 6.5 bits per char
     chars = string.ascii_letters + string.digits + string.punctuation
-    SECRET = CONF["FSA_TOKEN_SECRET"] if "FSA_TOKEN_SECRET" in CONF else \
-        ''.join(random.SystemRandom().choices(chars, k=40))  # > 256 bits
+    if "FSA_TOKEN_SECRET" in CONF:
+        SECRET = CONF["FSA_TOKEN_SECRET"]
+        if len(SECRET) < 16:
+            log.warning("token secret is short")
+    else:
+        log.warning("setting random token secret, which only works with a one process app")
+        SECRET = ''.join(random.SystemRandom().choices(chars, k=40))  # > 256 bits
     DELAY = CONF.get("FSA_TOKEN_DELAY", 60)
     GRACE = CONF.get("FSA_TOKEN_GRACE", 0)
     HASH = CONF.get("FSA_TOKEN_HASH", "blake2s")
-    SIGLEN = CONF.get("FSA_TOKEN_LENGTH", 32)
+    SIGLEN = CONF.get("FSA_TOKEN_LENGTH", 16)
     # parameters
     LOGIN = CONF.get("FSA_FAKE_LOGIN", "LOGIN")
     USERP = CONF.get("FSA_PARAM_USER", "USER")

@@ -28,8 +28,8 @@ authorization management, but would be insufficient for most application where
 user can edit their own data but not those of others.
 
 Compared to [Flask HTTPAuth](https://github.com/miguelgrinberg/Flask-HTTPAuth),
-there is one code in the app which does not need to know about which scheme
-is being used, so switching between schemes only impacts the configuration,
+there is one code in the app which does not need to know about which authentication
+scheme is being used, so switching between schemes only impacts the configuration,
 *not* the application code.
 
 
@@ -218,7 +218,7 @@ def post_register():
     if "user" not in params or "pass" not in params:
         return "missing parameter", 404
     # FIXME should handle an existing user and respond appropriately
-    insert_new_user_with_hashed_pass(params["user"], auth.hash_password(params["pass"]))
+    add_new_user_with_hashed_pass(params["user"], auth.hash_password(params["pass"]))
     return "", 201
 ```
 
@@ -251,13 +251,16 @@ the application-side approach.
 
 ### `basic` Authentication
 
-HTTP Basic password authentication.
+HTTP Basic password authentication, which rely on the `Authorization`
+HTTP header in the request.
 
-See also Password Authentication below for how the password is retrieved.
+See also Password Authentication below for how the password is retrieved
+and checked.
 
 ### `param` Authentication
 
 HTTP parameter or JSON password authentication.
+User name and password are passed as request parameters.
 
 The following configuration directives are available:
 
@@ -266,7 +269,8 @@ The following configuration directives are available:
  - `FSA_PARAM_PASS` parameter name for the password.
    Default is `PASS`.
 
-See also Password Authentication below for how the password is retrieved.
+See also Password Authentication below for how the password is retrieved
+and checked.
 
 ### `password` Authentication
 
@@ -275,10 +279,14 @@ Tries `basic` then `param` authentication.
 ### `token` Authentication
 
 Only rely on signed tokens for authentication.
-A token certifies that a user is authenticated up to some time limit.
+A token certifies that a *user* is authenticated in a *realm* up to some
+time *limit*.
+The token is authenticated by a signature which is the hash of the payload
+(*realm*, *user* and *limit*) and a secret hold by the server.
 The token syntax is: `<realm>:<user>:<limit>:<signature>`,
 for instance: `kiva:calvin:20210221160258:4ee89cd4cc7afe0a86b26bdce6d11126`.
-The limit is an easily parsable UTC timestamp *YYYYMMDDHHmmSS*.
+The time limit is an easily parsable UTC timestamp *YYYYMMDDHHmmSS* so that
+it can be checked easily by the application client.
 
 The following configuration directives are available:
 
@@ -288,25 +296,25 @@ The following configuration directives are available:
    Default is `auth`.
  - `FSA_TOKEN_SECRET` secret string used for signing tokens.
    Default is a system-generated random string containing 128 bits.
-   This default with only work with itself, as it cannot be shared
-   across server instances.
- - `FSA_TOKEN_DELAY` number of minutes a token validity.
+   This default with only work with itself, as it is not shared
+   across server instances or processes. Set to `None` to disable tokens.
+ - `FSA_TOKEN_DELAY` number of minutes of token validity.
    Default is *60* minutes. 
  - `FSA_TOKEN_GRACE` number of minutes of grace time for token validity.
    Default is *0* minutes.
  - `FSA_TOKEN_HASH` hash algorithm used to sign the token.
    Default is `blake2s`.
  - `FSA_TOKEN_LENGTH` number of hash bytes kept for token signature.
-   Default is *32*.
+   Default is *16*.
 
 Function `create_token(user)` creates a token for the user.
 
 Note that token authentication is always attempted unless the secret is empty.
-Setting `FSA_TYPE` to `token` results in *only* token auth to be used.
+Setting `FSA_TYPE` to `token` results in *only* token authentication to be used.
 
-Also note that token authentication is much faster than password verification
-because password checks are designed to be slow so as to hinder password cracking,
-and it avoids sending passwords again and again.
+Also note that token authentication is usually much faster than password verification
+because password checks are designed to be slow so as to hinder password cracking.
+Another benefit of token is that it avoids sending passwords over and over.
 The rational option is to use a password scheme to retrieve a token and then to
 use it till it expires.
 
@@ -323,7 +331,7 @@ The following configuration directive is available:
 
 ### Password Authentication (`param` or `basic`)
 
-For checking passwords the password (hash) must be retrieved through
+For checking passwords the password (salted hash) must be retrieved through
 `get_user_password(user)`. 
 This function must be provided by the application.
 
@@ -331,7 +339,8 @@ The following configuration directives are available to configure
 `passlib` password checks:
 
  - `FSA_PASSWORD_SCHEME` password scheme to use for passwords.
-   Default is `bcrypt`.
+   Default is `bcrypt`. See [passlib documentation](https://passlib.readthedocs.io/en/stable/lib/passlib.hash.html)
+   for available options.
  - `FSA_PASSWORD_OPTIONS` relevant options (for `passlib.CryptContext`).
    Default is `{'bcrypt__default_rounds': 4}`.
 
@@ -340,9 +349,10 @@ thwart password cracking if the hashed passwords are leaked, so that you
 do not want to have to use that on every request in real life (eg hundreds
 milliseconds for passlib bcrypt 12 rounds).
 The above defaults result in manageable password checks of a few milliseconds.
+Consider enabling tokens to reduce the authentication load on each request.
 
 Function `hash_password(pass)` computes the password salted digest compatible
-with the configuration.
+with the current configuration.
 
 ### `authorize` Decorator
 
@@ -375,6 +385,8 @@ Sources are available on [GitHub](https://github.com/zx80/flask-simple-auth).
 ### dev
 
 Improved documentation.
+Reduce default token signature length and default token secret.
+Warn on random or short token secrets.
 
 ### 1.2.0
 
