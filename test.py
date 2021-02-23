@@ -26,6 +26,7 @@ def test_sanity():
 def test_token():
     calvin_token = auth.create_token("calvin")
     assert calvin_token[:12] == "test:calvin:"
+    assert auth.get_token_auth(calvin_token) == "calvin"
 
 def test_password_check():
     try:
