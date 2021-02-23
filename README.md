@@ -382,7 +382,7 @@ For those, careful per-operation authorization will still be needed.
 
 Sources are available on [GitHub](https://github.com/zx80/flask-simple-auth).
 
-### dev
+### 1.3.0
 
 Improved documentation.
 Reduce default token signature length and default token secret.

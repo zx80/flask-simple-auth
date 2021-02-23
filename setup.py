@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setup(
     name="FlaskSimpleAuth",
-    version="1.2.0",
+    version="1.3.0",
     packages=find_packages(),
     author="Fabien Coelho",
     author_email="flask.auth@coelho.net",
