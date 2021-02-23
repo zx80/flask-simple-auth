@@ -380,7 +380,8 @@ For those, careful per-operation authorization will still be needed.
 
 ## Versions
 
-Sources are available on [GitHub](https://github.com/zx80/flask-simple-auth).
+Sources are available on [GitHub](https://github.com/zx80/flask-simple-auth)
+and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 
 ### 1.3.0
 
