@@ -93,11 +93,11 @@ def setConfig(app: Flask,
     chars = string.ascii_letters + string.digits + string.punctuation
     if "FSA_TOKEN_SECRET" in CONF:
         SECRET = CONF["FSA_TOKEN_SECRET"]
-        if len(SECRET) < 16:
+        if SECRET is not None and len(SECRET) < 16:
             log.warning("token secret is short")
     else:
-        log.warning("setting random token secret, which only works with a one process app")
-        SECRET = ''.join(random.SystemRandom().choices(chars, k=40))  # > 256 bits
+        log.warning("random token secret, only ok for one process app")
+        SECRET = ''.join(random.SystemRandom().choices(chars, k=40))
     DELAY = CONF.get("FSA_TOKEN_DELAY", 60)
     GRACE = CONF.get("FSA_TOKEN_GRACE", 0)
     HASH = CONF.get("FSA_TOKEN_HASH", "blake2s")
@@ -326,7 +326,7 @@ def get_user():
 
 
 #
-# authorization helper
+# authorize decorator
 #
 class authorize:
 
@@ -343,15 +343,11 @@ class authorize:
         def wrapper(*args, **kwargs):
             if USER is None:
                 return "", 401
-            permitted = False
             for g in self.groups:
                 if user_in_group(USER, g):
-                    permitted = True
-                    break
-            if not permitted:
-                return "", 403
-            else:
-                return fun(*args, **kwargs)
-        # work around flask reliance on the function name
+                    return fun(*args, **kwargs)
+            # else no matching group
+            return "", 403
+        # work around flask unwitty reliance on the function name
         wrapper.__name__ = fun.__name__
         return wrapper
