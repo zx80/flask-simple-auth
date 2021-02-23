@@ -77,3 +77,8 @@ def test_authorize():
     auth.USER = "hobbes"
     _, status = stuff()
     assert status == 403
+    lazy, auth.LAZY = auth.LAZY, False
+    auth.USER = None
+    _, status = stuff()
+    assert status == 401
+    auth.LAZY = lazy
