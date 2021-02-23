@@ -339,7 +339,8 @@ The following configuration directives are available to configure
 `passlib` password checks:
 
  - `FSA_PASSWORD_SCHEME` password scheme to use for passwords.
-   Default is `bcrypt`. See [passlib documentation](https://passlib.readthedocs.io/en/stable/lib/passlib.hash.html)
+   Default is `bcrypt`.
+   See [passlib documentation](https://passlib.readthedocs.io/en/stable/lib/passlib.hash.html)
    for available options.
  - `FSA_PASSWORD_OPTIONS` relevant options (for `passlib.CryptContext`).
    Default is `{'bcrypt__default_rounds': 4}`.
