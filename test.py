@@ -67,6 +67,7 @@ def test_password_check():
 
 def test_authorize():
     assert is_in_group("calvin", "admin")
+    assert not is_in_group("hobbes", "admin")
     @auth.authorize("admin")
     def stuff():
         return "", 200
