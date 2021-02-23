@@ -33,10 +33,10 @@ scheme is being used, so switching between schemes only impacts the configuratio
 *not* the application code.
 
 
-## Simple Example
+## Very Simple Example
 
-The application code extract below maintains a `LOGIN` global variable which
-holds the authenticated user name for the current request.
+The application code below performs authentication on authorization checks
+triggered by the `authorize` decorator.
 There is no clue in the source about what kind of authentication is used,
 which is the whole point: authentication schemes are managed elsewhere, not
 explicitely in the application code.
@@ -50,36 +50,14 @@ explicitely in the application code.
 import FlaskSimpleAuth as auth
 auth.setConfig(app, user_to_password_fun, user_in_group_fun)
 
-# mandatory authentication
-LOGIN = None
-
-def set_login():
-    global LOGIN
-    LOGIN = None                  # remove previous value, just in case
-    try:
-        LOGIN = auth.get_user()    
-    except auth.AuthException as e:
-        return Response(e.message, e.status)
-    assert LOGIN is not None      # defensive check
-
-app.before_request(set_login)
-
-# elsewhere use the authentication
-# here implicitely by the authorize decorator
+# users belonging to the patcher group can patch whatever:
 @app.route("/whatever", methods=["PATCH"])
 @auth.authorize("patcher")
 def patch_whatever():
     # ok to do it, then
     return "", 204
-
-# here explicitely at the beginning of the function
-@app.route("/something", methods=["PUT"])
-def put_something():
-    if not can_put_something(LOGIN):
-        return "", 403
-    # else ok to do it, then
-    return "", 204
 ```
+
 
 Authentication is manage from the application flask configuration
 with `FSA_*` (Flask simple authentication) directives:
@@ -94,8 +72,38 @@ FSA_TYPE = 'param'     # HTTP parameter auth
 Various aspects of the implemented schemes can be configured with other
 directives, with reasonable defaults provided so that not much is really
 needed beyond choosing the authentication scheme.
-See below for details.
 
+## Simple Example
+
+The application code extract below maintains a `LOGIN` global variable which
+holds the authenticated user name for the current request.
+This allows more complex application-level permission management.
+
+```Python
+# app and auth are initialized as in the previous example, then:
+
+# mandatory authentication for all path
+LOGIN = None
+
+def set_login():
+    global LOGIN
+    LOGIN = None                  # remove previous value, just in case
+    try:
+        LOGIN = auth.get_user()
+    except auth.AuthException as e:
+        return Response(e.message, e.status)
+    assert LOGIN is not None      # defensive check
+
+app.before_request(set_login)
+
+# authorization is checked explicitely at the beginning of the function
+@app.route("/something", methods=["PUT"])
+def put_something():
+    if not can_put_something(LOGIN):
+        return "", 403
+    # else ok to do it, then
+    return "", 204
+```
 
 ## Documentation
 
