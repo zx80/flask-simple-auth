@@ -8,7 +8,7 @@ class Flask:
         self.name = name
         self.config = config
     def after_request(self, hook):
-        pass
+        self.hook = hook
 
 app = Flask('Test', { 'FSA_TYPE': 'fake' })
 
@@ -22,6 +22,7 @@ auth.setConfig(app, AUTH.get, is_in_group)
 def test_sanity():
     assert auth.REALM == "test"
     assert 'FSA_TYPE' in auth.CONF
+    assert app.hook is not None
 
 def test_token():
     calvin_token = auth.create_token("calvin")
