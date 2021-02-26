@@ -20,7 +20,7 @@ install:
 venv:
 	python3 -m venv venv
 	venv/bin/pip3 install wheel mypy flake8 pytest
-	venv/bin/pip3 install flask bcrypt
+	venv/bin/pip3 install flask bcrypt requests
 	venv/bin/pip3 install -e .
 
 # generate source and built distribution
