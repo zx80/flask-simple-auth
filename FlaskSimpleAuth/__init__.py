@@ -353,7 +353,8 @@ class authorize:
                         return "", 401
                 else:
                     return "", 401
-            assert USER is not None  # it should always be the case
+            if USER is None:
+                return "", 401
             for g in self.groups:
                 if user_in_group(USER, g):
                     return fun(*args, **kwargs)
