@@ -6,7 +6,7 @@ check: venv
 	type python3
 	mypy FlaskSimpleAuth
 	flake8 FlaskSimpleAuth
-	pytest test.py
+	pytest tests
 
 .PHONY: clean
 clean:

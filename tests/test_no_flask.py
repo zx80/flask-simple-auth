@@ -12,12 +12,10 @@ class Flask:
 
 app = Flask('Test', { 'FSA_TYPE': 'fake' })
 
-AUTH = {'calvin': 'hello world!', 'hobbes': 'bonjour tout le monde !'}
-
 is_in_group = lambda u, g: u == "calvin"
 
 import FlaskSimpleAuth as auth
-auth.setConfig(app, AUTH.get, is_in_group)
+auth.setConfig(app, None, is_in_group)
 
 def test_sanity():
     assert auth.REALM == "test"
@@ -59,12 +57,17 @@ def test_wrong_token():
         assert e.status == 401
 
 def test_password_check():
+    ref = auth.hash_password("hello")
     try:
-        ref = auth.hash_password(AUTH['calvin'])
-        auth.check_password('calvin', AUTH['calvin'], ref)
+        auth.check_password("calvin", "hello", ref)
         assert True, "password check succeeded"
     except:
         assert False, "password check failed"
+    try:
+        auth.check_password('calvin', "bad-pass", ref)
+        assert False, "unexpected password check success"
+    except auth.AuthException:
+        assert True, "password check failed as expected"
 
 def test_authorize():
     assert is_in_group("calvin", "admin")
