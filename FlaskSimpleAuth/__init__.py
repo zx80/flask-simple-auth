@@ -149,12 +149,8 @@ def get_fake_auth():
 #
 
 # verify password
-def check_password(user, pwd, ref):
-    if not PM.verify(pwd, ref):
-        log.debug(f"LOGIN (password): password check failed {user}")
-        raise AuthException(f"invalid password for user: {user}", 401)
-    else:
-        log.debug(f"LOGIN (password): password check succeeded for {user}")
+def check_password(pwd, ref):
+    return PM.verify(pwd, ref)
 
 
 # hash password consistently with above check, can be used by app
@@ -162,14 +158,16 @@ def hash_password(pwd):
     return PM.hash(pwd)
 
 
-# check user password agains database-stored credentials
+# check user password against internal credentials
 # raise an exception if not ok, otherwise simply proceeds
 def check_db_password(user, pwd):
     ref = get_user_password(user)
     if ref is None:
         log.debug(f"LOGIN (password): no such user ({user})")
         raise AuthException(f"no such user: {user}", 401)
-    check_password(user, pwd, ref)
+    if not check_password(pwd, ref):
+        log.debug(f"LOGIN (password): invalid password for {user}")
+        raise AuthException(f"invalid password for {user}", 401)
 
 
 #

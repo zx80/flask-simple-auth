@@ -165,16 +165,8 @@ def test_wrong_token():
 
 def test_password_check():
     ref = auth.hash_password("hello")
-    try:
-        auth.check_password("susie", "hello", ref)
-        assert True, "password check succeeded"
-    except:
-        assert False, "password check failed"
-    try:
-        auth.check_password("susie", "bad-pass", ref)
-        assert False, "unexpected password check success"
-    except auth.AuthException:
-        assert True, "password check failed as expected"
+    assert auth.check_password("hello", ref)
+    assert not auth.check_password("bad-pass", ref)
 
 def test_authorize():
     assert auth.user_in_group("dad", app.ADMIN)

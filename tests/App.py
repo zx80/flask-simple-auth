@@ -97,9 +97,7 @@ def patch_user_str(user):
     if not "oldpass" in PARAMS or not "newpass" in PARAMS:
         return "missing parameters", 400  # 422?
     oldpass, newpass = PARAMS["oldpass"], PARAMS["newpass"]
-    try:
-        auth.check_password(LOGIN, oldpass, UHP[LOGIN])
-    except auth.AuthException:
+    if not auth.check_password(oldpass, UHP[LOGIN]):
         return "bad old password", 422
     # update password
     UP[LOGIN] = newpass
