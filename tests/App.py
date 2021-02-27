@@ -50,7 +50,7 @@ LOGIN = None
 def set_login():
     global LOGIN
     LOGIN = None
-    if not SET_LOGIN_ACTIVE:
+    if not SET_LOGIN_ACTIVE or request.path in ("/register", "/all"):
         log.debug("skipping set_login")
         return
     try:
@@ -106,12 +106,24 @@ def patch_user_str(user):
     UHP[LOGIN] = auth.hash_password(newpass)
     return "", 204
 
+# possibly suicidal self-care
+@app.route("/user/<string:user>", methods=["DELETE"])
+def delete_user_str(user):
+    login = auth.get_user()
+    if not (login == user or is_in_group(login, ADMIN)):
+        return "self care or admin only", 403
+    del UP[user]
+    del UHP[user]
+    return "", 204
+
 # self registration
 @app.route("/register", methods=["POST"])
 def register():
     if not "user" in PARAMS or not "pass" in PARAMS:
         return "", 400
     user, pswd = PARAMS["user"], PARAMS["pass"]
+    if user in UP:
+        return "cannot register existing user", 403
     # add new user with read permission…
     UP[user] = pswd
     UHP[user] = auth.hash_password(pswd)

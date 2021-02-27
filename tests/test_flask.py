@@ -113,11 +113,21 @@ def test_perms(client):
     all_auth(client, "hobbes", app.UP["hobbes"], check_200, "/read")
 
 def test_register(client):
+    # missing params
+    check_400(client.post("/register", data={"user":"calvin"}))
+    check_400(client.post("/register", data={"pass":"calvin-pass"}))
+    # existing user
+    check_403(client.post("/register", data={"user":"calvin", "pass":"calvin-pass"}))
+    # new user
     check_201(client.post("/register", data={"user":"susie", "pass":"derkins"}))
     assert app.UP["susie"] == "derkins"
     all_auth(client, "susie", app.UP["susie"], check_403, "/admin")
     all_auth(client, "susie", app.UP["susie"], check_403, "/write")
     all_auth(client, "susie", app.UP["susie"], check_200, "/read")
+    # clean-up
+    sauth, auth.AUTH = auth.AUTH, "fake"
+    check_204(client.delete("/user/susie", data={"LOGIN":"susie"}))
+    auth.AUTH = sauth
 
 def test_token():
     calvin_token = auth.create_token("calvin")
@@ -196,5 +206,9 @@ def test_self_care(client):
     assert app.UP[who] == npass
     check_204(client.patch(f"/user/{who}", data={"oldpass":npass, "newpass":opass, "LOGIN":who}))
     assert app.UP[who] == opass
+    check_201(client.post("/register", data={"user":"rosalyn", "pass":"rosa-pass"}))
+    check_204(client.delete("user/rosalyn", data={"LOGIN":"rosalyn"}))  # self
+    check_201(client.post("/register", data={"user":"rosalyn", "pass":"rosa-pass"}))
+    check_204(client.delete("user/rosalyn", data={"LOGIN":"dad"}))  # admin
     app.SET_LOGIN_ACTIVE = saved
     auth.AUTH = sauth
