@@ -6,12 +6,13 @@ which is controled from Flask configuration and decorators.
 
 ## Description
 
-Help to manage authentication, authorizations and parameter checks in
-a Flask application.
+Help to manage authentication, authorizations and parameters in
+a Flask REST application.
 
 For authentication, the idea is that the authentication is checked in a
 `before_request` hook, and can be made available through some global
-*à-la-Flask* variable.
+*à-la-Flask* variable, or possibly on demand through a provided
+`get_user` function.
 
 The module implements inheriting the web-server authentication,
 password authentication (HTTP Basic, or HTTP/JSON parameters),
@@ -22,16 +23,19 @@ It allows to have a login route to generate authentication tokens.
 Support functions allow to hash new passwords consistently with password
 checks performed by the module.
 
+Compared to [Flask HTTPAuth](https://github.com/miguelgrinberg/Flask-HTTPAuth),
+there is one code in the app which does not need to know about which authentication
+scheme is being used, so switching between schemes only impacts the configuration,
+*not* the application code.
+
 For authorization, a simple decorator allows to declare required permissions
 on a route (eg a role name), and relies on a supplied function to check
 whether a user has this role. This is approach is enough for basic
 authorization management, but would be insufficient for realistic applications
 where users can edit their own data but not those of others.
 
-Compared to [Flask HTTPAuth](https://github.com/miguelgrinberg/Flask-HTTPAuth),
-there is one code in the app which does not need to know about which authentication
-scheme is being used, so switching between schemes only impacts the configuration,
-*not* the application code.
+For request parameters, they can be declared, their presence and type checked,
+and can be added as named parameters to route functions.
 
 
 ## Very Simple Example
@@ -79,6 +83,7 @@ FSA_TYPE = 'param'     # HTTP parameter auth
 Various aspects of the implemented schemes can be configured with other
 directives, with reasonable defaults provided so that not much is really
 needed beyond choosing the authentication scheme.
+
 
 ## Simple Example
 
@@ -204,6 +209,7 @@ def set_login():
     except fsa.AuthException as e:
         # before request hooks can return an alternate response
         return Response(e.message, e.status)
+    assert LOGIN is not None
 
 app.before_request(set_login)
 ```
@@ -229,8 +235,8 @@ An opened route for user registration could look like that:
 
 ```Python
 @app.route("/register", methods=["POST"])
-@fsa.parameters("user", "password")
-def post_register(user, password):
+@fsa.autoparams(True)
+def post_register(user: str, password: str):
     assert LOGIN is None
     # FIXME should handle an existing user and respond appropriately
     add_new_user_with_hashed_pass(user, fsa.hash_password(password))
@@ -248,7 +254,7 @@ def get_login():
 ```
 
 The client application will return the token as a parameter for
-authenticatiing later requests, till it expires.
+authenticating later requests, till it expires.
 
 The main configuration directive is `FSA_TYPE` which governs authentication
 methods used by the `get_user` function, as described in the following sections:
@@ -428,7 +434,7 @@ def get_add(a, b):
 ```
 
 The `parameters` decorator is declared place *after* the `authorize` decorator,
-so that parameter checks are only attempted fit the user actually has permissions.
+so that parameter checks are only attempted if the user actually has permissions.
 
 ### `autoparams` Decorator
 
