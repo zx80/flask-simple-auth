@@ -87,7 +87,7 @@ def all():
     return "no-auth", 200
 
 # change password in self-care with set_login
-@app.route("/user/<string:user>", methods=["PATCH"])
+@app.route("/user/<string:user>", methods=["PATCH", "PUT"])
 @auth.authorize(READ)
 @auth.parameters("oldpass", "newpass")
 def patch_user_str(user):
