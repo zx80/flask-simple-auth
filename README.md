@@ -41,6 +41,9 @@ There is no clue in the source about what kind of authentication is used,
 which is the whole point: authentication schemes are managed elsewhere, not
 explicitely in the application code.
 
+Also, the `/whatever` route requires that parameters (HTTP or JSON) `some`
+and `stuff` are set in the incoming request.
+
 ```Python
 # app is the Flask application…
 # user_to_password_fun is a function returning the hashed password for a user.
@@ -52,9 +55,10 @@ auth.setConfig(app, user_to_password_fun, user_in_group_fun)
 
 # users belonging to the patcher group can patch whatever:
 @app.route("/whatever", methods=["PATCH"])
+@auth.parameters("some", "stuff")
 @auth.authorize("patcher")
 def patch_whatever():
-    # ok to do it, then
+    # ok to do it, with parameters "some" and "stuff"
     return "", 204
 ```
 
@@ -98,10 +102,11 @@ app.before_request(set_login)
 
 # authorization is checked explicitely at the beginning of the function
 @app.route("/something", methods=["PUT"])
+@auth.parameters("some", "thing")
 def put_something():
     if not can_put_something(LOGIN):
         return "", 403
-    # else ok to do it, then
+    # else ok to do it with parameters "some" and "thing"
     return "", 204
 ```
 
@@ -201,13 +206,15 @@ def set_login():
 app.before_request(set_login)
 ```
 
-### Using Authentication and Authorization
+### Using Authentication, Authorization and Parameter Check
 
 Then all route functions can take advantage of this information to check for
-authorizations with a decorator:
+authorizations with the `authorize` decorator, and for mandatory parameters
+with the `parameters` decorator.
 
 ```Python
 @app.route("/somewhere", methods=["POST"])
+@auth.parameters("list", "of", "mandatory", "parameters")
 @auth.authorize("posters")
 def post_somewhere():
     …
@@ -220,11 +227,10 @@ An opened route for user registration could look like that:
 
 ```Python
 @app.route("/register", methods=["POST"])
+@auth.parameters("user", "pass")
 def post_register():
     assert LOGIN is None
     params = request.values if request.json is None else request.json
-    if "user" not in params or "pass" not in params:
-        return "missing parameter", 404
     # FIXME should handle an existing user and respond appropriately
     add_new_user_with_hashed_pass(params["user"], auth.hash_password(params["pass"]))
     return "", 201
@@ -392,6 +398,18 @@ Note that this simplistic model does is not enough for non-trivial applications,
 where permissions on objects often depend on the object owner.
 For those, careful per-operation authorization will still be needed.
 
+###  `parameters` Decorator
+
+This decorator expects parameter names and generates a *400* if any is missing
+from the request. The decorator looks for HTTP or JSON parameters.
+
+```Python
+@app.route("/thing/<int:tid>", methods=["PUT"])
+@auth.parameters("name")
+def put_thing_tid(tid):
+    …
+```
+
 
 ## Versions
 
@@ -402,6 +420,7 @@ and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 
 Flask *internal* tests with a good coverage.
 Switch to `setup.cfg` configuration.
+Add convenient `parameters` decorator.
 
 ### 1.4.0
 

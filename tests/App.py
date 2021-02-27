@@ -89,13 +89,12 @@ def all():
 # change password in self-care with set_login
 @app.route("/user/<string:user>", methods=["PATCH"])
 @auth.authorize(READ)
+@auth.parameters("oldpass", "newpass")
 def patch_user_str(user):
     if LOGIN is None:
         return "must activate set_login", 500
     if LOGIN != user:
         return "self care only", 403
-    if not "oldpass" in PARAMS or not "newpass" in PARAMS:
-        return "missing parameters", 400  # 422?
     oldpass, newpass = PARAMS["oldpass"], PARAMS["newpass"]
     if not auth.check_password(oldpass, UHP[LOGIN]):
         return "bad old password", 422
@@ -116,9 +115,8 @@ def delete_user_str(user):
 
 # self registration
 @app.route("/register", methods=["POST"])
+@auth.parameters("user", "pass")
 def register():
-    if not "user" in PARAMS or not "pass" in PARAMS:
-        return "", 400
     user, pswd = PARAMS["user"], PARAMS["pass"]
     if user in UP:
         return "cannot register existing user", 403

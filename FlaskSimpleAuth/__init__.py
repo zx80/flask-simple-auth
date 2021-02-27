@@ -361,3 +361,23 @@ class authorize:
         # work around flask unwitty reliance on the function name
         wrapper.__name__ = fun.__name__
         return wrapper
+
+
+#
+# parameters decorator
+#
+class parameters:
+
+    def __init__(self, *args):
+        self.parameters = args
+
+    def __call__(self, fun):
+        def wrapper(*args, **kwargs):
+            params = request.values if request.json is None else request.json
+            for p in self.parameters:
+                if p not in params:
+                    return "missing mandatory parameter: {p}", 400
+            # else ok to proceed
+            return fun(*args, **kwargs)
+        wrapper.__name__ = fun.__name__
+        return wrapper
