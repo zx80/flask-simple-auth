@@ -400,7 +400,7 @@ and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 
 ### dev
 
-Improve test coverage on tokens and authorize.
+Flask *internal* tests with a good coverage.
 
 ### 1.4.0
 
