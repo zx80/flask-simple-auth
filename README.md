@@ -1,12 +1,13 @@
 # Flask Simple Auth
 
 Simple authentication and authorization for [Flask](https://flask.palletsprojects.com/),
-which is controled from Flask configuration.
+which is controled from Flask configuration and decorators.
 
 
 ## Description
 
-Help to manage authentication and authorizations in a Flask application.
+Help to manage authentication, authorizations and parameter checks in
+a Flask application.
 
 For authentication, the idea is that the authentication is checked in a
 `before_request` hook, and can be made available through some global
@@ -24,8 +25,8 @@ checks performed by the module.
 For authorization, a simple decorator allows to declare required permissions
 on a route (eg a role name), and relies on a supplied function to check
 whether a user has this role. This is approach is enough for basic
-authorization management, but would be insufficient for most application where
-user can edit their own data but not those of others.
+authorization management, but would be insufficient for realistic applications
+where users can edit their own data but not those of others.
 
 Compared to [Flask HTTPAuth](https://github.com/miguelgrinberg/Flask-HTTPAuth),
 there is one code in the app which does not need to know about which authentication
@@ -50,13 +51,13 @@ and `stuff` are set in the incoming request.
 # user_in_group_fun is a function telling whether a user is in a group.
 
 # initialize module
-import FlaskSimpleAuth as auth
-auth.setConfig(app, user_to_password_fun, user_in_group_fun)
+import FlaskSimpleAuth as fsa
+fsa.setConfig(app, user_to_password_fun, user_in_group_fun)
 
-# users belonging to the patcher group can patch whatever:
+# users belonging to the patcher group can patch whatever with 2 parameters:
 @app.route("/whatever", methods=["PATCH"])
-@auth.parameters("some", "stuff")
-@auth.authorize("patcher")
+@fsa.parameters("some", "stuff")
+@fsa.authorize("patcher")
 def patch_whatever():
     # ok to do it, with parameters "some" and "stuff"
     return "", 204
@@ -84,7 +85,7 @@ holds the authenticated user name for the current request.
 This allows more complex application-level permission management.
 
 ```Python
-# app and auth are initialized as in the previous example, then:
+# app and fsa are initialized as in the previous example, then:
 
 # mandatory authentication for all path
 LOGIN = None
@@ -93,8 +94,8 @@ def set_login():
     global LOGIN
     LOGIN = None                  # remove previous value, just in case
     try:
-        LOGIN = auth.get_user()
-    except auth.AuthException as e:
+        LOGIN = fsa.get_user()
+    except fsa.AuthException as e:
         return Response(e.message, e.status)
     assert LOGIN is not None      # defensive check
 
@@ -102,7 +103,7 @@ app.before_request(set_login)
 
 # authorization is checked explicitely at the beginning of the function
 @app.route("/something", methods=["PUT"])
-@auth.parameters("some", "thing")
+@fsa.parameters("some", "thing")
 def put_something():
     if not can_put_something(LOGIN):
         return "", 403
@@ -176,8 +177,8 @@ def get_user_password(user):
 def user_in_group(user, group):
     return …
 
-import FlaskSimpleAuth as auth
-auth.setConfig(app, get_user_password, user_in_group)
+import FlaskSimpleAuth as fsa
+fsa.setConfig(app, get_user_password, user_in_group)
 ```
 
 Then the module can be used to retrieve the authenticated user with `get_user`.
@@ -198,8 +199,8 @@ def set_login():
     if request.path == "/register":
         return
     try:
-        LOGIN = auth.get_user()
-    except auth.AuthException as e:
+        LOGIN = fsa.get_user()
+    except fsa.AuthException as e:
         # before request hooks can return an alternate response
         return Response(e.message, e.status)
 
@@ -214,8 +215,8 @@ with the `parameters` decorator.
 
 ```Python
 @app.route("/somewhere", methods=["POST"])
-@auth.parameters("list", "of", "mandatory", "parameters")
-@auth.authorize("posters")
+@fsa.parameters("list", "of", "mandatory", "parameters")
+@fsa.authorize("posters")
 def post_somewhere():
     …
 ```
@@ -227,12 +228,12 @@ An opened route for user registration could look like that:
 
 ```Python
 @app.route("/register", methods=["POST"])
-@auth.parameters("user", "pass")
+@fsa.parameters("user", "pass")
 def post_register():
     assert LOGIN is None
     params = request.values if request.json is None else request.json
     # FIXME should handle an existing user and respond appropriately
-    add_new_user_with_hashed_pass(params["user"], auth.hash_password(params["pass"]))
+    add_new_user_with_hashed_pass(params["user"], fsa.hash_password(params["pass"]))
     return "", 201
 ```
 
@@ -243,7 +244,7 @@ by one of the other methods. The code for that would be as simple as:
 # token creation route
 @app.route("/login", methods=["GET"])
 def get_login():
-    return jsonify(auth.create_token(LOGIN)), 200
+    return jsonify(fsa.create_token(LOGIN)), 200
 ```
 
 The client application will return the token as a parameter for
@@ -380,7 +381,7 @@ When several groups are specified, any will allow the operation to proceed.
 ADMIN, WRITE, READ = 1, 2, 3
 
 @app.route("/some/place", methods=["POST"])
-@auth.authorize([ ADMIN, WRITE ])
+@fsa.authorize([ ADMIN, WRITE ])
 def post_some_place():
     …
 ```
@@ -405,7 +406,7 @@ from the request. The decorator looks for HTTP or JSON parameters.
 
 ```Python
 @app.route("/thing/<int:tid>", methods=["PUT"])
-@auth.parameters("name")
+@fsa.parameters("name")
 def put_thing_tid(tid):
     …
 ```
