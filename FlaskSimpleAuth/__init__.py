@@ -364,16 +364,30 @@ class authorize:
 #
 class parameters:
 
-    def __init__(self, *args):
-        self.parameters = args
+    def __init__(self, *args, **kwargs):
+        self.params = args
+        self.typed = kwargs
 
     def __call__(self, fun):
         def wrapper(*args, **kwargs):
+            log.warning(f"args: {args}")
+            log.warning(f"kwargs: {kwargs}")
             params = request.values if request.json is None else request.json
-            for p in self.parameters:
+            for p in self.params:
                 if p not in params:
-                    return "missing mandatory parameter: {p}", 400
-            # else ok to proceed
+                    return f"missing mandatory parameter: {p}", 400
+                kwargs[p] = params[p]
+            for p in self.typed:
+                if p not in params:
+                    return f"missing mandatory parameter: {p}", 400
+                try:
+                    kwargs[p] = self.typed[p](params[p])
+                except Exception as e:
+                    log.debug(f"type error on {p}: {e}")
+                    return f"type error on parameter {p} ({e})", 400  # 422?
+            # ok to proceed
+            log.warning(f"* args: {args}")
+            log.warning(f"* kwargs: {kwargs}")
             return fun(*args, **kwargs)
         wrapper.__name__ = fun.__name__
         return wrapper

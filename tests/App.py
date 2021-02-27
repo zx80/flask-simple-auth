@@ -23,7 +23,7 @@ app.before_request(set_params)
 #
 # AUTH
 #
-import FlaskSimpleAuth as auth
+import FlaskSimpleAuth as fsa
 
 # passwords
 UHP = {}
@@ -36,12 +36,12 @@ def is_in_group(user, group):
     return user in GROUPS.get(group, {})
 
 log.info("initializing auth...")
-auth.setConfig(app, UHP.get, is_in_group)
+fsa.setConfig(app, UHP.get, is_in_group)
 
 # finalize test passwords
 UP = { "calvin": "hobbes", "hobbes": "susie", "dad": "mum" }
 for u in UP:
-    UHP[u] = auth.hash_password(UP[u])
+    UHP[u] = fsa.hash_password(UP[u])
 
 
 SET_LOGIN_ACTIVE = False
@@ -54,8 +54,8 @@ def set_login():
         log.debug("skipping set_login")
         return
     try:
-        LOGIN = auth.get_user()
-    except auth.AuthException as e:
+        LOGIN = fsa.get_user()
+    except fsa.AuthException as e:
         return Response(e.message, e.status)
 
 app.before_request(set_login)
@@ -65,20 +65,20 @@ app.before_request(set_login)
 #
 @app.route("/login")
 def login():
-    return jsonify(auth.create_token(auth.get_user())), 200
+    return jsonify(fsa.create_token(fsa.get_user())), 200
 
 @app.route("/admin")
-@auth.authorize(ADMIN)
+@fsa.authorize(ADMIN)
 def admin_only():
     return "admin-only", 200
 
 @app.route("/write")
-@auth.authorize(WRITE)
+@fsa.authorize(WRITE)
 def write_only():
     return "write-only", 200
 
 @app.route("/read")
-@auth.authorize(READ)
+@fsa.authorize(READ)
 def read_only():
     return "read-only", 200
 
@@ -88,25 +88,24 @@ def all():
 
 # change password in self-care with set_login
 @app.route("/user/<string:user>", methods=["PATCH", "PUT"])
-@auth.authorize(READ)
-@auth.parameters("oldpass", "newpass")
-def patch_user_str(user):
+@fsa.authorize(READ)
+@fsa.parameters("oldpass", "newpass")
+def patch_user_str(user, oldpass, newpass):
     if LOGIN is None:
         return "must activate set_login", 500
     if LOGIN != user:
         return "self care only", 403
-    oldpass, newpass = PARAMS["oldpass"], PARAMS["newpass"]
-    if not auth.check_password(oldpass, UHP[LOGIN]):
+    if not fsa.check_password(oldpass, UHP[LOGIN]):
         return "bad old password", 422
     # update password
     UP[LOGIN] = newpass
-    UHP[LOGIN] = auth.hash_password(newpass)
+    UHP[LOGIN] = fsa.hash_password(newpass)
     return "", 204
 
 # possibly suicidal self-care
 @app.route("/user/<string:user>", methods=["DELETE"])
 def delete_user_str(user):
-    login = auth.get_user()
+    login = fsa.get_user()
     if not (login == user or is_in_group(login, ADMIN)):
         return "self care or admin only", 403
     del UP[user]
@@ -115,13 +114,18 @@ def delete_user_str(user):
 
 # self registration
 @app.route("/register", methods=["POST"])
-@auth.parameters("user", "pass")
-def register():
-    user, pswd = PARAMS["user"], PARAMS["pass"]
+@fsa.parameters("user", "upass")
+def register(user, upass):
     if user in UP:
         return "cannot register existing user", 403
     # add new user with read permission…
-    UP[user] = pswd
-    UHP[user] = auth.hash_password(pswd)
+    UP[user] = upass
+    UHP[user] = fsa.hash_password(upass)
     GROUPS[READ].add(user)
     return "", 201
+
+# typed parameters
+@app.route("/add/<int:i>", methods=["GET"])
+@fsa.parameters(a=float, b=float)
+def get_add(i, a, b):
+    return str(i * (a + b)), 200

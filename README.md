@@ -54,12 +54,14 @@ and `stuff` are set in the incoming request.
 import FlaskSimpleAuth as fsa
 fsa.setConfig(app, user_to_password_fun, user_in_group_fun)
 
-# users belonging to the patcher group can patch whatever with 2 parameters:
-@app.route("/whatever", methods=["PATCH"])
+# users belonging to the patcher group can patch whatever/*
+# the function gets 3 arguments: one coming from the path (id)
+# and two coming from the request parameters.
+@app.route("/whatever/<int:id>", methods=["PATCH"])
 @fsa.authorize("patcher")
-@fsa.parameters("some", "stuff")
-def patch_whatever():
-    # ok to do it, with parameters "some" and "stuff"
+@fsa.parameters(some=str, stuff=str)
+def patch_whatever(id, some, stuff):
+    # ok to do it, with parameters id, some & stuff
     return "", 204
 ```
 
@@ -228,12 +230,11 @@ An opened route for user registration could look like that:
 
 ```Python
 @app.route("/register", methods=["POST"])
-@fsa.parameters("user", "pass")
-def post_register():
+@fsa.parameters("user", "password")
+def post_register(user, password):
     assert LOGIN is None
-    params = request.values if request.json is None else request.json
     # FIXME should handle an existing user and respond appropriately
-    add_new_user_with_hashed_pass(params["user"], fsa.hash_password(params["pass"]))
+    add_new_user_with_hashed_pass(user, fsa.hash_password(password))
     return "", 201
 ```
 
@@ -401,14 +402,30 @@ For those, careful per-operation authorization will still be needed.
 
 ###  `parameters` Decorator
 
-This decorator expects parameter names and generates a *400* if any is missing
-from the request. The decorator looks for HTTP or JSON parameters.
+This decorator has two flavors.
+
+With positional string arguments, it expects these parameter names and
+generates a *400* if any is missing from the request, and passes them
+to function named parameters.
+The decorator looks for HTTP or JSON parameters.
 
 ```Python
 @app.route("/thing/<int:tid>", methods=["PUT"])
 @fsa.parameters("name")
-def put_thing_tid(tid):
+def put_thing_tid(tid, name):
     …
+```
+
+With named parameters associated to a type, it expects these parameter names
+and generate a *400* if any is missing from the request, it converts the
+parameter string value to the expected type, resulting in a *400* again if the type
+conversion fails, and it passes these to the function as named parameters.
+
+```Python
+@app.route("/add", methods=["GET"])
+@fsa.parameters(a=float, b=float)
+def get_add(a, b):
+    return str(a + b), 200
 ```
 
 The `parameters` decorator is declared place *after* the `authorize` decorator,
@@ -424,6 +441,8 @@ and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 Improved documentation.
 Simplify `authorize` decorator.
 Advise `authorize` *then* `parameters` decorator order.
+Make `parameters` pass request parameters as function parameters.
+Add typed parameters to `parameters` decorator.
 
 ### 1.5.0
 
