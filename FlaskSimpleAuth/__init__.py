@@ -5,6 +5,7 @@
 #
 
 from typing import Optional, Union, Callable, Dict, Any
+import functools
 from flask import Flask, request, Response
 
 import datetime as dt
@@ -369,6 +370,7 @@ class parameters:
         self.typed = kwargs
 
     def __call__(self, fun):
+        @functools.wraps(fun)
         def wrapper(*args, **kwargs):
             log.warning(f"args: {args}")
             log.warning(f"kwargs: {kwargs}")
@@ -389,5 +391,4 @@ class parameters:
             log.warning(f"* args: {args}")
             log.warning(f"* kwargs: {kwargs}")
             return fun(*args, **kwargs)
-        wrapper.__name__ = fun.__name__
         return wrapper
