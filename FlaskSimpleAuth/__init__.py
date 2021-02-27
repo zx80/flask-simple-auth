@@ -4,7 +4,7 @@
 # This code is public domain.
 #
 
-from typing import Optional, Union, Callable, Dict, List, Any
+from typing import Optional, Union, Callable, Dict, Any
 from flask import Flask, request, Response
 
 import datetime as dt
@@ -330,14 +330,10 @@ def get_user():
 #
 class authorize:
 
-    def __init__(self, groups: Union[List[str], List[int], str, int] = None):
+    def __init__(self, *args):
         assert user_in_group is not None, \
             "user_in_group callback needed for authorize"
-        if isinstance(groups, str):
-            groups = [groups]
-        elif isinstance(groups, int):
-            groups = [groups]
-        self.groups = groups
+        self.groups = args
 
     def __call__(self, fun):
         def wrapper(*args, **kwargs):

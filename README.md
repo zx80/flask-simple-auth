@@ -372,8 +372,8 @@ with the current configuration.
 
 ### `authorize` Decorator
 
-The decorator expects a list or possibly one group identifier.
-A group identifier can be either a name or a number.
+The decorator expects a list of identifiers, which are typically names or
+numbers.
 When several groups are specified, any will allow the operation to proceed.
 
 ```Python
@@ -381,7 +381,7 @@ When several groups are specified, any will allow the operation to proceed.
 ADMIN, WRITE, READ = 1, 2, 3
 
 @app.route("/some/place", methods=["POST"])
-@fsa.authorize([ ADMIN, WRITE ])
+@fsa.authorize(ADMIN, WRITE)
 def post_some_place():
     …
 ```
@@ -420,6 +420,7 @@ and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 ### dev
 
 Improved documentation.
+Simplify `authorize` decorator.
 
 ### 1.5.0
 
