@@ -60,21 +60,27 @@ def all_auth(client, user, pswd, check, *args, **kwargs):
     check(client.get(*args, **kwargs, data={"auth": token_basic}))
     auth.AUTH = saved
 
-def check_200(res):
+def check_200(res):  # ok
     assert res.status_code == 200
 
-def check_201(res):
+def check_201(res):  # created
     assert res.status_code == 201
+
+def check_204(res):  # no content
+    assert res.status_code == 204
+
+def check_400(res):
+    assert res.status_code == 400
 
 def check_401(res):
     assert res.status_code == 401
 
-def check_403(res):
+def check_403(res):  # forbidden
     assert res.status_code == 403
 
 def test_perms(client):
     check_200(client.get("/all"))  # open route
-    try: 
+    try:
         client.get("/login")  # no login login
     except auth.AuthException as e:
         assert e.status == 401
@@ -177,3 +183,18 @@ def test_authorize():
     _, status = stuff()
     assert status == 401
     auth.LAZY = lazy
+
+def test_self_care(client):
+    saved = app.SET_LOGIN_ACTIVE
+    sauth = auth.AUTH
+    app.SET_LOGIN_ACTIVE = True
+    auth.AUTH = 'fake'
+    check_401(client.patch("/user/calvin"))
+    check_403(client.patch("/user/calvin", data={"LOGIN":"dad"}))
+    who, npass, opass = "calvin", "new-calvin-password", app.UP["calvin"]
+    check_204(client.patch(f"/user/{who}", data={"oldpass":opass, "newpass":npass, "LOGIN":who}))
+    assert app.UP[who] == npass
+    check_204(client.patch(f"/user/{who}", data={"oldpass":npass, "newpass":opass, "LOGIN":who}))
+    assert app.UP[who] == opass
+    app.SET_LOGIN_ACTIVE = saved
+    auth.AUTH = sauth
