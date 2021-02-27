@@ -60,7 +60,7 @@ fsa.setConfig(app, user_to_password_fun, user_in_group_fun)
 
 # users belonging to the patcher group can patch whatever/*
 # the function gets 3 arguments: one coming from the path (id)
-# and remaining two coming from request parameters.
+# and the remaining two coming from request parameters.
 @app.route("/whatever/<int:id>", methods=["PATCH"])
 @fsa.authorize("patcher")
 @fsa.autoparams(required=True)
