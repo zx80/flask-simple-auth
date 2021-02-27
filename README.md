@@ -416,7 +416,7 @@ def put_thing_tid(tid):
 Sources are available on [GitHub](https://github.com/zx80/flask-simple-auth)
 and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 
-### dev
+### 1.5.0
 
 Flask *internal* tests with a good coverage.
 Switch to `setup.cfg` configuration.
