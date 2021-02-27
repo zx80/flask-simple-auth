@@ -401,6 +401,7 @@ and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 ### dev
 
 Flask *internal* tests with a good coverage.
+Switch to `setup.cfg` configuration.
 
 ### 1.4.0
 
