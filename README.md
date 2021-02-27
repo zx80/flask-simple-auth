@@ -106,7 +106,7 @@ app.before_request(set_login)
 # authorization is checked explicitely at the beginning of the function
 @app.route("/something", methods=["PUT"])
 @fsa.parameters("some", "thing")
-def put_something():
+def put_something(some, thing):
     if not can_put_something(LOGIN):
         return "", 403
     # else ok to do it with parameters "some" and "thing"
