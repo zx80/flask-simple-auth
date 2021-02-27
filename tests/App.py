@@ -48,11 +48,12 @@ SET_LOGIN_ACTIVE = False
 LOGIN = None
 
 def set_login():
+    global LOGIN
+    LOGIN = None
     if not SET_LOGIN_ACTIVE:
         log.debug("skipping set_login")
         return
     try:
-        global LOGIN
         LOGIN = auth.get_user()
     except auth.AuthException as e:
         return Response(e.message, e.status)
@@ -88,7 +89,9 @@ def all():
 # change password in self-care with set_login
 @app.route("/user/<string:user>", methods=["PATCH"])
 @auth.authorize(READ)
-def self_care(user):
+def patch_user_str(user):
+    if LOGIN is None:
+        return "must activate set_login", 500
     if LOGIN != user:
         return "self care only", 403
     if not "oldpass" in PARAMS or not "newpass" in PARAMS:
