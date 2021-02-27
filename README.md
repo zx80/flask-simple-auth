@@ -489,6 +489,8 @@ Features
  - better control which schemes are attempted?
  - add support for JWT?
  - make parameters handle optional params as well
+ - auto guess parameters from annotations?
+   how to distinguish path parameters in that case?
 
 Implementation
  - should it be an object instead of a flat module?
