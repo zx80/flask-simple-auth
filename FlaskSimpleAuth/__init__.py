@@ -388,3 +388,29 @@ class parameters:
             # ok to proceed
             return fun(*args, **kwargs)
         return wrapper
+
+
+class autoparams:
+
+    def __init__(self, required=True):
+        self.required = required
+
+    def __call__(self, fun):
+        @functools.wraps(fun)
+        def wrapper(*args, **kwargs):
+            params = request.values if request.json is None else request.json
+            for p, typing in fun.__annotations__.items():
+                if p == "return":
+                    continue
+                if p not in params and p not in kwargs:
+                    if self.required:
+                        return f"missing parameter {p}", 400
+                    else:
+                        kwargs[p] = None
+                if p in params and p not in kwargs:
+                    try:
+                        kwargs[p] = typing(params[p])
+                    except Exception as e:
+                        return f"type error on parameter {p} ({e})", 400
+            return fun(*args, **kwargs)
+        return wrapper

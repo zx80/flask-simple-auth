@@ -129,3 +129,18 @@ def register(user, upass):
 @fsa.parameters(a=float, b=float)
 def get_add(i, a, b):
     return str(i * (a + b)), 200
+
+# another one
+@app.route("/mul/<int:i>", methods=["GET"])
+@fsa.autoparams(True)
+def get_mul(i: int, j: int, k: int):
+    return str(i * j * k), 200
+
+# another one
+@app.route("/div", methods=["GET"])
+@fsa.autoparams(False)
+def get_div(i: int, j: int):
+    if i is None or j is None:
+        return "0", 200
+    else:
+        return str(i // j), 200

@@ -209,3 +209,14 @@ def test_typed_params(client):
     res = client.get("/add/2", data={"a":"2.0", "b":"4.0"})
     check_200(res)
     assert float(res.data) == 12.0
+    res = client.get("/mul/2", data={"j":"3", "k":"4"})
+    check_200(res)
+    assert int(res.data) == 24
+    check_400(client.get("/mul/1", data={"j":"3"}))
+    check_400(client.get("/mul/1", data={"k":"4"}))
+    res = client.get("/div", data={"i":"10", "j":"3"})
+    check_200(res)
+    assert int(res.data) == 3
+    res = client.get("/div", data={"i":"10"})
+    check_200(res)
+    assert int(res.data) == 0

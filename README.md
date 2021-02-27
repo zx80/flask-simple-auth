@@ -56,11 +56,11 @@ fsa.setConfig(app, user_to_password_fun, user_in_group_fun)
 
 # users belonging to the patcher group can patch whatever/*
 # the function gets 3 arguments: one coming from the path (id)
-# and two coming from the request parameters.
+# and remaining two coming from request parameters.
 @app.route("/whatever/<int:id>", methods=["PATCH"])
 @fsa.authorize("patcher")
-@fsa.parameters(some=str, stuff=str)
-def patch_whatever(id, some, stuff):
+@fsa.autoparams(required=True)
+def patch_whatever(id:int, some:int, stuff:str):
     # ok to do it, with parameters id, some & stuff
     return "", 204
 ```
@@ -105,11 +105,10 @@ app.before_request(set_login)
 
 # authorization is checked explicitely at the beginning of the function
 @app.route("/something", methods=["PUT"])
-@fsa.parameters("some", "thing")
-def put_something(some, thing):
+def put_something():
     if not can_put_something(LOGIN):
         return "", 403
-    # else ok to do it with parameters "some" and "thing"
+    # else ok to do it
     return "", 204
 ```
 
@@ -431,6 +430,24 @@ def get_add(a, b):
 The `parameters` decorator is declared place *after* the `authorize` decorator,
 so that parameter checks are only attempted fit the user actually has permissions.
 
+### `autoparams` Decorator
+
+This decorators translates automatically request parameters (HTTP or JSON)
+to function parameters, relying on function type annotations to do that.
+The `required` parameter allows to declare whether parameters must be set
+(when *True*), or whether they are optional (*False*) in which case *None* values
+are passed.
+
+```Python
+@app.route("/thing/<int:tid>", methods=["PATCH"])
+@fsa.autoparams(False)
+def patch_thing_tid(tid: int, name: str, price: float):
+    if name is not None:
+        update_name(tid, name)
+    …
+    return "", 204
+```
+
 ## Versions
 
 Sources are available on [GitHub](https://github.com/zx80/flask-simple-auth)
@@ -443,6 +460,7 @@ Simplify `authorize` decorator.
 Advise `authorize` *then* `parameters` decorator order.
 Make `parameters` pass request parameters as function parameters.
 Add typed parameters to `parameters` decorator.
+Add `autoparams` decorator with required or optional parameters.
 
 ### 1.5.0
 
