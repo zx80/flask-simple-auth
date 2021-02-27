@@ -127,6 +127,7 @@ def test_register(client):
     # clean-up
     sauth, fsa.AUTH = fsa.AUTH, "fake"
     check_204(client.delete("/user/susie", data={"LOGIN":"susie"}))
+    assert "susie" not in app.UP and "susie" not in app.UHP
     fsa.AUTH = sauth
 
 def test_token():
