@@ -56,8 +56,8 @@ fsa.setConfig(app, user_to_password_fun, user_in_group_fun)
 
 # users belonging to the patcher group can patch whatever with 2 parameters:
 @app.route("/whatever", methods=["PATCH"])
-@fsa.parameters("some", "stuff")
 @fsa.authorize("patcher")
+@fsa.parameters("some", "stuff")
 def patch_whatever():
     # ok to do it, with parameters "some" and "stuff"
     return "", 204
@@ -215,8 +215,8 @@ with the `parameters` decorator.
 
 ```Python
 @app.route("/somewhere", methods=["POST"])
-@fsa.parameters("list", "of", "mandatory", "parameters")
 @fsa.authorize("posters")
+@fsa.parameters("list", "of", "mandatory", "parameters")
 def post_somewhere():
     …
 ```
@@ -411,6 +411,8 @@ def put_thing_tid(tid):
     …
 ```
 
+The `parameters` decorator is declared place *after* the `authorize` decorator,
+so that parameter checks are only attempted fit the user actually has permissions.
 
 ## Versions
 
@@ -421,6 +423,7 @@ and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 
 Improved documentation.
 Simplify `authorize` decorator.
+Advise `authorize` *then* `parameters` decorator order.
 
 ### 1.5.0
 
