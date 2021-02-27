@@ -488,6 +488,7 @@ Initial release in beta.
 Features
  - better control which schemes are attempted?
  - add support for JWT?
+ - make parameters handle optional params as well
 
 Implementation
  - should it be an object instead of a flat module?
