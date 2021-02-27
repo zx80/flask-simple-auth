@@ -337,6 +337,7 @@ class authorize:
         self.groups = args
 
     def __call__(self, fun):
+        @functools.wraps(fun)
         def wrapper(*args, **kwargs):
             global USER
             if USER is None:
@@ -356,7 +357,6 @@ class authorize:
             # else no matching group
             return "", 403
         # work around flask unwitty reliance on the function name
-        wrapper.__name__ = fun.__name__
         return wrapper
 
 
@@ -372,8 +372,6 @@ class parameters:
     def __call__(self, fun):
         @functools.wraps(fun)
         def wrapper(*args, **kwargs):
-            log.warning(f"args: {args}")
-            log.warning(f"kwargs: {kwargs}")
             params = request.values if request.json is None else request.json
             for p in self.params:
                 if p not in params:
@@ -388,7 +386,5 @@ class parameters:
                     log.debug(f"type error on {p}: {e}")
                     return f"type error on parameter {p} ({e})", 400  # 422?
             # ok to proceed
-            log.warning(f"* args: {args}")
-            log.warning(f"* kwargs: {kwargs}")
             return fun(*args, **kwargs)
         return wrapper
