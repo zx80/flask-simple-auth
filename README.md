@@ -453,7 +453,7 @@ def patch_thing_tid(tid: int, name: str, price: float):
     return "", 204
 ```
 
-The `autoparams` decorator should be place after the `authorize`.
+The `autoparams` decorator should be place after the `authorize` decorator.
 
 
 ## Versions
