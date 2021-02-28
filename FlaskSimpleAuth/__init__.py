@@ -4,7 +4,7 @@
 # This code is public domain.
 #
 
-from typing import Optional, Union, Callable, Dict, Any
+from typing import Optional, Union, Callable, Dict, List, Any
 import functools
 from flask import Flask, request, Response
 
@@ -33,6 +33,8 @@ CONF: Optional[Dict[str, Any]] = None
 # auth type
 AUTH: Optional[str] = None
 LAZY: Optional[bool] = None
+ALWAYS: Optional[bool] = False
+skip_path: Optional[List[Callable]] = None
 
 # auth token
 NAME: Optional[str] = None
@@ -59,7 +61,7 @@ UserInGroupType = Optional[Union[Callable[[str, str], bool],
                                  Callable[[str, int], bool]]]
 user_in_group: UserInGroupType = None
 
-# local copy of authenticated user
+# current authenticated user
 USER: Optional[str] = None
 
 
@@ -70,32 +72,47 @@ def auth_after_cleanup(res: Response):
     return res
 
 
-def auth_before_cleanup():
+# set, or possibly just reset, the current authentication
+def auth_set_user():
     global USER
     USER = None
+    if not ALWAYS:
+        return
+    for skip in skip_path:
+        if skip(request.path):
+            return
+    try:
+        USER = get_user()
+    except AuthException as e:
+        return e.message, e.status
+    assert USER is not None
 
 
 # initialize module
 def setConfig(app: Flask,
               gup: GetUserPasswordType = None,
               uig: UserInGroupType = None):
-    global APP, CONF, AUTH, LAZY
+    global APP, CONF, AUTH, LAZY, ALWAYS, skip_path
     global NAME, REALM, SECRET, DELAY, GRACE, HASH, SIGLEN
     global LOGIN, USERP, PASSP, PM
     global get_user_password, user_in_group
     # overall setup
     APP = app
     CONF = app.config
-    app.before_request(auth_before_cleanup)
-    app.after_request(auth_after_cleanup)
+    # auth setup
     AUTH = CONF.get("FSA_TYPE", "httpd")
     LAZY = CONF.get("FSA_LAZY", True)
+    ALWAYS = CONF.get("FSA_ALWAYS", True)
+    app.before_request(auth_set_user)
+    app.after_request(auth_after_cleanup)
+    import re
+    skip_path = [re.compile(r).match for r in CONF.get("FSA_SKIP_PATH", [])]
     # token setup
     NAME = CONF.get("FSA_TOKEN_NAME", "auth")
-    import re
     realm = CONF.get("FSA_TOKEN_REALM", app.name).lower()
     # tr -cd "[a-z0-9_]" "": is there a better way to do that?
-    REALM = "".join(c for c in realm if re.match("[-a-z0-9_]", c))
+    keep_char = re.compile(r"[-a-z0-9_]").match
+    REALM = "".join(c for c in realm if keep_char(c))
     import random
     import string
     # list of 94 chars, about 6.5 bits per char
@@ -305,7 +322,7 @@ def get_user():
 
     elif AUTH in ("fake", "param", "basic", "token", "password"):
 
-        # check for token
+        # always check for token
         if SECRET is not None and SECRET != "":
             params = request.values if request.json is None else request.json
             token = params.get(NAME, None)
@@ -328,12 +345,12 @@ def get_user():
             else:
                 raise AuthException("auth token is required", 401)
 
-        assert USER is not None  # else an exception would have been raised
-        return USER
-
     else:
 
         raise AuthException(f"unexpected authentication type: {AUTH}", 500)
+
+    assert USER is not None  # else an exception would have been raised
+    return USER
 
 
 #

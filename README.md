@@ -10,10 +10,10 @@ Flask configuration and decorators.
 Help to manage authentication, authorizations and parameters in
 a Flask REST application.
 
-For authentication, the idea is that the authentication is checked in a
-`before_request` hook, and can be made available through some global
-*à-la-Flask* variable, or possibly on demand through a provided
-`get_user` function.
+**Authentication** is available through the `get_user` function.
+It is performed on demand when the function is called, automatically when
+checking for permissions in a per-role authorization model, or possibly
+forced for all/most paths.
 
 The module implements inheriting the web-server authentication,
 password authentication (HTTP Basic, or HTTP/JSON parameters),
@@ -29,7 +29,7 @@ there is one code in the app which does not need to know about which authenticat
 scheme is being used, so switching between schemes only impacts the configuration,
 *not* the application code.
 
-For authorization, a simple decorator allows to declare required permissions
+For **authorization**, a simple decorator allows to declare required permissions
 on a route (eg a role name), and relies on a supplied function to check
 whether a user has this role.  This approach is enough for basic
 authorization management, but would be insufficient for realistic applications
@@ -92,24 +92,10 @@ This allows more complex application-level permission management.
 ```Python
 # app and fsa are initialized as in the previous example, then:
 
-# mandatory authentication for all path
-LOGIN = None
-
-def set_login():
-    global LOGIN
-    LOGIN = None                  # remove previous value, just in case
-    try:
-        LOGIN = fsa.get_user()
-    except fsa.AuthException as e:
-        return Response(e.message, e.status)
-    assert LOGIN is not None      # defensive check
-
-app.before_request(set_login)
-
 # authorization is checked explicitely at the beginning of the function
 @app.route("/something", methods=["GET"])
 def get_something():
-    if not can_get_something(LOGIN):
+    if not can_get_something(fsa.get_user()):
         return "", 403
     # else ok to get it
     return "", 204
@@ -145,7 +131,7 @@ This simple module allows configurable authentication (`FSA_TYPE`):
 
 I have considered [Flask HTTPAuth](https://github.com/miguelgrinberg/Flask-HTTPAuth)
 obviously, which provides many options, but I do not want to force their
-per-route model and explicit classes but rather rely on mandatory request hooks
+per-route-only model and explicit classes but rather rely on mandatory request hooks
 and have everything managed from the configuration file to easily switch
 between schemes, without impact on the application code.
 
@@ -186,32 +172,29 @@ import FlaskSimpleAuth as fsa
 fsa.setConfig(app, get_user_password, user_in_group)
 ```
 
-Then the module can be used to retrieve the authenticated user with `get_user`.
-This functions raises `AuthException` on failures.
-
-A good practice (IMHO) is to use a before request hook to set a global variable
-with the value and warrant that the authentication is always checked.
-
+Then the module can be used to retrieve the authenticated user with `get_user`,
+which raises `AuthException` on failures.
 Some path may require to skip authentication, for instance registering a new user.
-This can be achieved simply by checking `request.path`.
 
-```Python
-LOGIN: Optional[str] = None
+Three directives impact how and when authentication is performed.
 
-def set_login():
-    global LOGIN
-    LOGIN = None      # not really needed, but this is safe
-    if request.path == "/register":
-        return
-    try:
-        LOGIN = fsa.get_user()
-    except fsa.AuthException as e:
-        # before request hooks can return an alternate response
-        return Response(e.message, e.status)
-    assert LOGIN is not None
+- `FSA_TYPE` governs the *how*: `httpd`, `basic`, `param`, `password`, `token`…
+as described below.
+Default is `httpd`.
 
-app.before_request(set_login)
-```
+- `FSA_ALWAYS` tells whether to perform authentication in a before request
+hook. Default is *True*.  On authentication failures *401* are returned.
+One in a route function, `get_user` will always return the authenticated
+user and cannot fail.
+
+- `FSA_SKIP_PATH` is a list of regular expression patterns which are matched
+against the request path for skipping systematic authentication.
+Default is empty, i.e. authentication is applied for all paths.
+
+- `FSA_LAZY` tells whether to attempt authentication lazily when checking an
+authorization through a `authorize` decorator.
+Default is *True*.
+
 
 ### Using Authentication, Authorization and Parameter Check
 
@@ -236,8 +219,8 @@ An opened route for user registration could look like that:
 @app.route("/register", methods=["POST"])
 @fsa.autoparams(True)
 def post_register(user: str, password: str):
-    assert LOGIN is None
-    # FIXME should handle an existing user and respond appropriately
+    if user_already_exists_somewhere(user):
+        return f"cannot create {user}", 409
     add_new_user_with_hashed_pass(user, fsa.hash_password(password))
     return "", 201
 ```
@@ -249,7 +232,7 @@ by one of the other methods. The code for that would be as simple as:
 # token creation route
 @app.route("/login", methods=["GET"])
 def get_login():
-    return jsonify(fsa.create_token(LOGIN)), 200
+    return jsonify(fsa.create_token(get_user())), 200
 ```
 
 The client application will return the token as a parameter for
@@ -464,6 +447,10 @@ and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 ### dev
 
 Simplify code.
+Add `FSA_ALWAYS` configuration directive and move the authentication before request
+hook logic inside the module.
+Add `FSA_SKIP_PATH` to skip authentication for some paths.
+Update documentation to reflect this simplified model.
 
 ### 1.6.0
 
