@@ -461,6 +461,10 @@ The `autoparams` decorator should be place after the `authorize`.
 Sources are available on [GitHub](https://github.com/zx80/flask-simple-auth)
 and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 
+### dev
+
+Simplify code.
+
 ### 1.6.0
 
 Add `autoparams` decorator with required or optional parameters.
