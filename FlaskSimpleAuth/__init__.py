@@ -380,6 +380,7 @@ class parameters:
         self.typed = kwargs
 
     def __call__(self, fun):
+
         @functools.wraps(fun)
         def wrapper(*args, **kwargs):
             params = request.values if request.json is None else request.json
@@ -397,6 +398,7 @@ class parameters:
                     return f"type error on parameter {p} ({e})", 400  # 422?
             # ok to proceed
             return fun(*args, **kwargs)
+
         return wrapper
 
 
