@@ -409,21 +409,26 @@ class autoparams:
         self.required = required
 
     def __call__(self, fun):
+
+        # get parameter types
         types = {p: t for p, t in fun.__annotations__.items() if p != 'return'}
 
         @functools.wraps(fun)
         def wrapper(*args, **kwargs):
             params = request.values if request.json is None else request.json
             for p, typing in types.items():
-                if p not in params and p not in kwargs:
-                    if self.required:
-                        return f"missing parameter {p}", 400
+                # guess which function parameters are request parameters
+                if p not in kwargs:
+                    if p in params:
+                        try:
+                            kwargs[p] = typing(params[p])
+                        except Exception as e:
+                            return f"type error on parameter {p} ({e})", 400
                     else:
-                        kwargs[p] = None
-                if p in params and p not in kwargs:
-                    try:
-                        kwargs[p] = typing(params[p])
-                    except Exception as e:
-                        return f"type error on parameter {p} ({e})", 400
+                        if self.required:
+                            return f"missing parameter {p}", 400
+                        else:
+                            kwargs[p] = None
             return fun(*args, **kwargs)
+
         return wrapper
