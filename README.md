@@ -24,11 +24,6 @@ It allows to have a login route to generate authentication tokens.
 For registration, support functions allow to hash new passwords consistently
 with password checks.
 
-Compared to [Flask HTTPAuth](https://github.com/miguelgrinberg/Flask-HTTPAuth),
-there is one code in the app which does not need to know about which authentication
-scheme is being used, so switching between schemes only impacts the configuration,
-*not* the application code.
-
 **Authorization** can be managed with a simple decorator to declare required
 permissions on a route (eg a role name), and relies on a supplied function to
 check whether a user has this role.  This approach is enough for basic
