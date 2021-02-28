@@ -64,6 +64,7 @@ app.before_request(set_login)
 # ROUTES
 #
 @app.route("/login")
+@fsa.authorize(ADMIN, WRITE, READ)
 def login():
     return jsonify(fsa.create_token(fsa.get_user())), 200
 

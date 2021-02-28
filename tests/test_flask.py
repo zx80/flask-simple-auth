@@ -69,10 +69,10 @@ def check_201(res):  # created
 def check_204(res):  # no content
     assert res.status_code == 204
 
-def check_400(res):
+def check_400(res):  # client error
     assert res.status_code == 400
 
-def check_401(res):
+def check_401(res):  # authentication required
     assert res.status_code == 401
 
 def check_403(res):  # forbidden
@@ -80,10 +80,7 @@ def check_403(res):  # forbidden
 
 def test_perms(client):
     check_200(client.get("/all"))  # open route
-    try:
-        client.get("/login")  # no login login
-    except fsa.AuthException as e:
-        assert e.status == 401
+    check_401(client.get("/login"))  # login without login
     # admin only
     check_401(client.get("/admin"))
     log.debug(f"app.is_in_group: {app.is_in_group}")
@@ -188,10 +185,8 @@ def test_authorize():
     fsa.LAZY = lazy
 
 def test_self_care(client):
-    saved = app.SET_LOGIN_ACTIVE
-    sauth = fsa.AUTH
+    saved, sauth, fsa.AUTH = app.SET_LOGIN_ACTIVE, fsa.AUTH, 'fake'
     app.SET_LOGIN_ACTIVE = True
-    fsa.AUTH = 'fake'
     check_401(client.patch("/user/calvin"))
     check_403(client.patch("/user/calvin", data={"LOGIN":"dad"}))
     who, npass, opass = "calvin", "new-calvin-password", app.UP["calvin"]
@@ -203,8 +198,7 @@ def test_self_care(client):
     check_204(client.delete("user/rosalyn", data={"LOGIN":"rosalyn"}))  # self
     check_201(client.post("/register", data={"user":"rosalyn", "upass":"rosa-pass"}))
     check_204(client.delete("user/rosalyn", data={"LOGIN":"dad"}))  # admin
-    app.SET_LOGIN_ACTIVE = saved
-    fsa.AUTH = sauth
+    app.SET_LOGIN_ACTIVE, fsa.AUTH = saved, sauth
 
 def test_typed_params(client):
     res = client.get("/add/2", data={"a":"2.0", "b":"4.0"})
