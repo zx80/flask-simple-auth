@@ -40,7 +40,7 @@ and they are added automatically as named parameters to route functions, skippin
 the burden of checking them in typical REST functions.
 
 
-## Very Simple Example
+## Simple Example
 
 The application code below performs authentication, authorization and
 parameter checks triggered by decorators.
@@ -81,25 +81,6 @@ FSA_TYPE = 'param'     # HTTP parameter auth
 Various aspects of the implemented schemes can be configured with other
 directives, with reasonable defaults provided so that not much is really
 needed beyond choosing the authentication scheme.
-
-
-## Simple Example
-
-The application code extract below maintains a `LOGIN` global variable which
-holds the authenticated user name for the current request.
-This allows more complex application-level permission management.
-
-```Python
-# app and fsa are initialized as in the previous example, then:
-
-# authorization is checked explicitely at the beginning of the function
-@app.route("/something", methods=["GET"])
-def get_something():
-    if not can_get_something(fsa.get_user()):
-        return "", 403
-    # else ok to get it
-    return "", 204
-```
 
 
 ## Documentation
