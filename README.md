@@ -441,7 +441,7 @@ This decorators translates automatically request parameters (HTTP or JSON)
 to function parameters, relying on function type annotations to do that.
 The `required` parameter allows to declare whether parameters must be set
 (when *True*), or whether they are optional (*False*) in which case *None* values
-are passed.
+are passed. Default is that parameters are required.
 
 ```Python
 @app.route("/thing/<int:tid>", methods=["PATCH"])
