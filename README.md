@@ -192,6 +192,7 @@ still require manual permission checks at the beginning of the function.
 An opened route for user registration could look like that:
 
 ```Python
+# with FSA_SKIP_PATH = (r"/register", …)
 @app.route("/register", methods=["POST"])
 @fsa.autoparams(True)
 def post_register(user: str, password: str):
