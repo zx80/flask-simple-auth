@@ -31,7 +31,7 @@ scheme is being used, so switching between schemes only impacts the configuratio
 
 For authorization, a simple decorator allows to declare required permissions
 on a route (eg a role name), and relies on a supplied function to check
-whether a user has this role.  This is approach is enough for basic
+whether a user has this role.  This approach is enough for basic
 authorization management, but would be insufficient for realistic applications
 where users can edit their own data but not those of others.
 
