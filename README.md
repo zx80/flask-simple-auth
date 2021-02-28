@@ -1,7 +1,8 @@
 # Flask Simple Auth
 
-Simple authentication and authorization for [Flask](https://flask.palletsprojects.com/),
-which is controled from Flask configuration and decorators.
+Simple authentication, authorization and parameter checks
+for [Flask](https://flask.palletsprojects.com/), controled from
+Flask configuration and decorators.
 
 
 ## Description
@@ -20,8 +21,8 @@ simple time-limited authentication tokens, and
 a fake authentication scheme useful for application testing.
 
 It allows to have a login route to generate authentication tokens.
-Support functions allow to hash new passwords consistently with password
-checks performed by the module.
+For registration, support functions allow to hash new passwords consistently
+with password checks.
 
 Compared to [Flask HTTPAuth](https://github.com/miguelgrinberg/Flask-HTTPAuth),
 there is one code in the app which does not need to know about which authentication
@@ -30,24 +31,22 @@ scheme is being used, so switching between schemes only impacts the configuratio
 
 For authorization, a simple decorator allows to declare required permissions
 on a route (eg a role name), and relies on a supplied function to check
-whether a user has this role. This is approach is enough for basic
+whether a user has this role.  This is approach is enough for basic
 authorization management, but would be insufficient for realistic applications
 where users can edit their own data but not those of others.
 
-For request parameters, they can be declared, their presence and type checked,
-and can be added as named parameters to route functions.
+Expected request parameters can be declared, their presence and type checked,
+and they are added automatically as named parameters to route functions, skipping
+the burden of checking them in typical REST functions.
 
 
 ## Very Simple Example
 
-The application code below performs authentication on authorization checks
-triggered by the `authorize` decorator.
+The application code below performs authentication, authorization and
+parameter checks triggered by decorators.
 There is no clue in the source about what kind of authentication is used,
 which is the whole point: authentication schemes are managed elsewhere, not
 explicitely in the application code.
-
-Also, the `/whatever` route requires that parameters (HTTP or JSON) `some`
-and `stuff` are set in the incoming request.
 
 ```Python
 # app is the Flask application…
@@ -58,17 +57,16 @@ and `stuff` are set in the incoming request.
 import FlaskSimpleAuth as fsa
 fsa.setConfig(app, user_to_password_fun, user_in_group_fun)
 
-# users belonging to the patcher group can patch whatever/*
+# users belonging to the "patcher" group can patch "whatever/*"
 # the function gets 3 arguments: one coming from the path (id)
-# and the remaining two coming from request parameters.
+# and the remaining two coming from request parameters (some, stuff).
 @app.route("/whatever/<int:id>", methods=["PATCH"])
 @fsa.authorize("patcher")
 @fsa.autoparams(required=True)
-def patch_whatever(id:int, some:int, stuff:str):
+def patch_whatever(id: int, some: int, stuff: str):
     # ok to do it, with parameters id, some & stuff
     return "", 204
 ```
-
 
 Authentication is manage from the application flask configuration
 with `FSA_*` (Flask simple authentication) directives:
@@ -109,13 +107,14 @@ def set_login():
 app.before_request(set_login)
 
 # authorization is checked explicitely at the beginning of the function
-@app.route("/something", methods=["PUT"])
-def put_something():
-    if not can_put_something(LOGIN):
+@app.route("/something", methods=["GET"])
+def get_something():
+    if not can_get_something(LOGIN):
         return "", 403
-    # else ok to do it
+    # else ok to get it
     return "", 204
 ```
+
 
 ## Documentation
 
@@ -223,7 +222,7 @@ with the `parameters` decorator.
 ```Python
 @app.route("/somewhere", methods=["POST"])
 @fsa.authorize("posters")
-@fsa.parameters("list", "of", "mandatory", "parameters")
+@fsa.parameters("listof", "mandatory", "parameters")
 def post_somewhere():
     …
 ```
@@ -354,7 +353,7 @@ The following configuration directive is available:
 
 For checking passwords the password (salted hash) must be retrieved through
 `get_user_password(user)`. 
-This function must be provided by the application.
+This function must be provided by the application when the module is initialized.
 
 The following configuration directives are available to configure
 `passlib` password checks:
@@ -454,6 +453,9 @@ def patch_thing_tid(tid: int, name: str, price: float):
     return "", 204
 ```
 
+The `autoparams` decorator should be place after the `authorize`.
+
+
 ## Versions
 
 Sources are available on [GitHub](https://github.com/zx80/flask-simple-auth)
@@ -461,12 +463,12 @@ and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 
 ### dev
 
-Improved documentation.
-Simplify `authorize` decorator.
-Advise `authorize` *then* `parameters` decorator order.
-Make `parameters` pass request parameters as function parameters.
-Add typed parameters to `parameters` decorator.
 Add `autoparams` decorator with required or optional parameters.
+Add typed parameters to `parameters` decorator.
+Make `parameters` pass request parameters as named function parameters.
+Simplify `authorize` decorator syntax and implementation.
+Advise `authorize` *then* `parameters` or `autoparams` decorator order.
+Improved documentation.
 
 ### 1.5.0
 
