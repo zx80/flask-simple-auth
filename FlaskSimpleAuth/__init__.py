@@ -64,10 +64,15 @@ USER: Optional[str] = None
 
 
 # wipe out current authentication
-def auth_cleanup(res: Response):
+def auth_after_cleanup(res: Response):
     global USER
     USER = None
     return res
+
+
+def auth_before_cleanup():
+    global USER
+    USER = None
 
 
 # initialize module
@@ -81,7 +86,8 @@ def setConfig(app: Flask,
     # overall setup
     APP = app
     CONF = app.config
-    app.after_request(auth_cleanup)
+    app.before_request(auth_before_cleanup)
+    app.after_request(auth_after_cleanup)
     AUTH = CONF.get("FSA_TYPE", "httpd")
     LAZY = CONF.get("FSA_LAZY", True)
     # token setup
@@ -283,7 +289,11 @@ def get_token_auth(token):
 def get_user():
 
     global USER
-    USER = None
+
+    # USER is reset before/after requests
+    # so relying on in-request persistance is safe
+    if USER is not None:
+        return USER
 
     if AUTH is None:
         raise AuthException("FlaskSimpleAuth module not initialized", 500)
