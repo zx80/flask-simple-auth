@@ -176,14 +176,14 @@ Default is *True*.
 ### Using Authentication, Authorization and Parameter Check
 
 Then all route functions can take advantage of this information to check for
-authorizations with the `authorize` decorator, and for mandatory parameters
-with the `parameters` decorator.
+authorizations with the `authorize` decorator, and for parameters with the
+`autoparams` decorator.
 
 ```Python
 @app.route("/somewhere", methods=["POST"])
 @fsa.authorize("posters")
-@fsa.parameters("listof", "mandatory", "parameters")
-def post_somewhere():
+@fsa.autoparams()
+def post_somewhere(stuff: str, nstuff: int, bstuff: bool = False):
     …
 ```
 
@@ -421,6 +421,9 @@ def patch_thing_tid(tid: int, name: str = None, price: float = None):
 
 The `autoparams` decorator should be place after the `authorize` decorator.
 
+A side-effect of the `parameters` and `autoparams` decorator passing of request
+parameters as named function parameters is that request parameter names must be
+valid python functions names, which excludes keywords such as `pass`, `def` or `for`.
 
 ## Versions
 
@@ -431,7 +434,7 @@ and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 
 Make `autoparams` guess optional parameters based on default values.
 Fix issues with boolean type parameters.
-Enhance int type to accept other base syntaxes.
+Enhance integer type to accept other base syntaxes.
 Improve documentation to advertise this simple and elegant approach.
 
 ### 1.7.0
