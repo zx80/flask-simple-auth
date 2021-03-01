@@ -392,7 +392,7 @@ The `autoparams` decorator should be place after the `authorize` decorator.
 
 A side-effect of the `parameters` and `autoparams` decorator passing of request
 parameters as named function parameters is that request parameter names must be
-valid python functions names, which excludes keywords such as `pass`, `def` or `for`.
+valid python identifiers, which excludes keywords such as `pass`, `def` or `for`.
 
 ###  `parameters` Decorator
 
