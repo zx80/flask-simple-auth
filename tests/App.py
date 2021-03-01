@@ -13,7 +13,7 @@ app = Flask("Test")
 app.config.update(
     FSA_TYPE = 'fake',
     FSA_ALWAYS = True,
-    FSA_SKIP_PATH = (r"/register", r"/all", r"/add", r"/div", r"/mul")
+    FSA_SKIP_PATH = (r"/register", r"/all", r"/(add|div|mul|sub|type)")
 )
 
 #
@@ -94,7 +94,7 @@ def delete_user_str(user):
     GROUPS[READ].remove(user)
     return "", 204
 
-# self registration with listed parameters
+# self registration with listed mandatory parameters
 @app.route("/register", methods=["POST"])
 @fsa.parameters("user", "upass")
 def register(user, upass):
@@ -106,19 +106,19 @@ def register(user, upass):
     GROUPS[READ].add(user)
     return "", 201
 
-# typed parameters
+# typed mandatory parameters
 @app.route("/add/<int:i>", methods=["GET"])
 @fsa.parameters(a=float, b=float)
 def get_add(i, a, b):
     return str(i * (a + b)), 200
 
-# another one
+# another one: j and k and mandatory
 @app.route("/mul/<int:i>", methods=["GET"])
 @fsa.autoparams(True)
 def get_mul(i: int, j: int, k: int):
     return str(i * j * k), 200
 
-# another one
+# another one: i and j are optional
 @app.route("/div", methods=["GET"])
 @fsa.autoparams(False)
 def get_div(i: int, j: int):
@@ -126,3 +126,24 @@ def get_div(i: int, j: int):
         return "0", 200
     else:
         return str(i // j), 200
+
+# another one: i is mandatory, j is optional
+@app.route("/sub", methods=["GET"])
+@fsa.autoparams()
+def get_sub(i: int, j: int = 0):
+    return str(i - j), 200
+
+# type tests
+@app.route("/type", methods=["GET"])
+@fsa.autoparams()
+def get_type(f: float = None, i: int = None, b: bool = None, s: str = None):
+    if f is not None:
+        return f"float {f}", 200
+    elif i is not None:
+        return f"int {i}", 200
+    elif b is not None:
+        return f"bool {b}", 200
+    elif s is not None:
+        return f"str {s}", 200
+    else:
+        return "", 200

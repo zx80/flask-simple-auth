@@ -55,10 +55,11 @@ fsa.setConfig(app, user_to_password_fun, user_in_group_fun)
 # users belonging to the "patcher" group can patch "whatever/*"
 # the function gets 3 arguments: one coming from the path (id)
 # and the remaining two coming from request parameters (some, stuff).
+# "some" is mandatory, stuff is optional because it has a default.
 @app.route("/whatever/<int:id>", methods=["PATCH"])
 @fsa.authorize("patcher")
-@fsa.autoparams(required=True)
-def patch_whatever(id: int, some: int, stuff: str):
+@fsa.autoparams()
+def patch_whatever(id: int, some: int, stuff: str = "wow"):
     # ok to do it, with parameters id, some & stuff
     return "", 204
 ```
@@ -189,12 +190,13 @@ def post_somewhere():
 Note that more advanced permissions (eg users can edit themselves) will
 still require manual permission checks at the beginning of the function.
 
-An opened route for user registration could look like that:
+An opened route for user registration with mandatory parameters
+could look like that:
 
 ```Python
 # with FSA_SKIP_PATH = (r"/register", …)
 @app.route("/register", methods=["POST"])
-@fsa.autoparams(True)
+@fsa.autoparams()
 def post_register(user: str, password: str):
     if user_already_exists_somewhere(user):
         return f"cannot create {user}", 409
@@ -399,14 +401,18 @@ so that parameter checks are only attempted if the user actually has permissions
 
 This decorators translates automatically request parameters (HTTP or JSON)
 to function parameters, relying on function type annotations to do that.
-The `required` parameter allows to declare whether parameters must be set
-(when *True*), or whether they are optional (*False*) in which case *None* values
-are passed. Default is that parameters are required.
+
+By default, the decorator guesses whether parameters are mandatory based on
+provided default values, i.e. they are optional when a default is provided.
+
+Additionally The `required` parameter allows to declare whether all parameters
+must be set (when *True*), or whether they are optional (*False*) in which
+case *None* values are passed if no defaults are given.
 
 ```Python
 @app.route("/thing/<int:tid>", methods=["PATCH"])
-@fsa.autoparams(False)
-def patch_thing_tid(tid: int, name: str, price: float):
+@fsa.autoparams()
+def patch_thing_tid(tid: int, name: str = None, price: float = None):
     if name is not None:
         update_name(tid, name)
     …
@@ -420,6 +426,13 @@ The `autoparams` decorator should be place after the `authorize` decorator.
 
 Sources are available on [GitHub](https://github.com/zx80/flask-simple-auth)
 and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
+
+### 1.8.0dev
+
+Make `autoparams` guess optional parameters based on default values.
+Fix issues with boolean type parameters.
+Enhance int type to accept other base syntaxes.
+Improve documentation to advertise this simple and elegant approach.
 
 ### 1.7.0
 

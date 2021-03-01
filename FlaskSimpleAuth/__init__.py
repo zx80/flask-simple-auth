@@ -387,6 +387,19 @@ class authorize:
         return wrapper
 
 
+def bool_cast(s: str) -> Optional[bool]:
+    return None if s is None else \
+        False if s.lower() in ("", "0", "false") else \
+        True
+
+
+def int_cast(s: str) -> Optional[int]:
+    return None if s is None else int(s, base=0)
+
+
+CASTS = {bool: bool_cast, int: int_cast}
+
+
 #
 # parameters decorator
 #
@@ -395,6 +408,11 @@ class parameters:
     def __init__(self, *args, **kwargs):
         self.params = args
         self.typed = kwargs
+
+        # substitute by cast functions if needed
+        for p, t in self.typed.items():
+            if t in CASTS:
+                self.typed[p] = CASTS[t]
 
     def __call__(self, fun):
 
@@ -424,13 +442,25 @@ class parameters:
 #
 class autoparams:
 
-    def __init__(self, required=True):
+    def __init__(self, required=None):
+        # None: parameters are required unless there is a default value
+        # True: all parameters are required
+        # False: all parameters are optional, default is None unless provided
         self.required = required
 
     def __call__(self, fun):
 
-        # get parameter types
-        types = {p: t for p, t in fun.__annotations__.items() if p != 'return'}
+        # get parameter types/casts
+        types: Dict[str, Callable] = \
+           {p: CASTS.get(t, t)
+               for p, t in fun.__annotations__.items() if p != 'return'}
+
+        # get default values if any
+        defaults: Dict[str, Any] = {}
+        if fun.__defaults__ is not None:
+            for i, p in enumerate(reversed(fun.__code__.co_varnames)):
+                if p in types and i < len(fun.__defaults__):
+                    defaults[p] = fun.__defaults__[-i-1]
 
         @functools.wraps(fun)
         def wrapper(*args, **kwargs):
@@ -444,10 +474,15 @@ class autoparams:
                         except Exception as e:
                             return f"type error on parameter {p} ({e})", 400
                     else:
-                        if self.required:
+                        if self.required is None:
+                            if p in defaults:
+                                kwargs[p] = defaults[p]
+                            else:
+                                return f"missing parameter {p}", 400
+                        elif self.required:
                             return f"missing parameter {p}", 400
                         else:
-                            kwargs[p] = None
+                            kwargs[p] = defaults.get(p, None)
             return fun(*args, **kwargs)
 
         return wrapper

@@ -14,24 +14,31 @@ log = logging.getLogger("tests")
 
 def check_200(res):  # ok
     assert res.status_code == 200
+    return res
 
 def check_201(res):  # created
     assert res.status_code == 201
+    return res
 
 def check_204(res):  # no content
     assert res.status_code == 204
+    return res
 
 def check_400(res):  # client error
     assert res.status_code == 400
+    return res
 
 def check_401(res):  # authentication required
     assert res.status_code == 401
+    return res
 
 def check_403(res):  # forbidden
     assert res.status_code == 403
+    return res
 
 def check_404(res):  # not found
     assert res.status_code == 404
+    return res
 
 def test_sanity():
     assert app.app is not None and fsa is not None
@@ -218,19 +225,44 @@ def test_self_care(client):
     fsa.AUTH = saved
 
 def test_typed_params(client):
-    res = client.get("/add/2", data={"a":"2.0", "b":"4.0"})
-    check_200(res)
+    res = check_200(client.get("/add/2", data={"a":"2.0", "b":"4.0"}))
     assert float(res.data) == 12.0
-    res = client.get("/mul/2", data={"j":"3", "k":"4"})
-    check_200(res)
+    res = check_200(client.get("/mul/2", data={"j":"3", "k":"4"}))
     assert int(res.data) == 24
     check_400(client.get("/mul/1", data={"j":"3"}))
     check_400(client.get("/mul/1", data={"k":"4"}))
     check_400(client.get("/mul/2", data={"j":"three", "k":"four"}))
     # optional
-    res = client.get("/div", data={"i":"10", "j":"3"})
-    check_200(res)
+    res = check_200(client.get("/div", data={"i":"10", "j":"3"}))
     assert int(res.data) == 3
-    res = client.get("/div", data={"i":"10"})
-    check_200(res)
+    res = check_200(client.get("/div", data={"i":"10"}))
     assert int(res.data) == 0
+    res = check_200(client.get("/sub", data={"i":"42", "j":"20"}))
+    assert int(res.data) == 22
+    check_400(client.get("/sub", data={"j":"42"}))
+    res = check_200(client.get("/sub", data={"i":"42"}))
+    assert int(res.data) == 42
+
+def test_types(client):
+   res = check_200(client.get("/type", data={"f": "1.0"}))
+   assert res.data == b"float 1.0"
+   res = check_200(client.get("/type", data={"i": "0b11"}))
+   assert res.data == b"int 3"
+   res = check_200(client.get("/type", data={"i": "0x11"}))
+   assert res.data == b"int 17"
+   res = check_200(client.get("/type", data={"i": "11"}))
+   assert res.data == b"int 11"
+   res = check_200(client.get("/type", data={"b": "0"}))
+   assert res.data == b"bool False"
+   res = check_200(client.get("/type", data={"b": ""}))
+   assert res.data == b"bool False"
+   res = check_200(client.get("/type", data={"b": "False"}))
+   assert res.data == b"bool False"
+   res = check_200(client.get("/type", data={"b": "1"}))
+   assert res.data == b"bool True"
+   res = check_200(client.get("/type", data={"b": "foofoo"}))
+   assert res.data == b"bool True"
+   res = check_200(client.get("/type", data={"b": "True"}))
+   assert res.data == b"bool True"
+   res = check_200(client.get("/type", data={"s": "Hello World!"}))
+   assert res.data == b"str Hello World!"
