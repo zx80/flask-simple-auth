@@ -16,14 +16,6 @@ app.config.update(
     FSA_SKIP_PATH = (r"/register", r"/all", r"/add", r"/div", r"/mul")
 )
 
-PARAMS = None
-
-def set_params():
-    global PARAMS
-    PARAMS = request.values if request.json is None else request.json
-
-app.before_request(set_params)
-
 #
 # AUTH
 #
