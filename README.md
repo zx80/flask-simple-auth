@@ -504,6 +504,8 @@ Initial release in beta.
 Features
  - better control which schemes are attempted?
  - add support for JWT?
+ - should `parameters` be removed?
+ - all option to move all/most parameters as name function parameters?
 
 Implementation
  - should it be an object instead of a flat module?
