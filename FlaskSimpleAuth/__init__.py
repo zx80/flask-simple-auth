@@ -6,9 +6,10 @@
 
 from typing import Optional, Union, Callable, Dict, List, Any
 import functools
-from flask import Flask, request, Response
-
+import inspect
 import datetime as dt
+
+from flask import Flask, request, Response
 from passlib.context import CryptContext  # type: ignore
 
 import logging
@@ -450,17 +451,15 @@ class autoparams:
 
     def __call__(self, fun):
 
-        # get parameter types/casts
-        types: Dict[str, Callable] = \
-           {p: CASTS.get(t, t)
-               for p, t in fun.__annotations__.items() if p != 'return'}
+        sig = inspect.signature(fun)
 
-        # get default values if any
+        # get parameter types/casts and defaults
+        types: Dict[str, Callable] = {}
         defaults: Dict[str, Any] = {}
-        if fun.__defaults__ is not None:
-            for i, p in enumerate(reversed(fun.__code__.co_varnames)):
-                if p in types and i < len(fun.__defaults__):
-                    defaults[p] = fun.__defaults__[-i-1]
+        for n, p in sig.parameters.items():
+            types[n] = CASTS.get(p.annotation, p.annotation)
+            if p.default != inspect._empty:
+                defaults[n] = p.default
 
         @functools.wraps(fun)
         def wrapper(*args, **kwargs):
