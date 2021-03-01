@@ -185,8 +185,8 @@ def hash_password(pwd):
 # check user password against internal credentials
 # raise an exception if not ok, otherwise simply proceeds
 def check_db_password(user, pwd):
-    assert ref is not None
     ref = get_user_password(user)
+    assert ref is not None
     if ref is None:
         log.debug(f"LOGIN (password): no such user ({user})")
         raise AuthException(f"no such user: {user}", 401)
