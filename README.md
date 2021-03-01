@@ -366,6 +366,34 @@ Note that this simplistic model does is not enough for non-trivial applications,
 where permissions on objects often depend on the object owner.
 For those, careful per-operation authorization will still be needed.
 
+### `autoparams` Decorator
+
+This decorators translates automatically request parameters (HTTP or JSON)
+to function parameters, relying on function type annotations to do that.
+
+By default, the decorator guesses whether parameters are mandatory based on
+provided default values, i.e. they are optional when a default is provided.
+
+Additionally The `required` parameter allows to declare whether all parameters
+must be set (when *True*), or whether they are optional (*False*) in which
+case *None* values are passed if no defaults are given.
+
+```Python
+@app.route("/thing/<int:tid>", methods=["PATCH"])
+@fsa.autoparams()
+def patch_thing_tid(tid: int, name: str = None, price: float = None):
+    if name is not None:
+        update_name(tid, name)
+    …
+    return "", 204
+```
+
+The `autoparams` decorator should be place after the `authorize` decorator.
+
+A side-effect of the `parameters` and `autoparams` decorator passing of request
+parameters as named function parameters is that request parameter names must be
+valid python functions names, which excludes keywords such as `pass`, `def` or `for`.
+
 ###  `parameters` Decorator
 
 This decorator has two flavors.
@@ -402,34 +430,6 @@ the value is *True*.
 
 The `parameters` decorator is declared place *after* the `authorize` decorator,
 so that parameter checks are only attempted if the user actually has permissions.
-
-### `autoparams` Decorator
-
-This decorators translates automatically request parameters (HTTP or JSON)
-to function parameters, relying on function type annotations to do that.
-
-By default, the decorator guesses whether parameters are mandatory based on
-provided default values, i.e. they are optional when a default is provided.
-
-Additionally The `required` parameter allows to declare whether all parameters
-must be set (when *True*), or whether they are optional (*False*) in which
-case *None* values are passed if no defaults are given.
-
-```Python
-@app.route("/thing/<int:tid>", methods=["PATCH"])
-@fsa.autoparams()
-def patch_thing_tid(tid: int, name: str = None, price: float = None):
-    if name is not None:
-        update_name(tid, name)
-    …
-    return "", 204
-```
-
-The `autoparams` decorator should be place after the `authorize` decorator.
-
-A side-effect of the `parameters` and `autoparams` decorator passing of request
-parameters as named function parameters is that request parameter names must be
-valid python functions names, which excludes keywords such as `pass`, `def` or `for`.
 
 ## Versions
 
