@@ -12,6 +12,27 @@ log = logging.getLogger("tests")
 # app.log.setLevel(logging.DEBUG)
 # log.setLevel(logging.DEBUG)
 
+def check_200(res):  # ok
+    assert res.status_code == 200
+
+def check_201(res):  # created
+    assert res.status_code == 201
+
+def check_204(res):  # no content
+    assert res.status_code == 204
+
+def check_400(res):  # client error
+    assert res.status_code == 400
+
+def check_401(res):  # authentication required
+    assert res.status_code == 401
+
+def check_403(res):  # forbidden
+    assert res.status_code == 403
+
+def check_404(res):  # not found
+    assert res.status_code == 404
+
 def test_sanity():
     assert app.app is not None and fsa is not None
     assert app.app.name == "Test"
@@ -26,7 +47,7 @@ def client():
     with app.app.test_client() as c:
         yield c
 
-# test all auth variants
+# test all auth variants on GET
 def all_auth(client, user, pswd, check, *args, **kwargs):
     saved = fsa.AUTH
     # fake login
@@ -60,27 +81,10 @@ def all_auth(client, user, pswd, check, *args, **kwargs):
     check(client.get(*args, **kwargs, data={"auth": token_basic}))
     fsa.AUTH = saved
 
-def check_200(res):  # ok
-    assert res.status_code == 200
-
-def check_201(res):  # created
-    assert res.status_code == 201
-
-def check_204(res):  # no content
-    assert res.status_code == 204
-
-def check_400(res):  # client error
-    assert res.status_code == 400
-
-def check_401(res):  # authentication required
-    assert res.status_code == 401
-
-def check_403(res):  # forbidden
-    assert res.status_code == 403
-
 def test_perms(client):
     check_200(client.get("/all"))  # open route
     check_401(client.get("/login"))  # login without login
+    check_401(client.get("/"))  # empty path
     # admin only
     check_401(client.get("/admin"))
     log.debug(f"app.is_in_group: {app.is_in_group}")
@@ -108,6 +112,20 @@ def test_perms(client):
     all_auth(client, "calvin", app.UP["calvin"], check_200, "/read")
     assert app.is_in_group("hobbes", app.READ)
     all_auth(client, "hobbes", app.UP["hobbes"], check_200, "/read")
+
+def test_whatever(client):
+    check_401(client.get("/whatever"))
+    check_401(client.post("/whatever"))
+    check_401(client.put("/whatever"))
+    check_401(client.patch("/whatever"))
+    check_401(client.delete("/whatever"))
+    saved, fsa.AUTH = fsa.AUTH, 'fake'
+    check_404(client.get("/whatever", data={"LOGIN": "dad"}))
+    check_404(client.post("/whatever", data={"LOGIN": "dad"}))
+    check_404(client.put("/whatever", data={"LOGIN": "dad"}))
+    check_404(client.patch("/whatever", data={"LOGIN": "dad"}))
+    check_404(client.delete("/whatever", data={"LOGIN": "dad"}))
+    fsa.AUTH = saved
 
 def test_register(client):
     # missing params
