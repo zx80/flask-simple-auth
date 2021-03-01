@@ -421,7 +421,7 @@ The `autoparams` decorator should be place after the `authorize` decorator.
 Sources are available on [GitHub](https://github.com/zx80/flask-simple-auth)
 and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 
-### dev
+### 1.7.0
 
 Simplify code.
 Add `FSA_ALWAYS` configuration directive and move the authentication before request
