@@ -394,6 +394,12 @@ def get_add(a, b):
     return str(a + b), 200
 ```
 
+Request parameter string values are converted to the target type.
+For `int`, base syntax is accepted, i.e. `0x11`, `0b10001` and `17`
+all mean decimal *17*.
+For `bool`, *False* is an empty string, `0`, `False`, otherwise
+the value is *True*.
+
 The `parameters` decorator is declared place *after* the `authorize` decorator,
 so that parameter checks are only attempted if the user actually has permissions.
 
