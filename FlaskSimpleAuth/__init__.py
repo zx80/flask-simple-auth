@@ -65,13 +65,6 @@ user_in_group: UserInGroupType = None
 USER: Optional[str] = None
 
 
-# wipe out current authentication
-def auth_after_cleanup(res: Response):
-    global USER
-    USER = None
-    return res
-
-
 # set, or possibly just reset, the current authentication
 def auth_set_user():
     global USER
@@ -86,6 +79,13 @@ def auth_set_user():
     except AuthException as e:
         return e.message, e.status
     assert USER is not None
+
+
+# wipe out current authentication
+def auth_after_cleanup(res: Response):
+    global USER
+    USER = None
+    return res
 
 
 # initialize module
