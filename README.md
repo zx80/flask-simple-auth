@@ -433,7 +433,7 @@ identifiers, which excludes keywords such as `pass`, `def` or `for`.
 Sources are available on [GitHub](https://github.com/zx80/flask-simple-auth)
 and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 
-### 1.8.0dev
+### 1.8.0
 
 Merge `autoparams` and `parameters` decorators into a single `parameters`
 decorator.
