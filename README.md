@@ -277,7 +277,7 @@ The following configuration directives are available:
  - `FKA_TOKEN_NAME` name of parameter holding the auth token.
    Default is `auth`.
  - `FSA_TOKEN_SECRET` secret string used for signing tokens.
-   Default is a system-generated random string containing 128 bits.
+   Default is a system-generated random string containing 256 bits.
    This default with only work with itself, as it is not shared
    across server instances or processes. Set to `None` to disable tokens.
  - `FSA_TOKEN_DELAY` number of minutes of token validity.
