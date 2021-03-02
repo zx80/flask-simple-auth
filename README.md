@@ -58,7 +58,7 @@ fsa.setConfig(app, user_to_password_fun, user_in_group_fun)
 # "some" is mandatory, stuff is optional because it has a default.
 @app.route("/whatever/<int:id>", methods=["PATCH"])
 @fsa.authorize("patcher")
-@fsa.autoparams()
+@fsa.parameters()
 def patch_whatever(id: int, some: int, stuff: str = "wow"):
     # ok to do it, with parameters id, some & stuff
     return "", 204
@@ -177,12 +177,12 @@ Default is *True*.
 
 Then all route functions can take advantage of this information to check for
 authorizations with the `authorize` decorator, and for parameters with the
-`autoparams` decorator.
+`parameters` decorator.
 
 ```Python
 @app.route("/somewhere", methods=["POST"])
 @fsa.authorize("posters")
-@fsa.autoparams()
+@fsa.parameters()
 def post_somewhere(stuff: str, nstuff: int, bstuff: bool = False):
     …
 ```
@@ -196,7 +196,7 @@ could look like that:
 ```Python
 # with FSA_SKIP_PATH = (r"/register", …)
 @app.route("/register", methods=["POST"])
-@fsa.autoparams()
+@fsa.parameters()
 def post_register(user: str, password: str):
     if user_already_exists_somewhere(user):
         return f"cannot create {user}", 409
@@ -366,7 +366,7 @@ Note that this simplistic model does is not enough for non-trivial applications,
 where permissions on objects often depend on the object owner.
 For those, careful per-operation authorization will still be needed.
 
-### `autoparams` Decorator
+### `parameters` Decorator
 
 This decorators translates automatically request parameters (HTTP or JSON)
 to function parameters, relying on function type annotations to do that.
@@ -374,13 +374,16 @@ to function parameters, relying on function type annotations to do that.
 By default, the decorator guesses whether parameters are mandatory based on
 provided default values, i.e. they are optional when a default is provided.
 
-Additionally The `required` parameter allows to declare whether all parameters
+The `required` parameter allows to declare whether all parameters
 must be set (when *True*), or whether they are optional (*False*) in which
 case *None* values are passed if no defaults are given.
 
+The `allparams` parameter makes all request parameters be translated to
+named function parameters that can be manipulated as such.
+
 ```Python
 @app.route("/thing/<int:tid>", methods=["PATCH"])
-@fsa.autoparams()
+@fsa.parameters()
 def patch_thing_tid(tid: int, name: str = None, price: float = None):
     if name is not None:
         update_name(tid, name)
@@ -388,19 +391,11 @@ def patch_thing_tid(tid: int, name: str = None, price: float = None):
     return "", 204
 ```
 
-The `autoparams` decorator should be place after the `authorize` decorator.
+The `parameters` decorator **must** be placed *after* the `authorize` decorator.
 
-A side-effect of the `parameters` and `autoparams` decorator passing of request
-parameters as named function parameters is that request parameter names must be
-valid python identifiers, which excludes keywords such as `pass`, `def` or `for`.
-
-###  `parameters` Decorator
-
-This decorator has two flavors.
-
-With positional string arguments, it expects these parameter names and
-generates a *400* if any is missing from the request, and passes them
-to function named parameters.
+The decorator also accepts positional string arguments. It expects these
+parameter names and generates a *400* if any is missing from the request,
+and passes them to function named parameters.
 The decorator looks for HTTP or JSON parameters.
 
 ```Python
@@ -410,10 +405,11 @@ def put_thing_tid(tid, name):
     …
 ```
 
-With named parameters associated to a type, it expects these parameter names
-and generate a *400* if any is missing from the request, it converts the
-parameter string value to the expected type, resulting in a *400* again if the type
-conversion fails, and it passes these to the function as named parameters.
+The decorator also accepts named parameters associated to a type. It expects
+these parameter names and generate a *400* if any is missing from the request,
+it converts the parameter string value to the expected type, resulting in a
+*400* again if the type conversion fails, and it passes these to the function
+as named parameters.
 
 ```Python
 @app.route("/add", methods=["GET"])
@@ -428,8 +424,9 @@ all mean decimal *17*.
 For `bool`, *False* is an empty string, `0`, `False`, otherwise
 the value is *True*.
 
-The `parameters` decorator is declared place *after* the `authorize` decorator,
-so that parameter checks are only attempted if the user actually has permissions.
+A side-effect of the `parameters` decorator passing of request parameters as
+named function parameters is that request parameter names must be valid python
+identifiers, which excludes keywords such as `pass`, `def` or `for`.
 
 ## Versions
 
@@ -438,11 +435,13 @@ and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 
 ### 1.8.0dev
 
-Make `autoparams` guess optional parameters based on default values.
-Fix issues with boolean type parameters.
+Merge `autoparams` and `parameters` decorators into a single `parameters`
+decorator.
+Make it guess optional parameters based on default values.
+Fix conversion issues with boolean type parameters.
 Enhance integer type to accept other base syntaxes.
-Improve documentation to advertise this simple and elegant approach.
-Implement decorators with functions instead of classes.
+Improve documentation to advertise the simple and elegant approach.
+Implement decorator with functions instead of a class.
 
 ### 1.7.0
 

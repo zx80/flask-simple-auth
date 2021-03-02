@@ -13,7 +13,7 @@ app = Flask("Test")
 app.config.update(
     FSA_TYPE = 'fake',
     FSA_ALWAYS = True,
-    FSA_SKIP_PATH = (r"/register", r"/all", r"/(add|div|mul|sub|type)")
+    FSA_SKIP_PATH = (r"/register", r"/all", r"/(add|div|mul|sub|type|params)")
 )
 
 #
@@ -86,7 +86,6 @@ def patch_user_str(user, oldpass, newpass):
 @fsa.authorize(ADMIN, WRITE, READ)
 def delete_user_str(user):
     login = fsa.get_user()
-    log.warning(f"login={login} user={user} admin={is_in_group(login, ADMIN)}")
     if not (login == user or is_in_group(login, ADMIN)):
         return "self care or admin only", 403
     del UP[user]
@@ -114,13 +113,13 @@ def get_add(i, a, b):
 
 # another one: j and k and mandatory
 @app.route("/mul/<int:i>", methods=["GET"])
-@fsa.autoparams(True)
+@fsa.parameters(required=True)
 def get_mul(i: int, j: int, k: int):
     return str(i * j * k), 200
 
 # another one: i and j are optional
 @app.route("/div", methods=["GET"])
-@fsa.autoparams(False)
+@fsa.parameters(required=False)
 def get_div(i: int, j: int):
     if i is None or j is None:
         return "0", 200
@@ -129,13 +128,13 @@ def get_div(i: int, j: int):
 
 # another one: i is mandatory, j is optional
 @app.route("/sub", methods=["GET"])
-@fsa.autoparams()
+@fsa.parameters()
 def get_sub(i: int, j: int = 0):
     return str(i - j), 200
 
 # type tests
 @app.route("/type", methods=["GET"])
-@fsa.autoparams()
+@fsa.parameters()
 def get_type(f: float = None, i: int = None, b: bool = None, s: str = None):
     if f is not None:
         return f"float {f}", 200
@@ -147,3 +146,9 @@ def get_type(f: float = None, i: int = None, b: bool = None, s: str = None):
         return f"str {s}", 200
     else:
         return "", 200
+
+# accept any parameters…
+@app.route("/params", methods=["GET"])
+@fsa.parameters(allparams=True)
+def get_params(**kwargs):
+    return ' '.join(sorted(kwargs)), 200

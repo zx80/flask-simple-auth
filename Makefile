@@ -6,7 +6,7 @@ check: venv
 	type python3
 	mypy FlaskSimpleAuth
 	flake8 FlaskSimpleAuth
-	pytest tests
+	pytest --capture=tee-sys tests
 
 .PHONY: clean
 clean:

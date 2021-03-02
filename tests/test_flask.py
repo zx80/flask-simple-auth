@@ -266,3 +266,7 @@ def test_types(client):
    assert res.data == b"bool True"
    res = check_200(client.get("/type", data={"s": "Hello World!"}))
    assert res.data == b"str Hello World!"
+
+def test_params(client):
+   res = check_200(client.get("/params", data={"a":1, "b":2, "c":3}))
+   assert res.data == b"a b c"

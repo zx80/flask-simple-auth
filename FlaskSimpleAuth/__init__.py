@@ -14,6 +14,7 @@ from passlib.context import CryptContext  # type: ignore
 
 import logging
 log = logging.getLogger('auth')
+log.setLevel(logging.INFO)
 
 
 # carry data for error Response
@@ -399,63 +400,50 @@ CASTS = {bool: bool_cast, int: int_cast, inspect._empty: str}
 
 
 #
-# parameters decorator
-#
-def parameters(*pargs, **types):
-
-    # substitute by cast functions if needed
-    for p, t in types.items():
-        if t in CASTS:
-            types[p] = CASTS[t]
-
-    def decorate(fun):
-
-        @functools.wraps(fun)
-        def wrapper(*args, **kwargs):
-
-            # translate request parameters to named function parameters
-            params = request.values if request.json is None else request.json
-            for p in pargs:
-                if p not in params:
-                    return f"missing mandatory parameter: {p}", 400
-                kwargs[p] = params[p]
-            for p in types:
-                if p not in params:
-                    return f"missing mandatory parameter: {p}", 400
-                try:
-                    kwargs[p] = types[p](params[p])
-                except Exception as e:
-                    log.debug(f"type error on {p}: {e}")
-                    return f"type error on parameter {p} ({e})", 400  # 422?
-
-            # ok to proceed
-            return fun(*args, **kwargs)
-
-        return wrapper
-
-    return decorate
-
-
-#
 # autoparams decorator
 #
 # required:
-# - None: parameters are required unless there is a default value
-# - True: all parameters are required
-# - False: all parameters are optional, default is None unless provided
+# - None: function parameters are required unless there is a default value
+# - True: all function parameters are required
+# - False: all function parameters are optional,
+#   with default value None unless explicitely provided
 #
-def autoparams(required=None):
+# allparams:
+# - whether all request parameters are automatically translated to function
+#   parameters with a str value.
+#
+# others:
+# - args: list of expected parameters, implicit type is str
+# - kwargs: list of expected parameters, explicit type as a value
+#
+def parameters(*args, required=None, allparams=False, **kwargs):
 
     def decorate(fun):
 
-        sig = inspect.signature(fun)
-
-        # get parameter types/casts and defaults
         types: Dict[str, Callable] = {}
         defaults: Dict[str, Any] = {}
 
+        # parameters types from **kwargs
+        for n, t in kwargs.items():
+            if n not in types:
+                types[n] = CASTS.get(t, t)
+            else:
+                log.warning(f"ignoring *kwargs decorator parameter {n}")
+
+        # parameters from *args
+        for n in args:
+            if n not in types:
+                types[n] = str
+            else:
+                log.warning(f"ignoring *args decorator parameter {n}")
+
+        # parameters types/casts and defaults from signature
+        sig = inspect.signature(fun)
+
         for n, p in sig.parameters.items():
-            types[n] = CASTS.get(p.annotation, p.annotation)
+            if n not in types and \
+               p.kind not in (p.VAR_KEYWORD, p.VAR_POSITIONAL):
+                types[n] = CASTS.get(p.annotation, p.annotation)
             if p.default != inspect._empty:
                 defaults[n] = p.default
 
@@ -482,6 +470,12 @@ def autoparams(required=None):
                             return f"missing parameter {p}", 400
                         else:
                             kwargs[p] = defaults.get(p, None)
+
+            # possibly add others, without shadowing already provided ones
+            if allparams:
+                for p in params:
+                    if p not in kwargs:
+                        kwargs[p] = params[p]
 
             # then call the initial function
             return fun(*args, **kwargs)
