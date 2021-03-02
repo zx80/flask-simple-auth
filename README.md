@@ -99,9 +99,11 @@ This simple module allows configurable authentication (`FSA_TYPE`):
 
 - `password` tries `basic` then `param`.
 
-- `token` auth uses a signed parameter to authenticate a
+- `token` auth uses a signed token to authenticate a
   user in a realm for some limited time. The token can be
   obtained by actually authenticating with other methods.
+  It can be provided as a *bearer* authorization header or
+  a parameter.
 
 - `fake` parameter-based auth for fast and simple testing
   the claimed login is coldly trusted…
@@ -274,14 +276,16 @@ The following configuration directives are available:
 
  - `FSA_TOKEN_REALM` realm of token.
    Default is the simplified lower case application name.
- - `FKA_TOKEN_NAME` name of parameter holding the auth token.
-   Default is `auth`.
+ - `FKA_TOKEN_NAME` name of parameter holding the auth token, or
+   *None* to use a *bearer* authorization header.
+   Default is *None*.
  - `FSA_TOKEN_SECRET` secret string used for signing tokens.
    Default is a system-generated random string containing 256 bits.
    This default with only work with itself, as it is not shared
-   across server instances or processes. Set to `None` to disable tokens.
+   across server instances or processes.
+   Set to *None* to disable tokens.
  - `FSA_TOKEN_DELAY` number of minutes of token validity.
-   Default is *60* minutes. 
+   Default is *60* minutes.
  - `FSA_TOKEN_GRACE` number of minutes of grace time for token validity.
    Default is *0* minutes.
  - `FSA_TOKEN_HASH` hash algorithm used to sign the token.
@@ -314,7 +318,7 @@ The following configuration directive is available:
 ### Password Authentication (`param` or `basic`)
 
 For checking passwords the password (salted hash) must be retrieved through
-`get_user_password(user)`. 
+`get_user_password(user)`.
 This function must be provided by the application when the module is initialized.
 
 The following configuration directives are available to configure
@@ -433,6 +437,10 @@ identifiers, which excludes keywords such as `pass`, `def` or `for`.
 Sources are available on [GitHub](https://github.com/zx80/flask-simple-auth)
 and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 
+### dev
+
+Implement *bearer* authorization for tokens and make it the default.
+
 ### 1.8.1
 
 Fix typo in distribution configuration file.
@@ -508,7 +516,6 @@ Initial release in beta.
 Features
  - better control which schemes are attempted?
  - add support for JWT?
- - Allow `Authorization: Bearer token...` syntax
 
 Implementation
  - should it be an object instead of a flat module?

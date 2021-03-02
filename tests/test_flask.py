@@ -56,9 +56,9 @@ def client():
 
 # test all auth variants on GET
 def all_auth(client, user, pswd, check, *args, **kwargs):
-    saved = fsa.AUTH
+    asave, nsave = fsa.AUTH, fsa.NAME
     # fake login
-    fsa.AUTH = 'fake'
+    fsa.AUTH, fsa.NAME = 'fake', 'auth'
     token_fake = json.loads(client.get("login", data={"LOGIN": user}).data)
     check(client.get(*args, **kwargs, data={"LOGIN": user}))
     check(client.get(*args, **kwargs, data={"auth": token_fake}))
@@ -73,7 +73,7 @@ def all_auth(client, user, pswd, check, *args, **kwargs):
     check(client.get(*args, **kwargs, data={"auth": token_param}))
     # user-pass basic
     from requests.auth import _basic_auth_str as basic_auth
-    BASIC = { "Authorization": basic_auth(user, pswd)}
+    BASIC = {"Authorization": basic_auth(user, pswd)}
     fsa.AUTH = 'basic'
     token_basic = json.loads(client.get("login", headers=BASIC).data)
     check(client.get(*args, **kwargs, headers=BASIC))
@@ -86,7 +86,12 @@ def all_auth(client, user, pswd, check, *args, **kwargs):
     check(client.get(*args, **kwargs, data={"auth": token_fake}))
     check(client.get(*args, **kwargs, data={"auth": token_param}))
     check(client.get(*args, **kwargs, data={"auth": token_basic}))
-    fsa.AUTH = saved
+    fsa.NAME = None
+    bearer = lambda t: {"Authorization": "Bearer " + t}
+    check(client.get(*args, **kwargs, headers=bearer(token_fake)))
+    check(client.get(*args, **kwargs, headers=bearer(token_param)))
+    check(client.get(*args, **kwargs, headers=bearer(token_basic)))
+    fsa.AUTH, fsa.NAME = asave, nsave
 
 def test_perms(client):
     check_200(client.get("/all"))  # open route

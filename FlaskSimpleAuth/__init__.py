@@ -9,7 +9,7 @@ import functools
 import inspect
 import datetime as dt
 
-from flask import Flask, request, Response
+from flask import Flask, Response, request
 from passlib.context import CryptContext  # type: ignore
 
 import logging
@@ -109,7 +109,7 @@ def setConfig(app: Flask,
     import re
     skip_path = [re.compile(r).match for r in CONF.get("FSA_SKIP_PATH", [])]
     # token setup
-    NAME = CONF.get("FSA_TOKEN_NAME", "auth")
+    NAME = CONF.get("FSA_TOKEN_NAME", None)
     realm = CONF.get("FSA_TOKEN_REALM", app.name).lower()
     # tr -cd "[a-z0-9_]" "": is there a better way to do that?
     keep_char = re.compile(r"[-a-z0-9_]").match
@@ -321,9 +321,14 @@ def get_user():
         # always check for token
         if SECRET is not None and SECRET != "":
             params = request.values if request.json is None else request.json
-            token = params.get(NAME, None)
-            if token is not None:
-                USER = get_token_auth(token)
+            if NAME is None:
+                auth = request.headers.get("Authorization", None)
+                if auth is not None and auth[:7] == "Bearer ":
+                    USER = get_token_auth(auth[7:])
+            else:
+                token = params.get(NAME, None)
+                if token is not None:
+                    USER = get_token_auth(token)
 
         # else try other schemes
         if USER is None:
