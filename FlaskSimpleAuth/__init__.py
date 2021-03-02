@@ -160,7 +160,6 @@ def get_fake_auth():
     # it could check that the user exists in db
     if user is None:
         raise AuthException("missing login parameter", 401)
-    log.info(f"LOGIN (param): {user}")
     return user
 
 
@@ -210,7 +209,6 @@ def get_basic_auth():
     if not request.is_secure:
         log.warning("password authentication over an insecure request")
     check_db_password(user, pwd)
-    log.info(f"LOGIN (basic): {user}")
     return user
 
 
@@ -233,7 +231,6 @@ def get_param_auth():
     if not request.is_secure:
         log.warning("password authentication over an insecure request")
     check_db_password(user, pwd)
-    log.info(f"LOGIN (param): {user}")
     return user
 
 
@@ -286,20 +283,19 @@ def get_token_auth(token):
     realm, user, limit, sig = token.split(':', 3)
     # check realm
     if realm != REALM:
-        log.info(f"LOGIN (token): unexpected realm {realm}")
+        log.debug(f"LOGIN (token): unexpected realm {realm}")
         raise AuthException(f"unexpected realm: {realm}", 401)
     # check signature
     ref = compute_signature(f"{realm}:{user}:{limit}", SECRET)
     if ref != sig:
-        log.info("LOGIN (token): invalid signature")
+        log.debug("LOGIN (token): invalid signature")
         raise AuthException("invalid auth token signature", 401)
     # check limit with a grace time
     now = get_timestamp(dt.datetime.utcnow() - dt.timedelta(minutes=GRACE))
     if now > limit:
-        log.info("LOGIN (token): token {token} has expired")
+        log.debug("LOGIN (token): token {token} has expired")
         raise AuthException("expired auth token", 401)
     # all is well
-    log.info(f"LOGIN (token): {user}")
     return user
 
 
@@ -318,7 +314,6 @@ def get_user():
 
     if AUTH == "httpd":
 
-        log.info(f"LOGIN (httpd): {request.remote_user}")
         USER = request.remote_user
 
     elif AUTH in ("fake", "param", "basic", "token", "password"):
@@ -351,6 +346,7 @@ def get_user():
         raise AuthException(f"unexpected authentication type: {AUTH}", 500)
 
     assert USER is not None  # else an exception would have been raised
+    log.info(f"get_user({AUTH}): {USER}")
     return USER
 
 
