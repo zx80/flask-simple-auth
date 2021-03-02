@@ -394,18 +394,19 @@ def int_cast(s: str) -> Optional[int]:
     return None if s is None else int(s, base=0)
 
 
-CASTS = {bool: bool_cast, int: int_cast}
+# note: mypy complains wrongly about non-existing _empty.
+CASTS = {bool: bool_cast, int: int_cast, inspect._empty: str}
 
 
 #
 # parameters decorator
 #
-def parameters(*pargs, **typed):
+def parameters(*pargs, **types):
 
     # substitute by cast functions if needed
-    for p, t in typed.items():
+    for p, t in types.items():
         if t in CASTS:
-            typed[p] = CASTS[t]
+            types[p] = CASTS[t]
 
     def decorate(fun):
 
@@ -418,11 +419,11 @@ def parameters(*pargs, **typed):
                 if p not in params:
                     return f"missing mandatory parameter: {p}", 400
                 kwargs[p] = params[p]
-            for p in typed:
+            for p in types:
                 if p not in params:
                     return f"missing mandatory parameter: {p}", 400
                 try:
-                    kwargs[p] = typed[p](params[p])
+                    kwargs[p] = types[p](params[p])
                 except Exception as e:
                     log.debug(f"type error on {p}: {e}")
                     return f"type error on parameter {p} ({e})", 400  # 422?
@@ -452,6 +453,7 @@ def autoparams(required=None):
         # get parameter types/casts and defaults
         types: Dict[str, Callable] = {}
         defaults: Dict[str, Any] = {}
+
         for n, p in sig.parameters.items():
             types[n] = CASTS.get(p.annotation, p.annotation)
             if p.default != inspect._empty:
