@@ -14,7 +14,6 @@ from passlib.context import CryptContext  # type: ignore
 
 import logging
 log = logging.getLogger('auth')
-log.setLevel(logging.INFO)
 
 
 # carry data for error Response
