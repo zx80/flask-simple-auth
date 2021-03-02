@@ -508,6 +508,7 @@ Initial release in beta.
 Features
  - better control which schemes are attempted?
  - add support for JWT?
+ - Allow `Authorization: Bearer token...` syntax
 
 Implementation
  - should it be an object instead of a flat module?
