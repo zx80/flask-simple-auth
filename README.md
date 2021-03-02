@@ -442,6 +442,7 @@ Make `autoparams` guess optional parameters based on default values.
 Fix issues with boolean type parameters.
 Enhance integer type to accept other base syntaxes.
 Improve documentation to advertise this simple and elegant approach.
+Implement decorators with functions instead of classes.
 
 ### 1.7.0
 

@@ -404,52 +404,52 @@ CASTS = {bool: bool_cast, int: int_cast}
 #
 # parameters decorator
 #
-class parameters:
+def parameters(*pargs, **typed):
 
-    def __init__(self, *args, **kwargs):
-        self.params = args
-        self.typed = kwargs
+    # substitute by cast functions if needed
+    for p, t in typed.items():
+        if t in CASTS:
+            typed[p] = CASTS[t]
 
-        # substitute by cast functions if needed
-        for p, t in self.typed.items():
-            if t in CASTS:
-                self.typed[p] = CASTS[t]
-
-    def __call__(self, fun):
+    def decorate(fun):
 
         @functools.wraps(fun)
         def wrapper(*args, **kwargs):
+
+            # translate request parameters to named function parameters
             params = request.values if request.json is None else request.json
-            for p in self.params:
+            for p in pargs:
                 if p not in params:
                     return f"missing mandatory parameter: {p}", 400
                 kwargs[p] = params[p]
-            for p in self.typed:
+            for p in typed:
                 if p not in params:
                     return f"missing mandatory parameter: {p}", 400
                 try:
-                    kwargs[p] = self.typed[p](params[p])
+                    kwargs[p] = typed[p](params[p])
                 except Exception as e:
                     log.debug(f"type error on {p}: {e}")
                     return f"type error on parameter {p} ({e})", 400  # 422?
+
             # ok to proceed
             return fun(*args, **kwargs)
 
         return wrapper
 
+    return decorate
+
 
 #
 # autoparams decorator
 #
-class autoparams:
+# required:
+# - None: parameters are required unless there is a default value
+# - True: all parameters are required
+# - False: all parameters are optional, default is None unless provided
+#
+def autoparams(required=None):
 
-    def __init__(self, required=None):
-        # None: parameters are required unless there is a default value
-        # True: all parameters are required
-        # False: all parameters are optional, default is None unless provided
-        self.required = required
-
-    def __call__(self, fun):
+    def decorate(fun):
 
         sig = inspect.signature(fun)
 
@@ -463,6 +463,8 @@ class autoparams:
 
         @functools.wraps(fun)
         def wrapper(*args, **kwargs):
+
+            # translate request parameters to named function parameters
             params = request.values if request.json is None else request.json
             for p, typing in types.items():
                 # guess which function parameters are request parameters
@@ -473,15 +475,19 @@ class autoparams:
                         except Exception as e:
                             return f"type error on parameter {p} ({e})", 400
                     else:
-                        if self.required is None:
+                        if required is None:
                             if p in defaults:
                                 kwargs[p] = defaults[p]
                             else:
                                 return f"missing parameter {p}", 400
-                        elif self.required:
+                        elif required:
                             return f"missing parameter {p}", 400
                         else:
                             kwargs[p] = defaults.get(p, None)
+
+            # then call the initial function
             return fun(*args, **kwargs)
 
         return wrapper
+
+    return decorate
