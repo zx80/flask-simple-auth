@@ -17,7 +17,7 @@ forced for all/most paths.
 
 The module implements inheriting the web-server authentication,
 password authentication (HTTP Basic, or HTTP/JSON parameters),
-simple time-limited authentication tokens, and
+authentication tokens (custom or jwt), and
 a fake authentication scheme useful for application testing.
 
 It allows to have a login route to generate authentication tokens.
