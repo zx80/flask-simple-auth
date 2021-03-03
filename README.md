@@ -404,8 +404,8 @@ If absent and under `FSA_CHECK`, a *500* internal error would be returned.
 ```Python
 @app.route("/some/path", methods=["GET"])
 @fsa.openroute
-@fsa.parameters():
-def get_some_path(param: str)
+@fsa.parameters()
+def get_some_path(param: str):
     return param, 200
 ```
 
