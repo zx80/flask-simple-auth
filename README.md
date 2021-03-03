@@ -203,6 +203,7 @@ could look like that:
 ```Python
 # with FSA_SKIP_PATH = (r"/register", …)
 @app.route("/register", methods=["POST"])
+@fsa.openroute
 @fsa.parameters()
 def post_register(user: str, password: str):
     if user_already_exists_somewhere(user):
@@ -215,8 +216,9 @@ For `token` authentication, a token can be created on a path authenticated
 by one of the other methods. The code for that would be as simple as:
 
 ```Python
-# token creation route
+# token creation route for any registered user
 @app.route("/login", methods=["GET"])
+@fsa.openroute
 def get_login():
     return jsonify(fsa.create_token(get_user())), 200
 ```
