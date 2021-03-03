@@ -267,15 +267,24 @@ A token certifies that a *user* is authenticated in a *realm* up to some
 time *limit*.
 The token is authenticated by a signature which is the hash of the payload
 (*realm*, *user* and *limit*) and a secret hold by the server.
-The token syntax is: `<realm>:<user>:<limit>:<signature>`,
+
+There are two token types chosen with the `FSA_TOKEN_TYPE` configuration
+directive: `fsa` is a compact custom format, and `jwt`
+[RFC 7519](https://tools.ietf.org/html/rfc7519) standard based
+on [pyjwt](https://pypi.org/project/PyJWT/) implementation.
+
+The `fsa` token syntax is: `<realm>:<user>:<limit>:<signature>`,
 for instance: `kiva:calvin:20210221160258:4ee89cd4cc7afe0a86b26bdce6d11126`.
 The time limit is an easily parsable UTC timestamp *YYYYMMDDHHmmSS* so that
 it can be checked easily by the application client.
 
 The following configuration directives are available:
 
+ - `FSA_TOKEN_TYPE` type of token, either *fsa* or *jwt*.
+   Default is *fsa*.
  - `FSA_TOKEN_REALM` realm of token.
    Default is the simplified lower case application name.
+   For *jwt*, this is translated as the audience.
  - `FKA_TOKEN_NAME` name of parameter holding the auth token, or
    *None* to use a *bearer* authorization header.
    Default is *None*.
@@ -289,11 +298,13 @@ The following configuration directives are available:
  - `FSA_TOKEN_GRACE` number of minutes of grace time for token validity.
    Default is *0* minutes.
  - `FSA_TOKEN_HASH` hash algorithm used to sign the token.
-   Default is `blake2s`.
+   Default is `blake2s` for `fsa` and `HS256` for *jwt*.
+   Currently only hash-based variants are supported for *jwt*
  - `FSA_TOKEN_LENGTH` number of hash bytes kept for token signature.
-   Default is *16*.
+   Default is *16* for `fsa`. The directive is ignored for `jwt`.
 
-Function `create_token(user)` creates a token for the user.
+Function `create_token(user)` creates a token for the user depending
+on the current scheme.
 
 Note that token authentication is always attempted unless the secret is empty.
 Setting `FSA_TYPE` to `token` results in *only* token authentication to be used.
@@ -440,6 +451,7 @@ and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 ### dev
 
 Implement *bearer* authorization for tokens and make it the default.
+Implement *JWT* tokens.
 
 ### 1.8.1
 
@@ -515,7 +527,6 @@ Initial release in beta.
 
 Features
  - better control which schemes are attempted?
- - add support for JWT?
 
 Implementation
  - should it be an object instead of a flat module?

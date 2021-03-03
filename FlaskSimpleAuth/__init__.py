@@ -13,7 +13,7 @@ from flask import Flask, Response, request
 from passlib.context import CryptContext  # type: ignore
 
 import logging
-log = logging.getLogger('auth')
+log = logging.getLogger("auth")
 
 
 # carry data for error Response
@@ -32,24 +32,25 @@ APP: Optional[Flask] = None
 CONF: Optional[Dict[str, Any]] = None
 
 # auth type
-AUTH: Optional[str] = None
-LAZY: Optional[bool] = None
-ALWAYS: Optional[bool] = False
-skip_path: Optional[List[Callable]] = None
+AUTH: str = "httpd"
+LAZY: bool = True
+ALWAYS: bool = True
+skip_path: List[Callable] = []
 
 # auth token
+TYPE: str = 'fsa'
 NAME: Optional[str] = None
 REALM: Optional[str] = None
 SECRET: Optional[str] = None
-DELAY: Optional[int] = None
-GRACE: Optional[int] = None
+DELAY: int = 60
+GRACE: int = 0
 HASH: Optional[str] = None
 SIGLEN: Optional[int] = None
 
 # parameter names
-LOGIN: Optional[str] = None
-USERP: Optional[str] = None
-PASSP: Optional[str] = None
+LOGIN: str = "LOGIN"
+USERP: str = "USER"
+PASSP: str = "PASS"
 
 # password management
 PM: Optional[CryptContext] = None
@@ -93,11 +94,10 @@ def auth_after_cleanup(res: Response):
 def setConfig(app: Flask,
               gup: GetUserPasswordType = None,
               uig: UserInGroupType = None):
-    global APP, CONF, AUTH, LAZY, ALWAYS, skip_path
-    global NAME, REALM, SECRET, DELAY, GRACE, HASH, SIGLEN
-    global LOGIN, USERP, PASSP, PM
-    global get_user_password, user_in_group
+    #
     # overall setup
+    #
+    global APP, CONF, AUTH, LAZY, ALWAYS, skip_path
     APP = app
     CONF = app.config
     # auth setup
@@ -108,7 +108,11 @@ def setConfig(app: Flask,
     app.after_request(auth_after_cleanup)
     import re
     skip_path = [re.compile(r).match for r in CONF.get("FSA_SKIP_PATH", [])]
+    #
     # token setup
+    #
+    global TYPE, NAME, REALM, SECRET, DELAY, GRACE, HASH, SIGLEN
+    TYPE = CONF.get("FSA_TOKEN_TYPE", "fsa")
     NAME = CONF.get("FSA_TOKEN_NAME", None)
     realm = CONF.get("FSA_TOKEN_REALM", app.name).lower()
     # tr -cd "[a-z0-9_]" "": is there a better way to do that?
@@ -127,20 +131,35 @@ def setConfig(app: Flask,
         SECRET = ''.join(random.SystemRandom().choices(chars, k=40))
     DELAY = CONF.get("FSA_TOKEN_DELAY", 60)
     GRACE = CONF.get("FSA_TOKEN_GRACE", 0)
-    HASH = CONF.get("FSA_TOKEN_HASH", "blake2s")
-    SIGLEN = CONF.get("FSA_TOKEN_LENGTH", 16)
+    if TYPE == "fsa":
+        HASH = CONF.get("FSA_TOKEN_HASH", "blake2s")
+        SIGLEN = CONF.get("FSA_TOKEN_LENGTH", 16)
+    elif TYPE == "jwt":
+        HASH = "HS256"
+        SIGLEN = None
+    else:
+        raise Exception(f"invalid FSA_TOKEN_TYPE ({TYPE})")
+    #
     # parameters
+    #
+    global LOGIN, USERP, PASSP
     LOGIN = CONF.get("FSA_FAKE_LOGIN", "LOGIN")
     USERP = CONF.get("FSA_PARAM_USER", "USER")
     PASSP = CONF.get("FSA_PARAM_PASS", "PASS")
+    #
     # password setup
+    #
+    global PM
     # passlib context is a pain, you have to know the scheme name to set its
     # round which make it impossible to configure directly.
     scheme = CONF.get("FSA_PASSWORD_SCHEME", "bcrypt")
     options = CONF.get("FSA_PASSWORD_OPTIONS", {'bcrypt__default_rounds': 4})
     PM = CryptContext(schemes=[scheme], **options)
+    #
+    # hooks
+    #
+    global get_user_password, user_in_group
     get_user_password = gup
-    # autorization helper
     user_in_group = uig
 
 
@@ -242,9 +261,14 @@ def get_param_auth():
 #
 # Its form is: <realm>:<user>:<validity-limit>:<signature>
 #
-# FSA_TOKEN_NAME: name of parameter holding the token ("auth")
-# FSA_TOKEN_HASH: hashlib algorithm for token authentication ("blake2s")
-# FSA_TOKEN_LENGTH: number of signature bytes (32)
+# FSA_TOKEN_TYPE: 'jwt' or 'fsa'
+# FSA_TOKEN_NAME: name of parameter holding the token, or None for bearer auth
+# FSA_TOKEN_HASH:
+# - for 'fsa': hashlib algorithm for token authentication ("blake2s")
+# - for 'jwt': signature algorithm ("HS256")
+# FSA_TOKEN_LENGTH:
+# - for 'fsa': number of signature bytes (16)
+# - for 'jwt': unused
 # FSA_TOKEN_DELAY: token validity in minutes (60)
 # FSA_TOKEN_GRACE: grace delay for token validity in minutes (0)
 # FSA_TOKEN_SECRET: signature secret for tokens (mandatory!)
@@ -265,21 +289,31 @@ def get_timestamp(ts):
 
 
 # compute a token for "user" valid for "delay" minutes, signed with "secret"
-def compute_token(realm, user, delay, secret):
+def get_fsa_token(realm, user, delay, secret):
     limit = get_timestamp(dt.datetime.utcnow() + dt.timedelta(minutes=delay))
     data = f"{realm}:{user}:{limit}"
     sig = compute_signature(data, secret)
     return f"{data}:{sig}"
 
 
+# jwt generation
+# exp = expiration, sub = subject, iss = issuer, aud = audience
+def get_jwt_token(realm, user, delay, secret):
+    exp = dt.datetime.utcnow() + dt.timedelta(minutes=delay)
+    import jwt
+    return jwt.encode({"exp": exp, "sub": user, "aud": realm},
+                      secret, algorithm=HASH)
+
+
 # create a new token for user depending on the configuration
 def create_token(user):
-    return compute_token(REALM, user, DELAY, SECRET)
+    return get_fsa_token(REALM, user, DELAY, SECRET) if TYPE == "fsa" else \
+           get_jwt_token(REALM, user, DELAY, SECRET)
 
 
 # tell whether token is ok: return validated user or None
 # token form: "realm:calvin:20380119031407:<signature>"
-def get_token_auth(token):
+def get_fsa_token_auth(token):
     realm, user, limit, sig = token.split(':', 3)
     # check realm
     if realm != REALM:
@@ -289,14 +323,33 @@ def get_token_auth(token):
     ref = compute_signature(f"{realm}:{user}:{limit}", SECRET)
     if ref != sig:
         log.debug("LOGIN (token): invalid signature")
-        raise AuthException("invalid auth token signature", 401)
+        raise AuthException("invalid jsa auth token signature", 401)
     # check limit with a grace time
     now = get_timestamp(dt.datetime.utcnow() - dt.timedelta(minutes=GRACE))
     if now > limit:
         log.debug("LOGIN (token): token {token} has expired")
-        raise AuthException("expired auth token", 401)
+        raise AuthException("expired jsa auth token", 401)
     # all is well
     return user
+
+
+def get_jwt_token_auth(token):
+    import jwt
+    try:
+        data = jwt.decode(token, SECRET, leeway=GRACE * 60,
+                          audience=REALM, algorithms=[HASH])
+        return data['sub']
+    except jwt.ExpiredSignatureError:
+        log.debug(f"LOGIN (token): token {token} has expired")
+        raise AuthException("expired jwt auth token", 401)
+    except Exception as e:
+        log.debug(f"LOGIN (token): invalide token ({e})")
+        raise AuthException("invalid jwt token", 401)
+
+
+def get_token_auth(token):
+    return get_fsa_token_auth(token) if TYPE == "fsa" else \
+           get_jwt_token_auth(token)
 
 
 # return authenticated user or throw exception

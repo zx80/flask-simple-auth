@@ -157,10 +157,12 @@ def test_register(client):
     assert "susie" not in app.UP and "susie" not in app.UHP
     fsa.AUTH = sauth
 
-def test_token():
+def test_fsa_token():
+    tsave, hsave, fsa.TYPE, fsa.HASH = fsa.TYPE, fsa.HASH, "fsa", "blake2s"
     calvin_token = fsa.create_token("calvin")
     assert calvin_token[:12] == "test:calvin:"
     assert fsa.get_token_auth(calvin_token) == "calvin"
+    fsa.TYPE, fsa.HASH = tsave, hsave
 
 def test_expired_token():
     hobbes_token = fsa.create_token("hobbes")
@@ -171,6 +173,14 @@ def test_expired_token():
     except fsa.AuthException as e:
         assert e.status == 401
     fsa.GRACE = grace
+
+def test_jwt_token():
+    tsave, hsave, fsa.TYPE, fsa.HASH = fsa.TYPE, fsa.HASH, "jwt", "HS256"
+    moe_token = fsa.create_token("moe")
+    assert "." in moe_token and len(moe_token.split(".")) == 3
+    user = fsa.get_token_auth(moe_token)
+    assert user == "moe"
+    fsa.TYPE, fsa.HASH = tsave, hsave
 
 def test_invalid_token():
     susie_token = fsa.create_token("susie")
