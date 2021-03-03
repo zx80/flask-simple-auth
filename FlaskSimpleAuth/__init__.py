@@ -1,5 +1,5 @@
 #
-# Debatable flask-side auth management
+# Debatable flask-side auth managemen, and more.
 #
 # This code is public domain.
 #
@@ -69,7 +69,7 @@ user_in_group: UserInGroupType = None
 # current authenticated user
 USER: Optional[str] = None
 
-# whether authorization are needed
+# whether authorization are (still) needed
 need_authorization: bool = True
 
 
@@ -291,7 +291,7 @@ def get_param_auth():
 # FSA_TOKEN_LENGTH:
 # - for 'fsa': number of signature bytes (16)
 # - for 'jwt': unused
-# FSA_TOKEN_SECRET: signature secret for tokens (mandatory!)
+# FSA_TOKEN_SECRET: signature secret for verifying tokens (mandatory!)
 # FSA_TOKEN_SIGN: secret for signing new tokens for jwt pubkey algorithms
 # FSA_TOKEN_DELAY: token validity in minutes (60)
 # FSA_TOKEN_GRACE: grace delay for token validity in minutes (0)
