@@ -5,36 +5,6 @@ for [Flask](https://flask.palletsprojects.com/), controled from
 Flask configuration and decorators.
 
 
-## Description
-
-Help to manage authentication, authorizations and parameters in
-a Flask REST application.
-
-**Authentication** is available through the `get_user` function.
-It is performed on demand when the function is called, automatically when
-checking for permissions in a per-role authorization model, or possibly
-forced for all/most paths.
-
-The module implements inheriting the web-server authentication,
-password authentication (HTTP Basic, or HTTP/JSON parameters),
-authentication tokens (custom or jwt), and
-a fake authentication scheme useful for application testing.
-
-It allows to have a login route to generate authentication tokens.
-For registration, support functions allow to hash new passwords consistently
-with password checks.
-
-**Authorization** can be managed with a simple decorator to declare required
-permissions on a route (eg a role name), and relies on a supplied function to
-check whether a user has this role.  This approach is enough for basic
-authorization management, but would be insufficient for realistic applications
-where users can edit their own data but not those of others.
-
-**Parameters** expected in the request can be declared, their presence and type
-checked, and they are added automatically as named parameters to route functions,
-skipping the burden of checking them in typical REST functions.
-
-
 ## Simple Example
 
 The application code below performs authentication, authorization and
@@ -77,6 +47,34 @@ FSA_TYPE = 'param'     # HTTP parameter auth
 Various aspects of the implemented schemes can be configured with other
 directives, with reasonable defaults provided so that not much is really
 needed beyond choosing the authentication scheme.
+
+
+## Description
+
+Help to manage authentication, authorizations and parameters in
+a Flask REST application.
+
+**Authentication** is available through the `get_user` function.
+It is performed on demand when the function is called, automatically when
+checking for permissions in a per-role authorization model, or possibly
+forced for all/most paths.
+The module implements inheriting the web-server authentication,
+password authentication (HTTP Basic, or HTTP/JSON parameters),
+authentication tokens (custom or jwt), and
+a fake authentication scheme useful for application testing.
+It allows to have a login route to generate authentication tokens.
+For registration, support functions allow to hash new passwords consistently
+with password checks.
+
+**Authorization** can be managed with a simple decorator to declare required
+permissions on a route (eg a role name), and relies on a supplied function to
+check whether a user has this role.  This approach is enough for basic
+authorization management, but would be insufficient for realistic applications
+where users can edit their own data but not those of others.
+
+**Parameters** expected in the request can be declared, their presence and type
+checked, and they are added automatically as named parameters to route functions,
+skipping the burden of checking them in typical REST functions.
 
 
 ## Documentation
