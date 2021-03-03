@@ -35,12 +35,14 @@ CONF: Optional[Dict[str, Any]] = None
 AUTH: str = "httpd"
 LAZY: bool = True
 ALWAYS: bool = True
+CHECK: bool = True
 skip_path: List[Callable] = []
 
 # auth token
 TYPE: str = 'fsa'
-NAME: Optional[str] = None
-REALM: Optional[str] = None
+NAME: Optional[str] = None  # None means Bearer authorization header
+REALM: str = ""
+# None to disables tokens (you should not want that, though)
 SECRET: Optional[Union[str, bytes]] = None  # shared secret or public key
 SIGN: Optional[Union[str, bytes]] = None  # shared secret or private key
 DELAY: int = 60
@@ -67,11 +69,15 @@ user_in_group: UserInGroupType = None
 # current authenticated user
 USER: Optional[str] = None
 
+# whether authorization are needed
+need_authorization: bool = True
+
 
 # set, or possibly just reset, the current authentication
 def auth_set_user():
-    global USER
+    global USER, need_authorization
     USER = None
+    need_authorization = True
     if not ALWAYS:
         return
     for skip in skip_path:
@@ -88,6 +94,11 @@ def auth_set_user():
 def auth_after_cleanup(res: Response):
     global USER
     USER = None
+    if res.status_code < 400 and need_authorization:
+        method, path = request.method, request.path
+        log.warning(f"missing authorization on {method} {path}")
+        if CHECK:
+            return Response("missing authorization check", 500)
     return res
 
 
@@ -98,13 +109,14 @@ def setConfig(app: Flask,
     #
     # overall setup
     #
-    global APP, CONF, AUTH, LAZY, ALWAYS, skip_path
+    global APP, CONF, AUTH, LAZY, ALWAYS, CHECK, skip_path
     APP = app
     CONF = app.config
     # auth setup
     AUTH = CONF.get("FSA_TYPE", "httpd")
     LAZY = CONF.get("FSA_LAZY", True)
     ALWAYS = CONF.get("FSA_ALWAYS", True)
+    CHECK = CONF.get("FSA_CHECK", True)
     app.before_request(auth_set_user)
     app.after_request(auth_after_cleanup)
     import re
@@ -432,6 +444,10 @@ class authorize:
     def __call__(self, fun):
         @functools.wraps(fun)
         def wrapper(*args, **kwargs):
+            # track that some autorization check was performed
+            global need_authorization
+            need_authorization = False
+            # get user if needed
             global USER
             if USER is None:
                 # no current user, try to get one?
@@ -444,13 +460,23 @@ class authorize:
                     return "", 401
             if USER is None:
                 return "", 401
+            # check against all authorized groups/roles
             for g in self.groups:
                 if user_in_group(USER, g):
                     return fun(*args, **kwargs)
             # else no matching group
             return "", 403
-        # work around flask unwitty reliance on the function name
         return wrapper
+
+
+# declare an opened route
+def openroute(fun):
+    @functools.wraps(fun)
+    def wrapper(*args, **kwargs):
+        global need_authorization
+        need_authorization = False
+        return fun(*args, **kwargs)
+    return wrapper
 
 
 def bool_cast(s: str) -> Optional[bool]:
@@ -517,6 +543,10 @@ def parameters(*args, required=None, allparams=False, **kwargs):
 
         @functools.wraps(fun)
         def wrapper(*args, **kwargs):
+
+            global need_authorization
+            if need_authorization and CHECK:
+                return "missing authorization check", 500
 
             # translate request parameters to named function parameters
             params = request.values if request.json is None else request.json

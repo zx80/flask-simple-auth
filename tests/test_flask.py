@@ -40,6 +40,10 @@ def check_404(res):  # not found
     assert res.status_code == 404
     return res
 
+def check_500(res):  # bad
+    assert res.status_code == 500
+    return res
+
 def test_sanity():
     assert app.app is not None and fsa is not None
     assert app.app.name == "Test"
@@ -316,3 +320,12 @@ def test_types(client):
 def test_params(client):
    res = check_200(client.get("/params", data={"a":1, "b":2, "c":3}))
    assert res.data == b"a b c"
+
+def test_missing(client):
+    saved, fsa.CHECK = fsa.CHECK, True
+    check_500(client.get("/mis1"))
+    check_500(client.get("/mis2"))
+    fsa.CHECK = False
+    check_200(client.get("/mis1"))
+    check_200(client.get("/mis2"))
+    fsa.CHECK = saved

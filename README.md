@@ -175,6 +175,10 @@ Default is empty, i.e. authentication is applied for all paths.
 authorization through a `authorize` decorator.
 Default is *True*.
 
+- `FSA_CHECK` tells whether to generate a *500* internal error if a route
+is missing an explicit authorization check.
+Default is *True*
+
 
 ### Using Authentication, Authorization and Parameter Check
 
@@ -385,6 +389,19 @@ Note that this simplistic model does is not enough for non-trivial applications,
 where permissions on objects often depend on the object owner.
 For those, careful per-operation authorization will still be needed.
 
+### `openroute` Decorator
+
+Declares explicitely that no authorizations are required on a route.
+If absent and under `FSA_CHECK`, a *500* internal error would be returned.
+
+```Python
+@app.route("/some/path", methods=["GET"])
+@fsa.openroute
+@fsa.parameters():
+def get_some_path(param: str)
+    return param, 200
+```
+
 ### `parameters` Decorator
 
 This decorators translates automatically request parameters (HTTP or JSON)
@@ -454,8 +471,9 @@ and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 
 ### dev
 
-Implement *bearer* authorization for tokens and make it the default.
-Implement *JWT* tokens, both hmac and pubkey variants.
+Add *bearer* authorization for tokens and make it the default.
+Add *JWT* tokens, both hmac and pubkey variants.
+Add *500* generation if a route is missing an authorization declaration.
 
 ### 1.8.1
 
@@ -531,16 +549,9 @@ Initial release in beta.
 
 Features
  - better control which schemes are attempted?
- - missing authorization checks? see below.
-   with strict/non strict mode?
+ - merge missing auth with parameters?
 
 Implementation
  - should it be an object instead of a flat module?
  - expand tests
  - token caching? how to deal with expiration?
-
-How not to forget autorizations?
- - set a `autorization_checked` variable to False before the request
- - reset it to True when autorization is checked
- - check whether it was done and possibly abort after the request
-
