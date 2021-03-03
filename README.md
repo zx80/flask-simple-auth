@@ -74,6 +74,9 @@ permissions on a route (eg a role name), and relies on a supplied function to
 check whether a user has this role.  This approach is enough for basic
 authorization management, but would be insufficient for realistic applications
 where users can edit their own data but not those of others.
+An additional feature is that the application aborts requests on routes
+for which there is no explicit authorization declarations, allowing to
+catch forgotten requirements.
 
 **Parameters** expected in the request can be declared, their presence and type
 checked, and they are added automatically as named parameters to route functions,
