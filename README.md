@@ -5,7 +5,7 @@ for [Flask](https://flask.palletsprojects.com/), controled from
 Flask configuration and decorators.
 
 
-## Simple Example
+## Example
 
 The application code below performs authentication, authorization and
 parameter checks triggered by decorators.
