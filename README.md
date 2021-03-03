@@ -299,7 +299,7 @@ The following configuration directives are available:
    Default is *0* minutes.
  - `FSA_TOKEN_HASH` hash algorithm used to sign the token.
    Default is `blake2s` for `fsa` and `HS256` for *jwt*.
-   Currently only hash-based variants are supported for *jwt*
+   Currently only hash-based variants are supported for *jwt*.
  - `FSA_TOKEN_LENGTH` number of hash bytes kept for token signature.
    Default is *16* for `fsa`. The directive is ignored for `jwt`.
 
