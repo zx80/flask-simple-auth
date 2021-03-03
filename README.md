@@ -12,6 +12,9 @@ parameter checks triggered by decorators.
 There is no clue in the source about what kind of authentication is used,
 which is the whole point: authentication schemes are managed elsewhere, not
 explicitely in the application code.
+Parameters are type checked and converted automatically.
+Basically, you just have to implement a Python function and most of the
+crust is managed by Flask and FlaskSimpleAuth.
 
 ```Python
 # app is the Flask application…
