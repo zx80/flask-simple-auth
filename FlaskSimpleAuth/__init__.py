@@ -41,11 +41,12 @@ skip_path: List[Callable] = []
 TYPE: str = 'fsa'
 NAME: Optional[str] = None
 REALM: Optional[str] = None
-SECRET: Optional[Union[str, bytes]] = None
+SECRET: Optional[Union[str, bytes]] = None  # shared secret or public key
+SIGN: Optional[Union[str, bytes]] = None  # shared secret or private key
 DELAY: int = 60
 GRACE: int = 0
-HASH: Optional[str] = None
-SIGLEN: Optional[int] = None
+HASH: str = ""
+SIGLEN: int = 16
 
 # parameter names
 LOGIN: str = "LOGIN"
@@ -111,7 +112,7 @@ def setConfig(app: Flask,
     #
     # token setup
     #
-    global TYPE, NAME, REALM, SECRET, DELAY, GRACE, HASH, SIGLEN
+    global TYPE, NAME, REALM, SECRET, SIGN, DELAY, GRACE, HASH, SIGLEN
     TYPE = CONF.get("FSA_TOKEN_TYPE", "fsa")
     NAME = CONF.get("FSA_TOKEN_NAME", None)
     realm = CONF.get("FSA_TOKEN_REALM", app.name).lower()
@@ -126,17 +127,26 @@ def setConfig(app: Flask,
         SECRET = CONF["FSA_TOKEN_SECRET"]
         if SECRET is not None and len(SECRET) < 16:
             log.warning("token secret is short")
-    else:
+    else:  # FIXME not ok for jwt pubkey signature algorithms
         log.warning("random token secret, only ok for one process app")
         SECRET = ''.join(random.SystemRandom().choices(chars, k=40))
     DELAY = CONF.get("FSA_TOKEN_DELAY", 60)
     GRACE = CONF.get("FSA_TOKEN_GRACE", 0)
     if TYPE == "fsa":
+        SIGN = SECRET
         HASH = CONF.get("FSA_TOKEN_HASH", "blake2s")
         SIGLEN = CONF.get("FSA_TOKEN_LENGTH", 16)
     elif TYPE == "jwt":
-        HASH = "HS256"
-        SIGLEN = None
+        HASH = CONF.get("FSA_TOKEN_HASH", "HS256")
+        if HASH[0] in ("R", "E", "P"):
+            SIGN = CONF["FSA_TOKEN_SIGN"]
+        elif HASH[0] == "H":
+            SIGN = SECRET
+        elif HASH == "none":
+            SIGN = None
+        else:
+            raise Exception("unexpected jwt FSA_TOKEN_HASH ({HASH})")
+        SIGLEN = 0
     else:
         raise Exception(f"invalid FSA_TOKEN_TYPE ({TYPE})")
     #
@@ -269,9 +279,10 @@ def get_param_auth():
 # FSA_TOKEN_LENGTH:
 # - for 'fsa': number of signature bytes (16)
 # - for 'jwt': unused
+# FSA_TOKEN_SECRET: signature secret for tokens (mandatory!)
+# FSA_TOKEN_SIGN: secret for signing new tokens for jwt pubkey algorithms
 # FSA_TOKEN_DELAY: token validity in minutes (60)
 # FSA_TOKEN_GRACE: grace delay for token validity in minutes (0)
-# FSA_TOKEN_SECRET: signature secret for tokens (mandatory!)
 # FSA_TOKEN_REALM: token realm (lc simplified app name)
 #
 
@@ -308,7 +319,7 @@ def get_jwt_token(realm, user, delay, secret):
 # create a new token for user depending on the configuration
 def create_token(user):
     return get_fsa_token(REALM, user, DELAY, SECRET) if TYPE == "fsa" else \
-           get_jwt_token(REALM, user, DELAY, SECRET)
+           get_jwt_token(REALM, user, DELAY, SIGN)
 
 
 # tell whether token is ok: return validated user or None

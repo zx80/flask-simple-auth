@@ -289,18 +289,21 @@ The following configuration directives are available:
  - `FKA_TOKEN_NAME` name of parameter holding the auth token, or
    *None* to use a *bearer* authorization header.
    Default is *None*.
- - `FSA_TOKEN_SECRET` secret string used for signing tokens.
+ - `FSA_TOKEN_SECRET` secret string used for validating tokens.
    Default is a system-generated random string containing 256 bits.
    This default with only work with itself, as it is not shared
    across server instances or processes.
    Set to *None* to disable tokens.
+ - `FSA_TOKEN_SIGN` secret string used for signing tokens, if
+   different from previous secret. This is only relevant for public-key
+   *jwt* schemes (`R…`, `E…`, `P…`).
+   Default is to use the previous secret.
  - `FSA_TOKEN_DELAY` number of minutes of token validity.
    Default is *60* minutes.
  - `FSA_TOKEN_GRACE` number of minutes of grace time for token validity.
    Default is *0* minutes.
  - `FSA_TOKEN_HASH` hash algorithm used to sign the token.
    Default is `blake2s` for `fsa` and `HS256` for *jwt*.
-   Currently only hash-based variants are supported for *jwt*.
  - `FSA_TOKEN_LENGTH` number of hash bytes kept for token signature.
    Default is *16* for `fsa`. The directive is ignored for `jwt`.
 
@@ -452,7 +455,7 @@ and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 ### dev
 
 Implement *bearer* authorization for tokens and make it the default.
-Implement *JWT* tokens.
+Implement *JWT* tokens, both hmac and pubkey variants.
 
 ### 1.8.1
 

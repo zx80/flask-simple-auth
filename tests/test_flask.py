@@ -174,13 +174,44 @@ def test_expired_token():
         assert e.status == 401
     fsa.GRACE = grace
 
+RSA_TEST_PUB_KEY = """
+-----BEGIN PUBLIC KEY-----
+MFwwDQYJKoZIhvcNAQEBBQADSwAwSAJBAN2AI/mvUWfUSh7KIAsLgwyqtuCTlw5D
+6Be7GAeKFhmp7+Xf3LCGOPrfqzjILxXrUUn4tnpCudL0+6jQiLFZZ5ECAwEAAQ==
+-----END PUBLIC KEY-----
+"""
+
+RSA_TEST_PRIV_KEY = """
+-----BEGIN RSA PRIVATE KEY-----
+MIIBOwIBAAJBAN2AI/mvUWfUSh7KIAsLgwyqtuCTlw5D6Be7GAeKFhmp7+Xf3LCG
+OPrfqzjILxXrUUn4tnpCudL0+6jQiLFZZ5ECAwEAAQJAGJkYZawQkEVFDfJIaLGY
+lhmHQZ1iUxU7exct7fhpx+OgdojEDiIjN1S6cGBfbw0EFoN/dSPFGsnLjw37Tkch
+gQIhAPQ9L+9Cpgnk3uUbXXIU52OF7WiQ51gdT8SnNLuNs+sZAiEA6CqmINKb09yr
+qOGXfKeoA08jgWJ0atXVZEf5SE+rZzkCIQC35U4vRy5/ap1NQfJ1EDo83D0qK1iV
+JtTFy+PPh909GQIhAMokyDzv42nWS0hiE6ofuDQZZcqz1LVotcH4wN3rMExRAiAd
+4Id4VP45+rGweeuzFycgt0MjB/m82leJla77vNdV7Q==
+-----END RSA PRIVATE KEY-----
+"""
+
 def test_jwt_token():
     tsave, hsave, fsa.TYPE, fsa.HASH = fsa.TYPE, fsa.HASH, "jwt", "HS256"
+    Ksave, ksave = fsa.SECRET, fsa.SIGN
+    # hmac signature scheme
     moe_token = fsa.create_token("moe")
     assert "." in moe_token and len(moe_token.split(".")) == 3
     user = fsa.get_token_auth(moe_token)
     assert user == "moe"
+    # pubkey signature scheme
+    fsa.HASH = "RS256"
+    fsa.SECRET = RSA_TEST_PUB_KEY
+    fsa.SIGN = RSA_TEST_PRIV_KEY
+    mum_token = fsa.create_token("mum")
+    assert "." in mum_token and len(mum_token.split(".")) == 3
+    user = fsa.get_token_auth(mum_token)
+    assert user == "mum"
+    # cleanup
     fsa.TYPE, fsa.HASH = tsave, hsave
+    fsa.SECRET, fsa.SIGN = Ksave, ksave
 
 def test_invalid_token():
     susie_token = fsa.create_token("susie")
