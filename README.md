@@ -180,7 +180,7 @@ Default is *True*.
 
 - `FSA_CHECK` tells whether to generate a *500* internal error if a route
 is missing an explicit authorization check.
-Default is *True*
+Default is *True*.
 
 
 ### Using Authentication, Authorization and Parameter Check
