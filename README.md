@@ -531,10 +531,13 @@ Initial release in beta.
 
 Features
  - better control which schemes are attempted?
+ - missing authorization checks? see below.
+   with strict/non strict mode?
 
 Implementation
  - should it be an object instead of a flat module?
  - expand tests
+ - token caching? how to deal with expiration?
 
 How not to forget autorizations?
  - set a `autorization_checked` variable to False before the request
