@@ -272,7 +272,7 @@ The token is authenticated by a signature which is the hash of the payload
 There are two token types chosen with the `FSA_TOKEN_TYPE` configuration
 directive: `fsa` is a compact custom format, and `jwt`
 [RFC 7519](https://tools.ietf.org/html/rfc7519) standard based
-on [pyjwt](https://pypi.org/project/PyJWT/) implementation.
+on [PyJWT](https://pypi.org/project/PyJWT/) implementation.
 
 The `fsa` token syntax is: `<realm>:<user>:<limit>:<signature>`,
 for instance: `kiva:calvin:20210221160258:4ee89cd4cc7afe0a86b26bdce6d11126`.
