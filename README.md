@@ -206,7 +206,7 @@ could look like that:
 ```Python
 # with FSA_SKIP_PATH = (r"/register", …)
 @app.route("/register", methods=["POST"])
-@fsa.openroute
+@fsa.authorize(fsa.OPEN)
 @fsa.parameters()
 def post_register(user: str, password: str):
     if user_already_exists_somewhere(user):
@@ -221,7 +221,7 @@ by one of the other methods. The code for that would be as simple as:
 ```Python
 # token creation route for any registered user
 @app.route("/login", methods=["GET"])
-@fsa.openroute
+@fsa.authorize(fsa.AUTHENTICATED)
 def get_login():
     return jsonify(fsa.create_token(get_user())), 200
 ```
@@ -386,6 +386,11 @@ def post_some_place():
 The check will call `user_in_group(user, group)` function to check whether the
 authenticated user belongs to any of the authorized groups.
 
+There are two special values that can be passed to the `authorize` decorator:
+
+ - `fsa.OPEN` declares that no authentication is needed on that route.
+ - `fsa.AUTHENTICATED` declares that any authenticated user can access this route.
+
 The following configuration directive is available:
 
  - `FSA_LAZY` allows the `authorize` decorator to perform the authentication
@@ -395,19 +400,6 @@ The following configuration directive is available:
 Note that this simplistic model does is not enough for non-trivial applications,
 where permissions on objects often depend on the object owner.
 For those, careful per-operation authorization will still be needed.
-
-### `openroute` Decorator
-
-Declares explicitely that no authorizations are required on a route.
-If absent and under `FSA_CHECK`, a *500* internal error would be returned.
-
-```Python
-@app.route("/some/path", methods=["GET"])
-@fsa.openroute
-@fsa.parameters()
-def get_some_path(param: str):
-    return param, 200
-```
 
 ### `parameters` Decorator
 
@@ -556,7 +548,6 @@ Initial release in beta.
 
 Features
  - better control which schemes are attempted?
- - merge missing auth with parameters?
 
 Implementation
  - should it be an object instead of a flat module?

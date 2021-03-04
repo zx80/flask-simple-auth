@@ -44,7 +44,7 @@ for u in UP:
 # ROUTES
 #
 @app.route("/login")
-@fsa.authorize(ADMIN, WRITE, READ)
+@fsa.authorize(fsa.AUTHENTICATED)
 def login():
     return jsonify(fsa.create_token(fsa.get_user())), 200
 
@@ -64,7 +64,7 @@ def read_only():
     return "read-only", 200
 
 @app.route("/all")
-@fsa.openroute
+@fsa.authorize(fsa.OPEN)
 def all():
     return "no-auth", 200
 
@@ -85,7 +85,7 @@ def patch_user_str(user, oldpass, newpass):
 
 # possibly suicidal self-care
 @app.route("/user/<string:user>", methods=["DELETE"])
-@fsa.authorize(ADMIN, WRITE, READ)
+@fsa.authorize(fsa.AUTHENTICATED)
 def delete_user_str(user):
     login = fsa.get_user()
     if not (login == user or is_in_group(login, ADMIN)):
@@ -97,7 +97,7 @@ def delete_user_str(user):
 
 # self registration with listed mandatory parameters
 @app.route("/register", methods=["POST"])
-@fsa.openroute
+@fsa.authorize(fsa.OPEN)
 @fsa.parameters("user", "upass")
 def register(user, upass):
     if user in UP:
@@ -110,21 +110,21 @@ def register(user, upass):
 
 # typed mandatory parameters
 @app.route("/add/<int:i>", methods=["GET"])
-@fsa.openroute
+@fsa.authorize(fsa.OPEN)
 @fsa.parameters(a=float, b=float)
 def get_add(i, a, b):
     return str(i * (a + b)), 200
 
 # another one: j and k and mandatory
 @app.route("/mul/<int:i>", methods=["GET"])
-@fsa.openroute
+@fsa.authorize(fsa.OPEN)
 @fsa.parameters(required=True)
 def get_mul(i: int, j: int, k: int):
     return str(i * j * k), 200
 
 # another one: i and j are optional
 @app.route("/div", methods=["GET"])
-@fsa.openroute
+@fsa.authorize(fsa.OPEN)
 @fsa.parameters(required=False)
 def get_div(i: int, j: int):
     if i is None or j is None:
@@ -134,14 +134,14 @@ def get_div(i: int, j: int):
 
 # another one: i is mandatory, j is optional
 @app.route("/sub", methods=["GET"])
-@fsa.openroute
+@fsa.authorize(fsa.OPEN)
 @fsa.parameters()
 def get_sub(i: int, j: int = 0):
     return str(i - j), 200
 
 # type tests
 @app.route("/type", methods=["GET"])
-@fsa.openroute
+@fsa.authorize(fsa.OPEN)
 @fsa.parameters()
 def get_type(f: float = None, i: int = None, b: bool = None, s: str = None):
     if f is not None:
@@ -157,18 +157,18 @@ def get_type(f: float = None, i: int = None, b: bool = None, s: str = None):
 
 # accept any parameters…
 @app.route("/params", methods=["GET"])
-@fsa.openroute
+@fsa.authorize(fsa.OPEN)
 @fsa.parameters(allparams=True)
 def get_params(**kwargs):
     return ' '.join(sorted(kwargs)), 200
 
-# missing check with parameters
+# missing authorization check with parameters
 @app.route("/mis1", methods=["GET"])
 @fsa.parameters()
 def get_mis1():
     return "", 200
 
-# missing check without parameters
+# missing authorization check without parameters
 @app.route("/mis2", methods=["GET"])
 def get_mis2():
     return "", 200

@@ -431,14 +431,22 @@ def get_user():
     return USER
 
 
+# special group names
+OPEN = "fully open path, no authentication is required"
+AUTHENTICATED = "any non-empty authentication is sufficient"
+
+
 #
 # authorize decorator
 #
 class authorize:
 
     def __init__(self, *args):
-        assert user_in_group is not None, \
-            "user_in_group callback needed for authorize"
+        if len(args) > 1 and (OPEN in args or AUTHENTICATED in args):
+            raise Exception("must not mix OPEN/AUTHENTICATED and other groups")
+        if OPEN not in args and AUTHENTICATED not in args:
+            assert user_in_group is not None, \
+                "user_in_group callback needed for authorize"
         self.groups = args
 
     def __call__(self, fun):
@@ -447,6 +455,9 @@ class authorize:
             # track that some autorization check was performed
             global need_authorization
             need_authorization = False
+            # special shortcut
+            if OPEN in self.groups:
+                return fun(*args, **kwargs)
             # get user if needed
             global USER
             if USER is None:
@@ -460,6 +471,9 @@ class authorize:
                     return "", 401
             if USER is None:
                 return "", 401
+            # special shortcut for authenticated users
+            if AUTHENTICATED in self.groups:
+                return fun(*args, **kwargs)
             # check against all authorized groups/roles
             for g in self.groups:
                 if user_in_group(USER, g):
@@ -469,24 +483,17 @@ class authorize:
         return wrapper
 
 
-# declare an opened route
-def openroute(fun):
-    @functools.wraps(fun)
-    def wrapper(*args, **kwargs):
-        global need_authorization
-        need_authorization = False
-        return fun(*args, **kwargs)
-    return wrapper
-
-
+#
+# special type casts
+#
 def bool_cast(s: str) -> Optional[bool]:
     return None if s is None else \
-        False if s.lower() in ("", "0", "false") else \
+        False if s.lower() in ("", "0", "false", "f") else \
         True
 
 
 def int_cast(s: str) -> Optional[int]:
-    return None if s is None else int(s, base=0)
+    return int(s, base=0) if s is not None else None
 
 
 # note: mypy complains wrongly about non-existing _empty.
