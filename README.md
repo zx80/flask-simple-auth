@@ -390,6 +390,8 @@ There are two special values that can be passed to the `authorize` decorator:
 
  - `fsa.OPEN` declares that no authentication is needed on that route.
  - `fsa.AUTHENTICATED` declares that any authenticated user can access this route.
+ - `fsa.FORBIDDEN` returns a *403* on all access. It can be used to close a route
+   temporarily.
 
 The following configuration directive is available:
 
@@ -549,7 +551,6 @@ Initial release in beta.
 
 Features
  - better control which schemes are attempted?
- - FORBIDDEN?
  - @fsa.route wrapper which does it all?
 
 Implementation

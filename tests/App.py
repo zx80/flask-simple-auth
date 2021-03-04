@@ -14,7 +14,7 @@ app.config.update(
     FSA_TYPE = 'fake',
     FSA_ALWAYS = True,
     FSA_SKIP_PATH = (r"/register",
-                     r"/(add|div|mul|sub|type|params|all|mis[12])")
+                     r"/(add|div|mul|sub|type|params|all|mis[12]|nogo)")
 )
 
 #
@@ -161,6 +161,11 @@ def get_type(f: float = None, i: int = None, b: bool = None, s: str = None):
 @fsa.parameters(allparams=True)
 def get_params(**kwargs):
     return ' '.join(sorted(kwargs)), 200
+
+@app.route("/nogo", methods=["GET"])
+@fsa.authorize(fsa.FORBIDDEN)
+def get_nogo():
+    return "", 200
 
 # missing authorization check with parameters
 @app.route("/mis1", methods=["GET"])

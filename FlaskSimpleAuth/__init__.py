@@ -434,6 +434,7 @@ def get_user():
 # special group names
 OPEN = "fully open path, no authentication is required"
 AUTHENTICATED = "any non-empty authentication is sufficient"
+FORBIDDEN = "return 403 on all requests"
 
 
 #
@@ -441,9 +442,12 @@ AUTHENTICATED = "any non-empty authentication is sufficient"
 #
 def authorize(*groups):
 
-    if len(groups) > 1 and (OPEN in groups or AUTHENTICATED in groups):
-        raise Exception("must not mix OPEN/AUTHENTICATED and other groups")
-    if OPEN not in groups and AUTHENTICATED not in groups:
+    if len(groups) > 1 and \
+       (OPEN in groups or AUTHENTICATED in groups or FORBIDDEN in groups):
+        raise Exception("must not mix OPEN/AUTHENTICATED/FORBIDDEN "
+                        "and other groups")
+    if OPEN not in groups and AUTHENTICATED not in groups and \
+       FORBIDDEN not in groups:
         assert user_in_group is not None, \
             "user_in_group callback needed for authorize"
 
@@ -454,7 +458,9 @@ def authorize(*groups):
             # track that some autorization check was performed
             global need_authorization
             need_authorization = False
-            # special shortcut
+            # special shortcuts
+            if FORBIDDEN in groups:
+                return "", 403
             if OPEN in groups:
                 return fun(*args, **kwargs)
             # get user if needed

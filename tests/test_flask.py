@@ -329,3 +329,6 @@ def test_missing(client):
     check_200(client.get("/mis1"))
     check_200(client.get("/mis2"))
     fsa.CHECK = saved
+
+def test_nogo(client):
+    check_403(client.get("/nogo"))
