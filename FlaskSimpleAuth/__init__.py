@@ -439,24 +439,23 @@ AUTHENTICATED = "any non-empty authentication is sufficient"
 #
 # authorize decorator
 #
-class authorize:
+def authorize(*groups):
 
-    def __init__(self, *args):
-        if len(args) > 1 and (OPEN in args or AUTHENTICATED in args):
-            raise Exception("must not mix OPEN/AUTHENTICATED and other groups")
-        if OPEN not in args and AUTHENTICATED not in args:
-            assert user_in_group is not None, \
-                "user_in_group callback needed for authorize"
-        self.groups = args
+    if len(groups) > 1 and (OPEN in groups or AUTHENTICATED in groups):
+        raise Exception("must not mix OPEN/AUTHENTICATED and other groups")
+    if OPEN not in groups and AUTHENTICATED not in groups:
+        assert user_in_group is not None, \
+            "user_in_group callback needed for authorize"
 
-    def __call__(self, fun):
+    def decorate(fun):
+
         @functools.wraps(fun)
         def wrapper(*args, **kwargs):
             # track that some autorization check was performed
             global need_authorization
             need_authorization = False
             # special shortcut
-            if OPEN in self.groups:
+            if OPEN in groups:
                 return fun(*args, **kwargs)
             # get user if needed
             global USER
@@ -472,15 +471,18 @@ class authorize:
             if USER is None:
                 return "", 401
             # special shortcut for authenticated users
-            if AUTHENTICATED in self.groups:
+            if AUTHENTICATED in groups:
                 return fun(*args, **kwargs)
             # check against all authorized groups/roles
-            for g in self.groups:
+            for g in groups:
                 if user_in_group(USER, g):
                     return fun(*args, **kwargs)
             # else no matching group
             return "", 403
+
         return wrapper
+
+    return decorate
 
 
 #
