@@ -495,6 +495,7 @@ Add `FSA_ALWAYS` configuration directive and move the authentication before requ
 hook logic inside the module.
 Add `FSA_SKIP_PATH` to skip authentication for some paths.
 Update documentation to reflect this simplified model.
+Switch all decorators to functions.
 
 ### 1.6.0
 
