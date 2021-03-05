@@ -14,7 +14,7 @@ app.config.update(
     FSA_TYPE = 'fake',
     FSA_ALWAYS = True,
     FSA_SKIP_PATH = (r"/register",
-                     r"/(add|div|mul|sub|type|params|all|mis[12]|nogo)")
+                     r"/(add|div|mul|sub|type|params|all|mis[12]|nogo|one)")
 )
 
 #
@@ -177,3 +177,13 @@ def get_mis1():
 @app.route("/mis2", methods=["GET"])
 def get_mis2():
     return "", 200
+
+# convenient route all-in-one decorator
+@fsa.route("/one/<int:i>", methods=["GET"], authorize=[fsa.OPEN])
+def get_one(i: int, msg: str, punct: str = "!"):
+    return f"{i}: {msg} {punct}", 200
+
+# missing authorize
+@fsa.route("/two", methods=["GET"])
+def get_two():
+    return "2", 200

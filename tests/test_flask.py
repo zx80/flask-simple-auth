@@ -332,3 +332,12 @@ def test_missing(client):
 
 def test_nogo(client):
     check_403(client.get("/nogo"))
+
+def check_route(client):
+    res = check_200(client.get("/one/42", data={"msg":"hello"}))
+    res.data == "42: hello !"
+    res = check_200(client.get("/one/42", data={"msg":"hello", "punct":"?"}))
+    res.data == "42: hello ?"
+    check_400(client.get("/one/42"))   # missing "msg"
+    check_400(client.get("/one/bad", data={"msg":"hi"}))  # bad "i" type
+    check_400(client.get("/two"))

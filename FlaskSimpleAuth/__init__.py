@@ -596,3 +596,38 @@ def parameters(*args, required=None, allparams=False, **kwargs):
         return wrapper
 
     return decorate
+
+
+#
+# route decorator wrapper
+#
+def route(path, *args, **kwargs):
+
+    # we intercept the authorize parameter
+    if 'authorize' in kwargs:
+        roles = kwargs['authorize']
+        del kwargs['authorize']
+    else:
+        roles = FORBIDDEN
+
+    # and make it a list/tuple
+    if isinstance(roles, str):
+        roles = (roles,)
+    elif isinstance(authorize, int):
+        roles = (roles,)
+
+    from collections.abc import Iterable
+    assert isinstance(roles, Iterable)
+
+    # TODO extract other kwargs?
+
+    def decorate(fun: Callable):
+        # then we deal with the path to add the expected type
+        # TODO
+        # detect <name> sections, find the type, insert it
+        # path = ...
+
+        apar = authorize(roles)(parameters()(fun))
+        return APP.route(path, *args, **kwargs)(apar)
+
+    return decorate

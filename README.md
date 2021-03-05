@@ -29,9 +29,7 @@ fsa.setConfig(app, user_to_password_fun, user_in_group_fun)
 # the function gets 3 arguments: one coming from the path (id)
 # and the remaining two coming from request parameters (some, stuff).
 # "some" is mandatory, stuff is optional because it has a default.
-@app.route("/whatever/<int:id>", methods=["PATCH"])
-@fsa.authorize("patcher")
-@fsa.parameters()
+@fsa.route("/whatever/<int:id>", methods=["PATCH"], authorize=["patcher"])
 def patch_whatever(id: int, some: int, stuff: str = "wow"):
     # ok to do it, with parameters id, some & stuff
     return "", 204
@@ -46,6 +44,9 @@ FSA_TYPE = 'httpd'     # inherit web-serveur authentication
 FSA_TYPE = 'basic'     # HTTP Basic auth
 FSA_TYPE = 'param'     # HTTP parameter auth
 ```
+
+If the `authorize` argument is not supplied, the security first approach
+results in the route to be aborted with a *500*.
 
 Various aspects of the implemented schemes can be configured with other
 directives, with reasonable defaults provided so that not much is really
@@ -175,7 +176,8 @@ against the request path for skipping systematic authentication.
 Default is empty, i.e. authentication is applied for all paths.
 
 - `FSA_LAZY` tells whether to attempt authentication lazily when checking an
-authorization through a `authorize` decorator.
+authorization through a `authorize` decorator or argument to the `route`
+decorator.
 Default is *True*.
 
 - `FSA_CHECK` tells whether to generate a *500* internal error if a route
@@ -190,9 +192,7 @@ authorizations with the `authorize` decorator, and for parameters with the
 `parameters` decorator.
 
 ```Python
-@app.route("/somewhere", methods=["POST"])
-@fsa.authorize("posters")
-@fsa.parameters()
+@fsa.route("/somewhere", methods=["POST"], authorize=["posters"])
 def post_somewhere(stuff: str, nstuff: int, bstuff: bool = False):
     …
 ```
@@ -464,6 +464,27 @@ the value is *True*.
 A side-effect of the `parameters` decorator passing of request parameters as
 named function parameters is that request parameter names must be valid python
 identifiers, which excludes keywords such as `pass`, `def` or `for`.
+
+## `route` Decorator
+
+This decorator is a shortcut for Flask's `route`, and Flask Simple Auth
+`authorize` and `parameters`.
+
+```Python
+@fsa.route("/foo/<int:i>", methods=["GET"], authorize=["getters"])
+def get_foo(i: int, j: int, k: int = 0):
+    …
+```
+
+Is the same as:
+
+```Python
+@app.route("/foo/<int:i>", methods=["GET"])
+@fsa.authorize("getters")
+@fsa.parameters()
+def get_foo(i: int, j: int, k: int = 0):
+    …
+```
 
 ## Versions
 
