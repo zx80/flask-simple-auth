@@ -446,6 +446,7 @@ def authorize(*groups):
        (OPEN in groups or AUTHENTICATED in groups or FORBIDDEN in groups):
         raise Exception("must not mix OPEN/AUTHENTICATED/FORBIDDEN "
                         "and other groups")
+
     if OPEN not in groups and AUTHENTICATED not in groups and \
        FORBIDDEN not in groups:
         assert user_in_group is not None, \
@@ -627,7 +628,7 @@ def route(path, *args, **kwargs):
         # detect <name> sections, find the type, insert it
         # path = ...
 
-        apar = authorize(roles)(parameters()(fun))
+        apar = authorize(*roles)(parameters()(fun))
         return APP.route(path, *args, **kwargs)(apar)
 
     return decorate
