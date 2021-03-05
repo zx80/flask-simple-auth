@@ -496,6 +496,7 @@ and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 Add *bearer* authorization for tokens and make it the default.
 Add *JWT* tokens, both hmac and pubkey variants.
 Add *500* generation if a route is missing an authorization declaration.
+Add convenient `route` decorator.
 
 ### 1.8.1
 
@@ -572,7 +573,6 @@ Initial release in beta.
 
 Features
  - better control which schemes are attempted?
- - @fsa.route wrapper which does it all?
 
 Implementation
  - should it be an object instead of a flat module?
