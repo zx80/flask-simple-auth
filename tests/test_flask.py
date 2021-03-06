@@ -308,6 +308,10 @@ def test_types(client):
    assert res.data == b"bool False"
    res = check_200(client.get("/type", data={"b": "False"}))
    assert res.data == b"bool False"
+   res = check_200(client.get("/type", data={"b": "fALSE"}))
+   assert res.data == b"bool False"
+   res = check_200(client.get("/type", data={"b": "F"}))
+   assert res.data == b"bool False"
    res = check_200(client.get("/type", data={"b": "1"}))
    assert res.data == b"bool True"
    res = check_200(client.get("/type", data={"b": "foofoo"}))

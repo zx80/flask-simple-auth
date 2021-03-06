@@ -458,7 +458,7 @@ def get_add(a, b):
 Request parameter string values are converted to the target type.
 For `int`, base syntax is accepted, i.e. `0x11`, `0b10001` and `17`
 all mean decimal *17*.
-For `bool`, *False* is an empty string, `0`, `False`, otherwise
+For `bool`, *False* is an empty string, `0`, `False` or `F`, otherwise
 the value is *True*.
 
 A side-effect of the `parameters` decorator passing of request parameters as
