@@ -337,17 +337,17 @@ def test_missing(client):
 def test_nogo(client):
     check_403(client.get("/nogo"))
 
-def check_route(client):
+def test_route(client):
     res = check_200(client.get("/one/42", data={"msg":"hello"}))
-    assert res.data == "42: hello !"
+    assert res.data == b"42: hello !"
     res = check_200(client.get("/one/42", data={"msg":"hello", "punct":"?"}))
-    assert res.data == "42: hello ?"
+    assert res.data == b"42: hello ?"
     check_400(client.get("/one/42"))   # missing "msg"
-    check_400(client.get("/one/bad", data={"msg":"hi"}))  # bad "i" type
-    check_400(client.get("/two"))
+    check_404(client.get("/one/bad", data={"msg":"hi"}))  # bad "i" type
+    check_403(client.get("/two", data={"LOGIN":"calvin"}))
 
-def check_infer(client):
-    rest = check_200(client.get("/infer/A"))
-    assert res.data == "A 4"
-    rest = check_200(client.get("/infer/B", data={"i":"2", "s":"hello"}))
-    assert res.data == "B 10"
+def test_infer(client):
+    res = check_200(client.get("/infer/1.000"))
+    assert res.data == b"1.0 4"
+    res = check_200(client.get("/infer/2.000", data={"i":"2", "s":"hello"}))
+    assert res.data == b"2.0 10"

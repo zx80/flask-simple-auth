@@ -14,7 +14,7 @@ app.config.update(
     FSA_TYPE = 'fake',
     FSA_ALWAYS = True,
     FSA_SKIP_PATH = (r"/register",
-                     r"/(add|div|mul|sub|type|params|all|mis[12]|nogo|one)")
+                     r"/(add|div|mul|sub|type|params|all|mis[12]|nogo|one|infer)")
 )
 
 #
@@ -190,5 +190,5 @@ def get_two():
 
 # parameter type inference
 @fsa.route("/infer/<id>", methods=["GET"], authorize=[fsa.OPEN])
-def get_infer(id, i = 2, s = "hi"):
-    return f"{id}: {i*len(s)}", 200
+def get_infer(id: float, i = 2, s = "hi"):
+    return f"{id} {i*len(s)}", 200

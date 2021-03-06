@@ -639,12 +639,24 @@ def route(path, *args, **kwargs):
     # TODO extract other kwargs?
 
     def decorate(fun: Callable):
-        # then we deal with the path to add the expected type
-        # TODO
-        # detect <name> sections, find the type, insert it
-        # path = ...
+        from uuid import UUID
+        # add the expected type to path sections, if available
+        # flask converter types: string (default), int, float, path, uuid
+        sig = inspect.signature(fun)
+
+        splits = path.split("<")
+        for i, s in enumerate(splits):
+            if i > 0:
+                spec, remainder = s.split(">", 1)
+                if ":" not in spec and spec in sig.parameters:
+                    t = typeof(sig.parameters[spec])
+                    if t in (int, float, UUID):
+                        splits[i] = f"{t.__name__}:{spec}>{remainder}"
+                    else:
+                        splits[i] = f"string:{spec}>{remainder}"
+        newpath = '<'.join(splits)
 
         apar = authorize(*roles)(parameters()(fun))
-        return APP.route(path, *args, **kwargs)(apar)
+        return APP.route(newpath, *args, **kwargs)(apar)
 
     return decorate

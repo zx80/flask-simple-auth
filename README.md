@@ -29,7 +29,7 @@ fsa.setConfig(app, user_to_password_fun, user_in_group_fun)
 # the function gets 3 arguments: one coming from the path (id)
 # and the remaining two coming from request parameters (some, stuff).
 # "some" is mandatory, stuff is optional because it has a default.
-@fsa.route("/whatever/<int:id>", methods=["PATCH"], authorize=["patcher"])
+@fsa.route("/whatever/<id>", methods=["PATCH"], authorize=["patcher"])
 def patch_whatever(id: int, some: int, stuff: str = "wow"):
     # ok to do it, with parameters id, some & stuff
     return "", 204
@@ -471,7 +471,7 @@ This decorator is a shortcut for Flask's `route`, and Flask Simple Auth
 `authorize` and `parameters`.
 
 ```Python
-@fsa.route("/foo/<int:i>", methods=["GET"], authorize=["getters"])
+@fsa.route("/foo/<i>", methods=["GET"], authorize=["getters"])
 def get_foo(i: int, j: int, k: int = 0):
     …
 ```
@@ -486,6 +486,9 @@ def get_foo(i: int, j: int, k: int = 0):
     …
 ```
 
+Note that path section type `int` for path parameter `i` is inferred from
+the function declaration.
+
 ## Versions
 
 Sources are available on [GitHub](https://github.com/zx80/flask-simple-auth)
@@ -497,7 +500,8 @@ Add *bearer* authorization for tokens and make it the default.
 Add *JWT* tokens, both hmac and pubkey variants.
 Add *500* generation if a route is missing an authorization declaration.
 Add convenient `route` decorator.
-Add type inference for parameters based on default value, when provided.
+Add type inference for http/json parameters based on default value, when provided.
+Add type inference for root path parameters based on function declaration.
 
 ### 1.8.1
 
