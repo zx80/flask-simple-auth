@@ -509,6 +509,20 @@ def int_cast(s: str) -> Optional[int]:
 CASTS = {bool: bool_cast, int: int_cast, inspect._empty: str}
 
 
+# guess parameter type
+def typeof(p: inspect.Parameter):
+    if p.kind == p.VAR_KEYWORD:
+        return dict
+    elif p.kind == p.VAR_POSITIONAL:
+        return list
+    elif p.annotation != inspect._empty:
+        return p.annotation
+    elif p.default is not None and p.default != inspect._empty:
+        return type(p.default)  # type inference!
+    else:
+        return str
+
+
 #
 # autoparams decorator
 #
@@ -553,7 +567,9 @@ def parameters(*args, required=None, allparams=False, **kwargs):
         for n, p in sig.parameters.items():
             if n not in types and \
                p.kind not in (p.VAR_KEYWORD, p.VAR_POSITIONAL):
-                types[n] = CASTS.get(p.annotation, p.annotation)
+                # guess parameter type
+                t = typeof(p)
+                types[n] = CASTS.get(t, t)
             if p.default != inspect._empty:
                 defaults[n] = p.default
 

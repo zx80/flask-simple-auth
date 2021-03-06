@@ -187,3 +187,8 @@ def get_one(i: int, msg: str, punct: str = "!"):
 @fsa.route("/two", methods=["GET"])
 def get_two():
     return "2", 200
+
+# parameter type inference
+@fsa.route("/infer/<id>", methods=["GET"], authorize=[fsa.OPEN])
+def get_infer(id, i = 2, s = "hi"):
+    return f"{id}: {i*len(s)}", 200

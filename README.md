@@ -497,6 +497,7 @@ Add *bearer* authorization for tokens and make it the default.
 Add *JWT* tokens, both hmac and pubkey variants.
 Add *500* generation if a route is missing an authorization declaration.
 Add convenient `route` decorator.
+Add type inference for parameters based on default value, when provided.
 
 ### 1.8.1
 

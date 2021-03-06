@@ -294,36 +294,36 @@ def test_typed_params(client):
     assert int(res.data) == 42
 
 def test_types(client):
-   res = check_200(client.get("/type", data={"f": "1.0"}))
-   assert res.data == b"float 1.0"
-   res = check_200(client.get("/type", data={"i": "0b11"}))
-   assert res.data == b"int 3"
-   res = check_200(client.get("/type", data={"i": "0x11"}))
-   assert res.data == b"int 17"
-   res = check_200(client.get("/type", data={"i": "11"}))
-   assert res.data == b"int 11"
-   res = check_200(client.get("/type", data={"b": "0"}))
-   assert res.data == b"bool False"
-   res = check_200(client.get("/type", data={"b": ""}))
-   assert res.data == b"bool False"
-   res = check_200(client.get("/type", data={"b": "False"}))
-   assert res.data == b"bool False"
-   res = check_200(client.get("/type", data={"b": "fALSE"}))
-   assert res.data == b"bool False"
-   res = check_200(client.get("/type", data={"b": "F"}))
-   assert res.data == b"bool False"
-   res = check_200(client.get("/type", data={"b": "1"}))
-   assert res.data == b"bool True"
-   res = check_200(client.get("/type", data={"b": "foofoo"}))
-   assert res.data == b"bool True"
-   res = check_200(client.get("/type", data={"b": "True"}))
-   assert res.data == b"bool True"
-   res = check_200(client.get("/type", data={"s": "Hello World!"}))
-   assert res.data == b"str Hello World!"
+    res = check_200(client.get("/type", data={"f": "1.0"}))
+    assert res.data == b"float 1.0"
+    res = check_200(client.get("/type", data={"i": "0b11"}))
+    assert res.data == b"int 3"
+    res = check_200(client.get("/type", data={"i": "0x11"}))
+    assert res.data == b"int 17"
+    res = check_200(client.get("/type", data={"i": "11"}))
+    assert res.data == b"int 11"
+    res = check_200(client.get("/type", data={"b": "0"}))
+    assert res.data == b"bool False"
+    res = check_200(client.get("/type", data={"b": ""}))
+    assert res.data == b"bool False"
+    res = check_200(client.get("/type", data={"b": "False"}))
+    assert res.data == b"bool False"
+    res = check_200(client.get("/type", data={"b": "fALSE"}))
+    assert res.data == b"bool False"
+    res = check_200(client.get("/type", data={"b": "F"}))
+    assert res.data == b"bool False"
+    res = check_200(client.get("/type", data={"b": "1"}))
+    assert res.data == b"bool True"
+    res = check_200(client.get("/type", data={"b": "foofoo"}))
+    assert res.data == b"bool True"
+    res = check_200(client.get("/type", data={"b": "True"}))
+    assert res.data == b"bool True"
+    res = check_200(client.get("/type", data={"s": "Hello World!"}))
+    assert res.data == b"str Hello World!"
 
 def test_params(client):
-   res = check_200(client.get("/params", data={"a":1, "b":2, "c":3}))
-   assert res.data == b"a b c"
+    res = check_200(client.get("/params", data={"a":1, "b":2, "c":3}))
+    assert res.data == b"a b c"
 
 def test_missing(client):
     saved, fsa.CHECK = fsa.CHECK, True
@@ -339,9 +339,15 @@ def test_nogo(client):
 
 def check_route(client):
     res = check_200(client.get("/one/42", data={"msg":"hello"}))
-    res.data == "42: hello !"
+    assert res.data == "42: hello !"
     res = check_200(client.get("/one/42", data={"msg":"hello", "punct":"?"}))
-    res.data == "42: hello ?"
+    assert res.data == "42: hello ?"
     check_400(client.get("/one/42"))   # missing "msg"
     check_400(client.get("/one/bad", data={"msg":"hi"}))  # bad "i" type
     check_400(client.get("/two"))
+
+def check_infer(client):
+    rest = check_200(client.get("/infer/A"))
+    assert res.data == "A 4"
+    rest = check_200(client.get("/infer/B", data={"i":"2", "s":"hello"}))
+    assert res.data == "B 10"
