@@ -189,7 +189,9 @@ Default is *True*.
 
 Then all route functions can take advantage of this information to check for
 authorizations with the `authorize` decorator, and for parameters with the
-`parameters` decorator.
+`parameters` decorator. All decorators are wrapped into a convenient `route`
+decorator which extends Flask's own with authentication, authorization and
+parameter management.
 
 ```Python
 @fsa.route("/somewhere", methods=["POST"], authorize=["posters"])
