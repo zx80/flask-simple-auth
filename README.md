@@ -472,7 +472,7 @@ This decorator is a shortcut for Flask's `route`, and Flask Simple Auth
 
 ```Python
 @fsa.route("/foo/<i>", methods=["GET"], authorize=["getters"])
-def get_foo(i: int, j: int, k: int = 0):
+def get_foo(i: int, j: int, k = 0):
     …
 ```
 
@@ -482,7 +482,7 @@ Is the same as:
 @app.route("/foo/<int:i>", methods=["GET"])
 @fsa.authorize("getters")
 @fsa.parameters()
-def get_foo(i: int, j: int, k: int = 0):
+def get_foo(i: int, j: int, k = 0):
     …
 ```
 
