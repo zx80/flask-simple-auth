@@ -636,7 +636,12 @@ def route(path, *args, **kwargs):
     from collections.abc import Iterable
     assert isinstance(roles, Iterable)
 
-    # TODO extract other kwargs?
+    # named parameters for parameters decorator
+    authkw = {}
+    for kw in ('allparams', 'required'):
+        if kw in kwargs:
+            authkw[kw] = kwargs[kw]
+            del kwargs[kw]
 
     def decorate(fun: Callable):
         from uuid import UUID
@@ -656,7 +661,7 @@ def route(path, *args, **kwargs):
                         splits[i] = f"string:{spec}>{remainder}"
         newpath = '<'.join(splits)
 
-        apar = authorize(*roles)(parameters()(fun))
+        apar = authorize(*roles)(parameters(**authkw)(fun))
         return APP.route(newpath, *args, **kwargs)(apar)
 
     return decorate
