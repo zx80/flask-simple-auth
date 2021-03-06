@@ -573,6 +573,7 @@ Initial release in beta.
 
 Features
  - better control which schemes are attempted?
+ - should it be a full wrapper around Flask?
 
 Implementation
  - should it be an object instead of a flat module?
