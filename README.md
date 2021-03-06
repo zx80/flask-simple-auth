@@ -467,27 +467,28 @@ identifiers, which excludes keywords such as `pass`, `def` or `for`.
 
 ## `route` Decorator
 
-This decorator is a shortcut for Flask's `route`, and Flask Simple Auth
+This decorator is a shortcut for Flask's `route`, and FlaskSimpleAuth
 `authorize` and `parameters`.
 
 ```Python
-@fsa.route("/foo/<i>", methods=["GET"], authorize=["getters"])
-def get_foo(i: int, j: int, k = 0):
+@fsa.route("/foo/<id>", methods=["GET"], authorize=["getters"])
+def get_foo(id: int, j: int, k = 0):
     …
 ```
 
 Is the same as:
 
 ```Python
-@app.route("/foo/<int:i>", methods=["GET"])
+@app.route("/foo/<int:id>", methods=["GET"])
 @fsa.authorize("getters")
 @fsa.parameters()
-def get_foo(i: int, j: int, k = 0):
+def get_foo(id: int, j: int, k = 0):
     …
 ```
 
-Note that path section type `int` for path parameter `i` is inferred from
-the function declaration.
+Note that path section type `int` for path parameter `id` is inferred from
+the function declaration. Also, optional parameter `k` is typed as int because
+of its default value.
 
 ## Versions
 
