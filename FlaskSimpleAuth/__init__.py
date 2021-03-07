@@ -1,5 +1,5 @@
 #
-# Debatable flask-side auth managemen, and more.
+# Debatable flask-side auth management, and more.
 #
 # This code is public domain.
 #
