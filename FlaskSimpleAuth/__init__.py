@@ -656,7 +656,7 @@ def route(path, *args, **kwargs):
                 if ":" not in spec and spec in sig.parameters:
                     t = typeof(sig.parameters[spec])
                     if t in (int, float, UUID):
-                        splits[i] = f"{t.__name__}:{spec}>{remainder}"
+                        splits[i] = f"{t.__name__.lower()}:{spec}>{remainder}"
                     else:
                         splits[i] = f"string:{spec}>{remainder}"
         newpath = '<'.join(splits)
