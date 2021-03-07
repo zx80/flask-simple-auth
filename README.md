@@ -97,10 +97,10 @@ This simple module allows configurable authentication (`FSA_TYPE`):
 
 - `httpd` web-server checked authentication passed in the request.
 
-- `basic` http basic auth with a function hook for getting
+- `basic` HTTP basic auth with a function hook for getting
   the password hash.
 
-- `param` same with http parameter-provided login/password.
+- `param` same with HTTP parameter-provided login/password.
 
 - `password` tries `basic` then `param`.
 
@@ -503,7 +503,7 @@ Add *bearer* authorization for tokens and make it the default.
 Add *JWT* tokens, both hmac and pubkey variants.
 Add *500* generation if a route is missing an authorization declaration.
 Add convenient `route` decorator.
-Add type inference for http/json parameters based on default value, when provided.
+Add type inference for HTTP/JSON parameters based on default value, when provided.
 Add type inference for root path parameters based on function declaration.
 
 ### 1.8.1
