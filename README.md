@@ -168,7 +168,7 @@ Default is `httpd`.
 
 - `FSA_ALWAYS` tells whether to perform authentication in a before request
 hook. Default is *True*.  On authentication failures *401* are returned.
-One in a route function, `get_user` will always return the authenticated
+Once in a route function, `get_user` will always return the authenticated
 user and cannot fail.
 
 - `FSA_SKIP_PATH` is a list of regular expression patterns which are matched
