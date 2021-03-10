@@ -177,7 +177,8 @@ def setConfig(app: Flask,
     # '2y' is same as '2b' but apache compatible
     scheme = CONF.get("FSA_PASSWORD_SCHEME", "bcrypt")
     options = CONF.get("FSA_PASSWORD_OPTIONS",
-                       {'bcrypt__default_rounds': 4, 'bcrypt__default_ident': '2y'})
+                       {'bcrypt__default_rounds': 4,
+                        'bcrypt__default_ident': '2y'})
     PM = CryptContext(schemes=[scheme], **options)
     #
     # hooks
