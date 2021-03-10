@@ -497,7 +497,7 @@ of its default value.
 Sources are available on [GitHub](https://github.com/zx80/flask-simple-auth)
 and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 
-### dev
+### 1.9.0
 
 Add *bearer* authorization for tokens and make it the default.
 Add *JWT* tokens, both hmac and pubkey variants.
