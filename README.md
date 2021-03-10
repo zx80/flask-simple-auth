@@ -357,7 +357,7 @@ The following configuration directives are available to configure
    See [passlib documentation](https://passlib.readthedocs.io/en/stable/lib/passlib.hash.html)
    for available options.
  - `FSA_PASSWORD_OPTIONS` relevant options (for `passlib.CryptContext`).
-   Default is `{'bcrypt__default_rounds': 4}`.
+   Default is `{'bcrypt__default_rounds': 4, 'bcrypt__default_ident': '2y'}`.
 
 Beware that modern password checking is often pretty expensive in order to
 thwart password cracking if the hashed passwords are leaked, so that you
@@ -496,6 +496,10 @@ of its default value.
 
 Sources are available on [GitHub](https://github.com/zx80/flask-simple-auth)
 and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
+
+### dev
+
+Change passlib bcrypt version to be compatible with Apache httpd.
 
 ### 1.9.0
 
