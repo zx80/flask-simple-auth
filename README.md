@@ -27,7 +27,7 @@ app.get_user_password(user_to_password_fun)
 app.user_in_group(user_in_group_fun)
 
 # users belonging to the "patcher" group can patch "whatever/*"
-# the function gets 3 arguments: one coming from the path (id)
+# the function gets 3 arguments: one int coming from the path (id)
 # and the remaining two coming from request parameters (some, stuff).
 # "some" is mandatory, stuff is optional because it has a default.
 @fsa.route("/whatever/<id>", methods=["PATCH"], authorize=["patcher"])
