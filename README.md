@@ -245,7 +245,7 @@ For `token` authentication, a token can be created on a path authenticated
 by one of the other methods. The code for that would be:
 
 ```Python
-# token creation route for all registered user
+# token creation route for all registered users
 @app.route("/login", methods=["GET"], authorize=[ALL])
 def get_login():
     return jsonify(app.create_token(get_user())), 200
