@@ -8,7 +8,7 @@ Flask configuration and decorators.
 ## Example
 
 The application code below performs authentication, authorization and
-parameter checks triggered by an extended `route` decorator.
+parameter checks triggered by the extended `route` decorator.
 There is no clue in the source about what kind of authentication is used,
 which is the whole point: authentication schemes are managed elsewhere, not
 explicitely in the application code.
@@ -56,8 +56,8 @@ needed beyond choosing the authentication scheme.
 
 ## Description
 
-Help to manage authentication, authorizations and parameters in
-a Flask REST application.
+This module helps managing authentication, authorizations and parameters
+in a Flask REST application.
 
 **Authentication** is available through the `get_user` function.
 It is performed on demand when the function is called, automatically when
@@ -96,7 +96,21 @@ other installation method you prefer.
 
 ### Features
 
-This simple module allows configurable authentication (`FSA_TYPE`):
+The module provides a wrapper around the `Flask` class which
+extends its capabilities for managing authentication, authorization and
+parameters.
+
+This is intended for a REST API implementation serving a remote client application.
+It does not make much sense to "login" and "logout" to/from a REST API
+because the point of the API is to serve and collect data
+to all who deserve it, i.e. are authorized, unlike a web application
+which is served while the client is on the page which maintains a session
+and should disappear when disconnected as the web browser page is wiped out.
+However, there is still a "login" concept which is only dedicated at
+obtaining an auth token, that the application client needs to update from
+time to time.
+
+The authentication is configured with `FSA_TYPE`:
 
 - `httpd` web-server checked authentication passed in the request.
 
@@ -116,21 +130,12 @@ This simple module allows configurable authentication (`FSA_TYPE`):
 - `fake` parameter-based auth for fast and simple testing
   the claimed login is coldly trusted…
 
-I have considered [Flask HTTPAuth](https://github.com/miguelgrinberg/Flask-HTTPAuth)
-obviously, which provides many options, but cannot be easily configured
-to change the authentication methods.  In constrast, this module
-performs can authentication before any request is performed and user code
-is executed. It also adds a convenient management of request parameters.
-
-Note that this is intended for a REST API implementation serving
-a remote application. It does not make much sense to "login" and "logout"
-to/from a REST API because the point of the API is to serve and collect data
-to all who deserve it, i.e. are authorized, unlike a web application
-which is served while the client is on the page which maintains a session
-and should disappear when disconnected as the web browser page is wiped out.
-However, there is still a "login" concept which is only dedicated at
-obtaining an auth token, that the application client needs to update from
-time to time.
+You shoud also consider
+[Flask HTTPAuth](https://github.com/miguelgrinberg/Flask-HTTPAuth)
+which provides many options, but cannot be easily configured
+to change authentication methods.  In constrast, this module
+performs authentication before any user code is executed.
+It also adds a convenient management of request parameters.
 
 Note that web-oriented flask authentication modules are not really
 relevant in the REST API context, where the server does not care about
