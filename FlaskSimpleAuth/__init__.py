@@ -382,6 +382,7 @@ class Flask(RealFlask):
         except AuthException:  # try param
             return self._fsa_get_param_auth()
 
+    # map auth types to their functions
     _FSA_AUTH = {"basic": _fsa_get_basic_auth,
                  "param": _fsa_get_param_auth,
                  "password": _fsa_get_password_auth,
@@ -389,8 +390,8 @@ class Flask(RealFlask):
 
     # return authenticated user or throw exception
     def get_user(self):
-
         log.debug(f"get_user for {self._fsa_auth}")
+
         # _fsa_user is reset before/after requests
         # so relying on in-request persistance is safe
         if self._fsa_user is not None:
