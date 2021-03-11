@@ -6,6 +6,7 @@ check: venv
 	type python3
 	mypy FlaskSimpleAuth
 	flake8 --ignore=E501,F401 FlaskSimpleAuth
+	# to select some tests: -k pattern
 	pytest --log-level=debug --capture=tee-sys tests
 
 .PHONY: clean
