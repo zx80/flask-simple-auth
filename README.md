@@ -212,7 +212,7 @@ authentication scheme detailed in the next sections.
 to the `route` decorator.
 Three special group names are available in the module: `ANY`
 to declare a route opened to anyone, `NONE` to close a route (eg
-temporarily) and `ALL` for all authenticated user.
+temporarily) and `ALL` for all authenticated users.
 If the authorize directive is absent or empty, the route is forbidden (*403*).
 Note that more advanced permissions (eg users can edit themselves) will
 still require manual permission checks at the beginning of the function.
