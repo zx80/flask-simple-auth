@@ -17,13 +17,14 @@ Basically, you just have to implement a Python function and most of the
 crust is managed by Flask and FlaskSimpleAuth.
 
 ```Python
-# app is the Flask application…
-# user_to_password_fun is a function returning the hashed password for a user.
-# user_in_group_fun is a function telling whether a user is in a group.
+from FlaskSimpleAuth import Flask
+app = Flask("demo")
 
-# initialize module
-import FlaskSimpleAuth as fsa
-fsa.setConfig(app, user_to_password_fun, user_in_group_fun)
+# register hooks
+# user_to_password_fun is a function returning the hashed password for a user.
+app.get_user_password(user_to_password_fun)
+# user_in_group_fun is a function telling whether a user is in a group.
+app.user_in_group(user_in_group_fun)
 
 # users belonging to the "patcher" group can patch "whatever/*"
 # the function gets 3 arguments: one coming from the path (id)
@@ -207,13 +208,11 @@ could look like that:
 
 ```Python
 # with FSA_SKIP_PATH = (r"/register", …)
-@app.route("/register", methods=["POST"])
-@fsa.authorize(fsa.OPEN)
-@fsa.parameters()
+@app.route("/register", methods=["POST"], authorize=[OPEN])
 def post_register(user: str, password: str):
     if user_already_exists_somewhere(user):
         return f"cannot create {user}", 409
-    add_new_user_with_hashed_pass(user, fsa.hash_password(password))
+    add_new_user_with_hashed_pass(user, app.hash_password(password))
     return "", 201
 ```
 
@@ -222,10 +221,9 @@ by one of the other methods. The code for that would be as simple as:
 
 ```Python
 # token creation route for any registered user
-@app.route("/login", methods=["GET"])
-@fsa.authorize(fsa.AUTHENTICATED)
+@app.route("/login", methods=["GET"], authorize=[AUTHENTICATED])
 def get_login():
-    return jsonify(fsa.create_token(get_user())), 200
+    return jsonify(app.create_token(get_user())), 200
 ```
 
 The client application will return the token as a parameter for
