@@ -174,8 +174,7 @@ class Flask(RealFlask):
         # password setup
         #
         # passlib context is a pain, you have to know the scheme name to set its
-        # round which make it impossible to configure directly.
-        # '2y' is same as '2b' but apache compatible
+        # round. Ident '2y' is same as '2b' but apache compatible.
         scheme = conf.get("FSA_PASSWORD_SCHEME", "bcrypt")
         if scheme is not None:
             options = conf.get("FSA_PASSWORD_OPTIONS",
