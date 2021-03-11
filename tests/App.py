@@ -10,7 +10,7 @@ log = logging.getLogger("app")
 #
 # APP
 #
-from FlaskSimpleAuth import Flask, RealFlask, jsonify, OPEN, AUTHENTICATED, FORBIDDEN
+from FlaskSimpleAuth import Flask, RealFlask, jsonify, ANY, ALL, NONE
 app = Flask("Test")
 
 #
@@ -46,7 +46,7 @@ for u in UP:
 #
 # ROUTES
 #
-@app.route("/login", authorize=[AUTHENTICATED])
+@app.route("/login", authorize=[ALL])
 def login():
     return jsonify(app.create_token(app.get_user())), 200
 
@@ -62,7 +62,7 @@ def write_only():
 def read_only():
     return "read-only", 200
 
-@app.route("/all", authorize=[OPEN])
+@app.route("/all", authorize=[ANY])
 def all():
     return "no-auth", 200
 
@@ -80,7 +80,7 @@ def patch_user_str(user, oldpass, newpass):
     return "", 204
 
 # possibly suicidal self-care
-@app.route("/user/<user>", methods=["DELETE"], authorize=[AUTHENTICATED])
+@app.route("/user/<user>", methods=["DELETE"], authorize=[ALL])
 def delete_user_str(user):
     login = app.get_user()
     if not (login == user or is_in_group(login, ADMIN)):
@@ -91,7 +91,7 @@ def delete_user_str(user):
     return "", 204
 
 # self registration with listed mandatory parameters
-@app.route("/register", methods=["POST"], authorize=[OPEN])
+@app.route("/register", methods=["POST"], authorize=[ANY])
 def register(user, upass):
     if user in UP:
         return "cannot register existing user", 403
@@ -102,17 +102,17 @@ def register(user, upass):
     return "", 201
 
 # typed mandatory parameters
-@app.route("/add/<i>", methods=["GET"], authorize=[OPEN])
+@app.route("/add/<i>", methods=["GET"], authorize=[ANY])
 def get_add(i: int, a: float, b: float):
     return str(i * (a + b)), 200
 
 # another one: j and k and mandatory
-@app.route("/mul/<i>", methods=["GET"], authorize=[OPEN])
+@app.route("/mul/<i>", methods=["GET"], authorize=[ANY])
 def get_mul(i: int, j: int, k: int):
     return str(i * j * k), 200
 
 # another one: i and j are optional
-@app.route("/div", methods=["GET"], authorize=[OPEN])
+@app.route("/div", methods=["GET"], authorize=[ANY])
 def get_div(i: int = None, j: int = None):
     if i is None or j is None:
         return "0", 200
@@ -120,12 +120,12 @@ def get_div(i: int = None, j: int = None):
         return str(i // j), 200
 
 # another one: i is mandatory, j is optional
-@app.route("/sub", methods=["GET"], authorize=[OPEN])
+@app.route("/sub", methods=["GET"], authorize=[ANY])
 def get_sub(i: int, j: int = 0):
     return str(i - j), 200
 
 # type tests
-@app.route("/type", methods=["GET"], authorize=[OPEN])
+@app.route("/type", methods=["GET"], authorize=[ANY])
 def get_type(f: float = None, i: int = None, b: bool = None, s: str = None):
     if f is not None:
         return f"float {f}", 200
@@ -139,12 +139,12 @@ def get_type(f: float = None, i: int = None, b: bool = None, s: str = None):
         return "", 200
 
 # accept any parameters…
-@app.route("/params", methods=["GET"], authorize=[OPEN], allparams=True)
+@app.route("/params", methods=["GET"], authorize=[ANY], allparams=True)
 def get_params(**kwargs):
     return ' '.join(sorted(kwargs)), 200
 
 # explicitly forbidden route
-@app.route("/nogo", methods=["GET"], authorize=[FORBIDDEN])
+@app.route("/nogo", methods=["GET"], authorize=[NONE])
 def get_nogo():
     return "", 200
 
@@ -160,7 +160,7 @@ def get_mis2():
     return "", 200
 
 # convenient route all-in-one decorator
-@app.route("/one/<int:i>", methods=["GET"], authorize=[OPEN])
+@app.route("/one/<int:i>", methods=["GET"], authorize=[ANY])
 def get_one(i: int, msg: str, punct: str = "!"):
     return f"{i}: {msg} {punct}", 200
 
@@ -170,6 +170,6 @@ def get_two():
     return "2", 200
 
 # parameter type inference
-@app.route("/infer/<id>", methods=["GET"], authorize=[OPEN])
+@app.route("/infer/<id>", methods=["GET"], authorize=[ANY])
 def get_infer(id: float, i = 2, s = "hi"):
     return f"{id} {i*len(s)}", 200

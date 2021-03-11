@@ -210,10 +210,10 @@ authentication scheme detailed in the next sections.
 
 **Authorization** is managed through the added `authorize` parameter
 to the `route` decorator.
-Three special group names are available in the module: `OPEN`
-to declare a fully opened route, `FORBIDDEN` to close a route (eg
-temporarily) and `AUTHENTICATED` for any authenticated user.
-If the authorize directive is absent or empty, the route is FORBIDDEN (*403*).
+Three special group names are available in the module: `ANY`
+to declare a route opened to anyone, `NONE` to close a route (eg
+temporarily) and `ALL` for all authenticated user.
+If the authorize directive is absent or empty, the route is forbidden (*403*).
 Note that more advanced permissions (eg users can edit themselves) will
 still require manual permission checks at the beginning of the function.
 
@@ -233,7 +233,7 @@ could look like that:
 
 ```Python
 # with FSA_SKIP_PATH = (r"/register", …)
-@app.route("/register", methods=["POST"], authorize=[OPEN])
+@app.route("/register", methods=["POST"], authorize=[ANY])
 def post_register(user: str, password: str):
     if user_already_exists_somewhere(user):
         return f"cannot create {user}", 409
@@ -246,7 +246,7 @@ by one of the other methods. The code for that would be:
 
 ```Python
 # token creation route for any registered user
-@app.route("/login", methods=["GET"], authorize=[AUTHENTICATED])
+@app.route("/login", methods=["GET"], authorize=[ALL])
 def get_login():
     return jsonify(app.create_token(get_user())), 200
 ```
@@ -407,9 +407,9 @@ authenticated user belongs to any of the authorized roles.
 
 There are three special values that can be passed to the `authorize` decorator:
 
- - `OPEN` declares that no authentication is needed on that route.
- - `AUTHENTICATED` declares that any authenticated user can access this route.
- - `FORBIDDEN` returns a *403* on all access. It can be used to close a route
+ - `ANY` declares that no authentication is needed on that route.
+ - `ALL` declares that all authenticated user can access this route.
+ - `NONE` returns a *403* on all access. It can be used to close a route
    temporarily.
 
 The following configuration directive is available:
@@ -446,7 +446,7 @@ The `allparams` parameter makes all request parameters be translated to
 named function parameters that can be manipulated as such, as shown below:
 
 ```Python
-@app.route("/awesome", methods=["PUT"], authorize=[AUTHENTICATED], allparams=True)
+@app.route("/awesome", methods=["PUT"], authorize=[ALL], allparams=True)
 def put_awesome(**kwargs):
     …
 ```

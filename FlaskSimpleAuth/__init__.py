@@ -39,10 +39,10 @@ def int_cast(s: str) -> Optional[int]:
 # note: mypy complains wrongly about non-existing _empty.
 CASTS = {bool: bool_cast, int: int_cast, inspect._empty: str}
 
-# special group names # ALL? ANY? NONE?
-OPEN = "fully open path, no authentication is required"
-AUTHENTICATED = "any non-empty authentication is sufficient"
-FORBIDDEN = "return 403 on all requests"
+# special group names
+ANY = "anyone can come in, no authentication required"
+ALL = "all authentified users are allowed"
+NONE = "none can come int, forbidden path"
 
 
 # guess parameter type
@@ -435,13 +435,12 @@ class Flask(RealFlask):
     def _fsa_authorize(self, *groups):
 
         if len(groups) > 1 and \
-           (OPEN in groups or AUTHENTICATED in groups or FORBIDDEN in groups):
+           (ANY in groups or ALL in groups or NONE in groups or None in groups):
             raise Exception("must not mix OPEN/AUTHENTICATED/FORBIDDEN "
                             "and other groups")
 
-        if OPEN not in groups and \
-           AUTHENTICATED not in groups and \
-           FORBIDDEN not in groups:
+        if ANY not in groups and ALL not in groups and \
+           NONE not in groups and None not in groups:
             assert self._fsa_user_in_group is not None, \
                 "user_in_group callback needed for authorize"
 
@@ -452,9 +451,9 @@ class Flask(RealFlask):
                 # track that some autorization check was performed
                 self._fsa_need_authorization = False
                 # shortcuts
-                if FORBIDDEN in groups:
+                if NONE in groups or None in groups:
                     return "", 403
-                if OPEN in groups:
+                if ANY in groups:
                     return fun(*args, **kwargs)
                 # get user if needed
                 if self._fsa_user is None:
@@ -469,7 +468,7 @@ class Flask(RealFlask):
                 if self._fsa_user is None:
                     return "", 401
                 # shortcut for authenticated users
-                if AUTHENTICATED in groups:
+                if ALL in groups:
                     return fun(*args, **kwargs)
                 # check against all authorized groups/roles
                 for g in groups:
@@ -586,7 +585,7 @@ class Flask(RealFlask):
             roles = kwargs['authorize']
             del kwargs['authorize']
         else:
-            roles = FORBIDDEN
+            roles = NONE
 
         # and make it a list/tuple
         if isinstance(roles, str):
