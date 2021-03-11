@@ -11,7 +11,6 @@ import datetime as dt
 
 from flask import Flask as RealFlask
 from flask import Response, request, jsonify
-from passlib.context import CryptContext  # type: ignore
 
 import logging
 log = logging.getLogger("fsa")
@@ -66,6 +65,8 @@ class Flask(RealFlask):
     # constructor
     def __init__(self, *args, **kwargs):
         RealFlask.__init__(self, *args, **kwargs)
+        self._fsa_get_user_pass = None
+        self._fsa_user_in_group = None
         self._fsa_initialized = False
         return
 
@@ -171,10 +172,14 @@ class Flask(RealFlask):
         # round which make it impossible to configure directly.
         # '2y' is same as '2b' but apache compatible
         scheme = conf.get("FSA_PASSWORD_SCHEME", "bcrypt")
-        options = conf.get("FSA_PASSWORD_OPTIONS",
-                           {'bcrypt__default_rounds': 4,
-                            'bcrypt__default_ident': '2y'})
-        self._fsa_pm = CryptContext(schemes=[scheme], **options)
+        if scheme is not None:
+            options = conf.get("FSA_PASSWORD_OPTIONS",
+                               {'bcrypt__default_rounds': 4,
+                                'bcrypt__default_ident': '2y'})
+            from passlib.context import CryptContext  # type: ignore
+            self._fsa_pm = CryptContext(schemes=[scheme], **options)
+        else:
+            self._fsa_pm = None
         #
         # hooks
         #

@@ -384,6 +384,7 @@ The following configuration directives are available to configure
    Default is `bcrypt`.
    See [passlib documentation](https://passlib.readthedocs.io/en/stable/lib/passlib.hash.html)
    for available options.
+   Set to `None` to disable password checking.
  - `FSA_PASSWORD_OPTIONS` relevant options (for `passlib.CryptContext`).
    Default is `{'bcrypt__default_rounds': 4, 'bcrypt__default_ident': '2y'}`.
 
@@ -466,6 +467,7 @@ and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 
 Change passlib bcrypt version to be compatible with Apache httpd.
 Make the module a full `Flask` wrapper.
+Allow disabling password checking.
 
 ### 1.9.0
 
