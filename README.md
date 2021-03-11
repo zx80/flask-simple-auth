@@ -22,7 +22,7 @@ app = Flask("demo")
 
 # register hooks
 # user_to_password_fun is a function returning the hashed password for a user.
-app.get_user_password(user_to_password_fun)
+app.get_user_pass(user_to_password_fun)
 # user_in_group_fun is a function telling whether a user is in a group.
 app.user_in_group(user_in_group_fun)
 
@@ -154,7 +154,7 @@ by calling some methods to register helper functions.
 # app is already initialized and configured the Flask application
 
 # return password hash if any, or None
-def get_user_password(user):
+def get_user_pass(user):
     return …
 
 # return whether user is in group
@@ -165,7 +165,7 @@ from FlaskSimpleAuth import Flask
 app = Flask('test')
 
 # register hooks manually
-app.get_user_pass(get_user_password)
+app.get_user_pass(get_user_pass)
 app.user_in_group(user_in_group)
 # they can also be provided in the Flask configuration with
 # - FSA_GET_USER_PASS
@@ -374,7 +374,7 @@ The following configuration directive is available:
 #### Password Authentication (`param` or `basic`)
 
 For checking passwords the password (salted hash) must be retrieved through
-`get_user_password(user)`.
+`get_user_pass(user)`.
 This function must be provided by the application when the module is initialized.
 
 The following configuration directives are available to configure
