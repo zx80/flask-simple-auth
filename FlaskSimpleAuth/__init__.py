@@ -128,31 +128,36 @@ class Flask(RealFlask):
         # tr -cd "[a-z0-9_]" "": is there a better way to do that?
         keep_char = re.compile(r"[-a-z0-9_]").match
         self._fsa_realm = "".join(c for c in realm if keep_char(c))
-        import random
-        import string
-        # list of 94 chars, about 6.5 bits per char
-        chars = string.ascii_letters + string.digits + string.punctuation
+        self._fsa_delay = conf.get("FSA_TOKEN_DELAY", 60.0)
+        self._fsa_grace = conf.get("FSA_TOKEN_GRACE", 0.0)
+        if self._fsa_type == "jwt":
+            algo = conf.get("FSA_TOKEN_HASH", "HS256")
+            if algo[0] in ("R", "E", "P"):
+                assert "FSA_TOKEN_SECRET" in conf and "FSA_TOKEN_SIGN" in conf, \
+                    "pubkey kwt signature require explicit secret and sign"
         if "FSA_TOKEN_SECRET" in conf:
             self._fsa_secret = conf["FSA_TOKEN_SECRET"]
             if self._fsa_secret is not None and len(self._fsa_secret) < 16:
                 log.warning("token secret is short")
-        else:  # FIXME not ok for jwt pubkey signature algorithms
+        else:
+            # list of 94 chars, about 6.5 bits per char
+            import random
+            import string
             log.warning("random token secret, only ok for one process app")
+            chars = string.ascii_letters + string.digits + string.punctuation
             self._fsa_secret = ''.join(random.SystemRandom().choices(chars, k=40))
-        self._fsa_delay = conf.get("FSA_TOKEN_DELAY", 60.0)
-        self._fsa_grace = conf.get("FSA_TOKEN_GRACE", 0.0)
         if self._fsa_type == "fsa":
             self._fsa_sign = self._fsa_secret
             self._fsa_hash = conf.get("FSA_TOKEN_HASH", "blake2s")
             self._fsa_siglen = conf.get("FSA_TOKEN_LENGTH", 16)
         elif self._fsa_type == "jwt":
-            hash = conf.get("FSA_TOKEN_HASH", "HS256")
-            self._fsa_hash = hash
-            if hash[0] in ("R", "E", "P"):
+            h = conf.get("FSA_TOKEN_HASH", "HS256")
+            self._fsa_hash = h
+            if h[0] in ("R", "E", "P"):
                 self._fsa_sign = conf["FSA_TOKEN_SIGN"]
-            elif hash[0] == "H":
+            elif h[0] == "H":
                 self._fsa_sign = self._fsa_secret
-            elif hash == "none":
+            elif h == "none":
                 self._fsa_sign = None
             else:
                 raise Exception("unexpected jwt FSA_TOKEN_HASH ({hash})")
