@@ -131,7 +131,7 @@ class Flask(RealFlask):
         self._fsa_delay = conf.get("FSA_TOKEN_DELAY", 60.0)
         self._fsa_grace = conf.get("FSA_TOKEN_GRACE", 0.0)
         if self._fsa_type == "jwt":
-            algo = conf.get("FSA_TOKEN_HASH", "HS256")
+            algo = conf.get("FSA_TOKEN_ALGO", "HS256")
             if algo[0] in ("R", "E", "P"):
                 assert "FSA_TOKEN_SECRET" in conf and "FSA_TOKEN_SIGN" in conf, \
                     "pubkey kwt signature require explicit secret and sign"
@@ -148,19 +148,19 @@ class Flask(RealFlask):
             self._fsa_secret = ''.join(random.SystemRandom().choices(chars, k=40))
         if self._fsa_type == "fsa":
             self._fsa_sign = self._fsa_secret
-            self._fsa_hash = conf.get("FSA_TOKEN_HASH", "blake2s")
+            self._fsa_algo = conf.get("FSA_TOKEN_ALGO", "blake2s")
             self._fsa_siglen = conf.get("FSA_TOKEN_LENGTH", 16)
         elif self._fsa_type == "jwt":
-            h = conf.get("FSA_TOKEN_HASH", "HS256")
-            self._fsa_hash = h
-            if h[0] in ("R", "E", "P"):
+            algo = conf.get("FSA_TOKEN_ALGO", "HS256")
+            self._fsa_algo = algo
+            if algo[0] in ("R", "E", "P"):
                 self._fsa_sign = conf["FSA_TOKEN_SIGN"]
-            elif h[0] == "H":
+            elif algo[0] == "H":
                 self._fsa_sign = self._fsa_secret
-            elif h == "none":
+            elif algo == "none":
                 self._fsa_sign = None
             else:
-                raise Exception("unexpected jwt FSA_TOKEN_HASH ({hash})")
+                raise Exception("unexpected jwt FSA_TOKEN_ALGO ({algo})")
             self._fsa_siglen = 0
         else:
             raise Exception(f"invalid FSA_TOKEN_TYPE ({self._fsa_type})")
@@ -291,7 +291,7 @@ class Flask(RealFlask):
     # FSA_TOKEN_TYPE: 'jwt' or 'fsa'
     # for fsa, the format is: <realm>:<user>:<validity-limit>:<signature>
     # FSA_TOKEN_NAME: name of parameter holding the token, or None for bearer auth
-    # FSA_TOKEN_HASH:
+    # FSA_TOKEN_ALGO:
     # - for 'fsa': hashlib algorithm for token authentication ("blake2s")
     # - for 'jwt': signature algorithm ("HS256")
     # FSA_TOKEN_LENGTH:
@@ -306,7 +306,7 @@ class Flask(RealFlask):
     # sign data with secret
     def _fsa_cmp_sig(self, data, secret):
         import hashlib
-        h = hashlib.new(self._fsa_hash)
+        h = hashlib.new(self._fsa_algo)
         h.update(f"{data}:{secret}".encode())
         return h.digest()[:self._fsa_siglen].hex()
 
@@ -327,7 +327,7 @@ class Flask(RealFlask):
         exp = dt.datetime.utcnow() + dt.timedelta(minutes=delay)
         import jwt
         return jwt.encode({"exp": exp, "sub": user, "aud": realm},
-                          secret, algorithm=self._fsa_hash)
+                          secret, algorithm=self._fsa_algo)
 
     # create a new token for user depending on the configuration
     def create_token(self, user):
@@ -362,7 +362,7 @@ class Flask(RealFlask):
         import jwt
         try:
             data = jwt.decode(token, self._fsa_secret, leeway=self._fsa_delay * 60,
-                              audience=self._fsa_realm, algorithms=[self._fsa_hash])
+                              audience=self._fsa_realm, algorithms=[self._fsa_algo])
             return data['sub']
         except jwt.ExpiredSignatureError:
             log.debug(f"LOGIN (token): token {token} has expired")

@@ -341,7 +341,7 @@ The following configuration directives are available:
    Default is *60* minutes.
  - `FSA_TOKEN_GRACE` number of minutes of grace time for token validity.
    Default is *0* minutes.
- - `FSA_TOKEN_HASH` hash algorithm used to sign the token.
+ - `FSA_TOKEN_ALGO` algorithm used to sign the token.
    Default is `blake2s` for `fsa` and `HS256` for *jwt*.
  - `FSA_TOKEN_LENGTH` number of hash bytes kept for token signature.
    Default is *16* for `fsa`. The directive is ignored for `jwt`.
@@ -468,6 +468,7 @@ Advertise only the extended `route` decorator in the documentation
 (though others are still used internally).
 Change passlib bcrypt version to be compatible with Apache httpd.
 Allow disabling password checking.
+Rename `FSA_TOKEN_HASH` as `FSA_TOKEN_ALGO`.
 
 ### 1.9.0
 
