@@ -447,8 +447,8 @@ The `allparams` parameter makes all request parameters be translated to
 named function parameters that can be manipulated as such, as shown below:
 
 ```Python
-@app.route("/awsome", methods=["PUT"], authorize=[AUTHENTICATED], allparams=True)
-def put_awsome(**kwargs):
+@app.route("/awesome", methods=["PUT"], authorize=[AUTHENTICATED], allparams=True)
+def put_awesome(**kwargs):
     …
 ```
 
