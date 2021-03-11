@@ -225,15 +225,6 @@ def post_somewhere(stuff: str, nstuff: int, bstuff: bool = False):
     …
 ```
 
-Special parameter `allparams` triggers converting all HTTP/JSON parameters
-as keywords arguments.
-
-```Python
-@app.route("/awsome", methods=["PUT"], authorize=[AUTHENTICATED], allparams=True)
-def put_awsome(**kwargs):
-    …
-```
-
 An opened route for user registration with mandatory parameters
 could look like that:
 
@@ -430,52 +421,11 @@ For those, careful per-operation authorization will still be needed.
 
 ### Parameters
 
-This decorators translates automatically request parameters (HTTP or JSON)
-to function parameters, relying on function type annotations to do that.
+Request parameters (HTTP or JSON) are translated automatically to
+function parameters, by relying on function type annotations.
 
 By default, the decorator guesses whether parameters are mandatory based on
 provided default values, i.e. they are optional when a default is provided.
-
-The `required` parameter allows to declare whether all parameters
-must be set (when *True*), or whether they are optional (*False*) in which
-case *None* values are passed if no defaults are given.
-
-The `allparams` parameter makes all request parameters be translated to
-named function parameters that can be manipulated as such.
-
-```Python
-@app.route("/thing/<int:tid>", methods=["PATCH"])
-def patch_thing_tid(tid: int, name: str = None, price: float = None):
-    if name is not None:
-        update_name(tid, name)
-    …
-    return "", 204
-```
-
-The decorator also accepts positional string arguments. It expects these
-parameter names and generates a *400* if any is missing from the request,
-and passes them to function named parameters.
-The decorator looks for HTTP or JSON parameters.
-
-```Python
-@app.route("/thing/<int:tid>", methods=["PUT"])
-@fsa.parameters("name")
-def put_thing_tid(tid, name):
-    …
-```
-
-The decorator also accepts named parameters associated to a type. It expects
-these parameter names and generate a *400* if any is missing from the request,
-it converts the parameter string value to the expected type, resulting in a
-*400* again if the type conversion fails, and it passes these to the function
-as named parameters.
-
-```Python
-@app.route("/add", methods=["GET"])
-@fsa.parameters(a=float, b=float)
-def get_add(a, b):
-    return str(a + b), 200
-```
 
 Request parameter string values are converted to the target type.
 For `int`, base syntax is accepted, i.e. `0x11`, `0b10001` and `17`
@@ -483,9 +433,24 @@ all mean decimal *17*.
 For `bool`, *False* is an empty string, `0`, `False` or `F`, otherwise
 the value is *True*.
 
-A side-effect of the `parameters` decorator passing of request parameters as
-named function parameters is that request parameter names must be valid python
-identifiers, which excludes keywords such as `pass`, `def` or `for`.
+The `required` parameter allows to declare whether all parameters
+must be set (when *True*), or whether they are optional (*False*) in which
+case *None* values are passed if no defaults are given, or if this is
+guessed (when *None*, the default).
+
+The `allparams` parameter makes all request parameters be translated to
+named function parameters that can be manipulated as such, as shown below:
+
+```Python
+@app.route("/awsome", methods=["PUT"], authorize=[AUTHENTICATED], allparams=True)
+def put_awsome(**kwargs):
+    …
+```
+
+A side-effect of passing of request parameters as named function parameters
+is that request parameter names must be valid python identifiers,
+which excludes keywords such as `pass`, `def` or `for`, unless passed
+as keywords arguments.
 
 ## Versions
 
