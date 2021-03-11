@@ -151,22 +151,21 @@ by calling some methods to register helper functions.
  - a function which tells whether a user is in a group or role.
 
 ```Python
-# app is already initialized and configured the Flask application
+from FlaskSimpleAuth import Flask
+app = Flask('test')
+
+# register hooks
 
 # return password hash if any, or None
+@app.get_user_pass
 def get_user_pass(user):
     return …
 
 # return whether user is in group
+@app.user_in_group
 def user_in_group(user, group):
     return …
 
-from FlaskSimpleAuth import Flask
-app = Flask('test')
-
-# register hooks manually
-app.get_user_pass(get_user_pass)
-app.user_in_group(user_in_group)
 # they can also be provided in the Flask configuration with
 # - FSA_GET_USER_PASS
 # - FSA_USER_IN_GROUP
