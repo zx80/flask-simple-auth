@@ -39,7 +39,7 @@ def int_cast(s: str) -> Optional[int]:
 # note: mypy complains wrongly about non-existing _empty.
 CASTS = {bool: bool_cast, int: int_cast, inspect._empty: str}
 
-# special group names
+# special group names # ALL? ANY? NONE?
 OPEN = "fully open path, no authentication is required"
 AUTHENTICATED = "any non-empty authentication is sufficient"
 FORBIDDEN = "return 403 on all requests"
