@@ -555,3 +555,4 @@ Implementation
  - token caching (especially for expensive jwt checks)?
  - how to deal with expiration?
  - cleanup unused features?
+ - test UUID
