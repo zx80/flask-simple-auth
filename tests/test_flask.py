@@ -164,11 +164,11 @@ def test_register(client):
     app._fsa_auth = sauth
 
 def test_fsa_token():
-    tsave, hsave, app._fsa_type, app._fsa_hash = app._fsa_type, app._fsa_hash, "fsa", "blake2s"
+    tsave, hsave, app._fsa_type, app._fsa_algo = app._fsa_type, app._fsa_algo, "fsa", "blake2s"
     calvin_token = app.create_token("calvin")
     assert calvin_token[:12] == "test:calvin:"
     assert app._fsa_get_token_auth(calvin_token) == "calvin"
-    app._fsa_type, app._fsa_hash = tsave, hsave
+    app._fsa_type, app._fsa_algo = tsave, hsave
 
 def test_expired_token():
     hobbes_token = app.create_token("hobbes")
@@ -200,7 +200,7 @@ JtTFy+PPh909GQIhAMokyDzv42nWS0hiE6ofuDQZZcqz1LVotcH4wN3rMExRAiAd
 """
 
 def test_jwt_token():
-    tsave, hsave, app._fsa_type, app._fsa_hash = app._fsa_type, app._fsa_hash, "jwt", "HS256"
+    tsave, hsave, app._fsa_type, app._fsa_algo = app._fsa_type, app._fsa_algo, "jwt", "HS256"
     Ksave, ksave = app._fsa_secret, app._fsa_sign
     # hmac signature scheme
     moe_token = app.create_token("moe")
@@ -208,7 +208,7 @@ def test_jwt_token():
     user = app._fsa_get_token_auth(moe_token)
     assert user == "moe"
     # pubkey signature scheme
-    app._fsa_hash = "RS256"
+    app._fsa_algo = "RS256"
     app._fsa_secret = RSA_TEST_PUB_KEY
     app._fsa_sign = RSA_TEST_PRIV_KEY
     mum_token = app.create_token("mum")
@@ -216,7 +216,7 @@ def test_jwt_token():
     user = app._fsa_get_token_auth(mum_token)
     assert user == "mum"
     # cleanup
-    app._fsa_type, app._fsa_hash = tsave, hsave
+    app._fsa_type, app._fsa_algo = tsave, hsave
     app._fsa_secret, app._fsa_sign = Ksave, ksave
 
 def test_invalid_token():
