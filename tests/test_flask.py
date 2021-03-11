@@ -94,7 +94,6 @@ def all_auth(client, user, pswd, check, *args, **kwargs):
     check(client.get(*args, **kwargs, data={"auth": token_basic}))
     app._fsa_name = None
     bearer = lambda t: {"Authorization": "Bearer " + t}
-    log.debug(f"token_fake = {token_fake}")
     check(client.get(*args, **kwargs, headers=bearer(token_fake)))
     check(client.get(*args, **kwargs, headers=bearer(token_param)))
     check(client.get(*args, **kwargs, headers=bearer(token_basic)))
