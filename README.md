@@ -204,7 +204,7 @@ Default is *True*.
 The authentication, authorization and parameter chechs are managed
 automatically through the extented `route` decorator.
 
-**Authentication** is transparently activated controlled by various
+**Authentication** is transparently activated and controlled by various
 directives as described in the previous section, and for each
 authentication scheme detailed in the next sections. 
 
