@@ -4,7 +4,7 @@
 # This code is public domain.
 #
 
-from typing import Optional, Callable, Dict, List, Any
+from typing import Optional, Callable, Dict, Any
 import functools
 import inspect
 import datetime as dt
@@ -66,37 +66,6 @@ class Flask(RealFlask):
     # constructor
     def __init__(self, *args, **kwargs):
         RealFlask.__init__(self, *args, **kwargs)
-        # authentication
-        self._fsa_auth = "httpd"
-        self._fsa_lazy = True
-        self._fsa_always = True
-        self._fsa_check = True
-        self._fsa_skip_path: List[Callable] = []
-        # auth token
-        self._fsa_type = 'fsa'
-        self._fsa_name: Optional[str] = None
-        self._fsa_realm = ""
-        self._fsa_secret = None
-        self._fsa_sign = None
-        self._fsa_delay = 60.0
-        self._fsa_grace = 0.0
-        self._fsa_hash = ""
-        self._fsa_siglen = 16
-        # parameter names
-        self._fsa_login = "LOGIN"
-        self._fsa_userp = "USER"
-        self._fsa_passp = "PASS"
-        # password management
-        self._fsa_pm: Optional[CryptContext] = None
-        # hooks
-        self._fsa_get_user_pass = None
-        self._fsa_user_in_group = None
-        # authenticated user
-        self._fsa_user = None
-        self._fsa_need_authorization: True
-        #
-        # was late initialization performed?
-        #
         self._fsa_initialized = False
         return
 
