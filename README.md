@@ -130,11 +130,10 @@ The authentication is configured with `FSA_TYPE`:
 - `fake` parameter-based auth for fast and simple testing
   the claimed login is coldly trusted…
 
-You shoud also consider
-[Flask HTTPAuth](https://github.com/miguelgrinberg/Flask-HTTPAuth)
-which provides many options, but cannot be easily configured
-to change authentication methods.  In constrast, this module
-performs authentication before any user code is executed.
+You should also consider the many options provided by
+[Flask HTTPAuth](https://github.com/miguelgrinberg/Flask-HTTPAuth).
+However, it cannot be easily configured to change authentication methods.
+Also, this module performs authentication before any user code is executed.
 It also adds a convenient management of request parameters.
 
 Note that web-oriented flask authentication modules are not really
