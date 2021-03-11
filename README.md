@@ -2,7 +2,7 @@
 
 Simple authentication, authorization and parameter checks
 for [Flask](https://flask.palletsprojects.com/), controled from
-Flask configuration and decorators.
+Flask configuration and the `route` decorator.
 
 
 ## Example
