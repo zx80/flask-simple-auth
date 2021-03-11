@@ -498,6 +498,7 @@ and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 ### dev
 
 Change passlib bcrypt version to be compatible with Apache httpd.
+Make the module a full `Flask` wrapper.
 
 ### 1.9.0
 

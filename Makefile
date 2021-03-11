@@ -5,7 +5,7 @@ check: venv
 	. venv/bin/activate
 	type python3
 	mypy FlaskSimpleAuth
-	flake8 FlaskSimpleAuth
+	flake8 --ignore=E501 FlaskSimpleAuth
 	pytest --log-level=debug --capture=tee-sys tests
 
 .PHONY: clean

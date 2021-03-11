@@ -45,6 +45,7 @@ OPEN = "fully open path, no authentication is required"
 AUTHENTICATED = "any non-empty authentication is sufficient"
 FORBIDDEN = "return 403 on all requests"
 
+
 # guess parameter type
 def typeof(p: inspect.Parameter):
     if p.kind == p.VAR_KEYWORD:
@@ -393,8 +394,9 @@ class Flask(RealFlask):
 
     def _fsa_get_token_auth(self, token):
         log.debug(f"checking token: {token}")
-        return self._fsa_get_fsa_token_auth(token) if self._fsa_type == "fsa" else \
-               self._fsa_get_jwt_token_auth(token)
+        return \
+            self._fsa_get_fsa_token_auth(token) if self._fsa_type == "fsa" else \
+            self._fsa_get_jwt_token_auth(token)
 
     def _fsa_get_password_auth(self):
         try:
@@ -459,9 +461,7 @@ class Flask(RealFlask):
     def _fsa_authorize(self, *groups):
 
         if len(groups) > 1 and \
-           (OPEN in groups or
-            AUTHENTICATED in groups or
-            FORBIDDEN in groups):
+           (OPEN in groups or AUTHENTICATED in groups or FORBIDDEN in groups):
             raise Exception("must not mix OPEN/AUTHENTICATED/FORBIDDEN "
                             "and other groups")
 
