@@ -143,6 +143,7 @@ def get_type(f: float = None, i: int = None, b: bool = None, s: str = None):
 def get_params(**kwargs):
     return ' '.join(sorted(kwargs)), 200
 
+# explicitly forbidden route
 @app.route("/nogo", methods=["GET"], authorize=[FORBIDDEN])
 def get_nogo():
     return "", 200
