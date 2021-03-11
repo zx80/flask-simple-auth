@@ -8,11 +8,11 @@ Flask configuration and decorators.
 ## Example
 
 The application code below performs authentication, authorization and
-parameter checks triggered by decorators.
+parameter checks triggered by an extended `route` decorator.
 There is no clue in the source about what kind of authentication is used,
 which is the whole point: authentication schemes are managed elsewhere, not
 explicitely in the application code.
-Parameters are type checked and converted automatically.
+Path and HTTP or JSON parameters are type checked and converted automatically.
 Basically, you just have to implement a Python function and most of the
 crust is managed by Flask and FlaskSimpleAuth.
 
@@ -47,7 +47,7 @@ FSA_TYPE = 'param'     # HTTP parameter auth
 ```
 
 If the `authorize` argument is not supplied, the security first approach
-results in the route to be aborted with a *500*.
+results in the route to be forbidden (*403*).
 
 Various aspects of the implemented schemes can be configured with other
 directives, with reasonable defaults provided so that not much is really
@@ -65,7 +65,8 @@ checking for permissions in a per-role authorization model, or possibly
 forced for all/most paths.
 The module implements inheriting the web-server authentication,
 password authentication (HTTP Basic, or HTTP/JSON parameters),
-authentication tokens (custom or jwt), and
+authentication tokens (custom or jwt passed in headers or as a
+parameter), and
 a fake authentication scheme useful for application testing.
 It allows to have a login route to generate authentication tokens.
 For registration, support functions allow to hash new passwords consistently
@@ -82,7 +83,8 @@ catch forgotten requirements.
 
 **Parameters** expected in the request can be declared, their presence and type
 checked, and they are added automatically as named parameters to route functions,
-skipping the burden of checking them in typical REST functions.
+skipping the burden of checking them in typical REST functions. In practice,
+importing Flask's `request` global variable is not necessary.
 
 
 ## Documentation
@@ -115,10 +117,10 @@ This simple module allows configurable authentication (`FSA_TYPE`):
   the claimed login is coldly trusted…
 
 I have considered [Flask HTTPAuth](https://github.com/miguelgrinberg/Flask-HTTPAuth)
-obviously, which provides many options, but I do not want to force their
-per-route-only model and explicit classes but rather rely on mandatory request hooks
-and have everything managed from the configuration file to easily switch
-between schemes, without impact on the application code.
+obviously, which provides many options, but cannot be easily configured
+to change the authentication methods.  In constrast, this module
+performs can authentication before any request is performed and user code
+is executed. It also adds a convenient management of request parameters.
 
 Note that this is intended for a REST API implementation serving
 a remote application. It does not make much sense to "login" and "logout"
@@ -136,9 +138,10 @@ presenting login forms for instance.
 
 ### Initialisation
 
-The module is initialized by calling `setConfig` with three arguments:
+The module is simply initialize by calling its `Flask` constructor
+and providing a configuration through `FSA_*` directives, or possibly
+by calling some methods to register helper functions.
 
- - the Flask application object.
  - a function to retrieve the password hash from the user name.
  - a function which tells whether a user is in a group or role.
 
@@ -153,8 +156,15 @@ def get_user_password(user):
 def user_in_group(user, group):
     return …
 
-import FlaskSimpleAuth as fsa
-fsa.setConfig(app, get_user_password, user_in_group)
+from FlaskSimpleAuth import Flask
+app = Flask('test')
+
+# register hooks manually
+app.get_user_pass(get_user_password)
+app.user_in_group(user_in_group)
+# they can also be provided in the Flask configuration with
+# - FSA_GET_USER_PASS
+# - FSA_USER_IN_GROUP
 ```
 
 Then the module can be used to retrieve the authenticated user with `get_user`,
@@ -188,20 +198,41 @@ Default is *True*.
 
 ### Using Authentication, Authorization and Parameter Check
 
-Then all route functions can take advantage of this information to check for
-authorizations with the `authorize` decorator, and for parameters with the
-`parameters` decorator. All decorators are wrapped into a convenient `route`
-decorator which extends Flask's own with authentication, authorization and
-parameter management.
+The authentication, authorization and parameter chechs are managed
+automatically through the extented `route` decorator.
+
+**Authentication** is transparently activated controlled by various
+directives as described in the previous section, and for each
+authentication scheme detailed in the next sections. 
+
+**Authorization** is managed through the added `authorize` parameter
+to the `route` decorator.
+Three special group names are available in the module: `OPEN`
+to declare a fully opened route, `FORBIDDEN` to close a route (eg
+temporarily) and `AUTHENTICATED` for any authenticated user.
+If the authorize directive is absent or empty, the route is FORBIDDEN (*403*).
+Note that more advanced permissions (eg users can edit themselves) will
+still require manual permission checks at the beginning of the function.
+
+**Parameters** are managed transparently, either coming from the route path
+or from HTTP/JSON parameters. Type conversion are performed based on
+type annotations for all parameters. Parameters with default values are
+optional, those without are mandatory.
 
 ```Python
-@fsa.route("/somewhere", methods=["POST"], authorize=["posters"])
+@app.route("/somewhere/<stuff>", methods=["POST"], authorize=["posters"])
 def post_somewhere(stuff: str, nstuff: int, bstuff: bool = False):
     …
 ```
 
-Note that more advanced permissions (eg users can edit themselves) will
-still require manual permission checks at the beginning of the function.
+Special parameter `allparams` triggers converting all HTTP/JSON parameters
+as keywords arguments.
+
+```Python
+@app.route("/awsome", methods=["PUT"], authorize=[AUTHENTICATED], allparams=True)
+def put_awsome(**kwargs):
+    …
+```
 
 An opened route for user registration with mandatory parameters
 could look like that:
@@ -217,7 +248,7 @@ def post_register(user: str, password: str):
 ```
 
 For `token` authentication, a token can be created on a path authenticated
-by one of the other methods. The code for that would be as simple as:
+by one of the other methods. The code for that would be:
 
 ```Python
 # token creation route for any registered user
@@ -229,10 +260,13 @@ def get_login():
 The client application will return the token as a parameter for
 authenticating later requests, till it expires.
 
+
+### Authentication
+
 The main configuration directive is `FSA_TYPE` which governs authentication
 methods used by the `get_user` function, as described in the following sections:
 
-### `httpd` Authentication
+#### `httpd` Authentication
 
 Inherit web server supplied authentication through `request.remote_user`.
 This is the default.
@@ -243,7 +277,7 @@ than python code, so this should be the preferred option.
 However, it could require significant configuration effort compared to
 the application-side approach.
 
-### `basic` Authentication
+#### `basic` Authentication
 
 HTTP Basic password authentication, which rely on the `Authorization`
 HTTP header in the request.
@@ -251,7 +285,7 @@ HTTP header in the request.
 See also Password Authentication below for how the password is retrieved
 and checked.
 
-### `param` Authentication
+#### `param` Authentication
 
 HTTP parameter or JSON password authentication.
 User name and password are passed as request parameters.
@@ -266,11 +300,11 @@ The following configuration directives are available:
 See also Password Authentication below for how the password is retrieved
 and checked.
 
-### `password` Authentication
+#### `password` Authentication
 
 Tries `basic` then `param` authentication.
 
-### `token` Authentication
+#### `token` Authentication
 
 Only rely on signed tokens for authentication.
 A token certifies that a *user* is authenticated in a *realm* up to some
@@ -330,7 +364,7 @@ Another benefit of token is that it avoids sending passwords over and over.
 The rational option is to use a password scheme to retrieve a token and then to
 use it till it expires.
 
-### `fake` Authentication
+#### `fake` Authentication
 
 Trust a parameter for authentication claims.
 Only for local tests, obviously.
@@ -341,7 +375,7 @@ The following configuration directive is available:
  - `FSA_FAKE_LOGIN` name of parameter holding the user name.
    Default is `LOGIN`.
 
-### Password Authentication (`param` or `basic`)
+#### Password Authentication (`param` or `basic`)
 
 For checking passwords the password (salted hash) must be retrieved through
 `get_user_password(user)`.
@@ -360,37 +394,27 @@ The following configuration directives are available to configure
 Beware that modern password checking is often pretty expensive in order to
 thwart password cracking if the hashed passwords are leaked, so that you
 do not want to have to use that on every request in real life (eg hundreds
-milliseconds for passlib bcrypt 12 rounds).
+milliseconds for passlib bcrypt *12* rounds).
 The above defaults result in manageable password checks of a few milliseconds.
 Consider enabling tokens to reduce the authentication load on each request.
 
 Function `hash_password(pass)` computes the password salted digest compatible
 with the current configuration.
 
-### `authorize` Decorator
 
-The decorator expects a list of identifiers, which are typically names or
-numbers.
-When several groups are specified, any will allow the operation to proceed.
+### Authorization
 
-```Python
-# group ids
-ADMIN, WRITE, READ = 1, 2, 3
+Role-oriented authorizations are managed through the `authorize` parameter to
+the `route` decorator, which provides a list of roles authorized
+to call a route. A role is identified as an integer or a string.
+The check calls `user_in_group(user, group)` function to check whether the
+authenticated user belongs to any of the authorized roles.
 
-@app.route("/some/place", methods=["POST"])
-@fsa.authorize(ADMIN, WRITE)
-def post_some_place():
-    …
-```
+There are three special values that can be passed to the `authorize` decorator:
 
-The check will call `user_in_group(user, group)` function to check whether the
-authenticated user belongs to any of the authorized groups.
-
-There are two special values that can be passed to the `authorize` decorator:
-
- - `fsa.OPEN` declares that no authentication is needed on that route.
- - `fsa.AUTHENTICATED` declares that any authenticated user can access this route.
- - `fsa.FORBIDDEN` returns a *403* on all access. It can be used to close a route
+ - `OPEN` declares that no authentication is needed on that route.
+ - `AUTHENTICATED` declares that any authenticated user can access this route.
+ - `FORBIDDEN` returns a *403* on all access. It can be used to close a route
    temporarily.
 
 The following configuration directive is available:
@@ -403,7 +427,8 @@ Note that this simplistic model does is not enough for non-trivial applications,
 where permissions on objects often depend on the object owner.
 For those, careful per-operation authorization will still be needed.
 
-### `parameters` Decorator
+
+### Parameters
 
 This decorators translates automatically request parameters (HTTP or JSON)
 to function parameters, relying on function type annotations to do that.
@@ -420,15 +445,12 @@ named function parameters that can be manipulated as such.
 
 ```Python
 @app.route("/thing/<int:tid>", methods=["PATCH"])
-@fsa.parameters()
 def patch_thing_tid(tid: int, name: str = None, price: float = None):
     if name is not None:
         update_name(tid, name)
     …
     return "", 204
 ```
-
-The `parameters` decorator **must** be placed *after* the `authorize` decorator.
 
 The decorator also accepts positional string arguments. It expects these
 parameter names and generates a *400* if any is missing from the request,
@@ -464,31 +486,6 @@ the value is *True*.
 A side-effect of the `parameters` decorator passing of request parameters as
 named function parameters is that request parameter names must be valid python
 identifiers, which excludes keywords such as `pass`, `def` or `for`.
-
-## `route` Decorator
-
-This decorator is a shortcut for Flask's `route`, and FlaskSimpleAuth
-`authorize` and `parameters`.
-
-```Python
-@fsa.route("/foo/<id>", methods=["GET"], authorize=["getters"])
-def get_foo(id: int, j: int, k = 0):
-    …
-```
-
-Is the same as:
-
-```Python
-@app.route("/foo/<int:id>", methods=["GET"])
-@fsa.authorize("getters")
-@fsa.parameters()
-def get_foo(id: int, j: int, k = 0):
-    …
-```
-
-Note that path section type `int` for path parameter `id` is inferred from
-the function declaration. Also, optional parameter `k` is typed as int because
-of its default value.
 
 ## Versions
 
