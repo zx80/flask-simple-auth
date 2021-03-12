@@ -176,33 +176,13 @@ def user_in_group(user, group):
 # - FSA_USER_IN_GROUP
 ```
 
-Then the module can be used to retrieve the authenticated user with `get_user`,
-which raises `AuthException` on failures.
-Some path may require to skip authentication, for instance registering a new user.
+Once initialized `app` is a standard Flask object with some additions:
 
-Three directives impact how and when authentication is performed.
-
-- `FSA_TYPE` governs the *how*: `httpd`, `basic`, `param`, `password`, `token`…
-as described below.
-Default is `httpd`.
-
-- `FSA_ALWAYS` tells whether to perform authentication in a before request
-hook. Default is *True*.  On authentication failures *401* are returned.
-Once in a route function, `get_user` will always return the authenticated
-user and cannot fail.
-
-- `FSA_SKIP_PATH` is a list of regular expression patterns which are matched
-against the request path for skipping systematic authentication.
-Default is empty, i.e. authentication is applied for all paths.
-
-- `FSA_LAZY` tells whether to attempt authentication lazily when checking an
-authorization through a `authorize` decorator or argument to the `route`
-decorator.
-Default is *True*.
-
-- `FSA_CHECK` tells whether to generate a *500* internal error if a route
-is missing an explicit authorization check.
-Default is *True*.
+- `route` decorator, an extended version of Flask's own
+- `user_in_group` and `get_user_pass` methods/decorator to register helper functions
+- `get_user` to extract the authenticated user or raise an `AuthException`.
+- `hash_password` to hash a password
+- `get_token`  to compute a new authentication token for the current user
 
 
 ### Using Authentication, Authorization and Parameter Check
@@ -210,9 +190,8 @@ Default is *True*.
 The authentication, authorization and parameter chechs are managed
 automatically through the extented `route` decorator.
 
-**Authentication** is transparently activated and controlled by various
-directives as described in the previous section, and for each
-authentication scheme detailed in the next sections. 
+**Authentication** is transparently activated and controlled by many
+configuration directives as described in the next section.
 
 **Authorization** is managed through the added `authorize` parameter
 to the `route` decorator.
@@ -263,8 +242,32 @@ authenticating later requests, till it expires.
 
 ### Authentication
 
+Three directives impact how and when authentication is performed.
 The main configuration directive is `FSA_TYPE` which governs authentication
-methods used by the `get_user` function, as described in the following sections:
+methods used by the `get_user` function, as described in the following sections.
+
+- `FSA_TYPE` governs the *how*: `httpd`, `basic`, `param`, `password`, `token`…
+as described below.
+Default is `httpd`.
+
+- `FSA_ALWAYS` tells whether to perform authentication in a before request
+hook. Default is *True*.  On authentication failures *401* are returned.
+Once in a route function, `get_user` will always return the authenticated
+user and cannot fail.
+
+- `FSA_SKIP_PATH` is a list of regular expression patterns which are matched
+against the request path for skipping systematic authentication.
+Default is empty, i.e. authentication is applied for all paths.
+
+- `FSA_LAZY` tells whether to attempt authentication lazily when checking an
+authorization through a `authorize` decorator or argument to the `route`
+decorator.
+Default is *True*.
+
+- `FSA_CHECK` tells whether to generate a *500* internal error if a route
+is missing an explicit authorization check.
+Default is *True*.
+
 
 #### `httpd` Authentication
 
