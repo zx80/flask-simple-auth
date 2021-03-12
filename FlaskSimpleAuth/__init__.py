@@ -272,9 +272,9 @@ class Flask(RealFlask):
         assert request.remote_user is None
         params = request.values if request.json is None else request.json
         user = params.get(self._fsa_userp, None)
-        pwd = params.get(self._fsa_passp, None)
         if user is None:
             raise AuthException(f"missing login parameter: {self._fsa_userp}", 401)
+        pwd = params.get(self._fsa_passp, None)
         if pwd is None:
             raise AuthException(f"missing password parameter: {self._fsa_passp}", 401)
         if not request.is_secure:
@@ -541,6 +541,7 @@ class Flask(RealFlask):
             @functools.wraps(fun)
             def wrapper(*args, **kwargs):
 
+                # this cannot happen under normal circumstances because
                 if self._fsa_need_authorization and self._fsa_check:
                     return "missing authorization check", 500
 
