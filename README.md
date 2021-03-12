@@ -2,7 +2,7 @@
 
 Simple authentication, authorization and parameter checks
 for [Flask](https://flask.palletsprojects.com/), controled from
-Flask configuration and the `route` decorator.
+Flask configuration and the extended `route` decorator.
 
 
 ## Example
@@ -10,11 +10,13 @@ Flask configuration and the `route` decorator.
 The application code below performs authentication, authorization and
 parameter checks triggered by the extended `route` decorator.
 There is no clue in the source about what kind of authentication is used,
-which is the whole point: authentication schemes are managed elsewhere, not
-explicitely in the application code.
-Path and HTTP or JSON parameters are type checked and converted automatically.
-Basically, you just have to implement a Python function and most of the
-crust is managed by Flask and FlaskSimpleAuth.
+which is the whole point: authentication schemes are managed in the configuration,
+not explicitely in the application code.
+The authorization rule is declared explicitely on each function with the
+`authorize` parameter.
+Path and HTTP/JSON parameters are type checked and converted automatically.
+Basically, you just have to implement a type-annotated Python function and
+most of the crust is managed by Flask and FlaskSimpleAuth.
 
 ```Python
 from FlaskSimpleAuth import Flask
@@ -41,9 +43,7 @@ with `FSA_*` (Flask simple authentication) directives:
 
 ```Python
 FSA_TYPE = 'httpd'     # inherit web-serveur authentication
-# OR others such as:
-FSA_TYPE = 'basic'     # HTTP Basic auth
-FSA_TYPE = 'param'     # HTTP parameter auth
+# or others such as: basic, param…
 ```
 
 If the `authorize` argument is not supplied, the security first approach
@@ -66,17 +66,16 @@ forced for all/most paths.
 The module implements inheriting the web-server authentication,
 password authentication (HTTP Basic, or HTTP/JSON parameters),
 authentication tokens (custom or jwt passed in headers or as a
-parameter), and
-a fake authentication scheme useful for application testing.
+parameter), and a fake authentication scheme useful for application testing.
 It allows to have a login route to generate authentication tokens.
 For registration, support functions allow to hash new passwords consistently
 with password checks.
 
-**Authorization** can be managed with a simple decorator to declare required
-permissions on a route (eg a role name), and relies on a supplied function to
-check whether a user has this role.  This approach is enough for basic
-authorization management, but would be insufficient for realistic applications
-where users can edit their own data but not those of others.
+**Authorization** are managed by declaring permissions on a route (eg a role name),
+and relies on a supplied function to check whether a user has this role.
+This approach is enough for simple authorization management, but would be
+insufficient for realistic applications where users can edit their own data
+but not those of others.
 An additional feature is that the application aborts requests on routes
 for which there is no explicit authorization declarations, allowing to
 catch forgotten requirements.
