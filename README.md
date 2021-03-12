@@ -213,7 +213,7 @@ by one of the other methods. The code for that would be:
 # token creation route for all registered users
 @app.route("/login", methods=["GET"], authorize=ALL)
 def get_login():
-    return jsonify(app.create_token(get_user())), 200
+    return jsonify(app.create_token(app.get_user())), 200
 ```
 
 The client application will return the token as a parameter for
