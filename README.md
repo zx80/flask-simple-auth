@@ -32,7 +32,7 @@ app.user_in_group(user_in_group_fun)
 # the function gets 3 arguments: one int coming from the path (id)
 # and the remaining two coming from request parameters (some, stuff).
 # "some" is mandatory, stuff is optional because it has a default.
-@fsa.route("/whatever/<id>", methods=["PATCH"], authorize=["patcher"])
+@fsa.route("/whatever/<id>", methods=["PATCH"], authorize="patcher")
 def patch_whatever(id: int, some: int, stuff: str = "wow"):
     # ok to do it, with parameters id, some & stuff
     return "", 204
@@ -188,7 +188,7 @@ type annotations for all parameters. Parameters with default values are
 optional, those without are mandatory.
 
 ```Python
-@app.route("/somewhere/<stuff>", methods=["POST"], authorize=["posters"])
+@app.route("/somewhere/<stuff>", methods=["POST"], authorize="posters")
 def post_somewhere(stuff: str, nstuff: int, bstuff: bool = False):
     …
 ```
@@ -198,7 +198,7 @@ could look like that:
 
 ```Python
 # with FSA_SKIP_PATH = (r"/register", …)
-@app.route("/register", methods=["POST"], authorize=[ANY])
+@app.route("/register", methods=["POST"], authorize=ANY)
 def post_register(user: str, password: str):
     if user_already_exists_somewhere(user):
         return f"cannot create {user}", 409
@@ -211,7 +211,7 @@ by one of the other methods. The code for that would be:
 
 ```Python
 # token creation route for all registered users
-@app.route("/login", methods=["GET"], authorize=[ALL])
+@app.route("/login", methods=["GET"], authorize=ALL)
 def get_login():
     return jsonify(app.create_token(get_user())), 200
 ```
@@ -434,7 +434,7 @@ The `allparams` parameter makes all request parameters be translated to
 named function parameters that can be manipulated as such, as shown below:
 
 ```Python
-@app.route("/awesome", methods=["PUT"], authorize=[ALL], allparams=True)
+@app.route("/awesome", methods=["PUT"], authorize=ALL, allparams=True)
 def put_awesome(**kwargs):
     …
 ```
