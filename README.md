@@ -116,26 +116,6 @@ However, there is still a "login" concept which is only dedicated at
 obtaining an auth token, that the application client needs to update from
 time to time.
 
-The authentication is configured with `FSA_TYPE`:
-
-- `httpd` web-server checked authentication passed in the request.
-
-- `basic` HTTP basic auth with a function hook for getting
-  the password hash.
-
-- `param` same with HTTP parameter-provided login/password.
-
-- `password` tries `basic` then `param`.
-
-- `token` auth uses a signed token to authenticate a
-  user in a realm for some limited time. The token can be
-  obtained by actually authenticating with other methods.
-  It can be provided as a *bearer* authorization header or
-  a parameter.
-
-- `fake` parameter-based auth for fast and simple testing
-  the claimed login is coldly trusted…
-
 You should also consider the many options provided by
 [Flask HTTPAuth](https://github.com/miguelgrinberg/Flask-HTTPAuth).
 However, it cannot be easily configured to change authentication methods.
@@ -247,7 +227,7 @@ The main configuration directive is `FSA_TYPE` which governs authentication
 methods used by the `get_user` function, as described in the following sections.
 
 - `FSA_TYPE` governs the *how*: `httpd`, `basic`, `param`, `password`, `token`…
-as described below.
+as described in details in the next sections.
 Default is `httpd`.
 
 - `FSA_ALWAYS` tells whether to perform authentication in a before request
