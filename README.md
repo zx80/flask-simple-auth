@@ -309,7 +309,7 @@ decoding is involved.
 
 The following configuration directives are available:
 
- - `FSA_TOKEN_TYPE` type of token, either *fsa* or *jwt*.
+ - `FSA_TOKEN_TYPE` type of token, either *fsa*, *jwt* or `None` to disable.
    Default is *fsa*.
  - `FSA_TOKEN_REALM` realm of token.
    Default is the simplified lower case application name.
@@ -321,7 +321,6 @@ The following configuration directives are available:
    Default is a system-generated random string containing 256 bits.
    This default with only work with itself, as it is not shared
    across server instances or processes.
-   Set to *None* to disable tokens.
  - `FSA_TOKEN_SIGN` secret string used for signing tokens, if
    different from previous secret. This is only relevant for public-key
    *jwt* schemes (`R…`, `E…`, `P…`).
@@ -458,6 +457,7 @@ Advertise only the extended `route` decorator in the documentation
 Change passlib bcrypt version to be compatible with Apache httpd.
 Allow disabling password checking.
 Rename `FSA_TOKEN_HASH` as `FSA_TOKEN_ALGO`.
+Disable tokens by setting their type to `None`.
 
 ### 1.9.0
 

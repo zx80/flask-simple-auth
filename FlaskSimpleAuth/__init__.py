@@ -130,7 +130,7 @@ class Flask(RealFlask):
         self._fsa_realm = "".join(c for c in realm if keep_char(c))
         self._fsa_delay = conf.get("FSA_TOKEN_DELAY", 60.0)
         self._fsa_grace = conf.get("FSA_TOKEN_GRACE", 0.0)
-        if self._fsa_type == "jwt":
+        if self._fsa_type is not None and self._fsa_type == "jwt":
             algo = conf.get("FSA_TOKEN_ALGO", "HS256")
             if algo[0] in ("R", "E", "P"):
                 assert "FSA_TOKEN_SECRET" in conf and "FSA_TOKEN_SIGN" in conf, \
@@ -146,7 +146,9 @@ class Flask(RealFlask):
             log.warning("random token secret, only ok for one process app")
             chars = string.ascii_letters + string.digits + string.punctuation
             self._fsa_secret = ''.join(random.SystemRandom().choices(chars, k=40))
-        if self._fsa_type == "fsa":
+        if self._fsa_type is None:
+            pass
+        elif self._fsa_type == "fsa":
             self._fsa_sign = self._fsa_secret
             self._fsa_algo = conf.get("FSA_TOKEN_ALGO", "blake2s")
             self._fsa_siglen = conf.get("FSA_TOKEN_LENGTH", 16)
@@ -330,6 +332,7 @@ class Flask(RealFlask):
 
     # create a new token for user depending on the configuration
     def create_token(self, user):
+        assert self._fsa_type is not None
         realm, delay = self._fsa_realm, self._fsa_delay
         if self._fsa_type == "fsa":
             return self._fsa_get_fsa_token(realm, user, delay, self._fsa_secret)
@@ -407,9 +410,8 @@ class Flask(RealFlask):
 
         elif AUTH in ("fake", "param", "basic", "token", "password"):
 
-            # always check for token
-            secret = self._fsa_secret
-            if secret is not None and secret != "":
+            # check for token
+            if self._fsa_type is not None:
                 params = request.values if request.json is None else request.json
                 if self._fsa_name is None:
                     auth = request.headers.get("Authorization", None)
