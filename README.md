@@ -178,11 +178,11 @@ def user_in_group(user, group):
 
 Once initialized `app` is a standard Flask object with some additions:
 
-- `route` decorator, an extended version of Flask's own
-- `user_in_group` and `get_user_pass` methods/decorator to register helper functions
+- `route` decorator, an extended version of Flask's own.
+- `user_in_group` and `get_user_pass` methods/decorator to register helper functions.
 - `get_user` to extract the authenticated user or raise an `AuthException`.
-- `hash_password` to hash a password
-- `get_token`  to compute a new authentication token for the current user
+- `hash_password` and `check_password` to hash or check a password.
+- `get_token`  to compute a new authentication token for the current user.
 
 
 ### Using Authentication, Authorization and Parameter Check
