@@ -14,7 +14,8 @@ which is the whole point: authentication schemes are managed in the configuratio
 not explicitely in the application code.
 The authorization rule is declared explicitely on each function with the
 `authorize` parameter.
-Path and HTTP/JSON parameters are type checked and converted automatically.
+Path and HTTP/JSON parameters are type checked and converted automatically
+based on type annotations.
 Basically, you just have to implement a type-annotated Python function and
 most of the crust is managed by Flask and FlaskSimpleAuth.
 
