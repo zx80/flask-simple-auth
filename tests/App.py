@@ -46,23 +46,23 @@ for u in UP:
 #
 # ROUTES
 #
-@app.route("/login", authorize=[ALL])
+@app.route("/login", authorize=ALL)
 def login():
     return jsonify(app.create_token(app.get_user())), 200
 
-@app.route("/admin", authorize=[ADMIN])
+@app.route("/admin", authorize=ADMIN)
 def admin_only():
     return "admin-only", 200
 
-@app.route("/write", authorize=[WRITE])
+@app.route("/write", authorize=WRITE)
 def write_only():
     return "write-only", 200
 
-@app.route("/read", authorize=[READ])
+@app.route("/read", authorize=READ)
 def read_only():
     return "read-only", 200
 
-@app.route("/all", authorize=[ANY])
+@app.route("/all", authorize=ANY)
 def all():
     return "no-auth", 200
 
@@ -144,7 +144,7 @@ def get_params(**kwargs):
     return ' '.join(sorted(kwargs)), 200
 
 # explicitly forbidden route
-@app.route("/nogo", methods=["GET"], authorize=[NONE])
+@app.route("/nogo", methods=["GET"], authorize=NONE)
 def get_nogo():
     return "", 200
 

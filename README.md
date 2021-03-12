@@ -388,8 +388,8 @@ with the current configuration.
 ### Authorization
 
 Role-oriented authorizations are managed through the `authorize` parameter to
-the `route` decorator, which provides a list of roles authorized
-to call a route. A role is identified as an integer or a string.
+the `route` decorator, which provides a just one or possibly a list of roles
+authorized to call a route. A role is identified as an integer or a string.
 The check calls `user_in_group(user, group)` function to check whether the
 authenticated user belongs to any of the authorized roles.
 
@@ -398,7 +398,7 @@ There are three special values that can be passed to the `authorize` decorator:
  - `ANY` declares that no authentication is needed on that route.
  - `ALL` declares that all authenticated user can access this route.
  - `NONE` returns a *403* on all access. It can be used to close a route
-   temporarily.
+   temporarily. This is the default.
 
 The following configuration directive is available:
 
