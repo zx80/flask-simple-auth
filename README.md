@@ -550,3 +550,5 @@ Implementation
  - cleanup unused features?
  - test UUID
  - should it be an extension? I think not, a wrapper looks better.
+ - make Flask callable for the route? Nope, already used.
+ - find a better decorator name for routing and all?
