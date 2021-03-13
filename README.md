@@ -44,7 +44,7 @@ with `FSA_*` (Flask simple authentication) directives:
 
 ```Python
 FSA_TYPE = 'httpd'     # inherit web-serveur authentication
-# or others such as: basic, param…
+# or others such as: basic, token (eg jwt), param…
 ```
 
 If the `authorize` argument is not supplied, the security first approach
