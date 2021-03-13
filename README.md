@@ -550,6 +550,7 @@ Implementation
  - how to deal with expiration?
  - cleanup unused features?
  - test UUID
+ - handle "path" vs "string" path parameter?
  - should it be an extension? I think not, a wrapper looks better.
    an extension seems really to interface with something outside,
    whereas I'm trying to improve what Flask does out of the box
