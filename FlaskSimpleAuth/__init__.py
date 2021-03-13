@@ -98,10 +98,12 @@ class Flask(RealFlask):
                 return Response("missing authorization check", 500)
         return res
 
+    # store get_user_pass helper function, can be used as a decorator
     def get_user_pass(self, gup):
         self._fsa_get_user_pass = gup
         return gup
 
+    # store user_in_group helper function, can be used as a decorator
     def user_in_group(self, uig):
         self._fsa_user_in_group = uig
         return uig
@@ -290,7 +292,7 @@ class Flask(RealFlask):
     # database and validating a possibly expensive salted password (+400 ms!).
     #
     #
-    # FSA_TOKEN_TYPE: 'jwt' or 'fsa'
+    # FSA_TOKEN_TYPE: 'jwt', 'fsa' or None to disactivate
     # for fsa, the format is: <realm>:<user>:<validity-limit>:<signature>
     # FSA_TOKEN_NAME: name of parameter holding the token, or None for bearer auth
     # FSA_TOKEN_ALGO:
