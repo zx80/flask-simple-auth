@@ -108,7 +108,7 @@ class Flask(RealFlask):
 
     # actually initialize module…
     def _fsa_initialize(self):
-        log.warning("FSA initialization…")
+        log.info("FSA initialization…")
         conf = self.config
         #
         # auth setup
@@ -238,6 +238,8 @@ class Flask(RealFlask):
     # check user password against internal credentials
     # raise an exception if not ok, otherwise simply proceeds
     def _fsa_check_password(self, user, pwd):
+        if not request.is_secure:
+            log.warning("password authentication over an insecure request")
         ref = self._fsa_get_user_pass(user)
         if ref is None:
             log.debug(f"LOGIN (password): no such user ({user})")
@@ -258,8 +260,6 @@ class Flask(RealFlask):
             log.debug(f"LOGIN (basic): unexpected auth {auth}")
             raise AuthException("missing or unexpected authorization header", 401)
         user, pwd = b64.b64decode(auth[6:]).decode().split(':', 1)
-        if not request.is_secure:
-            log.warning("password authentication over an insecure request")
         self._fsa_check_password(user, pwd)
         return user
 
@@ -280,8 +280,6 @@ class Flask(RealFlask):
         pwd = params.get(self._fsa_passp, None)
         if pwd is None:
             raise AuthException(f"missing password parameter: {self._fsa_passp}", 401)
-        if not request.is_secure:
-            log.warning("password authentication over an insecure request")
         self._fsa_check_password(user, pwd)
         return user
 
