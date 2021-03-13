@@ -40,7 +40,12 @@ def int_cast(s: str) -> Optional[int]:
 
 
 # note: mypy complains wrongly about non-existing _empty.
-CASTS = {bool: bool_cast, int: int_cast, inspect._empty: str}
+CASTS = {
+    bool: bool_cast,
+    int: int_cast,
+    inspect._empty: str,
+    dt.date: dt.date.fromisoformat
+}
 
 # special group names
 ANY = "anyone can come in, no authentication required"

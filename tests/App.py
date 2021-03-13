@@ -178,3 +178,9 @@ def get_two():
 @app.route("/infer/<id>", methods=["GET"], authorize=[ANY])
 def get_infer(id: float, i = 2, s = "hi"):
     return f"{id} {i*len(s)}", 200
+
+# try a date…
+from datetime import date
+@app.route("/when", methods=["GET"], authorize=ALL)
+def get_when(d: date):
+    return f"in {d - date.today()}", 200

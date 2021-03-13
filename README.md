@@ -461,7 +461,8 @@ Allow disabling password checking.
 Rename `FSA_TOKEN_HASH` as `FSA_TOKEN_ALGO`.
 Disable tokens by setting their type to `None`.
 Import Flask `session`, `redirect`, `url_for`, `make_response`,
-`abort`, `render_template` objects.
+`abort`, `render_template`, `current_app` objects.
+Add parameter support for `date` (in iso format).
 
 ### 1.9.0
 
@@ -551,7 +552,7 @@ Implementation
  - cleanup unused features?
  - test UUID
  - handle "path" vs "string" path parameter?
- - test other types, eg date?!
+ - add support for more types (time? timestamp?)
  - should it be an extension? I think not, a wrapper looks better.
    an extension seems really to interface with something outside,
    whereas I'm trying to improve what Flask does out of the box

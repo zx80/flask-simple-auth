@@ -354,3 +354,7 @@ def test_infer(client):
     assert res.data == b"1.0 4"
     res = check_200(client.get("/infer/2.000", data={"i":"2", "s":"hello"}))
     assert res.data == b"2.0 10"
+
+def test_when(client):
+    res = check_200(client.get("/when", data={"d": "1970-03-20", "LOGIN": "calvin"}))
+    assert b"days" in res.data
