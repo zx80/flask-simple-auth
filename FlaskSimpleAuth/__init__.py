@@ -10,7 +10,7 @@ import inspect
 import datetime as dt
 
 from flask import Flask as RealFlask
-from flask import Response, request, jsonify
+from flask import Response, request, session, jsonify
 
 import logging
 log = logging.getLogger("fsa")
