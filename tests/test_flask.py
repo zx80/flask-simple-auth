@@ -208,9 +208,8 @@ def test_jwt_token():
     user = app._fsa_get_token_auth(moe_token)
     assert user == "moe"
     # pubkey signature scheme
-    app._fsa_algo = "RS256"
-    app._fsa_secret = RSA_TEST_PUB_KEY
-    app._fsa_sign = RSA_TEST_PRIV_KEY
+    app._fsa_algo, app._fsa_secret, app._fsa_sign = \
+        "RS256", RSA_TEST_PUB_KEY, RSA_TEST_PRIV_KEY
     mum_token = app.create_token("mum")
     assert "." in mum_token and len(mum_token.split(".")) == 3
     user = app._fsa_get_token_auth(mum_token)
