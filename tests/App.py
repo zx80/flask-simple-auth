@@ -159,6 +159,11 @@ def get_mis1(i: int = 0):
 def get_mis2():
     return "", 200
 
+# empty authorization
+@app.route("/empty", methods=["GET"], authorize=[])
+def get_mis3():
+    return "", 200
+
 # convenient route all-in-one decorator
 @app.route("/one/<int:i>", methods=["GET"], authorize=[ANY])
 def get_one(i: int, msg: str, punct: str = "!"):

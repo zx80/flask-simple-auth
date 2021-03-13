@@ -330,9 +330,11 @@ def test_missing(client):
     saved, app._fsa_check = app._fsa_check, True
     check_500(client.get("/mis1"))
     check_500(client.get("/mis2"))
+    check_403(client.get("/empty", data={"LOGIN": "dad"}))
     app._fsa_check = False
     check_200(client.get("/mis1"))
     check_200(client.get("/mis2"))
+    check_403(client.get("/empty", data={"LOGIN": "dad"}))
     app._fsa_check = saved
 
 def test_nogo(client):
