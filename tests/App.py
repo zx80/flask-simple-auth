@@ -30,7 +30,7 @@ app.config.update(
     FSA_TYPE = 'fake',
     FSA_ALWAYS = True,
     FSA_SKIP_PATH = (r"/register",
-                     r"/(add|div|mul|sub|type|params|all|mis[12]|nogo|one|infer)"),
+                     r"/(add|div|mul|sub|type|params|all|mis[12]|nogo|one|infer|superid)"),
     FSA_GET_USER_PASS = UHP.get,
     FSA_USER_IN_GROUP = is_in_group
 )
@@ -180,7 +180,12 @@ def get_infer(id: float, i = 2, s = "hi"):
     return f"{id} {i*len(s)}", 200
 
 # try a date…
-from datetime import date
+import datetime as dt
 @app.route("/when", methods=["GET"], authorize=ALL)
-def get_when(d: date):
-    return f"in {d - date.today()}", 200
+def get_when(d: dt.date, t: dt.time = '23:34:45'):
+    return f"in {d - dt.date.today()} {t}", 200
+
+import uuid
+@app.route("/superid/<uid>", methods=["GET"], authorize=ANY)
+def get_superid_uid(uid: uuid.UUID):
+    return f"uid = {uid}", 200

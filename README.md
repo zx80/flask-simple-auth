@@ -462,7 +462,7 @@ Rename `FSA_TOKEN_HASH` as `FSA_TOKEN_ALGO`.
 Disable tokens by setting their type to `None`.
 Import Flask `session`, `redirect`, `url_for`, `make_response`,
 `abort`, `render_template`, `current_app` objects.
-Add parameter support for `date` (in iso format).
+Add parameter support for `date`, `time` and `datetime` in iso format.
 
 ### 1.9.0
 

@@ -358,3 +358,9 @@ def test_infer(client):
 def test_when(client):
     res = check_200(client.get("/when", data={"d": "1970-03-20", "LOGIN": "calvin"}))
     assert b"days" in res.data
+    check_400(client.get("/when", data={"d": "not a date", "LOGIN": "calvin"}))
+    check_400(client.get("/when", data={"d": "2005-04-21", "t": "not a time", "LOGIN": "calvin"}))
+
+def test_uuid(client):
+    res = check_200(client.get("/superid/12345678-1234-1234-1234-1234567890ab"))
+    check_404(client.get("/superid/not-a-valid-uuid"))

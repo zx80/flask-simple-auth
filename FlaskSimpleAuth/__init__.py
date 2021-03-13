@@ -44,7 +44,9 @@ CASTS = {
     bool: bool_cast,
     int: int_cast,
     inspect._empty: str,
-    dt.date: dt.date.fromisoformat
+    dt.date: dt.date.fromisoformat,
+    dt.time: dt.time.fromisoformat,
+    dt.datetime: dt.datetime.fromisoformat
 }
 
 # special group names
