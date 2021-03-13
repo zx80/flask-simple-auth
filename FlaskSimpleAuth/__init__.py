@@ -444,8 +444,7 @@ class Flask(RealFlask):
 
         if len(groups) > 1 and \
            (ANY in groups or ALL in groups or NONE in groups or None in groups):
-            raise Exception("must not mix OPEN/AUTHENTICATED/FORBIDDEN "
-                            "and other groups")
+            raise Exception("must not mix ANY/ALL/NONE and other groups")
 
         if ANY not in groups and ALL not in groups and \
            NONE not in groups and None not in groups:
