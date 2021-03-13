@@ -459,7 +459,8 @@ Change passlib bcrypt version to be compatible with Apache httpd.
 Allow disabling password checking.
 Rename `FSA_TOKEN_HASH` as `FSA_TOKEN_ALGO`.
 Disable tokens by setting their type to `None`.
-Import Flask session object.
+Import Flask `session`, `redirect`, `url_for`, `make_response`,
+`abort`, `render_template` objects.
 
 ### 1.9.0
 
