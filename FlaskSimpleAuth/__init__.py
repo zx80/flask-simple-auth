@@ -584,20 +584,14 @@ class Flask(RealFlask):
     #
     # route decorator wrapper
     #
-    def route(self, path, *args, **kwargs):
+    def route(self, path, *args, authorize=NONE, required=None, allparams=False, **kwargs):
 
         # lazy initialization
         if not self._fsa_initialized:
             self._fsa_initialize()
 
-        # we intercept the authorize parameter
-        if 'authorize' in kwargs:
-            roles = kwargs['authorize']
-            del kwargs['authorize']
-        else:
-            roles = NONE
-
-        # and make it a list/tuple
+        # make authorize parameter it a list/tuple
+        roles = authorize
         if isinstance(roles, str):
             roles = (roles,)
         elif isinstance(roles, int):
@@ -605,13 +599,6 @@ class Flask(RealFlask):
 
         from collections.abc import Iterable
         assert isinstance(roles, Iterable)
-
-        # named parameters for parameters decorator
-        authkw = {}
-        for kw in ('allparams', 'required'):
-            if kw in kwargs:
-                authkw[kw] = kwargs[kw]
-                del kwargs[kw]
 
         def decorate(fun: Callable):
             from uuid import UUID
@@ -631,7 +618,8 @@ class Flask(RealFlask):
                             splits[i] = f"string:{spec}>{remainder}"
             newpath = '<'.join(splits)
 
-            apar = self._fsa_authorize(*roles)(self._fsa_parameters(**authkw)(fun))
-            return RealFlask.route(self, newpath, *args, **kwargs)(apar)
+            par = self._fsa_parameters(required=required, allparams=allparams)(fun)
+            aut = self._fsa_authorize(*roles)(par)
+            return RealFlask.route(self, newpath, *args, **kwargs)(aut)
 
         return decorate
