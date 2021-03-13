@@ -13,7 +13,7 @@ from flask import Flask as RealFlask
 from flask import Response, request
 # just for forwarding
 from flask import session, jsonify, redirect, url_for
-from flask import make_response, abort, render_template
+from flask import make_response, abort, render_template, current_app
 
 import logging
 log = logging.getLogger("fsa")
