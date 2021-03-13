@@ -549,3 +549,4 @@ Implementation
  - how to deal with expiration?
  - cleanup unused features?
  - test UUID
+ - should it be an extension? I think not, a wrapper looks better.
