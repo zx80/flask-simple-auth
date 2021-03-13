@@ -33,7 +33,7 @@ app.user_in_group(user_in_group_fun)
 # the function gets 3 arguments: one int coming from the path (id)
 # and the remaining two coming from request parameters (some, stuff).
 # "some" is mandatory, stuff is optional because it has a default.
-@fsa.route("/whatever/<id>", methods=["PATCH"], authorize="patcher")
+@app.route("/whatever/<id>", methods=["PATCH"], authorize="patcher")
 def patch_whatever(id: int, some: int, stuff: str = "wow"):
     # ok to do it, with parameters id, some & stuff
     return "", 204
