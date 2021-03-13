@@ -45,7 +45,7 @@ CASTS = {bool: bool_cast, int: int_cast, inspect._empty: str}
 # special group names
 ANY = "anyone can come in, no authentication required"
 ALL = "all authentified users are allowed"
-NONE = "none can come int, forbidden path"
+NONE = "none can come in, the path is forbidden"
 
 
 # guess parameter type
