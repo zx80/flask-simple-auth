@@ -50,9 +50,9 @@ CASTS = {
 }
 
 # special group names
-ANY = "anyone can come in, no authentication required"
-ALL = "all authentified users are allowed"
-NONE = "none can come in, the path is forbidden"
+ANY = "ANYone can come in, no authentication required"
+ALL = "ALL authentified users are allowed"
+NONE = "NONE can come in, the path is forbidden"
 
 
 # guess parameter type
