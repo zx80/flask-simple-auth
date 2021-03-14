@@ -217,8 +217,8 @@ def get_login():
     return jsonify(app.create_token(app.get_user())), 200
 ```
 
-The client application will return the token as a parameter for
-authenticating later requests, till it expires.
+The client application will return the token as a parameter or in
+headers for authenticating later requests, till it expires.
 
 
 ### Authentication
