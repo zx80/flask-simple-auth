@@ -551,7 +551,7 @@ Implementation
  - token caching (especially for expensive jwt checks)?
  - how to deal with expiration?
  - handle "path" vs "string" path parameter?
- - add support for more types (time? timestamp?)
+ - add support for more types? which ones?
  - should it be an extension? I think not, a wrapper looks better.
    an extension seems really to interface with something outside,
    whereas I'm trying to improve what Flask does out of the box
