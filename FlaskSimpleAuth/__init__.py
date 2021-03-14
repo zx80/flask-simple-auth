@@ -40,7 +40,7 @@ def int_cast(s: str) -> Optional[int]:
 
 
 # note: mypy complains wrongly about non-existing _empty.
-CASTS = {
+CASTS: Dict[type, Callable[[str], object]] = {
     bool: bool_cast,
     int: int_cast,
     inspect._empty: str,
@@ -512,10 +512,10 @@ class Flask(RealFlask):
     #
     def _fsa_parameters(self, required=None, allparams=False):
 
-        def decorate(fun):
+        def decorate(fun: Callable):
 
             types: Dict[str, type] = {}
-            typings: Dict[str, Callable] = {}
+            typings: Dict[str, Callable[[str], Any]] = {}
             defaults: Dict[str, Any] = {}
 
             # parameters types/casts and defaults from signature
