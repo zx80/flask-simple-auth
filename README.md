@@ -550,7 +550,6 @@ Initial release in beta.
 Implementation
  - token caching (especially for expensive jwt checks)?
  - how to deal with expiration?
- - cleanup unused features?
  - handle "path" vs "string" path parameter?
  - add support for more types (time? timestamp?)
  - should it be an extension? I think not, a wrapper looks better.
