@@ -460,7 +460,7 @@ class Flask(RealFlask):
             assert self._fsa_user_in_group is not None, \
                 "user_in_group callback needed for authorize"
 
-        def decorate(fun):
+        def decorate(fun: Callable):
 
             @functools.wraps(fun)
             def wrapper(*args, **kwargs):
