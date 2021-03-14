@@ -551,13 +551,12 @@ Implementation
  - token caching (especially for expensive jwt checks)?
  - how to deal with expiration?
  - cleanup unused features?
- - test UUID
  - handle "path" vs "string" path parameter?
  - add support for more types (time? timestamp?)
  - should it be an extension? I think not, a wrapper looks better.
    an extension seems really to interface with something outside,
    whereas I'm trying to improve what Flask does out of the box
-   wrt interacting with HTTP. I want to overwrite route to extend it.
+   wrt interacting with HTTP. I want to overwrite `route` to extend it.
    It is unclear though whether FSA should use `current_app` and
    other extension patterns anyway.
  - make Flask callable for the route? Nope, already used.
