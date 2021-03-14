@@ -443,7 +443,7 @@ def put_awesome(**kwargs):
 A side-effect of passing of request parameters as named function parameters
 is that request parameter names must be valid python identifiers,
 which excludes keywords such as `pass`, `def` or `for`, unless passed
-as keywords arguments.
+as keyword arguments.
 
 Custom classes can be used as path and HTTP parameter types, provided that
 the constructor accepts a string to convert the parameter value to the
