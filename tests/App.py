@@ -204,3 +204,9 @@ def get_bool_b(b: bool):
 @app.route("/cplx/<c>", methods=["GET"], authorize=ANY)
 def get_cplx_c(c: complex):
     return str(c + 1j), 200
+
+# requires Python 3.9
+# import zoneinfo as zi
+# @app.route("/zi/<zone>", methods=["GET"], authorize=ANY)
+# def get_zi_zone(zone: zi.ZoneInfo):
+#     return f"{zone}", 200
