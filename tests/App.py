@@ -30,7 +30,8 @@ app.config.update(
     FSA_TYPE = 'fake',
     FSA_ALWAYS = True,
     FSA_SKIP_PATH = (r"/register",
-                     r"/(add|div|mul|sub|type|params|all|mis[12]|nogo|one|infer|superid|cplx|bool)"),
+                     r"/(add|div|mul|sub|type|params|all|mis[12]|nogo|one)",
+                     r"/(infer|superid|cplx|bool|mail)"),
     FSA_GET_USER_PASS = UHP.get,
     FSA_USER_IN_GROUP = is_in_group
 )
@@ -210,3 +211,15 @@ def get_cplx_c(c: complex):
 # @app.route("/zi/<zone>", methods=["GET"], authorize=ANY)
 # def get_zi_zone(zone: zi.ZoneInfo):
 #     return f"{zone}", 200
+
+# custom class
+class Mail:
+    def __init__(self, address):
+        assert "@" in address, "email address must contain a '@'"
+        self._address = address
+    def __str__(self):
+        return self._address
+
+@app.route("/mail/<ad1>", methods=["GET"], authorize=ANY)
+def get_mail_address(ad1: Mail, ad2: Mail = "calvin@comics.net"):
+    return f"{ad1} {ad2}", 200

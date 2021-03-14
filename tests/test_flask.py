@@ -386,3 +386,12 @@ def test_bool(client):
     res = check_200(client.get("/bool/hello"))
     assert res.data == b"True"
     check_404(client.get("/bool/"))
+
+def test_mail(client):
+    s, h, m = "susie@comics.net", "hobbes@comics.net", "moe@comics.net"
+    res = check_200(client.get(f"/mail/{s}"))
+    assert b"susie" in res.data and b"calvin" in res.data
+    res = check_200(client.get(f"/mail/{h}", data={"ad2": m}))
+    assert b"hobbes" in res.data and b"moe" in res.data
+    check_404(client.get(f"/mail/bad-email-address"))
+    check_400(client.get(f"/mail/{m}", data={"ad2": "bad-email-address"}))

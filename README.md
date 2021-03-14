@@ -445,6 +445,20 @@ is that request parameter names must be valid python identifiers,
 which excludes keywords such as `pass`, `def` or `for`, unless passed
 as keywords arguments.
 
+Custom classes can be used as path and HTTP parameter types, provided that
+the constructor accepts a string to convert the parameter value to the
+expected type.
+
+```Python
+class EmailAddr:
+    def __init__(self, addr: str):
+        self._addr = addr
+
+@app.route("/mail/<addr>", methods=["GET"], authorize=ALL)
+def get_mail_addr(addr: EmailAddr):
+    …
+```
+
 ## Versions
 
 Sources are available on [GitHub](https://github.com/zx80/flask-simple-auth)
