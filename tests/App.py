@@ -30,7 +30,7 @@ app.config.update(
     FSA_TYPE = 'fake',
     FSA_ALWAYS = True,
     FSA_SKIP_PATH = (r"/register",
-                     r"/(add|div|mul|sub|type|params|all|mis[12]|nogo|one|infer|superid)"),
+                     r"/(add|div|mul|sub|type|params|all|mis[12]|nogo|one|infer|superid|cplx)"),
     FSA_GET_USER_PASS = UHP.get,
     FSA_USER_IN_GROUP = is_in_group
 )
@@ -189,3 +189,8 @@ import uuid
 @app.route("/superid/<uid>", methods=["GET"], authorize=ANY)
 def get_superid_uid(uid: uuid.UUID, u: uuid.UUID = None):
     return f"uid = {uid}/{u}", 200
+
+# complex numbers as parameters should work out of the box
+@app.route("/cplx", methods=["GET"], authorize=ANY)
+def get_cplx_c1(c1: complex, c2: complex = 1+1j):
+    return f"{c1+c2}", 200

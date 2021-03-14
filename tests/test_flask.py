@@ -368,3 +368,7 @@ def test_uuid(client):
     check_404(client.get("/superid/not-a-valid-uuid"))
     res = check_200(client.get(f"/superid/{u2}", data={"u": u1}))
     check_400(client.get(f"/superid/{u1}", data={"u": "invalid uuid"}))
+
+def test_complex(client):
+    res = check_200(client.get("/cplx", data={"c1": "-1-1j"}))
+    assert res.data == b"0j"
