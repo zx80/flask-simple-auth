@@ -362,5 +362,9 @@ def test_when(client):
     check_400(client.get("/when", data={"d": "2005-04-21", "t": "not a time", "LOGIN": "calvin"}))
 
 def test_uuid(client):
-    res = check_200(client.get("/superid/12345678-1234-1234-1234-1234567890ab"))
+    u1 = "12345678-1234-1234-1234-1234567890ab"
+    u2 = "23456789-1234-1234-1234-1234567890ab"
+    res = check_200(client.get(f"/superid/{u1}"))
     check_404(client.get("/superid/not-a-valid-uuid"))
+    res = check_200(client.get(f"/superid/{u2}", data={"u": u1}))
+    check_400(client.get(f"/superid/{u1}", data={"u": "invalid uuid"}))

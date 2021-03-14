@@ -187,5 +187,5 @@ def get_when(d: dt.date, t: dt.time = '23:34:45'):
 
 import uuid
 @app.route("/superid/<uid>", methods=["GET"], authorize=ANY)
-def get_superid_uid(uid: uuid.UUID):
-    return f"uid = {uid}", 200
+def get_superid_uid(uid: uuid.UUID, u: uuid.UUID = None):
+    return f"uid = {uid}/{u}", 200
