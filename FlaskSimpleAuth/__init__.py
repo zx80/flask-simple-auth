@@ -510,30 +510,13 @@ class Flask(RealFlask):
     # - whether all request parameters are automatically translated to function
     #   parameters with a str value.
     #
-    # others:
-    # - args: list of expected parameters, implicit type is str
-    # - kwargs: list of expected parameters, explicit type as a value
-    #
-    def _fsa_parameters(self, *args, required=None, allparams=False, **kwargs):
+    def _fsa_parameters(self, required=None, allparams=False):
 
         def decorate(fun):
 
-            types: Dict[str, Callable] = {}
+            types: Dict[str, type] = {}
+            typings: Dict[str, Callable] = {}
             defaults: Dict[str, Any] = {}
-
-            # parameters types from **kwargs
-            for n, t in kwargs.items():
-                if n not in types:
-                    types[n] = CASTS.get(t, t)
-                else:
-                    log.warning(f"ignoring *kwargs decorator parameter {n}")
-
-            # parameters from *args
-            for n in args:
-                if n not in types:
-                    types[n] = str
-                else:
-                    log.warning(f"ignoring *args decorator parameter {n}")
 
             # parameters types/casts and defaults from signature
             sig = inspect.signature(fun)
@@ -543,7 +526,8 @@ class Flask(RealFlask):
                    p.kind not in (p.VAR_KEYWORD, p.VAR_POSITIONAL):
                     # guess parameter type
                     t = typeof(p)
-                    types[n] = CASTS.get(t, t)
+                    types[n] = t
+                    typings[n] = CASTS.get(t, t)
                 if p.default != inspect._empty:
                     defaults[n] = p.default
 
@@ -556,24 +540,31 @@ class Flask(RealFlask):
 
                 # translate request parameters to named function parameters
                 params = request.values if request.json is None else request.json
-                for p, typing in types.items():
+                for p, typing in typings.items():
                     # guess which function parameters are request parameters
                     if p not in kwargs:
                         if p in params:
                             try:
                                 kwargs[p] = typing(params[p])
                             except Exception as e:
-                                return f"type error on parameter {p} ({e})", 400
+                                return f"type error on HTTP parameter {p} ({e})", 400
                         else:
                             if required is None:
                                 if p in defaults:
                                     kwargs[p] = defaults[p]
                                 else:
-                                    return f"missing parameter {p}", 400
+                                    return f"missing HTTP parameter {p}", 400
                             elif required:
-                                return f"missing parameter {p}", 400
+                                return f"missing HTTP parameter {p}", 400
                             else:
                                 kwargs[p] = defaults.get(p, None)
+                    else:
+                        # possibly recast path parameters if needed
+                        if not isinstance(kwargs[p], types[p]):
+                            try:
+                                kwargs[p] = typing(kwargs[p])
+                            except Exception as e:
+                                return f"type error on path parameter {p}: ({e})", 404
 
                 # possibly add others, without shadowing already provided ones
                 if allparams:
@@ -619,6 +610,8 @@ class Flask(RealFlask):
                     spec, remainder = s.split(">", 1)
                     if ":" not in spec and spec in sig.parameters:
                         t = typeof(sig.parameters[spec])
+                        # Flask supports 5 types, with string the default?
+                        # FIXME how to handle path?
                         if t in (int, float, UUID):
                             splits[i] = f"{t.__name__.lower()}:{spec}>{remainder}"
                         else:

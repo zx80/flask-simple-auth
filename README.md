@@ -463,6 +463,7 @@ Disable tokens by setting their type to `None`.
 Import Flask `session`, `redirect`, `url_for`, `make_response`,
 `abort`, `render_template`, `current_app` objects.
 Add parameter support for `date`, `time` and `datetime` in iso format.
+Allow to use any type as path parameters, not just Flask predefined ones.
 
 ### 1.9.0
 

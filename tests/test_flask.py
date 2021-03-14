@@ -372,3 +372,17 @@ def test_uuid(client):
 def test_complex(client):
     res = check_200(client.get("/cplx", data={"c1": "-1-1j"}))
     assert res.data == b"0j"
+    res = check_200(client.get("/cplx/-1j"))
+    assert res.data == b"0j"
+    check_404(client.get("/cplx/zero"))
+
+def test_bool(client):
+    res = check_200(client.get("/bool/1"))
+    assert res.data == b"True"
+    res = check_200(client.get("/bool/f"))
+    assert res.data == b"False"
+    res = check_200(client.get("/bool/0"))
+    assert res.data == b"False"
+    res = check_200(client.get("/bool/hello"))
+    assert res.data == b"True"
+    check_404(client.get("/bool/"))
