@@ -152,10 +152,10 @@ class Flask(RealFlask):
             if self._fsa_secret is not None and len(self._fsa_secret) < 16:
                 log.warning("token secret is short")
         else:
-            # list of 94 chars, about 6.5 bits per char
             import random
             import string
             log.warning("random token secret, only ok for one process app")
+            # list of 94 chars, about 6.5 bits per char
             chars = string.ascii_letters + string.digits + string.punctuation
             self._fsa_secret = ''.join(random.SystemRandom().choices(chars, k=40))
         if self._fsa_type is None:
