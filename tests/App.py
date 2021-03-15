@@ -2,7 +2,6 @@
 # TEST APP FOR FlaskSimpleAuth
 #
 
-from typing import Dict
 from shared_auth import user_in_group, get_user_pass
 from shared_auth import ADMIN, WRITE, READ, GROUPS, UP, UHP
 
