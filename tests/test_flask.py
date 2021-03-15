@@ -3,8 +3,11 @@
 import pytest
 import App
 from App import app
+
 import FlaskSimpleAuth as fsa
 import json
+
+import AppExt
 
 import logging
 log = logging.getLogger("tests")
@@ -58,6 +61,11 @@ def test_sanity():
 @pytest.fixture
 def client():
     with App.app.test_client() as c:
+        yield c
+
+@pytest.fixture
+def client2():
+    with AppExt.app.test_client() as c:
         yield c
 
 # test all auth variants on GET
@@ -395,3 +403,9 @@ def test_mail(client):
     assert b"hobbes" in res.data and b"moe" in res.data
     check_404(client.get(f"/mail/bad-email-address"))
     check_400(client.get(f"/mail/{m}", data={"ad2": "bad-email-address"}))
+
+def test_appext(client2):
+    check_401(client2.get("/stuff"))
+    check_200(client2.get("/stuff", data={"LOGIN": "dad"}))
+    check_401(client2.get("/bad"))
+    check_500(client2.get("/bad", data={"LOGIN": "dad"}))
