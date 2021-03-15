@@ -574,3 +574,4 @@ Implementation
    other extension patterns anyway.
  - make Flask callable for the route? Nope, already used.
  - find a better decorator name for routing and all?
+ - make it work with Blueprint
