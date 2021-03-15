@@ -105,14 +105,14 @@ def test_perms(client):
     check_401(client.get("/"))  # empty path
     # admin only
     check_401(client.get("/admin"))
-    log.debug(f"App.is_in_group: {App.is_in_group}")
+    log.debug(f"App.user_in_group: {App.user_in_group}")
     log.debug(f"app._fsa._user_in_group: {app._fsa._user_in_group}")
-    assert App.is_in_group("dad", App.ADMIN)
+    assert App.user_in_group("dad", App.ADMIN)
     assert app._fsa._user_in_group("dad", App.ADMIN)
     all_auth(client, "dad", App.UP["dad"], check_200, "/admin")
-    assert not App.is_in_group("calvin", App.ADMIN)
+    assert not App.user_in_group("calvin", App.ADMIN)
     all_auth(client, "calvin", App.UP["calvin"], check_403, "/admin")
-    assert not App.is_in_group("hobbes", App.ADMIN)
+    assert not App.user_in_group("hobbes", App.ADMIN)
     all_auth(client, "hobbes", App.UP["hobbes"], check_403, "/admin")
     # write only
     check_401(client.get("/write"))
@@ -120,7 +120,7 @@ def test_perms(client):
     all_auth(client, "dad", App.UP["dad"], check_200, "/write")
     assert app._fsa._user_in_group("calvin", App.WRITE)
     all_auth(client, "calvin", App.UP["calvin"], check_200, "/write")
-    assert not App.is_in_group("hobbes", App.WRITE)
+    assert not App.user_in_group("hobbes", App.WRITE)
     all_auth(client, "hobbes", App.UP["hobbes"], check_403, "/write")
     # read only
     check_401(client.get("/read"))
@@ -128,7 +128,7 @@ def test_perms(client):
     all_auth(client, "dad", App.UP["dad"], check_403, "/read")
     assert app._fsa._user_in_group("calvin", App.READ)
     all_auth(client, "calvin", App.UP["calvin"], check_200, "/read")
-    assert App.is_in_group("hobbes", App.READ)
+    assert App.user_in_group("hobbes", App.READ)
     all_auth(client, "hobbes", App.UP["hobbes"], check_200, "/read")
 
 def test_whatever(client):

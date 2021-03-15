@@ -3,6 +3,8 @@
 #
 
 from typing import Dict
+from shared_auth import user_in_group, get_user_pass
+from shared_auth import ADMIN, WRITE, READ, GROUPS, UP, UHP
 
 import logging
 log = logging.getLogger("app")
@@ -16,33 +18,15 @@ app = Flask("Test")
 #
 # AUTH
 #
-# passwords
-UHP: Dict[str,str] = {}
-
-# group management
-ADMIN, WRITE, READ = 0, 1, 2
-GROUPS = { 0: {"dad"}, 1: {"dad", "calvin"}, 2: {"calvin", "hobbes"} }
-
-def is_in_group(user, group):
-    return user in GROUPS.get(group, [])
-
 app.config.update(
     FSA_TYPE = 'fake',
     FSA_ALWAYS = True,
     FSA_SKIP_PATH = (r"/register",
                      r"/(add|div|mul|sub|type|params|all|mis[12]|nogo|one)",
                      r"/(infer|superid|cplx|bool|mail)"),
-    FSA_GET_USER_PASS = UHP.get,
-    FSA_USER_IN_GROUP = is_in_group
+    FSA_GET_USER_PASS = get_user_pass,
+    FSA_USER_IN_GROUP = user_in_group
 )
-
-# force initialization so that hash_password is ok
-app._fsa.initialize()
-
-# finalize test passwords
-UP = { "calvin": "hobbes", "hobbes": "susie", "dad": "mum" }
-for u in UP:
-    UHP[u] = app.hash_password(UP[u])
 
 #
 # ROUTES
@@ -84,7 +68,7 @@ def patch_user_str(user, oldpass, newpass):
 @app.route("/user/<user>", methods=["DELETE"], authorize=[ALL])
 def delete_user_str(user):
     login = app.get_user()
-    if not (login == user or is_in_group(login, ADMIN)):
+    if not (login == user or user_in_group(login, ADMIN)):
         return "self care or admin only", 403
     del UP[user]
     del UHP[user]
