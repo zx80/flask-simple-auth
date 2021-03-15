@@ -5,6 +5,7 @@
 #
 
 from typing import Optional, Callable, Dict, Any
+
 import functools
 import inspect
 import datetime as dt
@@ -72,84 +73,124 @@ def typeof(p: inspect.Parameter):
 # Flask wrapper
 class Flask(RealFlask):
 
-    # constructor
     def __init__(self, *args, **kwargs):
         RealFlask.__init__(self, *args, **kwargs)
-        self._fsa_get_user_pass = None
-        self._fsa_user_in_group = None
-        self._fsa_initialized = False
-        return
+        self._fsa = FlaskSimpleAuth(self)
+
+    # forward some methods
+    def init_app(self, app: RealFlask):
+        return self._fsa.init_app(app)
+
+    def get_user_pass(self, gup):
+        return self._fsa.get_user_pass(gup)
+
+    def user_in_group(self, uig):
+        return self._fsa.user_in_group(uig)
+
+    def check_password(self, pwd, ref):
+        return self._fsa.check_password(pwd, ref)
+
+    def hash_password(self, pwd):
+        return self._fsa.hash_password(pwd)
+
+    def create_token(self, user):
+        return self._fsa.create_token(user)
+
+    def get_user(self):
+        return self._fsa.get_user()
+
+    # overwrite route decorator
+    def route(self, *args, **kwargs):
+        return self._fsa.route(*args, **kwargs)
+
+
+# actual class
+class FlaskSimpleAuth:
+
+    # constructor
+    def __init__(self, app: RealFlask = None):
+        self._app = app
+        self._get_user_pass = None
+        self._user_in_group = None
+        # actual initialization is delayed
+        self._initialized = False
 
     # set, or possibly just reset, the current authentication
-    def _fsa_auth_set_user(self):
-        self._fsa_user = None
-        self._fsa_need_authorization = True
-        if not self._fsa_always:
+    def _auth_set_user(self):
+        self._user = None
+        self._need_authorization = True
+        if not self._always:
             return
-        for skip in self._fsa_skip_path:
+        for skip in self._skip_path:
             if skip(request.path):
                 return
         try:
-            self._fsa_user = self.get_user()
+            self._user = self.get_user()
         except AuthException as e:
             return e.message, e.status
-        assert self._fsa_user is not None
+        assert self._user is not None
 
     # wipe out current authentication
-    def _fsa_auth_after_cleanup(self, res: Response):
-        self._fsa_user = None
-        if res.status_code < 400 and self._fsa_need_authorization:
+    def _auth_after_cleanup(self, res: Response):
+        self._user = None
+        if res.status_code < 400 and self._need_authorization:
             method, path = request.method, request.path
             log.warning(f"missing authorization on {method} {path}")
-            if self._fsa_check:
+            if self._check:
                 return Response("missing authorization check", 500)
         return res
 
     # store get_user_pass helper function, can be used as a decorator
     def get_user_pass(self, gup):
-        self._fsa_get_user_pass = gup
+        self._get_user_pass = gup
         return gup
 
     # store user_in_group helper function, can be used as a decorator
     def user_in_group(self, uig):
-        self._fsa_user_in_group = uig
+        self._user_in_group = uig
         return uig
 
-    # actually initialize module…
-    def _fsa_initialize(self):
+    def initialize(self):
+        assert self._app is not None
+        self.init_app(self._app)
+
+    # actually initialize class…
+    def init_app(self, app: RealFlask):
         log.info("FSA initialization…")
-        conf = self.config
+        assert app is not None
+        self._app = app
+        conf = app.config
         #
         # auth setup
         #
-        self._fsa_auth = conf.get("FSA_TYPE", "httpd")
-        self._fsa_lazy = conf.get("FSA_LAZY", True)
-        self._fsa_always = conf.get("FSA_ALWAYS", True)
-        self._fsa_check = conf.get("FSA_CHECK", True)
+        self._auth = conf.get("FSA_TYPE", "httpd")
+        self._lazy = conf.get("FSA_LAZY", True)
+        self._always = conf.get("FSA_ALWAYS", True)
+        self._check = conf.get("FSA_CHECK", True)
         # register auth request hooks
-        self.before_request(self._fsa_auth_set_user)
-        self.after_request(self._fsa_auth_after_cleanup)
+        app.before_request(self._auth_set_user)
+        app.after_request(self._auth_after_cleanup)
         import re
-        self._fsa_skip_path = [re.compile(r).match for r in conf.get("FSA_SKIP_PATH", [])]
+        self._skip_path = [re.compile(r).match for r in conf.get("FSA_SKIP_PATH", [])]
         #
         # token setup
         #
-        self._fsa_type = conf.get("FSA_TOKEN_TYPE", "fsa")
-        self._fsa_name = conf.get("FSA_TOKEN_NAME", None)
-        realm = conf.get("FSA_TOKEN_REALM", self.name).lower()
+        self._type = conf.get("FSA_TOKEN_TYPE", "fsa")
+        self._name = conf.get("FSA_TOKEN_NAME", None)
+        realm = conf.get("FSA_TOKEN_REALM", self._app.name).lower()
         # tr -cd "[a-z0-9_]" "": is there a better way to do that?
         keep_char = re.compile(r"[-a-z0-9_]").match
-        self._fsa_realm = "".join(c for c in realm if keep_char(c))
-        self._fsa_delay = conf.get("FSA_TOKEN_DELAY", 60.0)
-        self._fsa_grace = conf.get("FSA_TOKEN_GRACE", 0.0)
-        if self._fsa_type is not None and self._fsa_type == "jwt":
+        self._realm = "".join(c for c in realm if keep_char(c))
+        self._delay = conf.get("FSA_TOKEN_DELAY", 60.0)
+        self._grace = conf.get("FSA_TOKEN_GRACE", 0.0)
+        if self._type is not None and self._type == "jwt":
             algo = conf.get("FSA_TOKEN_ALGO", "HS256")
             if algo[0] in ("R", "E", "P"):
                 assert "FSA_TOKEN_SECRET" in conf and "FSA_TOKEN_SIGN" in conf, \
                     "pubkey kwt signature require explicit secret and sign"
         if "FSA_TOKEN_SECRET" in conf:
-            self._fsa_secret = conf["FSA_TOKEN_SECRET"]
-            if self._fsa_secret is not None and len(self._fsa_secret) < 16:
+            self._secret = conf["FSA_TOKEN_SECRET"]
+            if self._secret is not None and len(self._secret) < 16:
                 log.warning("token secret is short")
         else:
             import random
@@ -157,33 +198,33 @@ class Flask(RealFlask):
             log.warning("random token secret, only ok for one process app")
             # list of 94 chars, about 6.5 bits per char
             chars = string.ascii_letters + string.digits + string.punctuation
-            self._fsa_secret = ''.join(random.SystemRandom().choices(chars, k=40))
-        if self._fsa_type is None:
+            self._secret = ''.join(random.SystemRandom().choices(chars, k=40))
+        if self._type is None:
             pass
-        elif self._fsa_type == "fsa":
-            self._fsa_sign = self._fsa_secret
-            self._fsa_algo = conf.get("FSA_TOKEN_ALGO", "blake2s")
-            self._fsa_siglen = conf.get("FSA_TOKEN_LENGTH", 16)
-        elif self._fsa_type == "jwt":
+        elif self._type == "fsa":
+            self._sign = self._secret
+            self._algo = conf.get("FSA_TOKEN_ALGO", "blake2s")
+            self._siglen = conf.get("FSA_TOKEN_LENGTH", 16)
+        elif self._type == "jwt":
             algo = conf.get("FSA_TOKEN_ALGO", "HS256")
-            self._fsa_algo = algo
+            self._algo = algo
             if algo[0] in ("R", "E", "P"):
-                self._fsa_sign = conf["FSA_TOKEN_SIGN"]
+                self._sign = conf["FSA_TOKEN_SIGN"]
             elif algo[0] == "H":
-                self._fsa_sign = self._fsa_secret
+                self._sign = self._secret
             elif algo == "none":
-                self._fsa_sign = None
+                self._sign = None
             else:
                 raise Exception("unexpected jwt FSA_TOKEN_ALGO ({algo})")
-            self._fsa_siglen = 0
+            self._siglen = 0
         else:
-            raise Exception(f"invalid FSA_TOKEN_TYPE ({self._fsa_type})")
+            raise Exception(f"invalid FSA_TOKEN_TYPE ({self._type})")
         #
         # parameters
         #
-        self._fsa_login = conf.get("FSA_FAKE_LOGIN", "LOGIN")
-        self._fsa_userp = conf.get("FSA_PARAM_USER", "USER")
-        self._fsa_passp = conf.get("FSA_PARAM_PASS", "PASS")
+        self._login = conf.get("FSA_FAKE_LOGIN", "LOGIN")
+        self._userp = conf.get("FSA_PARAM_USER", "USER")
+        self._passp = conf.get("FSA_PARAM_PASS", "PASS")
         #
         # password setup
         #
@@ -195,18 +236,18 @@ class Flask(RealFlask):
                                {'bcrypt__default_rounds': 4,
                                 'bcrypt__default_ident': '2y'})
             from passlib.context import CryptContext  # type: ignore
-            self._fsa_pm = CryptContext(schemes=[scheme], **options)
+            self._pm = CryptContext(schemes=[scheme], **options)
         else:
-            self._fsa_pm = None
+            self._pm = None
         #
         # hooks
         #
         if "FSA_GET_USER_PASS" in conf:
-            self._fsa_get_user_pass = conf["FSA_GET_USER_PASS"]
+            self._get_user_pass = conf["FSA_GET_USER_PASS"]
         if "FSA_USER_IN_GROUP" in conf:
-            self._fsa_user_in_group = conf["FSA_USER_IN_GROUP"]
+            self._user_in_group = conf["FSA_USER_IN_GROUP"]
         # done!
-        self._fsa_initialized = True
+        self._initialized = True
         return
 
     #
@@ -216,12 +257,12 @@ class Flask(RealFlask):
     #
     # FSA_FAKE_LOGIN: name of parameter holding the login ("LOGIN")
     #
-    def _fsa_get_fake_auth(self):
+    def _get_fake_auth(self):
         assert request.remote_user is None, "do not shadow web server auth"
         assert request.environ["REMOTE_ADDR"][:4] == "127.", \
             "fake auth only on localhost"
         params = request.values if request.json is None else request.json
-        user = params.get(self._fsa_login, None)
+        user = params.get(self._login, None)
         # it could check that the user exists in db
         if user is None:
             raise AuthException("missing login parameter", 401)
@@ -238,18 +279,18 @@ class Flask(RealFlask):
 
     # verify password
     def check_password(self, pwd, ref):
-        return self._fsa_pm.verify(pwd, ref)
+        return self._pm.verify(pwd, ref)
 
     # hash password consistently with above check, can be used by app
     def hash_password(self, pwd):
-        return self._fsa_pm.hash(pwd)
+        return self._pm.hash(pwd)
 
     # check user password against internal credentials
     # raise an exception if not ok, otherwise simply proceeds
-    def _fsa_check_password(self, user, pwd):
+    def _check_password(self, user, pwd):
         if not request.is_secure:
             log.warning("password authentication over an insecure request")
-        ref = self._fsa_get_user_pass(user)
+        ref = self._get_user_pass(user)
         if ref is None:
             log.debug(f"LOGIN (password): no such user ({user})")
             raise AuthException(f"no such user: {user}", 401)
@@ -260,7 +301,7 @@ class Flask(RealFlask):
     #
     # HTTP BASIC AUTH
     #
-    def _fsa_get_basic_auth(self):
+    def _get_basic_auth(self):
         import base64 as b64
         assert request.remote_user is None
         auth = request.headers.get("Authorization", None)
@@ -269,7 +310,7 @@ class Flask(RealFlask):
             log.debug(f"LOGIN (basic): unexpected auth {auth}")
             raise AuthException("missing or unexpected authorization header", 401)
         user, pwd = b64.b64decode(auth[6:]).decode().split(':', 1)
-        self._fsa_check_password(user, pwd)
+        self._check_password(user, pwd)
         return user
 
     #
@@ -280,16 +321,16 @@ class Flask(RealFlask):
     # FSA_PARAM_USER: parameter name for login ("USER")
     # FSA_PARAM_PASS: parameter name for password ("PASS")
     #
-    def _fsa_get_param_auth(self):
+    def _get_param_auth(self):
         assert request.remote_user is None
         params = request.values if request.json is None else request.json
-        user = params.get(self._fsa_userp, None)
+        user = params.get(self._userp, None)
         if user is None:
-            raise AuthException(f"missing login parameter: {self._fsa_userp}", 401)
-        pwd = params.get(self._fsa_passp, None)
+            raise AuthException(f"missing login parameter: {self._userp}", 401)
+        pwd = params.get(self._passp, None)
         if pwd is None:
-            raise AuthException(f"missing password parameter: {self._fsa_passp}", 401)
-        self._fsa_check_password(user, pwd)
+            raise AuthException(f"missing password parameter: {self._passp}", 401)
+        self._check_password(user, pwd)
         return user
 
     #
@@ -315,66 +356,66 @@ class Flask(RealFlask):
     # FSA_TOKEN_REALM: token realm (lc simplified app name)
     #
     # sign data with secret
-    def _fsa_cmp_sig(self, data, secret):
+    def _cmp_sig(self, data, secret):
         import hashlib
-        h = hashlib.new(self._fsa_algo)
+        h = hashlib.new(self._algo)
         h.update(f"{data}:{secret}".encode())
-        return h.digest()[:self._fsa_siglen].hex()
+        return h.digest()[:self._siglen].hex()
 
     # build a timestamp string
-    def _fsa_timestamp(self, ts):
+    def _timestamp(self, ts):
         return "%04d%02d%02d%02d%02d%02d" % ts.timetuple()[:6]
 
     # compute a token for "user" valid for "delay" minutes, signed with "secret"
-    def _fsa_get_fsa_token(self, realm, user, delay, secret):
-        limit = self._fsa_timestamp(dt.datetime.utcnow() + dt.timedelta(minutes=delay))
+    def _get_fsa_token(self, realm, user, delay, secret):
+        limit = self._timestamp(dt.datetime.utcnow() + dt.timedelta(minutes=delay))
         data = f"{realm}:{user}:{limit}"
-        sig = self._fsa_cmp_sig(data, secret)
+        sig = self._cmp_sig(data, secret)
         return f"{data}:{sig}"
 
     # jwt generation
     # exp = expiration, sub = subject, iss = issuer, aud = audience
-    def _fsa_get_jwt_token(self, realm, user, delay, secret):
+    def _get_jwt_token(self, realm, user, delay, secret):
         exp = dt.datetime.utcnow() + dt.timedelta(minutes=delay)
         import jwt
         return jwt.encode({"exp": exp, "sub": user, "aud": realm},
-                          secret, algorithm=self._fsa_algo)
+                          secret, algorithm=self._algo)
 
     # create a new token for user depending on the configuration
     def create_token(self, user):
-        assert self._fsa_type is not None
-        realm, delay = self._fsa_realm, self._fsa_delay
-        if self._fsa_type == "fsa":
-            return self._fsa_get_fsa_token(realm, user, delay, self._fsa_secret)
+        assert self._type is not None
+        realm, delay = self._realm, self._delay
+        if self._type == "fsa":
+            return self._get_fsa_token(realm, user, delay, self._secret)
         else:
-            return self._fsa_get_jwt_token(realm, user, delay, self._fsa_sign)
+            return self._get_jwt_token(realm, user, delay, self._sign)
 
     # tell whether token is ok: return validated user or None
     # token form: "realm:calvin:20380119031407:<signature>"
-    def _fsa_get_fsa_token_auth(self, token):
+    def _get_fsa_token_auth(self, token):
         realm, user, limit, sig = token.split(':', 3)
         # check realm
-        if realm != self._fsa_realm:
+        if realm != self._realm:
             log.debug(f"LOGIN (token): unexpected realm {realm}")
             raise AuthException(f"unexpected realm: {realm}", 401)
         # check signature
-        ref = self._fsa_cmp_sig(f"{realm}:{user}:{limit}", self._fsa_secret)
+        ref = self._cmp_sig(f"{realm}:{user}:{limit}", self._secret)
         if ref != sig:
             log.debug("LOGIN (token): invalid signature")
             raise AuthException("invalid jsa auth token signature", 401)
         # check limit with a grace time
-        now = self._fsa_timestamp(dt.datetime.utcnow() - dt.timedelta(minutes=self._fsa_grace))
+        now = self._timestamp(dt.datetime.utcnow() - dt.timedelta(minutes=self._grace))
         if now > limit:
             log.debug("LOGIN (token): token {token} has expired")
             raise AuthException("expired jsa auth token", 401)
         # all is well
         return user
 
-    def _fsa_get_jwt_token_auth(self, token):
+    def _get_jwt_token_auth(self, token):
         import jwt
         try:
-            data = jwt.decode(token, self._fsa_secret, leeway=self._fsa_delay * 60,
-                              audience=self._fsa_realm, algorithms=[self._fsa_algo])
+            data = jwt.decode(token, self._secret, leeway=self._delay * 60,
+                              audience=self._realm, algorithms=[self._algo])
             return data['sub']
         except jwt.ExpiredSignatureError:
             log.debug(f"LOGIN (token): token {token} has expired")
@@ -383,73 +424,73 @@ class Flask(RealFlask):
             log.debug(f"LOGIN (token): invalide token ({e})")
             raise AuthException("invalid jwt token", 401)
 
-    def _fsa_get_token_auth(self, token):
+    def _get_token_auth(self, token):
         log.debug(f"checking token: {token}")
         return \
-            self._fsa_get_fsa_token_auth(token) if self._fsa_type == "fsa" else \
-            self._fsa_get_jwt_token_auth(token)
+            self._get_fsa_token_auth(token) if self._type == "fsa" else \
+            self._get_jwt_token_auth(token)
 
-    def _fsa_get_password_auth(self):
+    def _get_password_auth(self):
         try:
-            return self._fsa_get_basic_auth()
+            return self._get_basic_auth()
         except AuthException:  # try param
-            return self._fsa_get_param_auth()
+            return self._get_param_auth()
 
     # map auth types to their functions
-    _FSA_AUTH = {"basic": _fsa_get_basic_auth,
-                 "param": _fsa_get_param_auth,
-                 "password": _fsa_get_password_auth,
-                 "fake": _fsa_get_fake_auth}
+    _FSA_AUTH = {"basic": _get_basic_auth,
+                 "param": _get_param_auth,
+                 "password": _get_password_auth,
+                 "fake": _get_fake_auth}
 
     # return authenticated user or throw exception
     def get_user(self):
-        log.debug(f"get_user for {self._fsa_auth}")
+        log.debug(f"get_user for {self._auth}")
 
-        # _fsa_user is reset before/after requests
+        # _user is reset before/after requests
         # so relying on in-request persistance is safe
-        if self._fsa_user is not None:
-            return self._fsa_user
+        if self._user is not None:
+            return self._user
 
-        AUTH = self._fsa_auth
+        AUTH = self._auth
         if AUTH is None:
             raise AuthException("FlaskSimpleAuth not initialized", 500)
 
         if AUTH == "httpd":
 
-            self._fsa_user = request.remote_user
+            self._user = request.remote_user
 
         elif AUTH in ("fake", "param", "basic", "token", "password"):
 
             # check for token
-            if self._fsa_type is not None:
+            if self._type is not None:
                 params = request.values if request.json is None else request.json
-                if self._fsa_name is None:
+                if self._name is None:
                     auth = request.headers.get("Authorization", None)
                     if auth is not None and auth[:7] == "Bearer ":
-                        self._fsa_user = self._fsa_get_token_auth(auth[7:])
+                        self._user = self._get_token_auth(auth[7:])
                 else:
-                    token = params.get(self._fsa_name, None)
+                    token = params.get(self._name, None)
                     if token is not None:
-                        self._fsa_user = self._fsa_get_token_auth(token)
+                        self._user = self._get_token_auth(token)
 
             # else try other schemes
-            if self._fsa_user is None:
+            if self._user is None:
                 if AUTH in self._FSA_AUTH:
-                    self._fsa_user = self._FSA_AUTH[AUTH](self)
+                    self._user = self._FSA_AUTH[AUTH](self)
                 else:
                     raise AuthException("auth token is required", 401)
 
         else:
             raise AuthException(f"unexpected authentication type: {AUTH}", 500)
 
-        assert self._fsa_user is not None  # else an exception would have been raised
-        log.info(f"get_user({self._fsa_auth}): {self._fsa_user}")
-        return self._fsa_user
+        assert self._user is not None  # else an exception would have been raised
+        log.info(f"get_user({self._auth}): {self._user}")
+        return self._user
 
     #
     # authorize internal decorator
     #
-    def _fsa_authorize(self, *groups):
+    def _authorize(self, *groups):
 
         if len(groups) > 1 and \
            (ANY in groups or ALL in groups or NONE in groups or None in groups):
@@ -457,7 +498,7 @@ class Flask(RealFlask):
 
         if ANY not in groups and ALL not in groups and \
            NONE not in groups and None not in groups:
-            assert self._fsa_user_in_group is not None, \
+            assert self._user_in_group is not None, \
                 "user_in_group callback needed for authorize"
 
         def decorate(fun: Callable):
@@ -465,30 +506,30 @@ class Flask(RealFlask):
             @functools.wraps(fun)
             def wrapper(*args, **kwargs):
                 # track that some autorization check was performed
-                self._fsa_need_authorization = False
+                self._need_authorization = False
                 # shortcuts
                 if NONE in groups or None in groups:
                     return "", 403
                 if ANY in groups:
                     return fun(*args, **kwargs)
                 # get user if needed
-                if self._fsa_user is None:
+                if self._user is None:
                     # no current user, try to get one?
-                    if self._fsa_lazy:
+                    if self._lazy:
                         try:
-                            self._fsa_user = self.get_user()
+                            self._user = self.get_user()
                         except AuthException:
                             return "", 401
                     else:
                         return "", 401
-                if self._fsa_user is None:
+                if self._user is None:
                     return "", 401
                 # shortcut for authenticated users
                 if ALL in groups:
                     return fun(*args, **kwargs)
                 # check against all authorized groups/roles
                 for g in groups:
-                    if self._fsa_user_in_group(self._fsa_user, g):
+                    if self._user_in_group(self._user, g):
                         return fun(*args, **kwargs)
                 # else no matching group
                 return "", 403
@@ -510,7 +551,7 @@ class Flask(RealFlask):
     # - whether all request parameters are automatically translated to function
     #   parameters with a str value.
     #
-    def _fsa_parameters(self, required=None, allparams=False):
+    def _parameters(self, required=None, allparams=False):
 
         def decorate(fun: Callable):
 
@@ -535,7 +576,7 @@ class Flask(RealFlask):
             def wrapper(*args, **kwargs):
 
                 # this cannot happen under normal circumstances because
-                if self._fsa_need_authorization and self._fsa_check:
+                if self._need_authorization and self._check:
                     return "missing authorization check", 500
 
                 # translate request parameters to named function parameters
@@ -585,8 +626,9 @@ class Flask(RealFlask):
     def route(self, path, *args, authorize=NONE, required=None, allparams=False, **kwargs):
 
         # lazy initialization
-        if not self._fsa_initialized:
-            self._fsa_initialize()
+        assert self._app is not None
+        if not self._initialized:
+            self.init_app(self._app)
 
         # make authorize parameter it a list/tuple
         roles = authorize
@@ -618,8 +660,9 @@ class Flask(RealFlask):
                             splits[i] = f"string:{spec}>{remainder}"
             newpath = '<'.join(splits)
 
-            par = self._fsa_parameters(required=required, allparams=allparams)(fun)
-            aut = self._fsa_authorize(*roles)(par)
-            return RealFlask.route(self, newpath, *args, **kwargs)(aut)
+            assert self._app is not None
+            par = self._parameters(required=required, allparams=allparams)(fun)
+            aut = self._authorize(*roles)(par)
+            return RealFlask.route(self._app, newpath, *args, **kwargs)(aut)
 
         return decorate

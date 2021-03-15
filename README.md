@@ -467,7 +467,7 @@ Software license is *public domain*.
 
 ### dev
 
-Make the module a full `Flask` wrapper.
+Make the module as a class *and* a full `Flask` wrapper.
 Advertise only the extended `route` decorator in the documentation
 (though others are still used internally).
 Change passlib bcrypt version to be compatible with Apache httpd.
@@ -561,7 +561,8 @@ Initial release in beta.
 
 ## TODO
 
-Implementation
+Some tasks:
+
  - token caching (especially for expensive jwt checks)?
  - how to deal with expiration?
  - handle "path" vs "string" path parameter?
@@ -574,4 +575,4 @@ Implementation
    other extension patterns anyway.
  - make Flask callable for the route? Nope, already used.
  - find a better decorator name for routing and all?
- - make it work with Blueprint
+ - make it work with Blueprint?

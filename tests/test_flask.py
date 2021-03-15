@@ -9,10 +9,10 @@ import json
 import logging
 log = logging.getLogger("tests")
 
-# app._fsa_log.setLevel(logging.DEBUG)
+# app._fsa._log.setLevel(logging.DEBUG)
 # app.log.setLevel(logging.DEBUG)
 # log.setLevel(logging.DEBUG)
-# app._fsa_initialize()
+# app._fsa._initialize()
 
 def check_200(res):  # ok
     assert res.status_code == 200
@@ -49,7 +49,7 @@ def check_500(res):  # bad
 def test_sanity():
     assert App.app is not None and fsa is not None
     assert App.app.name == "Test"
-    assert app._fsa_realm == "test"
+    assert app._fsa._realm == "test"
     assert 'FSA_TYPE' in app.config
     assert "dad" in App.UHP
     assert "calvin" in App.UHP
@@ -62,42 +62,42 @@ def client():
 
 # test all auth variants on GET
 def all_auth(client, user, pswd, check, *args, **kwargs):
-    asave, nsave = app._fsa_auth, app._fsa_name
+    asave, nsave = app._fsa._auth, app._fsa._name
     # fake login
-    app._fsa_auth, app._fsa_name = 'fake', 'auth'
+    app._fsa._auth, app._fsa._name = 'fake', 'auth'
     token_fake = json.loads(client.get("login", data={"LOGIN": user}).data)
     check(client.get(*args, **kwargs, data={"LOGIN": user}))
     check(client.get(*args, **kwargs, data={"auth": token_fake}))
     # user-pass param
     USERPASS = { "USER": user, "PASS": pswd }
-    app._fsa_auth = 'param'
+    app._fsa._auth = 'param'
     token_param = json.loads(client.get("login", data=USERPASS).data)
     check(client.get(*args, **kwargs, data=USERPASS))
     check(client.get(*args, **kwargs, data={"auth": token_param}))
-    app._fsa_auth = 'password'
+    app._fsa._auth = 'password'
     check(client.get(*args, **kwargs, data=USERPASS))
     check(client.get(*args, **kwargs, data={"auth": token_param}))
     # user-pass basic
     from requests.auth import _basic_auth_str as basic_auth
     BASIC = {"Authorization": basic_auth(user, pswd)}
-    app._fsa_auth = 'basic'
+    app._fsa._auth = 'basic'
     token_basic = json.loads(client.get("login", headers=BASIC).data)
     check(client.get(*args, **kwargs, headers=BASIC))
     check(client.get(*args, **kwargs, data={"auth": token_basic}))
-    app._fsa_auth = 'password'
+    app._fsa._auth = 'password'
     check(client.get(*args, **kwargs, headers=BASIC))
     check(client.get(*args, **kwargs, data={"auth": token_basic}))
     # token only
-    app._fsa_auth = "token"
+    app._fsa._auth = "token"
     check(client.get(*args, **kwargs, data={"auth": token_fake}))
     check(client.get(*args, **kwargs, data={"auth": token_param}))
     check(client.get(*args, **kwargs, data={"auth": token_basic}))
-    app._fsa_name = None
+    app._fsa._name = None
     bearer = lambda t: {"Authorization": "Bearer " + t}
     check(client.get(*args, **kwargs, headers=bearer(token_fake)))
     check(client.get(*args, **kwargs, headers=bearer(token_param)))
     check(client.get(*args, **kwargs, headers=bearer(token_basic)))
-    app._fsa_auth, app._fsa_name = asave, nsave
+    app._fsa._auth, app._fsa._name = asave, nsave
 
 def test_perms(client):
     check_200(client.get("/all"))  # open route
@@ -106,9 +106,9 @@ def test_perms(client):
     # admin only
     check_401(client.get("/admin"))
     log.debug(f"App.is_in_group: {App.is_in_group}")
-    log.debug(f"app._fsa_user_in_group: {app._fsa_user_in_group}")
+    log.debug(f"app._fsa._user_in_group: {app._fsa._user_in_group}")
     assert App.is_in_group("dad", App.ADMIN)
-    assert app._fsa_user_in_group("dad", App.ADMIN)
+    assert app._fsa._user_in_group("dad", App.ADMIN)
     all_auth(client, "dad", App.UP["dad"], check_200, "/admin")
     assert not App.is_in_group("calvin", App.ADMIN)
     all_auth(client, "calvin", App.UP["calvin"], check_403, "/admin")
@@ -116,17 +116,17 @@ def test_perms(client):
     all_auth(client, "hobbes", App.UP["hobbes"], check_403, "/admin")
     # write only
     check_401(client.get("/write"))
-    assert app._fsa_user_in_group("dad", App.WRITE)
+    assert app._fsa._user_in_group("dad", App.WRITE)
     all_auth(client, "dad", App.UP["dad"], check_200, "/write")
-    assert app._fsa_user_in_group("calvin", App.WRITE)
+    assert app._fsa._user_in_group("calvin", App.WRITE)
     all_auth(client, "calvin", App.UP["calvin"], check_200, "/write")
     assert not App.is_in_group("hobbes", App.WRITE)
     all_auth(client, "hobbes", App.UP["hobbes"], check_403, "/write")
     # read only
     check_401(client.get("/read"))
-    assert not app._fsa_user_in_group("dad", App.READ)
+    assert not app._fsa._user_in_group("dad", App.READ)
     all_auth(client, "dad", App.UP["dad"], check_403, "/read")
-    assert app._fsa_user_in_group("calvin", App.READ)
+    assert app._fsa._user_in_group("calvin", App.READ)
     all_auth(client, "calvin", App.UP["calvin"], check_200, "/read")
     assert App.is_in_group("hobbes", App.READ)
     all_auth(client, "hobbes", App.UP["hobbes"], check_200, "/read")
@@ -137,13 +137,13 @@ def test_whatever(client):
     check_401(client.put("/whatever"))
     check_401(client.patch("/whatever"))
     check_401(client.delete("/whatever"))
-    saved, app._fsa_auth = app._fsa_auth, 'fake'
+    saved, app._fsa._auth = app._fsa._auth, 'fake'
     check_404(client.get("/whatever", data={"LOGIN": "dad"}))
     check_404(client.post("/whatever", data={"LOGIN": "dad"}))
     check_404(client.put("/whatever", data={"LOGIN": "dad"}))
     check_404(client.patch("/whatever", data={"LOGIN": "dad"}))
     check_404(client.delete("/whatever", data={"LOGIN": "dad"}))
-    app._fsa_auth = saved
+    app._fsa._auth = saved
 
 def test_register(client):
     # missing params
@@ -158,27 +158,27 @@ def test_register(client):
     all_auth(client, "susie", App.UP["susie"], check_403, "/write")
     all_auth(client, "susie", App.UP["susie"], check_200, "/read")
     # clean-up
-    sauth, app._fsa_auth = app._fsa_auth, "fake"
+    sauth, app._fsa._auth = app._fsa._auth, "fake"
     check_204(client.delete("/user/susie", data={"LOGIN":"susie"}))
     assert "susie" not in App.UP and "susie" not in App.UHP
-    app._fsa_auth = sauth
+    app._fsa._auth = sauth
 
 def test_fsa_token():
-    tsave, hsave, app._fsa_type, app._fsa_algo = app._fsa_type, app._fsa_algo, "fsa", "blake2s"
+    tsave, hsave, app._fsa._type, app._fsa._algo = app._fsa._type, app._fsa._algo, "fsa", "blake2s"
     calvin_token = app.create_token("calvin")
     assert calvin_token[:12] == "test:calvin:"
-    assert app._fsa_get_token_auth(calvin_token) == "calvin"
-    app._fsa_type, app._fsa_algo = tsave, hsave
+    assert app._fsa._get_token_auth(calvin_token) == "calvin"
+    app._fsa._type, app._fsa._algo = tsave, hsave
 
 def test_expired_token():
     hobbes_token = app.create_token("hobbes")
-    grace, app._fsa_grace = app._fsa_grace, -100
+    grace, app._fsa._grace = app._fsa._grace, -100
     try:
-        user = app._fsa_get_token_auth(hobbes_token)
+        user = app._fsa._get_token_auth(hobbes_token)
         assert False, "token should be invalid"
     except fsa.AuthException as e:
         assert e.status == 401
-    app._fsa_grace = grace
+    app._fsa._grace = grace
 
 RSA_TEST_PUB_KEY = """
 -----BEGIN PUBLIC KEY-----
@@ -200,39 +200,39 @@ JtTFy+PPh909GQIhAMokyDzv42nWS0hiE6ofuDQZZcqz1LVotcH4wN3rMExRAiAd
 """
 
 def test_jwt_token():
-    tsave, hsave, app._fsa_type, app._fsa_algo = app._fsa_type, app._fsa_algo, "jwt", "HS256"
-    Ksave, ksave = app._fsa_secret, app._fsa_sign
+    tsave, hsave, app._fsa._type, app._fsa._algo = app._fsa._type, app._fsa._algo, "jwt", "HS256"
+    Ksave, ksave = app._fsa._secret, app._fsa._sign
     # hmac signature scheme
     moe_token = app.create_token("moe")
     assert "." in moe_token and len(moe_token.split(".")) == 3
-    user = app._fsa_get_token_auth(moe_token)
+    user = app._fsa._get_token_auth(moe_token)
     assert user == "moe"
     # pubkey signature scheme
-    app._fsa_algo, app._fsa_secret, app._fsa_sign = \
+    app._fsa._algo, app._fsa._secret, app._fsa._sign = \
         "RS256", RSA_TEST_PUB_KEY, RSA_TEST_PRIV_KEY
     mum_token = app.create_token("mum")
     assert "." in mum_token and len(mum_token.split(".")) == 3
-    user = app._fsa_get_token_auth(mum_token)
+    user = app._fsa._get_token_auth(mum_token)
     assert user == "mum"
     # cleanup
-    app._fsa_type, app._fsa_algo = tsave, hsave
-    app._fsa_secret, app._fsa_sign = Ksave, ksave
+    app._fsa._type, app._fsa._algo = tsave, hsave
+    app._fsa._secret, app._fsa._sign = Ksave, ksave
 
 def test_invalid_token():
     susie_token = app.create_token("susie")
     susie_token = susie_token[:-1] + "z"
     try:
-        user = app._fsa_get_token_auth(susie_token)
+        user = app._fsa._get_token_auth(susie_token)
         assert False, "token should be invalid"
     except fsa.AuthException as e:
         assert e.status == 401
 
 def test_wrong_token():
-    realm, app._fsa_realm = app._fsa_realm, "elsewhere"
+    realm, app._fsa._realm = app._fsa._realm, "elsewhere"
     moe_token = app.create_token("moe")
-    app._fsa_realm = realm
+    app._fsa._realm = realm
     try:
-        user = app._fsa_get_token_auth(moe_token)
+        user = app._fsa._get_token_auth(moe_token)
         assert False, "token should be invalid"
     except fsa.AuthException as e:
         assert e.status == 401
@@ -243,25 +243,25 @@ def test_password_check():
     assert not app.check_password("bad-pass", ref)
 
 def test_authorize():
-    assert app._fsa_user_in_group("dad", App.ADMIN)
-    assert not app._fsa_user_in_group("hobbes", App.ADMIN)
-    @app._fsa_authorize(App.ADMIN)
+    assert app._fsa._user_in_group("dad", App.ADMIN)
+    assert not app._fsa._user_in_group("hobbes", App.ADMIN)
+    @app._fsa._authorize(App.ADMIN)
     def stuff():
         return "", 200
-    app._fsa_user = "dad"
+    app._fsa._user = "dad"
     _, status = stuff()
     assert status == 200
-    app._fsa_user = "hobbes"
+    app._fsa._user = "hobbes"
     _, status = stuff()
     assert status == 403
-    lazy, app._fsa_lazy = app._fsa_lazy, False
-    app._fsa_user = None
+    lazy, app._fsa._lazy = app._fsa._lazy, False
+    app._fsa._user = None
     _, status = stuff()
     assert status == 401
-    app._fsa_lazy = lazy
+    app._fsa._lazy = lazy
 
 def test_self_care(client):
-    saved, app._fsa_auth = app._fsa_auth, 'fake'
+    saved, app._fsa._auth = app._fsa._auth, 'fake'
     check_401(client.patch("/user/calvin"))
     check_403(client.patch("/user/calvin", data={"LOGIN":"dad"}))
     who, npass, opass = "calvin", "new-calvin-password", App.UP["calvin"]
@@ -273,7 +273,7 @@ def test_self_care(client):
     check_204(client.delete("user/rosalyn", data={"LOGIN":"rosalyn"}))  # self
     check_201(client.post("/register", data={"user":"rosalyn", "upass":"rosa-pass"}))
     check_204(client.delete("user/rosalyn", data={"LOGIN":"dad"}))  # admin
-    app._fsa_auth = saved
+    app._fsa._auth = saved
 
 def test_typed_params(client):
     res = check_200(client.get("/add/2", data={"a":"2.0", "b":"4.0"}))
@@ -327,15 +327,15 @@ def test_params(client):
     assert res.data == b"a b c"
 
 def test_missing(client):
-    saved, app._fsa_check = app._fsa_check, True
+    saved, app._fsa._check = app._fsa._check, True
     check_500(client.get("/mis1"))
     check_500(client.get("/mis2"))
     check_403(client.get("/empty", data={"LOGIN": "dad"}))
-    app._fsa_check = False
+    app._fsa._check = False
     check_200(client.get("/mis1"))
     check_200(client.get("/mis2"))
     check_403(client.get("/empty", data={"LOGIN": "dad"}))
-    app._fsa_check = saved
+    app._fsa._check = saved
 
 def test_nogo(client):
     check_403(client.get("/nogo"))

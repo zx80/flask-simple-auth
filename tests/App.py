@@ -37,7 +37,7 @@ app.config.update(
 )
 
 # force initialization so that hash_password is ok
-app._fsa_initialize()
+app._fsa.initialize()
 
 # finalize test passwords
 UP = { "calvin": "hobbes", "hobbes": "susie", "dad": "mum" }
@@ -151,7 +151,7 @@ def get_nogo():
 
 # missing authorization check with parameters
 @RealFlask.route(app, "/mis1", methods=["GET"])
-@app._fsa_parameters()
+@app._fsa._parameters()
 def get_mis1(i: int = 0):
     return "", 200
 
