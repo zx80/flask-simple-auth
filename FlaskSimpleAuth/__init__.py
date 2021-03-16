@@ -77,6 +77,9 @@ class Flask(flask.Flask):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._fsa = FlaskSimpleAuth(self)
+        # needed for blueprint registration
+        # overwritten late because called by upper Flask initialization
+        self.add_url_rule = self._fsa.add_url_rule
 
     # forward some methods
     def init_app(self, app: flask.Flask):
@@ -99,10 +102,6 @@ class Flask(flask.Flask):
 
     def get_user(self):
         return self._fsa.get_user()
-
-    # overwrite route decorator
-    def route(self, *args, **kwargs):
-        return self._fsa.route(*args, **kwargs)
 
 
 # actual class
@@ -576,7 +575,7 @@ class FlaskSimpleAuth:
             @functools.wraps(fun)
             def wrapper(*args, **kwargs):
 
-                # this cannot happen under normal circumstances because
+                # this cannot happen under normal circumstances
                 if self._need_authorization and self._check:
                     return "missing authorization check", 500
 
@@ -622,12 +621,11 @@ class FlaskSimpleAuth:
         return decorate
 
     #
-    # route decorator wrapper
+    # route decorator helper
     #
-    def route(self, path, *args, authorize=NONE, required=None, allparams=False, **kwargs):
+    def add_url_rule(self, rule, endpoint=None, view_func=None, authorize=NONE, required=None, allparams=False, **options):
 
         # lazy initialization
-        assert self._app is not None
         if not self._initialized:
             self.init_app(self._app)
 
@@ -641,29 +639,32 @@ class FlaskSimpleAuth:
         from collections.abc import Iterable
         assert isinstance(roles, Iterable)
 
-        def decorate(fun: Callable):
-            from uuid import UUID
-            # add the expected type to path sections, if available
-            # flask converter types: string (default), int, float, path, uuid
-            sig = inspect.signature(fun)
+        from uuid import UUID
+        # add the expected type to path sections, if available
+        # flask converter types: string (default), int, float, path, uuid
+        sig = inspect.signature(view_func)
 
-            splits = path.split("<")
-            for i, s in enumerate(splits):
-                if i > 0:
-                    spec, remainder = s.split(">", 1)
-                    if ":" not in spec and spec in sig.parameters:
-                        t = typeof(sig.parameters[spec])
-                        # Flask supports 5 types, with string the default?
-                        # FIXME how to handle path?
-                        if t in (int, float, UUID):
-                            splits[i] = f"{t.__name__.lower()}:{spec}>{remainder}"
-                        else:
-                            splits[i] = f"string:{spec}>{remainder}"
-            newpath = '<'.join(splits)
+        splits = rule.split("<")
+        for i, s in enumerate(splits):
+            if i > 0:
+                spec, remainder = s.split(">", 1)
+                if ":" not in spec and spec in sig.parameters:
+                    t = typeof(sig.parameters[spec])
+                    # Flask supports 5 types, with string the default?
+                    # FIXME how to handle path?
+                    if t in (int, float, UUID):
+                        splits[i] = f"{t.__name__.lower()}:{spec}>{remainder}"
+                    else:
+                        splits[i] = f"string:{spec}>{remainder}"
+        newpath = '<'.join(splits)
 
-            assert self._app is not None
-            par = self._parameters(required=required, allparams=allparams)(fun)
-            aut = self._authorize(*roles)(par)
-            return flask.Flask.route(self._app, newpath, *args, **kwargs)(aut)
+        assert self._app is not None
+        par = self._parameters(required=required, allparams=allparams)(view_func)
+        aut = self._authorize(*roles)(par)
+        return flask.Flask.add_url_rule(self._app, newpath, endpoint=endpoint, view_func=aut, **options)
 
+    # route decorator
+    def route(self, rule, **options):
+        def decorate(fun):
+            self.add_url_rule(rule, view_func=fun, **options)
         return decorate

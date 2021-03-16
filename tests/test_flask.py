@@ -336,12 +336,12 @@ def test_params(client):
 
 def test_missing(client):
     saved, app._fsa._check = app._fsa._check, True
-    check_500(client.get("/mis1"))
-    check_500(client.get("/mis2"))
+    check_403(client.get("/mis1"))
+    check_403(client.get("/mis2"))
     check_403(client.get("/empty", data={"LOGIN": "dad"}))
     app._fsa._check = False
-    check_200(client.get("/mis1"))
-    check_200(client.get("/mis2"))
+    # check_200(client.get("/mis1"))
+    # check_200(client.get("/mis2"))
     check_403(client.get("/empty", data={"LOGIN": "dad"}))
     app._fsa._check = saved
 
@@ -355,7 +355,7 @@ def test_route(client):
     assert res.data == b"42: hello ?"
     check_400(client.get("/one/42"))   # missing "msg"
     check_404(client.get("/one/bad", data={"msg":"hi"}))  # bad "i" type
-    check_500(client.get("/two", data={"LOGIN":"calvin"}))
+    check_403(client.get("/two", data={"LOGIN":"calvin"}))
 
 def test_infer(client):
     res = check_200(client.get("/infer/1.000"))
@@ -412,9 +412,9 @@ def test_appext(client2):
 
 def test_blueprint(client):
     check_401(client.get("/b1/words/foo"))
-    #res = check_200(client.get("/b1/words/foo", data={"LOGIN": "dad"}))
-    #assert res.data == b"foo"
-    check_500(client.get("/b1/words/foo", data={"LOGIN": "dad"}))
-    #res = check_200(client.get("/b1/words/bla", data={"LOGIN": "dad", "n": "2"}))
-    #assert res.data == b"bla_bla"
-    check_500(client.get("/b1/words/bla", data={"LOGIN": "dad", "n": "2"}))
+    res = check_200(client.get("/b1/words/foo", data={"LOGIN": "dad"}))
+    assert res.data == b"foo"
+    res = check_200(client.get("/b1/words/bla", data={"LOGIN": "dad", "n": "2"}))
+    assert res.data == b"bla_bla"
+    check_403(client.get("/b1/blue", data={"LOGIN": "dad"}))
+
