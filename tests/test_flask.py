@@ -444,3 +444,10 @@ def test_appfact(client3):
     assert res.data == b"3"
     check_400(client3.get("/add", data={"i": "sept", "j": "deux", "LOGIN": "dad"}))
     check_400(client3.get("/add", data={"i": "7", "LOGIN": "dad"}))
+    # blueprint
+    check_401(client3.get("/b/word/fun"))
+    res = check_200(client3.get("/b/words/fun", data={"LOGIN": "dad"}))
+    assert res.data == b"fun"
+    res = check_200(client3.get("/b/words/bin", data={"LOGIN": "dad", "n": "2"}))
+    assert res.data == b"bin_bin"
+    check_403(client3.get("/b/blue", data={"LOGIN": "dad"}))

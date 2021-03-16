@@ -27,7 +27,7 @@ app.config.update(
     FSA_USER_IN_GROUP = user_in_group
 )
 
-from subapp import subapp
+from SubApp import subapp
 app.register_blueprint(subapp, url_prefix="/b1")
 
 #

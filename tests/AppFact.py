@@ -1,12 +1,16 @@
 # test factory pattern
 
-from shared_auth import get_user_pass, user_in_group
 from FlaskSimpleAuth import Flask, ALL
+
+from shared_auth import get_user_pass, user_in_group
+from SubApp import subapp
 
 def create_app(**config):
     app = Flask("4ops")
     app.config.update(FSA_TYPE="fake", FSA_GET_USER_PASS=get_user_pass, FSA_USER_IN_GROUP=user_in_group)
     app.config.update(**config)
+
+    app.register_blueprint(subapp, url_prefix="/b")
 
     @app.route("/mul", methods=["GET"], authorize=ALL)
     def get_mul(i: int, j: int):

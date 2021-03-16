@@ -38,7 +38,7 @@ def get_stuff():
 def get_bad():
     return "bad", 200
 
-from subapp import subapp
+from SubApp import subapp
 fsa.register_blueprint(subapp, url_prefix="/b2")
 
 # errors because authorize is not handled
