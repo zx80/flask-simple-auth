@@ -442,6 +442,8 @@ def test_appfact(client3):
     assert res.data == b"14"
     res = check_200(client3.get("/div", data={"i": "7", "j": "2", "LOGIN": "dad"}))
     assert res.data == b"3"
+    res = check_200(client3.get("/div", data={"i": "0xf", "j": "0b10", "LOGIN": "dad"}))
+    assert res.data == b"7"
     check_400(client3.get("/add", data={"i": "sept", "j": "deux", "LOGIN": "dad"}))
     check_400(client3.get("/add", data={"i": "7", "LOGIN": "dad"}))
     # blueprint
