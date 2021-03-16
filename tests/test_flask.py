@@ -68,6 +68,12 @@ def client2():
     with AppExt.app.test_client() as c:
         yield c
 
+@pytest.fixture
+def client3():
+    import AppFact as af
+    with af.create_app().test_client() as c:
+        yield c
+
 # test all auth variants on GET
 def all_auth(client, user, pswd, check, *args, **kwargs):
     asave, nsave = app._fsa._auth, app._fsa._name
@@ -425,3 +431,16 @@ def test_blueprint_2(client2):
     res = check_200(client2.get("/b2/words/bla", data={"LOGIN": "dad", "n": "2"}))
     assert res.data == b"bla_bla"
     check_403(client2.get("/b2/blue", data={"LOGIN": "dad"}))
+
+def test_appfact(client3):
+    check_401(client3.get("/add", data={"i": "7", "j": "2"}))
+    res = check_200(client3.get("/add", data={"i": "7", "j": "2", "LOGIN": "dad"}))
+    assert res.data == b"9"
+    res = check_200(client3.get("/sub", data={"i": "7", "j": "2", "LOGIN": "dad"}))
+    assert res.data == b"5"
+    res = check_200(client3.get("/mul", data={"i": "7", "j": "2", "LOGIN": "dad"}))
+    assert res.data == b"14"
+    res = check_200(client3.get("/div", data={"i": "7", "j": "2", "LOGIN": "dad"}))
+    assert res.data == b"3"
+    check_400(client3.get("/add", data={"i": "sept", "j": "deux", "LOGIN": "dad"}))
+    check_400(client3.get("/add", data={"i": "7", "LOGIN": "dad"}))
