@@ -22,6 +22,7 @@ most of the crust is managed by Flask and FlaskSimpleAuth.
 ```Python
 from FlaskSimpleAuth import Flask
 app = Flask("demo")
+app.config.from_envvar("DEMO_CONFIG")
 
 # register hooks
 # user_to_password_fun is a function returning the hashed password for a user.
@@ -139,6 +140,7 @@ by calling some methods to register helper functions.
 ```Python
 from FlaskSimpleAuth import Flask
 app = Flask('test')
+app.config.from_envvar("TEST_CONFIG")
 
 # register hooks
 
@@ -172,6 +174,7 @@ using this object:
 ```Python
 from flask import Flask
 app = Flask("demo")
+app.config.from_envvar("DEMO_CONFIG")
 
 from FlaskSimpleAuth import FlaskSimpleAuth, ALL
 fsa = FlaskSimpleAuth(app)
