@@ -409,3 +409,12 @@ def test_appext(client2):
     check_200(client2.get("/stuff", data={"LOGIN": "dad"}))
     check_401(client2.get("/bad"))
     check_500(client2.get("/bad", data={"LOGIN": "dad"}))
+
+def test_blueprint(client):
+    check_401(client.get("/b1/words/foo"))
+    #res = check_200(client.get("/b1/words/foo", data={"LOGIN": "dad"}))
+    #assert res.data == b"foo"
+    check_500(client.get("/b1/words/foo", data={"LOGIN": "dad"}))
+    #res = check_200(client.get("/b1/words/bla", data={"LOGIN": "dad", "n": "2"}))
+    #assert res.data == b"bla_bla"
+    check_500(client.get("/b1/words/bla", data={"LOGIN": "dad", "n": "2"}))
