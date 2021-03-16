@@ -180,7 +180,7 @@ fsa = FlaskSimpleAuth(app)
 from DemoAdmin import abp
 fsa.register_blueprint(abp, url_path="/admin")
 
-# define a route is an optional paramater "flt"
+# define a route with an optional paramater "flt"
 @fsa.route("/users", methods=["GET"], authorize=ALL)
 def get_what(flt: str = None):
     …
