@@ -165,6 +165,26 @@ Once initialized `app` is a standard Flask object with some additions:
 - `hash_password` and `check_password` to hash or check a password.
 - `create_token` to compute a new authentication token for the current user.
 
+Alternatively, it is possible to use the flask extension model, in which case
+the `FlaskSimpleAuth` object must be instanciated and routes must be created
+using this object:
+
+```Python
+from flask import Flask
+app = Flask("demo")
+
+from FlaskSimpleAuth import FlaskSimpleAuth, ALL
+fsa = FlaskSimpleAuth(app)
+
+# imaginary blueprint registration on the fsa object:
+from DemoAdmin import abp
+fsa.register_blueprint(abp, url_path="/admin")
+
+# define a route is an optional paramater "flt"
+@fsa.route("/users", methods=["GET"], authorize=ALL)
+def get_what(flt: str = None):
+    …
+```
 
 ### Using Authentication, Authorization and Parameter Check
 
