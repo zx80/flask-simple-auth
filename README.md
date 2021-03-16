@@ -44,7 +44,7 @@ Authentication is manage from the application flask configuration
 with `FSA_*` (Flask simple authentication) directives:
 
 ```Python
-FSA_TYPE = 'httpd'     # inherit web-serveur authentication
+FSA_TYPE = "httpd"     # inherit web-serveur authentication
 # or others such as: basic, token (eg jwt), param…
 ```
 
@@ -139,7 +139,7 @@ by calling some methods to register helper functions.
 
 ```Python
 from FlaskSimpleAuth import Flask
-app = Flask('test')
+app = Flask("test")
 app.config.from_envvar("TEST_CONFIG")
 
 # register hooks
