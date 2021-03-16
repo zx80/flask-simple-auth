@@ -75,7 +75,7 @@ def typeof(p: inspect.Parameter):
 class Flask(flask.Flask):
 
     def __init__(self, *args, **kwargs):
-        flask.Flask.__init__(self, *args, **kwargs)
+        super().__init__(*args, **kwargs)
         self._fsa = FlaskSimpleAuth(self)
 
     # forward some methods
