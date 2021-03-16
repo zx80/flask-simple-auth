@@ -10,7 +10,8 @@ import functools
 import inspect
 import datetime as dt
 
-from flask import Flask as RealFlask
+import flask
+# for local use & forwarding
 from flask import Response, request
 # just for forwarding
 from flask import session, jsonify, redirect, url_for, Blueprint
@@ -71,14 +72,14 @@ def typeof(p: inspect.Parameter):
 
 
 # Flask wrapper
-class Flask(RealFlask):
+class Flask(flask.Flask):
 
     def __init__(self, *args, **kwargs):
-        RealFlask.__init__(self, *args, **kwargs)
+        flask.Flask.__init__(self, *args, **kwargs)
         self._fsa = FlaskSimpleAuth(self)
 
     # forward some methods
-    def init_app(self, app: RealFlask):
+    def init_app(self, app: flask.Flask):
         return self._fsa.init_app(app)
 
     def get_user_pass(self, gup):
@@ -108,7 +109,7 @@ class Flask(RealFlask):
 class FlaskSimpleAuth:
 
     # constructor
-    def __init__(self, app: RealFlask = None):
+    def __init__(self, app: flask.Flask = None):
         self._app = app
         self._get_user_pass = None
         self._user_in_group = None
@@ -155,7 +156,7 @@ class FlaskSimpleAuth:
         self.init_app(self._app)
 
     # actually initialize class…
-    def init_app(self, app: RealFlask):
+    def init_app(self, app: flask.Flask):
         log.info("FSA initialization…")
         assert app is not None
         self._app = app
@@ -663,6 +664,6 @@ class FlaskSimpleAuth:
             assert self._app is not None
             par = self._parameters(required=required, allparams=allparams)(fun)
             aut = self._authorize(*roles)(par)
-            return RealFlask.route(self._app, newpath, *args, **kwargs)(aut)
+            return flask.Flask.route(self._app, newpath, *args, **kwargs)(aut)
 
         return decorate

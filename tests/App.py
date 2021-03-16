@@ -11,7 +11,7 @@ log = logging.getLogger("app")
 #
 # APP
 #
-from FlaskSimpleAuth import Flask, RealFlask, jsonify, ANY, ALL, NONE
+from FlaskSimpleAuth import Flask, jsonify, ANY, ALL, NONE
 app = Flask("Test")
 
 #
@@ -135,14 +135,16 @@ def get_params(**kwargs):
 def get_nogo():
     return "", 200
 
+import flask
+
 # missing authorization check with parameters
-@RealFlask.route(app, "/mis1", methods=["GET"])
+@flask.Flask.route(app, "/mis1", methods=["GET"])
 @app._fsa._parameters()
 def get_mis1(i: int = 0):
     return "", 200
 
 # missing authorization check without parameters
-@RealFlask.route(app, "/mis2", methods=["GET"])
+@flask.Flask.route(app, "/mis2", methods=["GET"])
 def get_mis2():
     return "", 200
 
@@ -157,7 +159,7 @@ def get_one(i: int, msg: str, punct: str = "!"):
     return f"{i}: {msg} {punct}", 200
 
 # missing authorize on direct flask route call
-@RealFlask.route(app, "/two", methods=["GET"])
+@flask.Flask.route(app, "/two", methods=["GET"])
 def get_two():
     return "2", 200
 
