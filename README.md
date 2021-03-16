@@ -591,7 +591,5 @@ Some tasks:
    how to deal with expiration?
  - handle "path" vs "string" path parameter?
  - add support for more types? which ones?
- - extension/factory : it is unclear though whether FSA should use `current_app` and
-   other extension patterns.
  - make Flask callable for the route? Nope, already used.
  - find a better decorator name for routing and all?
