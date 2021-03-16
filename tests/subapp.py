@@ -1,3 +1,4 @@
+# also works: from flask import Blueprint
 from FlaskSimpleAuth import Blueprint, ALL
 
 subapp = Blueprint("subapp", __name__)
