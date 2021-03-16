@@ -418,3 +418,10 @@ def test_blueprint(client):
     assert res.data == b"bla_bla"
     check_403(client.get("/b1/blue", data={"LOGIN": "dad"}))
 
+def test_blueprint_2(client2):
+    check_401(client2.get("/b2/words/foo"))
+    res = check_200(client2.get("/b2/words/foo", data={"LOGIN": "dad"}))
+    assert res.data == b"foo"
+    res = check_200(client2.get("/b2/words/bla", data={"LOGIN": "dad", "n": "2"}))
+    assert res.data == b"bla_bla"
+    check_403(client2.get("/b2/blue", data={"LOGIN": "dad"}))

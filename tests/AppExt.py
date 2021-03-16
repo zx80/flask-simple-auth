@@ -37,3 +37,6 @@ def get_stuff():
 @app.route("/bad", methods=["GET"])
 def get_bad():
     return "bad", 200
+
+from subapp import subapp
+fsa.register_blueprint(subapp, url_prefix="/b2")

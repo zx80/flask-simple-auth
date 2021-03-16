@@ -246,6 +246,12 @@ class FlaskSimpleAuth:
             self._get_user_pass = conf["FSA_GET_USER_PASS"]
         if "FSA_USER_IN_GROUP" in conf:
             self._user_in_group = conf["FSA_USER_IN_GROUP"]
+        #
+        # blueprint hacks
+        #
+        self.blueprints = self._app.blueprints
+        self._blueprint_order = self._app._blueprint_order
+        self.debug = False
         # done!
         self._initialized = True
         return
@@ -668,3 +674,7 @@ class FlaskSimpleAuth:
         def decorate(fun):
             self.add_url_rule(rule, view_func=fun, **options)
         return decorate
+
+    # duck-typing blueprint code stealing: needs blueprints, _blueprint_order, debug
+    def register_blueprint(self, blueprint, **options):
+        flask.Flask.register_blueprint(self, blueprint, **options)

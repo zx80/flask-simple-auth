@@ -478,7 +478,7 @@ Import Flask `session`, `redirect`, `url_for`, `make_response`,
 `abort`, `render_template`, `current_app` objects.
 Add parameter support for `date`, `time` and `datetime` in iso format.
 Allow to use any type as path parameters, not just Flask predefined ones.
-Make `Blueprint` work with the wrapper.
+Make blueprints work.
 
 ### 1.9.0
 
