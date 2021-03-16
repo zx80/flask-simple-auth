@@ -490,7 +490,7 @@ Software license is *public domain*.
 
 ### dev
 
-Make the module as a class *and* a full `Flask` wrapper.
+Make the module as an extension *and* a full `Flask` wrapper.
 Advertise only the extended `route` decorator in the documentation
 (though others are still used internally).
 Change passlib bcrypt version to be compatible with Apache httpd.
