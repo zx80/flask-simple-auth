@@ -454,20 +454,25 @@ def test_appfact(client3):
     assert res.data == b"bin_bin"
     check_403(client3.get("/b/blue", data={"LOGIN": "dad"}))
 
+import Shared
+
 def test_something_1(client):
+    Shared.init_app(something="HELLO")
     res = check_200(client.get("/something", data={"LOGIN": "dad"}))
-    assert res.data == b"App"
+    assert res.data == b"HELLO"
     res = check_200(client.get("/b1/something", data={"LOGIN": "dad"}))
-    assert res.data == b"App"
+    assert res.data == b"HELLO"
 
 def test_something_2(client2):
+    Shared.init_app(something="WORLD")
     res = check_200(client2.get("/something", data={"LOGIN": "dad"}))
-    assert res.data == b"App"
+    assert res.data == b"WORLD"
     res = check_200(client2.get("/b2/something", data={"LOGIN": "dad"}))
-    assert res.data == b"App"
+    assert res.data == b"WORLD"
 
 def test_something_3(client3):
+    Shared.init_app(something="CALVIN")
     res = check_200(client3.get("/something", data={"LOGIN": "dad"}))
-    assert res.data == b"App"
+    assert res.data == b"CALVIN"
     res = check_200(client3.get("/b/something", data={"LOGIN": "dad"}))
-    assert res.data == b"App"
+    assert res.data == b"CALVIN"
