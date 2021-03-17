@@ -16,6 +16,10 @@ run:
 stop:
 	-pkill flask
 
+.PHONY: check
+check:
+	pytest --log-level=debug --capture=tee-sys
+
 .PHONY: clean
 clean: stop
 	$(RM) -r __pycache__
