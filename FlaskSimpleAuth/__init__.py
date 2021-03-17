@@ -75,12 +75,15 @@ def typeof(p: inspect.Parameter):
 class Reference:  # type: Any
 
     def __init__(self, obj: Any = None):
+        self._obj = None
+        # keep track of initial methods
         self._init = set(self.__dir__())
         self._init.add("_init")
         if obj is not None:
             self._setobj(obj)
 
     def _setobj(self, obj):
+        log.debug(f"setting reference to {obj} ({type(obj)})")
         self._obj = obj
         for f in self.__dir__():
             if f not in self._init:
@@ -88,6 +91,13 @@ class Reference:  # type: Any
         for f in obj.__dir__():
             if f not in self._init:
                 setattr(self, f, getattr(obj, f))
+
+    def __str__(self):
+        return self._obj.__str__()
+
+    def __repr__(self):
+        return self._obj.__repr__()
+
 
 # Flask wrapper
 class Flask(flask.Flask):

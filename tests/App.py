@@ -2,8 +2,8 @@
 # TEST APP FOR FlaskSimpleAuth
 #
 
-from shared_auth import user_in_group, get_user_pass
-from shared_auth import ADMIN, WRITE, READ, GROUPS, UP, UHP
+from Auth import user_in_group, get_user_pass
+from Auth import ADMIN, WRITE, READ, GROUPS, UP, UHP
 
 import logging
 log = logging.getLogger("app")
@@ -211,3 +211,12 @@ class Mail:
 @app.route("/mail/<ad1>", methods=["GET"], authorize=ANY)
 def get_mail_address(ad1: Mail, ad2: Mail = "calvin@comics.net"):
     return f"{ad1} {ad2}", 200
+
+# shared initialized object
+import Shared
+from Shared import something
+Shared.init_app(something="App")
+
+@app.route("/something", methods=["GET"], authorize=ANY)
+def get_something():
+    return str(something), 200

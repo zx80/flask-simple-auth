@@ -2,7 +2,7 @@
 # ANOTHER TEST APP FOR FlaskSimpleAuth
 #
 
-from shared_auth import user_in_group, get_user_pass
+from Auth import user_in_group, get_user_pass
 
 import logging
 log = logging.getLogger("app-ext")
@@ -43,3 +43,11 @@ fsa.register_blueprint(subapp, url_prefix="/b2")
 
 # errors because authorize is not handled
 # app.register_blueprint(subapp, url_prefix="/b3")
+
+import Shared
+from Shared import something
+Shared.init_app(something="App")
+
+@fsa.route("/something", methods=["GET"], authorize=ALL)
+def get_something():
+    return str(something), 200

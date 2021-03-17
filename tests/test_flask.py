@@ -453,3 +453,21 @@ def test_appfact(client3):
     res = check_200(client3.get("/b/words/bin", data={"LOGIN": "dad", "n": "2"}))
     assert res.data == b"bin_bin"
     check_403(client3.get("/b/blue", data={"LOGIN": "dad"}))
+
+def test_something_1(client):
+    res = check_200(client.get("/something", data={"LOGIN": "dad"}))
+    assert res.data == b"App"
+    res = check_200(client.get("/b1/something", data={"LOGIN": "dad"}))
+    assert res.data == b"App"
+
+def test_something_2(client2):
+    res = check_200(client2.get("/something", data={"LOGIN": "dad"}))
+    assert res.data == b"App"
+    res = check_200(client2.get("/b2/something", data={"LOGIN": "dad"}))
+    assert res.data == b"App"
+
+def test_something_3(client3):
+    res = check_200(client3.get("/something", data={"LOGIN": "dad"}))
+    assert res.data == b"App"
+    res = check_200(client3.get("/b/something", data={"LOGIN": "dad"}))
+    assert res.data == b"App"
