@@ -114,7 +114,7 @@ def all_auth(client, user, pswd, check, *args, **kwargs):
     app._fsa._auth, app._fsa._name = asave, nsave
 
 def test_perms(client):
-    check_200(client.get("/all"))  # open route
+    check_200(client.get("/any"))  # open route
     check_401(client.get("/login"))  # login without login
     check_401(client.get("/"))  # empty path
     # admin only

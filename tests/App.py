@@ -21,7 +21,7 @@ app.config.update(
     FSA_TYPE = 'fake',
     FSA_ALWAYS = True,
     FSA_SKIP_PATH = (r"/register",
-                     r"/(add|div|mul|sub|type|params|all|mis[12]|nogo|one)",
+                     r"/(add|div|mul|sub|type|params|any|mis[12]|nogo|one)",
                      r"/(infer|superid|cplx|bool|mail)"),
     FSA_GET_USER_PASS = get_user_pass,
     FSA_USER_IN_GROUP = user_in_group
@@ -49,8 +49,8 @@ def write_only():
 def read_only():
     return "read-only", 200
 
-@app.route("/all", authorize=ANY)
-def all():
+@app.route("/any", authorize=ANY)
+def any():
     return "no-auth", 200
 
 # change password in self-care with set_login
