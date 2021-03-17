@@ -71,6 +71,24 @@ def typeof(p: inspect.Parameter):
         return str
 
 
+# convenient object wrapper class
+class Reference:  # type: Any
+
+    def __init__(self, obj: Any = None):
+        self._init = set(self.__dir__())
+        self._init.add("_init")
+        if obj is not None:
+            self._setobj(obj)
+
+    def _setobj(self, obj):
+        self._obj = obj
+        for f in self.__dir__():
+            if f not in self._init:
+                delattr(self, f)
+        for f in obj.__dir__():
+            if f not in self._init:
+                setattr(self, f, getattr(obj, f))
+
 # Flask wrapper
 class Flask(flask.Flask):
 
