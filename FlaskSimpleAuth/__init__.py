@@ -85,18 +85,27 @@ class Reference:  # type: Any
     def _setobj(self, obj):
         log.debug(f"setting reference to {obj} ({type(obj)})")
         self._obj = obj
+        # method cleanup
         for f in self.__dir__():
             if f not in self._init:
                 delattr(self, f)
+        # and forward
         for f in obj.__dir__():
             if f not in self._init:
                 setattr(self, f, getattr(obj, f))
 
+    # forward a few ones
     def __str__(self):
         return self._obj.__str__()
 
     def __repr__(self):
         return self._obj.__repr__()
+
+    def __hash__(self):
+        return self.obj.__hash__()
+
+    def __eq__(self):
+        return self.obj.__eq__()
 
 
 # Flask wrapper
