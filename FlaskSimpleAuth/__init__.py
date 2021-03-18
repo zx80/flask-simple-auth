@@ -89,23 +89,26 @@ class Reference:  # type: Any
         for f in self.__dir__():
             if f not in self._init:
                 delattr(self, f)
-        # and forward
+        # forward
         for f in obj.__dir__():
             if f not in self._init:
                 setattr(self, f, getattr(obj, f))
+        # and more forwards
+        # for f in ("str", "repr", "hash", "eq", "ne", "lt", "gt", "le", "ge"):
+        #    name = "__" + f + "__"
+        #    setattr(self, name, getattr(obj, name))
 
-    # forward a few ones
     def __str__(self):
         return self._obj.__str__()
 
     def __repr__(self):
         return self._obj.__repr__()
 
-    def __hash__(self):
-        return self.obj.__hash__()
+    def __eq__(self, *args):
+        return self._obj.__eq__(*args)
 
-    def __eq__(self):
-        return self.obj.__eq__()
+    def __hash__(self):
+        return self._obj.__hash__()
 
 
 # Flask wrapper
