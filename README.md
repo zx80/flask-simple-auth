@@ -492,7 +492,7 @@ shared between modules (eg apps, blueprints…) with its initialization
 differed:
 
 ```Python
-# file Share.py
+# file Shared.py
 from FlaskSimpleAuth import Reference
 stuff = Reference()
 init_app(**conf):
