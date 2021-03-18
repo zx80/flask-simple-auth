@@ -1,6 +1,6 @@
 # Flask Simple Auth
 
-Simple authentication, authorization and parameter checks
+Simple authentication, authorization, parameter checks and utils
 for [Flask](https://flask.palletsprojects.com/), controled from
 Flask configuration and the extended `route` decorator.
 
@@ -86,6 +86,9 @@ catch forgotten requirements.
 checked, and they are added automatically as named parameters to route functions,
 skipping the burden of checking them in typical REST functions. In practice,
 importing Flask's `request` global variable is not necessary.
+
+**Utils** include the convenient `Reference` class which allows to share for
+import an unitialized variable.
 
 
 ## Documentation
@@ -482,6 +485,52 @@ def get_mail_addr(addr: EmailAddr):
     …
 ```
 
+## `Reference` Class
+
+This class implements a generic share-able global variable which can be
+shared between modules (eg apps, blueprints…) with its initialization
+differed:
+
+```Python
+# file Share.py
+from FlaskSimpleAuth import Reference
+stuff = Reference()
+init_app(**conf):
+    stuff._setobj(…)
+```
+
+Then in a blueprint:
+
+```Python
+# file SubStuff.py
+from FlaskSimpleAuth import Blueprint, ALL
+from Shared import stuff
+
+sub = Blueprint(…)
+
+@sub.add("/stuff", authorize=ALL):
+def get_stuff():
+    return str(stuff), 200
+```
+
+Then in the app itself:
+
+```Python
+# file App.py
+from FlaskSimpleAuth import Flask
+app = Flask(__name__)
+
+from SubStuff import sub
+app.register_blueprint(sub, url_prefix="/sub")
+
+# delayed "stuff" initialization
+import Shared
+Shared.init_app(…)
+
+…
+```
+
+
 ## Versions
 
 Sources are available on [GitHub](https://github.com/zx80/flask-simple-auth)
@@ -490,6 +539,7 @@ Software license is *public domain*.
 
 ### dev
 
+Add convenient `Reference` any object wrapper class.
 Add more tests.
 
 ### 2.0.0
