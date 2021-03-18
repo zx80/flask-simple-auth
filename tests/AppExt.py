@@ -46,7 +46,7 @@ fsa.register_blueprint(subapp, url_prefix="/b2")
 
 import Shared
 from Shared import something
-Shared.init_app(something="App")
+Shared.init_app(something="AppExt")
 
 @fsa.route("/something", methods=["GET"], authorize=ALL)
 def get_something():

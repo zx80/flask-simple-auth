@@ -14,7 +14,7 @@ def create_app(**config):
     app.config.update(**config)
     app.register_blueprint(subapp, url_prefix="/b")
 
-    Shared.init_app(something="App")
+    Shared.init_app(something="AppFact")
 
     @app.route("/mul", methods=["GET"], authorize=ALL)
     def get_mul(i: int, j: int):
