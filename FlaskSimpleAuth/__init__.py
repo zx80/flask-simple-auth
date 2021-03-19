@@ -143,6 +143,8 @@ class Flask(flask.Flask):
     def get_user(self):
         return self._fsa.get_user()
 
+    def current_user(self):
+        return self._fsa._user
 
 # actual class
 class FlaskSimpleAuth:

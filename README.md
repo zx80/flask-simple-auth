@@ -167,6 +167,7 @@ Once initialized `app` is a standard Flask object with some additions:
 - `route` decorator, an extended version of Flask's own.
 - `user_in_group` and `get_user_pass` methods/decorator to register helper functions.
 - `get_user` to extract the authenticated user or raise an `AuthException`.
+- `current_user` to get the authenticated user if any, or `None`
 - `hash_password` and `check_password` to hash or check a password.
 - `create_token` to compute a new authentication token for the current user.
 
@@ -540,6 +541,7 @@ Software license is *public domain*.
 ### dev
 
 Add convenient `Reference` any object wrapper class.
+Add `current_user` function.
 Add more tests.
 
 ### 2.0.0
