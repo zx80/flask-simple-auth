@@ -88,7 +88,8 @@ skipping the burden of checking them in typical REST functions. In practice,
 importing Flask's `request` global variable is not necessary.
 
 **Utils** include the convenient `Reference` class which allows to share for
-import an unitialized variable.
+import an unitialized variable, and the `CacheOK` decorator to memoize true
+answers (eg for user/group checks).
 
 
 ## Documentation
@@ -489,6 +490,7 @@ def get_mail_addr(addr: EmailAddr):
     …
 ```
 
+
 ## `Reference` Class
 
 This class implements a generic share-able global variable which can be
@@ -535,6 +537,18 @@ Shared.init_app(…)
 ```
 
 
+## `CacheOK` Decorator
+
+This decorator memorize the underlying function true answers, but keep trying
+on false answers. Call `cache_clear` to reset cache.
+
+```Python
+@CacheOK
+def user_in_group(user, group):
+    return …
+```
+
+
 ## Versions
 
 Sources are available on [GitHub](https://github.com/zx80/flask-simple-auth)
@@ -543,7 +557,8 @@ Software license is *public domain*.
 
 ### dev
 
-Add convenient `Reference` any object wrapper class.
+Add `Reference` any object wrapper class.
+Add `CacheOK` positive caching decorator.
 Add `current_user` function.
 Add `none` authentication type.
 Add more tests.

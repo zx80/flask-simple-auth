@@ -111,6 +111,35 @@ class Reference:  # type: Any
         return self._obj.__hash__()
 
 
+#
+# Positive caching.
+#
+# Keep a cache of true answers to reduce database queries,
+# but keep querying on failures.
+#
+# See also: functools.cache, functools.lru_cache
+#
+# TODO
+# - LRU? LFU?
+# - automatic reset based on cache efficiency? expansion?
+#
+class CacheOK:
+
+    def __init__(self, fun):
+        self._fun = fun
+        self._cache = set()
+        self.cache_clear = self._cache.clear
+
+    def __call__(self, *args):
+        if args in self._cache:
+            return True
+        else:
+            ok = self._fun(*args)
+            if ok:
+                self._cache.add(args)
+            return ok
+
+
 # Flask wrapper
 class Flask(flask.Flask):
 
