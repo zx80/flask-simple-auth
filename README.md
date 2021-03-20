@@ -254,9 +254,8 @@ Three directives impact how and when authentication is performed.
 The main configuration directive is `FSA_TYPE` which governs authentication
 methods used by the `get_user` function, as described in the following sections.
 
-- `FSA_TYPE` governs the *how*: `httpd`, `basic`, `param`, `password`, `token`…
-as described in details in the next sections.
-Default is `httpd`.
+- `FSA_TYPE` governs the *how*: `none`, `httpd`, `basic`, `param`, `password`,
+`token`… as described in details in the next sections.  Default is `httpd`.
 
 - `FSA_ALWAYS` tells whether to perform authentication in a before request
 hook. Default is *True*.  On authentication failures *401* are returned.
@@ -287,6 +286,10 @@ such as Apache or Nginx, all of which probably more efficiently implemented
 than python code, so this should be the preferred option.
 However, it could require significant configuration effort compared to
 the application-side approach.
+
+#### `none` Authentication
+
+Use to disactivate authentication.
 
 #### `basic` Authentication
 
@@ -542,6 +545,7 @@ Software license is *public domain*.
 
 Add convenient `Reference` any object wrapper class.
 Add `current_user` function.
+Add `none` authentication type.
 Add more tests.
 
 ### 2.0.0

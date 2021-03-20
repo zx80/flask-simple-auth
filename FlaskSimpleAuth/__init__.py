@@ -146,6 +146,7 @@ class Flask(flask.Flask):
     def current_user(self):
         return self._fsa._user
 
+
 # actual class
 class FlaskSimpleAuth:
 
@@ -206,6 +207,7 @@ class FlaskSimpleAuth:
         # auth setup
         #
         self._auth = conf.get("FSA_TYPE", "httpd")
+        assert self._auth in ("httpd", "none", "fake", "basic", "param", "password", "token")
         self._lazy = conf.get("FSA_LAZY", True)
         self._always = conf.get("FSA_ALWAYS", True)
         self._check = conf.get("FSA_CHECK", True)
@@ -499,15 +501,17 @@ class FlaskSimpleAuth:
         if self._user is not None:
             return self._user
 
-        AUTH = self._auth
-        if AUTH is None:
+        a = self._auth
+        if a is None:
             raise AuthException("FlaskSimpleAuth not initialized", 500)
 
-        if AUTH == "httpd":
+        elif a == "none":
+            return None
 
+        elif a == "httpd":
             self._user = request.remote_user
 
-        elif AUTH in ("fake", "param", "basic", "token", "password"):
+        elif a in ("fake", "basic", "param", "password", "token"):
 
             # check for token
             if self._type is not None:
@@ -523,13 +527,13 @@ class FlaskSimpleAuth:
 
             # else try other schemes
             if self._user is None:
-                if AUTH in self._FSA_AUTH:
-                    self._user = self._FSA_AUTH[AUTH](self)
+                if a in self._FSA_AUTH:
+                    self._user = self._FSA_AUTH[a](self)
                 else:
                     raise AuthException("auth token is required", 401)
 
         else:
-            raise AuthException(f"unexpected authentication type: {AUTH}", 500)
+            raise AuthException(f"unexpected authentication type: {a}", 500)
 
         assert self._user is not None  # else an exception would have been raised
         log.info(f"get_user({self._auth}): {self._user}")
