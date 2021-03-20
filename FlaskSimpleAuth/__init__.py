@@ -530,14 +530,16 @@ class FlaskSimpleAuth:
     def _get_password_auth(self):
         try:
             return self._get_basic_auth()
-        except AuthException:  # try param
+        except AuthException:  # failed, let's try param
             return self._get_param_auth()
 
     # map auth types to their functions
-    _FSA_AUTH = {"basic": _get_basic_auth,
-                 "param": _get_param_auth,
-                 "password": _get_password_auth,
-                 "fake": _get_fake_auth}
+    _FSA_AUTH = {
+        "basic": _get_basic_auth,
+        "param": _get_param_auth,
+        "password": _get_password_auth,
+        "fake": _get_fake_auth
+    }
 
     # return authenticated user or throw exception
     def get_user(self):
