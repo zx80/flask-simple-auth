@@ -666,4 +666,3 @@ Some tasks:
  - add support for more types? which ones?
  - make Flask callable for the route? Nope, already used.
  - find a better decorator name for routing and all?
- - add CacheOK test

@@ -476,3 +476,14 @@ def test_something_3(client3):
     assert res.data == b"CALVIN"
     res = check_200(client3.get("/b/something", data={"LOGIN": "dad"}))
     assert res.data == b"CALVIN"
+
+def test_cacheok():
+    @fsa.CacheOK
+    def randBool(p: str):
+        import random
+        return random.choice([False, True])
+    for c in "abcdefghijklmnopqrstivwxyz":
+        v = randBool(c)
+        if v:
+            for i in range(10):
+                assert v == randBool(c)
