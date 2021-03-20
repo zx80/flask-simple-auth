@@ -491,7 +491,7 @@ def get_mail_addr(addr: EmailAddr):
 ```
 
 
-## `Reference` Class
+## `Reference` Object Wrapper
 
 This class implements a generic share-able global variable which can be
 shared between modules (eg apps, blueprints…) with its initialization
