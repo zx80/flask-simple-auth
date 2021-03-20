@@ -563,6 +563,7 @@ Add `Reference` any object wrapper class.
 Add `CacheOK` positive caching decorator.
 Add `current_user` function.
 Add `none` authentication type.
+Add `path` parameter type.
 Add more tests.
 
 ### 2.0.0
