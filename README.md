@@ -456,6 +456,8 @@ For `int`, base syntax is accepted, i.e. `0x11`, `0b10001` and `17`
 all mean decimal *17*.
 For `bool`, *False* is an empty string, `0`, `False` or `F`, otherwise
 the value is *True*.
+Type `path` is a special `str` type which allow to trigger accepting
+any path on a route.
 
 The `required` parameter allows to declare whether all parameters
 must be set (when *True*), or whether they are optional (*False*) in which
@@ -577,6 +579,7 @@ Import Flask `session`, `redirect`, `url_for`, `make_response`,
 Add parameter support for `date`, `time` and `datetime` in iso format.
 Allow to use any type as path parameters, not just Flask predefined ones.
 Make blueprints work.
+Add special `path` type for parameters taken from the path.
 
 ### 1.9.0
 
@@ -662,7 +665,6 @@ Initial release in beta.
 
 Some tasks:
 
- - handle "path" vs "string" path parameter?
  - add support for more types? which ones?
  - make Flask callable for the route? Nope, already used.
  - find a better decorator name for routing and all?

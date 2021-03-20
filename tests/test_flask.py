@@ -487,3 +487,9 @@ def test_cacheok():
         if v:
             for i in range(10):
                 assert v == randBool(c)
+
+def test_path(client):
+    res = check_200(client.get("/path/foo"))
+    assert res.data == b"foo"
+    res = check_200(client.get("/path/foo/bla"))
+    assert res.data == b"foo/bla"

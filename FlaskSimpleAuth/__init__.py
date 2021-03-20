@@ -41,11 +41,16 @@ def int_cast(s: str) -> Optional[int]:
     return int(s, base=0) if s is not None else None
 
 
+# special "path" type
+class path(str):
+    pass
+
 # note: mypy complains wrongly about non-existing _empty.
 CASTS: Dict[type, Callable[[str], object]] = {
     bool: bool_cast,
     int: int_cast,
     inspect._empty: str,
+    path: str,
     dt.date: dt.date.fromisoformat,
     dt.time: dt.time.fromisoformat,
     dt.datetime: dt.datetime.fromisoformat
@@ -746,7 +751,7 @@ class FlaskSimpleAuth:
                     t = typeof(sig.parameters[spec])
                     # Flask supports 5 types, with string the default?
                     # FIXME how to handle path?
-                    if t in (int, float, UUID):
+                    if t in (int, float, UUID, path):
                         splits[i] = f"{t.__name__.lower()}:{spec}>{remainder}"
                     else:
                         splits[i] = f"string:{spec}>{remainder}"
