@@ -529,7 +529,7 @@ app = Flask(__name__)
 from SubStuff import sub
 app.register_blueprint(sub, url_prefix="/sub")
 
-# delayed "stuff" initialization
+# deferred "stuff" initialization
 import Shared
 Shared.init_app(…)
 
