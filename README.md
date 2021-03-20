@@ -264,8 +264,9 @@ Once in a route function, `get_user` will always return the authenticated
 user and cannot fail.
 
 - `FSA_SKIP_PATH` is a list of regular expression patterns which are matched
-against the request path for skipping systematic authentication.
-Default is empty, i.e. authentication is applied for all paths.
+against the request path for skipping systematic authentication when
+`FSA_ALWAYS` is enabled.  Default is empty, i.e. authentication is applied
+for all paths.
 
 - `FSA_LAZY` tells whether to attempt authentication lazily when checking an
 authorization through a `authorize` decorator or argument to the `route`
