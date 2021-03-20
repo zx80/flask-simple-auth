@@ -662,8 +662,6 @@ Initial release in beta.
 
 Some tasks:
 
- - token caching (especially for expensive jwt checks)?
-   how to deal with expiration?
  - handle "path" vs "string" path parameter?
  - add support for more types? which ones?
  - make Flask callable for the route? Nope, already used.

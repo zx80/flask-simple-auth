@@ -490,18 +490,31 @@ class FlaskSimpleAuth:
         # all is well
         return user
 
-    def _get_jwt_token_auth(self, token):
+    # jwt authentication can be expensive, especially with pubkey-signatures
+    # so use a cache to keep track of already used tokens
+    @functools.lru_cache(maxsize=1024)
+    def _get_jwt_token_auth_real(self, token):
         import jwt
         try:
             data = jwt.decode(token, self._secret, leeway=self._delay * 60,
                               audience=self._realm, algorithms=[self._algo])
-            return data['sub']
+            exp = dt.datetime.fromtimestamp(data['exp'])
+            return data['sub'], exp
         except jwt.ExpiredSignatureError:
             log.debug(f"LOGIN (token): token {token} has expired")
             raise AuthException("expired jwt auth token", 401)
         except Exception as e:
             log.debug(f"LOGIN (token): invalide token ({e})")
             raise AuthException("invalid jwt token", 401)
+
+    def _get_jwt_token_auth(self, token):
+        user, exp = self._get_jwt_token_auth_real(token)
+        # recheck token expiration
+        now = dt.datetime.utcnow() - dt.timedelta(minutes=self._grace)
+        if now > exp:
+            log.debug(f"LOGIN (token): token {token} has expired")
+            raise AuthException("expired jwt auth token", 401)
+        return user
 
     def _get_token_auth(self, token):
         log.debug(f"checking token: {token}")
