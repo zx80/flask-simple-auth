@@ -464,8 +464,8 @@ def do_some_id(id: int, when: date, what: str = "nothing):
 ```
 
 Request parameter string values are actually *converted* to the target type.
-For `int`, base syntax is accepted, i.e. `0x11`, `0b10001` and `17`
-all mean decimal *17*.
+For `int`, base syntax is accepted for HTTP/JSON parameters, i.e. `0x11`,
+`0b10001` and `17` all mean decimal *17*.
 For `bool`, *False* is an empty string, `0`, `False` or `F`, otherwise
 the value is *True*.
 Type `path` is a special `str` type which allow to trigger accepting
