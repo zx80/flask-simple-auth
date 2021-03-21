@@ -83,7 +83,9 @@ class Reference:  # type: Any
     def __init__(self, obj: Any = None, set_name: str = "set"):
         self._obj = None
         # possibly rename the "set" method
-        if set_name is not None and set_name != "set":
+        if set_name is None:
+            set_name = "set"
+        elif set_name != "set":
             setattr(self, set_name, getattr(self, "set"))
             delattr(self.__class__, "set")
         # keep track of initial methods for later cleanup
