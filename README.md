@@ -498,7 +498,8 @@ def get_mail_addr(addr: EmailAddr):
 
 This class implements a generic share-able global variable which can be
 shared between modules (eg apps, blueprints…) with its initialization
-differed:
+differed. Under the hood, most methods calls are forworded to the object
+stored inside the wrapper.
 
 ```Python
 # file Shared.py
