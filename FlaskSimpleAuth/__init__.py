@@ -4,7 +4,7 @@
 # This code is public domain.
 #
 
-from typing import Optional, Callable, Dict, Any
+from typing import Optional, Callable, Dict, List, Any
 
 import functools
 import inspect
@@ -139,7 +139,7 @@ class CacheOK:
     function.
     """
 
-    def __init__(self, fun):
+    def __init__(self, fun: Callable[[List[Any]], bool]):
         self._fun = fun
         self._cache = set()
         self.cache_clear = self._cache.clear
