@@ -492,8 +492,8 @@ class FlaskSimpleAuth:
         return jwt.encode({"exp": exp, "sub": user, "aud": realm},
                           secret, algorithm=self._algo)
 
-    # create a new token for user depending on the configuration
     def create_token(self, user):
+        """Create a new token for user depending on the configuration."""
         assert self._type is not None
         realm, delay = self._realm, self._delay
         if self._type == "fsa":
