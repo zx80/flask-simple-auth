@@ -370,14 +370,17 @@ The following configuration directives are available:
 Function `create_token(user)` creates a token for the user depending
 on the current scheme.
 
-Note that token authentication is always attempted unless the secret is empty.
+Token authentication is always attempted unless the secret is empty.
 Setting `FSA_TYPE` to `token` results in *only* token authentication to be used.
 
-Also note that token authentication is usually much faster than password verification
-because password checks are designed to be slow so as to hinder password cracking.
+Token authentication is usually much faster than password verification because
+password checks are designed to be slow so as to hinder password cracking.
 Another benefit of token is that it avoids sending passwords over and over.
 The rational option is to use a password scheme to retrieve a token and then to
 use it till it expires.
+
+Internally *jwt* token checks are cached so that even with slow public-key schemes
+the performance impact should be low.
 
 #### `fake` Authentication
 
