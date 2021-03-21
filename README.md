@@ -460,7 +460,7 @@ def do_some_id(id: int, when: date, what: str = "nothing):
     return …
 ```
 
-Request parameter string values are converted to the target type.
+Request parameter string values are actuall *converted* to the target type.
 For `int`, base syntax is accepted, i.e. `0x11`, `0b10001` and `17`
 all mean decimal *17*.
 For `bool`, *False* is an empty string, `0`, `False` or `F`, otherwise
