@@ -45,6 +45,7 @@ def int_cast(s: str) -> Optional[int]:
 class path(str):
     pass
 
+
 # note: mypy complains wrongly about non-existing _empty.
 CASTS: Dict[type, Callable[[str], object]] = {
     bool: bool_cast,
@@ -79,15 +80,18 @@ def typeof(p: inspect.Parameter):
 # convenient object wrapper class
 class Reference:  # type: Any
 
-    def __init__(self, obj: Any = None):
+    def __init__(self, obj: Any = None, set_name: str = "set"):
         self._obj = None
-        # keep track of initial methods
-        self._init = set(self.__dir__())
-        self._init.add("_init")
+        # possibly rename the "set" method
+        if set_name is not None and set_name != "set":
+            setattr(self, set_name, getattr(self, "set"))
+            delattr(self.__class__, "set")
+        # keep track of initial methods for later cleanup
+        self._init = set(self.__dir__() + ["_init"])
         if obj is not None:
-            self._setobj(obj)
+            getattr(self, set_name)(obj)
 
-    def _setobj(self, obj):
+    def set(self, obj):
         log.debug(f"setting reference to {obj} ({type(obj)})")
         self._obj = obj
         # method cleanup
@@ -109,11 +113,26 @@ class Reference:  # type: Any
     def __repr__(self):
         return self._obj.__repr__()
 
+    def __hash__(self):
+        return self._obj.__hash__()
+
     def __eq__(self, *args):
         return self._obj.__eq__(*args)
 
-    def __hash__(self):
-        return self._obj.__hash__()
+    def __ne__(self, *args):
+        return self._obj.__ne__(*args)
+
+    def __le__(self, *args):
+        return self._obj.__ne__(*args)
+
+    def __ge__(self, *args):
+        return self._obj.__ne__(*args)
+
+    def __lt__(self, *args):
+        return self._obj.__ne__(*args)
+
+    def __gt__(self, *args):
+        return self._obj.__ne__(*args)
 
 
 #

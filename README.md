@@ -497,16 +497,19 @@ def get_mail_addr(addr: EmailAddr):
 ## `Reference` Object Wrapper
 
 This class implements a generic share-able global variable which can be
-shared between modules (eg apps, blueprints…) with its initialization
-differed. Under the hood, most methods calls are forworded to the object
-stored inside the wrapper.
+used by modules (eg app, blueprints…) with its initialization differed.
+Under the hood, most methods calls are forwarded to the object stored
+inside the wrapper, so that the Reference object mostly behaves like
+the wrapped object.  The wrapped object can be reset at will with `set`.
+The `set` method name can be changed with the `set_name` initialization
+parameter.
 
 ```Python
 # file Shared.py
 from FlaskSimpleAuth import Reference
 stuff = Reference()
-init_app(**conf):
-    stuff._setobj(…)
+def init_app(**conf):
+    stuff.set(…)
 ```
 
 Then in a blueprint:
@@ -560,6 +563,9 @@ and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 Software license is *public domain*.
 
 ### dev
+
+Rename `_setobj` to `set` in `Reference`, with an option to rename the method
+if needed.
 
 ### 2.1.0
 
