@@ -40,7 +40,6 @@ class AuthException(BaseException):
         self.status = status
 
 
-
 # special type casts
 #
 def bool_cast(s: str) -> Optional[bool]:
@@ -766,10 +765,9 @@ class FlaskSimpleAuth:
 
         return decorate
 
-    #
-    # route decorator helper
-    #
     def add_url_rule(self, rule, endpoint=None, view_func=None, authorize=NONE, required=None, allparams=False, **options):
+
+        """Route decorator helper method."""
 
         # lazy initialization
         if not self._initialized:
