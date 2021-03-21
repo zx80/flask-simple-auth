@@ -1,6 +1,7 @@
 """
-Flask Extension and Wrapper for managing:
+Flask Extension and Wrapper
 
+This extension helps manage:
 - authentication
 - authorization
 - parameters
