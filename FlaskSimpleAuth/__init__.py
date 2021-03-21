@@ -1,8 +1,13 @@
-#
-# Debatable flask-side auth management, and more.
-#
-# This code is public domain.
-#
+"""
+Flask Extension and Wrapper for managing:
+
+- authentication
+- authorization
+- parameters
+- and more…
+
+This code is public domain.
+"""
 
 from typing import Optional, Callable, Dict, List, Any
 
@@ -34,7 +39,7 @@ class AuthException(BaseException):
         self.status = status
 
 
-#
+
 # special type casts
 #
 def bool_cast(s: str) -> Optional[bool]:
