@@ -21,9 +21,15 @@ import logging
 log = logging.getLogger("fsa")
 
 
-# carry data for error Response
 class AuthException(BaseException):
+    """Exception class to carry fields for an error Response."""
+
     def __init__(self, message: str, status: int):
+        """Constructor parameters:
+
+        - message: Response's message
+        - status: intended HTTP status
+        """
         self.message = message
         self.status = status
 
@@ -32,17 +38,19 @@ class AuthException(BaseException):
 # special type casts
 #
 def bool_cast(s: str) -> Optional[bool]:
+    """Parses a bool."""
     return None if s is None else \
         False if s.lower() in ("", "0", "false", "f") else \
         True
 
 
 def int_cast(s: str) -> Optional[int]:
+    """Parses an integer, allowing several bases."""
     return int(s, base=0) if s is not None else None
 
 
-# special "path" type
 class path(str):
+    """Type to distinguish path parameters."""
     pass
 
 
@@ -63,8 +71,8 @@ ALL = "ALL authentified users are allowed"
 NONE = "NONE can come in, the path is forbidden"
 
 
-# guess parameter type
 def typeof(p: inspect.Parameter):
+    """Guess parameter type, possibly with some type inference."""
     if p.kind == p.VAR_KEYWORD:
         return dict
     elif p.kind == p.VAR_POSITIONAL:
@@ -77,10 +85,18 @@ def typeof(p: inspect.Parameter):
         return str
 
 
-# convenient object wrapper class
 class Reference:  # type: Any
+    """Convenient object wrapper class.
+
+    The wrapper forwards most method calls to the wrapped object.
+    """
 
     def __init__(self, obj: Any = None, set_name: str = "set"):
+        """Constructor parameters:
+
+        - obj: object to be wrapped, can also be provided later.
+        - set_name: provide another name for the "set" function.
+        """
         self._obj = None
         # possibly rename the "set" method
         if set_name is None:
@@ -94,6 +110,7 @@ class Reference:  # type: Any
             getattr(self, set_name)(obj)
 
     def set(self, obj):
+        """Set current wrapped object, possibly replacing the previous one."""
         log.debug(f"setting reference to {obj} ({type(obj)})")
         self._obj = obj
         # method cleanup
@@ -111,18 +128,16 @@ class Reference:  # type: Any
 
 
 #
-# Positive caching.
-#
-# Keep a cache of true answers to reduce database queries,
-# but keep querying on failures.
-#
-# See also: functools.cache, functools.lru_cache
-#
 # TODO
 # - LRU? LFU?
 # - automatic reset based on cache efficiency? expansion?
 #
 class CacheOK:
+    """Positive caching decorator.
+
+    Cache True answers, but still forwards False answers to the underlying
+    function.
+    """
 
     def __init__(self, fun):
         self._fun = fun
@@ -139,8 +154,17 @@ class CacheOK:
             return ok
 
 
-# Flask wrapper
 class Flask(flask.Flask):
+    """Flask class wrapper.
+
+    The class behaves mostly as a Flask class, but supports extensions:
+
+    - the `route` decorator manages authentication, authorization and
+      parameters transparently.
+    - several additional methods are provided: `init_app`, `get_user_pass`,
+      `user_in_group`, `check_password`, `hash_password`, `create_token`,
+      `get_user`, `current_user`.
+    """
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -150,8 +174,8 @@ class Flask(flask.Flask):
         self.add_url_rule = self._fsa.add_url_rule
 
     # forward some methods
-    def init_app(self, app: flask.Flask):
-        return self._fsa.init_app(app)
+    def init_app(self):
+        return self._fsa.init_app(self)
 
     def get_user_pass(self, gup):
         return self._fsa.get_user_pass(gup)
@@ -172,22 +196,25 @@ class Flask(flask.Flask):
         return self._fsa.get_user()
 
     def current_user(self):
-        return self._fsa._user
+        return self._fsa.current_user()
 
 
 # actual class
 class FlaskSimpleAuth:
+    """Flask extension to implement authentication, authorization and parameter
+    management.
+    """
 
-    # constructor
     def __init__(self, app: flask.Flask = None):
+        """Constructor parameter: flask application to extend."""
         self._app = app
         self._get_user_pass = None
         self._user_in_group = None
         # actual initialization is delayed
         self._initialized = False
 
-    # set, or possibly just reset, the current authentication
     def _auth_set_user(self):
+        """Before request hook to perform early authentication."""
         self._user = None
         self._need_authorization = True
         if not self._always:
@@ -201,8 +228,9 @@ class FlaskSimpleAuth:
             return e.message, e.status
         assert self._user is not None
 
-    # wipe out current authentication
     def _auth_after_cleanup(self, res: Response):
+        """After request hook to cleanup authentication and detect missing
+        authorization."""
         self._user = None
         if res.status_code < 400 and self._need_authorization:
             method, path = request.method, request.path
@@ -211,22 +239,27 @@ class FlaskSimpleAuth:
                 return Response("missing authorization check", 500)
         return res
 
-    # store get_user_pass helper function, can be used as a decorator
     def get_user_pass(self, gup):
+        """Set `get_user_pass` helper, can be used as a decorator."""
         self._get_user_pass = gup
         return gup
 
-    # store user_in_group helper function, can be used as a decorator
     def user_in_group(self, uig):
+        """Set `user_in_group` helper, can be used as a decorator."""
         self._user_in_group = uig
         return uig
 
     def initialize(self):
+        """Run late initialization on current app."""
         assert self._app is not None
         self.init_app(self._app)
 
-    # actually initialize class…
     def init_app(self, app: flask.Flask):
+        """Initialize extension with a Flask application.
+
+        The initialization is performed through `FSA_*` configuration
+        directives.
+        """
         log.info("FSA initialization…")
         assert app is not None
         self._app = app
@@ -355,12 +388,12 @@ class FlaskSimpleAuth:
     # note: passlib bcrypt is Apache compatible
     #
 
-    # verify password
     def check_password(self, pwd, ref):
+        """Verify whether a password is correct."""
         return self._pm.verify(pwd, ref)
 
-    # hash password consistently with above check, can be used by app
     def hash_password(self, pwd):
+        """Hash password according to the current password scheme."""
         return self._pm.hash(pwd)
 
     # check user password against internal credentials
@@ -535,8 +568,8 @@ class FlaskSimpleAuth:
         "fake": _get_fake_auth
     }
 
-    # return authenticated user or throw exception
     def get_user(self):
+        """Authenticate user or throw exception."""
         log.debug(f"get_user for {self._auth}")
 
         # _user is reset before/after requests
@@ -580,6 +613,10 @@ class FlaskSimpleAuth:
 
         assert self._user is not None  # else an exception would have been raised
         log.info(f"get_user({self._auth}): {self._user}")
+        return self._user
+
+    def current_user(self):
+        """Return current authenticated user, if any."""
         return self._user
 
     #
@@ -758,12 +795,13 @@ class FlaskSimpleAuth:
         aut = self._authorize(*roles)(par)
         return flask.Flask.add_url_rule(self._app, newpath, endpoint=endpoint, view_func=aut, **options)
 
-    # route decorator
     def route(self, rule, **options):
+        """Extended `route` decorator provided by the extension."""
         def decorate(fun):
             self.add_url_rule(rule, view_func=fun, **options)
         return decorate
 
     # duck-typing blueprint code stealing: needs blueprints, _blueprint_order, debug
     def register_blueprint(self, blueprint, **options):
+        """Register a blueprint."""
         flask.Flask.register_blueprint(self, blueprint, **options)

@@ -566,6 +566,8 @@ Software license is *public domain*.
 
 Rename `_setobj` to `set` in `Reference`, with an option to rename the method
 if needed.
+Add `current_user` to `FlaskSimpleAuth` as well.
+Add python documentation on class and methods.
 
 ### 2.1.0
 
