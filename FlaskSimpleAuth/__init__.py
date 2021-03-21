@@ -175,27 +175,35 @@ class Flask(flask.Flask):
 
     # forward some methods
     def init_app(self):
+        """Initialize underlying extension."""
         return self._fsa.init_app(self)
 
     def get_user_pass(self, gup):
+        """Set `get_user_pass` helper function."""
         return self._fsa.get_user_pass(gup)
 
     def user_in_group(self, uig):
+        """Set `user_in_group` helper function."""
         return self._fsa.user_in_group(uig)
 
     def check_password(self, pwd, ref):
+        """Check whether password is ok wrt to current configuration."""
         return self._fsa.check_password(pwd, ref)
 
     def hash_password(self, pwd):
+        """Hash password using current password scheme."""
         return self._fsa.hash_password(pwd)
 
     def create_token(self, user):
+        """Create a token with the current token configuration."""
         return self._fsa.create_token(user)
 
     def get_user(self):
+        """Authenticate remote user."""
         return self._fsa.get_user()
 
     def current_user(self):
+        """Get current authenticated user, if any."""
         return self._fsa.current_user()
 
 
