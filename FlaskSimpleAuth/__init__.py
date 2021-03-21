@@ -320,7 +320,7 @@ class FlaskSimpleAuth:
             elif algo == "none":
                 self._sign = None
             else:
-                raise Exception("unexpected jwt FSA_TOKEN_ALGO ({algo})")
+                raise Exception(f"unexpected jwt FSA_TOKEN_ALGO ({algo})")
             self._siglen = 0
         else:
             raise Exception(f"invalid FSA_TOKEN_TYPE ({self._type})")
