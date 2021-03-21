@@ -103,36 +103,9 @@ class Reference:  # type: Any
             if f not in self._init:
                 setattr(self, f, getattr(obj, f))
         # and more forwards
-        # for f in ("str", "repr", "hash", "eq", "ne", "lt", "gt", "le", "ge"):
-        #    name = "__" + f + "__"
-        #    setattr(self, name, getattr(obj, name))
-
-    def __str__(self):
-        return self._obj.__str__()
-
-    def __repr__(self):
-        return self._obj.__repr__()
-
-    def __hash__(self):
-        return self._obj.__hash__()
-
-    def __eq__(self, *args):
-        return self._obj.__eq__(*args)
-
-    def __ne__(self, *args):
-        return self._obj.__ne__(*args)
-
-    def __le__(self, *args):
-        return self._obj.__ne__(*args)
-
-    def __ge__(self, *args):
-        return self._obj.__ne__(*args)
-
-    def __lt__(self, *args):
-        return self._obj.__ne__(*args)
-
-    def __gt__(self, *args):
-        return self._obj.__ne__(*args)
+        for f in ("str", "repr", "hash", "eq", "ne", "lt", "gt", "le", "ge"):
+            name = "__" + f + "__"
+            setattr(self.__class__, name, getattr(obj, name))
 
 
 #
