@@ -448,9 +448,17 @@ For those, careful per-operation authorization will still be needed.
 
 Request parameters (HTTP or JSON) are translated automatically to
 function parameters, by relying on function type annotations.
-
 By default, the decorator guesses whether parameters are mandatory based on
 provided default values, i.e. they are optional when a default is provided.
+
+```python
+@app.route("/something/<id>", methods=…, authorize=…)
+def do_some_id(id: int, when: date, what: str = "nothing):
+    # `id` is a integer path-parameter
+    # `when` is a mandatory date HTTP or JSON parameter
+    # `what` is an optional string HTTP or JSON parameter
+    return …
+```
 
 Request parameter string values are converted to the target type.
 For `int`, base syntax is accepted, i.e. `0x11`, `0b10001` and `17`
