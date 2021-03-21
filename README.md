@@ -558,7 +558,7 @@ Sources are available on [GitHub](https://github.com/zx80/flask-simple-auth)
 and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 Software license is *public domain*.
 
-### dev
+### 2.1.0
 
 Add `Reference` any object wrapper class.
 Add `CacheOK` positive caching decorator.
