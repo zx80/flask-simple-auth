@@ -127,6 +127,8 @@ class Reference:  # type: Any
 
     # forward standard methods
     # automating that with setattr/getattr does not work…
+    # contrary to the documenation, it seems that str(obj)
+    # really calls obj.__class__.__str__() and *not* obj.__str__().
     def __str__(self):
         return self._obj.__str__()
 
