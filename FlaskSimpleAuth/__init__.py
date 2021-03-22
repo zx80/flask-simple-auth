@@ -103,20 +103,16 @@ class Reference:  # type: Any
         - set_name: provide another name for the "set" function.
         """
         self._obj = None
-        # possibly rename the "set" method
+        # create "set" method, which may use another name…
         if set_name is None:
             set_name = "set"
-        elif set_name != "set":
-            setattr(self, set_name, getattr(self, "set"))
-            # cannot really delete "set"…
-            # delattr(self, "set"): attribute error
-            # delattr(self.__class__, "set"): removes for all instances!
+        setattr(self, set_name, getattr(self, "_set_obj"))
         # keep track of initial methods for later cleanup
         self._init = set(self.__dir__() + ["_init"])
         if obj is not None:
             getattr(self, set_name)(obj)
 
-    def set(self, obj):
+    def _set_obj(self, obj):
         """Set current wrapped object, possibly replacing the previous one."""
         log.debug(f"setting reference to {obj} ({type(obj)})")
         self._obj = obj
