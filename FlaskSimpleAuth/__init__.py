@@ -108,7 +108,9 @@ class Reference:  # type: Any
             set_name = "set"
         elif set_name != "set":
             setattr(self, set_name, getattr(self, "set"))
-            delattr(self.__class__, "set")
+            # cannot really delete "set"…
+            # delattr(self, "set"): attribute error
+            # delattr(self.__class__, "set"): removes for all instances!
         # keep track of initial methods for later cleanup
         self._init = set(self.__dir__() + ["_init"])
         if obj is not None:
