@@ -573,13 +573,14 @@ Sources are available on [GitHub](https://github.com/zx80/flask-simple-auth)
 and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 Software license is *public domain*.
 
-### dev
+### 2.2.0
 
 Rename `_setobj` to `set` in `Reference`, with an option to rename the method
 if needed.
 Shorten `Reference` class implementation.
 Add `current_user` to `FlaskSimpleAuth` as well.
 Add python documentation on class and methods.
+Fix `Reference` issue when using several references.
 
 ### 2.1.0
 

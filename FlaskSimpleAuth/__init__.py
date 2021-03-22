@@ -126,10 +126,35 @@ class Reference:  # type: Any
         for f in obj.__dir__():
             if f not in self._init:
                 setattr(self, f, getattr(obj, f))
-        # and more forwards
-        for f in ("str", "repr", "hash", "eq", "ne", "lt", "gt", "le", "ge"):
-            name = "__" + f + "__"
-            setattr(self.__class__, name, getattr(obj, name))
+
+    # forward standard methods
+    # automating that with setattr/getattr does not work…
+    def __str__(self):
+        return self._obj.__str__()
+
+    def __repr__(self):
+        return self._obj.__repr__()
+
+    def __hash__(self):
+        return self._obj.__hash__()
+
+    def __eq__(self, o):
+        return self._obj.__eq__(o)
+
+    def __ne__(self, o):
+        return self._obj.__ne__(o)
+
+    def __le__(self, o):
+        return self._obj.__le__(o)
+
+    def __lt__(self, o):
+        return self._obj.__lt__(o)
+
+    def __ge__(self, o):
+        return self._obj.__ge__(o)
+
+    def __gt__(self, o):
+        return self._obj.__gt__(o)
 
 
 #
