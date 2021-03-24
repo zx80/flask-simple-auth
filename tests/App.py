@@ -11,7 +11,7 @@ log = logging.getLogger("app")
 #
 # APP
 #
-from FlaskSimpleAuth import Flask, jsonify, ANY, ALL, NONE, path
+from FlaskSimpleAuth import Flask, jsonify, ANY, ALL, NONE, path, string
 app = Flask("Test")
 
 #
@@ -22,7 +22,7 @@ app.config.update(
     FSA_ALWAYS = True,
     FSA_SKIP_PATH = (r"/register",
                      r"/(add|div|mul|sub|type|params|any|mis[12]|nogo|one)",
-                     r"/(infer|superid|cplx|bool|mail|path)"),
+                     r"/(infer|superid|cplx|bool|mail|path|string)"),
     FSA_GET_USER_PASS = get_user_pass,
     FSA_USER_IN_GROUP = user_in_group
 )
@@ -224,3 +224,7 @@ def get_something():
 @app.route("/path/<p>", methods=["GET"], authorize=ANY)
 def get_path(p: path):
     return p, 200
+
+@app.route("/string/<s>", methods=["GET"], authorize=ANY)
+def get_string(s: string):
+    return s, 200

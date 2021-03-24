@@ -55,7 +55,12 @@ def int_cast(s: str) -> Optional[int]:
 
 
 class path(str):
-    """Type to distinguish path parameters."""
+    """Type to distinguish str path parameters."""
+    pass
+
+
+class string(str):
+    """Type to distinguish str path parameters."""
     pass
 
 
@@ -65,6 +70,7 @@ CASTS: Dict[type, Callable[[str], object]] = {
     int: int_cast,
     inspect._empty: str,
     path: str,
+    string: str,
     dt.date: dt.date.fromisoformat,
     dt.time: dt.time.fromisoformat,
     dt.datetime: dt.datetime.fromisoformat
@@ -235,6 +241,10 @@ class Flask(flask.Flask):
     def current_user(self):
         """Get current authenticated user, if any."""
         return self._fsa.current_user()
+
+    def clear_caches(self):
+        """Clear internal caches."""
+        self._fsa.clear_caches()
 
 
 # actual class
@@ -656,6 +666,10 @@ class FlaskSimpleAuth:
     def current_user(self):
         """Return current authenticated user, if any."""
         return self._user
+
+    def clear_caches(self):
+        """Clear internal caches."""
+        self._get_jwt_token_auth_real.cache_clear()
 
     #
     # authorize internal decorator

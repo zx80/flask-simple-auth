@@ -171,6 +171,7 @@ Once initialized `app` is a standard Flask object with some additions:
 - `current_user` to get the authenticated user if any, or `None`
 - `hash_password` and `check_password` to hash or check a password.
 - `create_token` to compute a new authentication token for the current user.
+- `clear_caches` to clear internal caches.
 
 Alternatively, it is possible to use the flask extension model, in which case
 the `FlaskSimpleAuth` object must be instanciated and routes must be created
@@ -576,6 +577,8 @@ Software license is *public domain*.
 ### dev
 
 Use a fully dynamic method for `set` in `Reference`.
+Add a `string` type.
+Add `clear_caches` method.
 
 ### 2.2.1
 
@@ -697,4 +700,5 @@ Initial release in beta.
 
 ## TODO
 
-Hmmm…
+- cache password checks?
+- cache other things?

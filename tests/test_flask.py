@@ -494,6 +494,10 @@ def test_path(client):
     res = check_200(client.get("/path/foo/bla"))
     assert res.data == b"foo/bla"
 
+def test_string(client):
+    res = check_200(client.get("/string/foo"))
+    assert res.data == b"foo"
+
 def test_reference():
     v1, v2 = "hello!", "world!"
     r1 = fsa.Reference()
