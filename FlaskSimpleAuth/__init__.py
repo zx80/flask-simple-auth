@@ -465,12 +465,20 @@ class FlaskSimpleAuth:
         assert request.remote_user is None
         auth = request.headers.get("Authorization", None)
         log.debug(f"auth: {auth}")
-        if auth is None or auth[:6] != "Basic ":
-            log.debug(f"LOGIN (basic): unexpected auth {auth}")
-            raise AuthException("missing or unexpected authorization header", 401)
-        user, pwd = b64.b64decode(auth[6:]).decode().split(':', 1)
-        self._check_password(user, pwd)
-        return user
+        if auth is None:
+            log.debug("LOGIN (basic): missing authorization header")
+            raise AuthException("missing authorization header", 401)
+        if auth[:6] != "Basic ":
+            log.debug(f"LOGIN (basic): unexpected auth \"{auth}\"")
+            raise AuthException("unexpected authorization header", 401)
+        try:
+            user, pwd = b64.b64decode(auth[6:]).decode().split(':', 1)
+        except Exception as e:
+            log.debug(f"LOGIN (basic): error while decoding auth \"{auth}\"")
+            raise AuthException("decoding error on authorization header", 401)
+        finally:
+            self._check_password(user, pwd)
+            return user
 
     #
     # HTTP PARAM AUTH
@@ -772,15 +780,15 @@ class FlaskSimpleAuth:
                             try:
                                 kwargs[p] = typing(params[p])
                             except Exception as e:
-                                return f"type error on HTTP parameter {p} ({e})", 400
+                                return f"type error on HTTP parameter \"{p}\" ({e})", 400
                         else:
                             if required is None:
                                 if p in defaults:
                                     kwargs[p] = defaults[p]
                                 else:
-                                    return f"missing HTTP parameter {p}", 400
+                                    return f"missing HTTP parameter \"{p}\"", 400
                             elif required:
-                                return f"missing HTTP parameter {p}", 400
+                                return f"missing HTTP parameter \"{p}\"", 400
                             else:
                                 kwargs[p] = defaults.get(p, None)
                     else:
@@ -789,7 +797,7 @@ class FlaskSimpleAuth:
                             try:
                                 kwargs[p] = typing(kwargs[p])
                             except Exception as e:
-                                return f"type error on path parameter {p}: ({e})", 404
+                                return f"type error on path parameter \"{p}\": ({e})", 404
 
                 # possibly add others, without shadowing already provided ones
                 if allparams:
