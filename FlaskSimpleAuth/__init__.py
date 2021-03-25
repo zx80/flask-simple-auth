@@ -221,15 +221,15 @@ class Flask(flask.Flask):
         return self._fsa.user_in_group(uig)
 
     def check_password(self, pwd, ref):
-        """Check whether password is ok wrt to current configuration."""
+        """Check whether password is ok wrt to current password manager."""
         return self._fsa.check_password(pwd, ref)
 
     def hash_password(self, pwd):
-        """Hash password using current password scheme."""
+        """Hash password using current password manager scheme."""
         return self._fsa.hash_password(pwd)
 
     def create_token(self, user):
-        """Create a token with the current token configuration."""
+        """Create a token with the current token scheme."""
         return self._fsa.create_token(user)
 
     def get_user(self):
@@ -287,12 +287,12 @@ class FlaskSimpleAuth:
 
     def get_user_pass(self, gup):
         """Set `get_user_pass` helper, can be used as a decorator."""
-        self._get_user_pass = gup
+        self._get_user_pass = functools.lru_cache(maxsize=1024)(gup)
         return gup
 
     def user_in_group(self, uig):
         """Set `user_in_group` helper, can be used as a decorator."""
-        self._user_in_group = uig
+        self._user_in_group = functools.lru_cache(maxsize=1024)(uig)
         return uig
 
     def initialize(self):
@@ -676,6 +676,8 @@ class FlaskSimpleAuth:
     def clear_caches(self):
         """Clear internal caches."""
         self._get_jwt_token_auth_real.cache_clear()
+        self.get_user_pass.cache_clear()
+        self.user_in_group.cache_clear()
 
     #
     # authorize internal decorator

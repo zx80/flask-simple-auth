@@ -578,6 +578,7 @@ Software license is *public domain*.
 
 Use a fully dynamic method for `set` in `Reference`.
 Add a `string` type.
+Add caching of `get_user_pass` and `user_in_group` helpers.
 Add `clear_caches` method.
 Warn on missing `authorize` on a route declaration.
 
