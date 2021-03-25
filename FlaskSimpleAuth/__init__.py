@@ -116,7 +116,7 @@ class Reference:  # type: Any
         # keep track of initial methods for later cleanup
         self._init = set(self.__dir__() + ["_init"])
         if obj is not None:
-            getattr(self, set_name)(obj)
+            self._set_obj(obj)
 
     def _set_obj(self, obj):
         """Set current wrapped object, possibly replacing the previous one."""
