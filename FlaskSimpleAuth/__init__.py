@@ -40,7 +40,8 @@ class AuthException(BaseException):
         self.status = status
 
 
-# special type casts
+#
+# TYPE CASTS
 #
 def bool_cast(s: str) -> Optional[bool]:
     """Parses a bool."""
@@ -76,7 +77,9 @@ CASTS: Dict[type, Callable[[str], object]] = {
     dt.datetime: dt.datetime.fromisoformat
 }
 
-# special group names
+#
+# PREDEFINED GROUP NAMES
+#
 ANY = "ANYone can come in, no authentication required"
 ALL = "ALL authentified users are allowed"
 NONE = "NONE can come in, the path is forbidden"
@@ -133,7 +136,7 @@ class Reference:  # type: Any
 
     # forward standard methods
     # automating that with setattr/getattr does not work…
-    # contrary to the documenation, it seems that str(obj)
+    # contrary to the documentation say, it seems that str(obj)
     # really calls obj.__class__.__str__() and *not* obj.__str__().
     def __str__(self):
         return self._obj.__str__()
@@ -197,9 +200,9 @@ class Flask(flask.Flask):
 
     - the `route` decorator manages authentication, authorization and
       parameters transparently.
-    - several additional methods are provided: `init_app`, `get_user_pass`,
+    - several additional methods are provided: `get_user_pass`,
       `user_in_group`, `check_password`, `hash_password`, `create_token`,
-      `get_user`, `current_user`.
+      `get_user`, `current_user`, `clear_caches`.
     """
 
     def __init__(self, *args, **kwargs):
@@ -208,11 +211,6 @@ class Flask(flask.Flask):
         # needed for blueprint registration
         # overwritten late because called by upper Flask initialization
         self.add_url_rule = self._fsa.add_url_rule
-
-    # forward some methods
-    def init_app(self):
-        """Initialize underlying extension."""
-        return self._fsa.init_app(self)
 
     def get_user_pass(self, gup):
         """Set `get_user_pass` helper function."""
