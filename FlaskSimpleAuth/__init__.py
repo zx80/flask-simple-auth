@@ -474,7 +474,7 @@ class FlaskSimpleAuth:
         try:
             user, pwd = b64.b64decode(auth[6:]).decode().split(':', 1)
         except Exception as e:
-            log.debug(f"LOGIN (basic): error while decoding auth \"{auth}\"")
+            log.debug(f"LOGIN (basic): error while decoding auth \"{auth}\" ({e})")
             raise AuthException("decoding error on authorization header", 401)
         finally:
             self._check_password(user, pwd)
@@ -856,6 +856,9 @@ class FlaskSimpleAuth:
 
     def route(self, rule, **options):
         """Extended `route` decorator provided by the extension."""
+        if "authorize" not in options:
+            log.warning(f"missing authorize on route \"{rule}\" makes it 403 Forbidden")
+
         def decorate(fun):
             self.add_url_rule(rule, view_func=fun, **options)
         return decorate

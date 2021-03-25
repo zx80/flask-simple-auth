@@ -579,6 +579,7 @@ Software license is *public domain*.
 Use a fully dynamic method for `set` in `Reference`.
 Add a `string` type.
 Add `clear_caches` method.
+Warn on missing `authorize` on a route declaration.
 
 ### 2.2.1
 
