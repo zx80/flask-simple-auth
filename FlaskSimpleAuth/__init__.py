@@ -87,13 +87,13 @@ NONE = "NONE can come in, the path is forbidden"
 
 def typeof(p: inspect.Parameter):
     """Guess parameter type, possibly with some type inference."""
-    if p.kind == p.VAR_KEYWORD:
+    if p.kind is p.VAR_KEYWORD:
         return dict
-    elif p.kind == p.VAR_POSITIONAL:
+    elif p.kind is p.VAR_POSITIONAL:
         return list
-    elif p.annotation != inspect._empty:
+    elif p.annotation is not inspect._empty:
         return p.annotation
-    elif p.default is not None and p.default != inspect._empty:
+    elif p.default is not None and p.default is not inspect._empty:
         return type(p.default)  # type inference!
     else:
         return str
@@ -256,7 +256,7 @@ class FlaskSimpleAuth:
         self._app = app
         self._get_user_pass = None
         self._user_in_group = None
-        # actual initialization is delayed
+        # actual initialization is deferred
         self._initialized = False
 
     def _auth_set_user(self):
@@ -278,11 +278,20 @@ class FlaskSimpleAuth:
         """After request hook to cleanup authentication and detect missing
         authorization."""
         self._user = None
+        # should it always return 500?
         if res.status_code < 400 and self._need_authorization:
             method, path = request.method, request.path
             log.warning(f"missing authorization on {method} {path}")
             if self._check:
                 return Response("missing authorization check", 500)
+        return res
+
+    # set a cookie if needed and none was sent
+    def _set_auth_cookie(self, res: Response):
+        if self._carrier == "cookie":
+            assert self._token is not None and self._name is not None
+            if self._user is not None and self._name not in request.cookies:
+                res.set_cookie(self._name, self.create_token(self._user))
         return res
 
     def get_user_pass(self, gup):
@@ -318,23 +327,37 @@ class FlaskSimpleAuth:
         self._lazy = conf.get("FSA_LAZY", True)
         self._always = conf.get("FSA_ALWAYS", True)
         self._check = conf.get("FSA_CHECK", True)
-        # register auth request hooks
-        app.before_request(self._auth_set_user)
-        app.after_request(self._auth_after_cleanup)
         import re
         self._skip_path = [re.compile(r).match for r in conf.get("FSA_SKIP_PATH", [])]
         #
         # token setup
         #
-        self._type = conf.get("FSA_TOKEN_TYPE", "fsa")
-        self._name = conf.get("FSA_TOKEN_NAME", None)
+        self._token = conf.get("FSA_TOKEN_TYPE", "fsa")
+        if self._token not in (None, "fsa", "jwt"):
+            raise Exception(f"Unexpected token type (FSA_TOKEN_TYPE): {self._token}")
+        # where to put/look for the token
+        need_carrier = self._token is not None
+        self._carrier = conf.get("FSA_TOKEN_CARRIER", "bearer" if need_carrier else None)
+        if self._carrier not in (None, "bearer", "param", "cookie"):
+            raise Exception(f"Unexpected token carrier (FSA_TOKEN_CARRIER): {self._carrier}")
+        # sanity checks
+        if need_carrier and self._carrier is None:
+            raise Exception(f"Token type {self._token} requires a carrier")
+        # name of token for cookie or param
+        need_name = self._carrier in ("param", "cookie")
+        self._name = conf.get("FSA_TOKEN_NAME", "auth" if need_name else None)
+        if need_name and self._name is None:
+            raise Exception(f"Token carrier {self._carrier} requires a name")
+        # token realm
         realm = conf.get("FSA_TOKEN_REALM", self._app.name).lower()
         # tr -cd "[a-z0-9_]" "": is there a better way to do that?
         keep_char = re.compile(r"[-a-z0-9_]").match
         self._realm = "".join(c for c in realm if keep_char(c))
+        # time validity
         self._delay = conf.get("FSA_TOKEN_DELAY", 60.0)
         self._grace = conf.get("FSA_TOKEN_GRACE", 0.0)
-        if self._type is not None and self._type == "jwt":
+        # token signature
+        if self._token is not None and self._token == "jwt":
             algo = conf.get("FSA_TOKEN_ALGO", "HS256")
             if algo[0] in ("R", "E", "P"):
                 assert "FSA_TOKEN_SECRET" in conf and "FSA_TOKEN_SIGN" in conf, \
@@ -350,13 +373,13 @@ class FlaskSimpleAuth:
             # list of 94 chars, about 6.5 bits per char
             chars = string.ascii_letters + string.digits + string.punctuation
             self._secret = ''.join(random.SystemRandom().choices(chars, k=40))
-        if self._type is None:
+        if self._token is None:
             pass
-        elif self._type == "fsa":
+        elif self._token == "fsa":
             self._sign = self._secret
             self._algo = conf.get("FSA_TOKEN_ALGO", "blake2s")
             self._siglen = conf.get("FSA_TOKEN_LENGTH", 16)
-        elif self._type == "jwt":
+        elif self._token == "jwt":
             algo = conf.get("FSA_TOKEN_ALGO", "HS256")
             self._algo = algo
             if algo[0] in ("R", "E", "P"):
@@ -369,7 +392,7 @@ class FlaskSimpleAuth:
                 raise Exception(f"unexpected jwt FSA_TOKEN_ALGO ({algo})")
             self._siglen = 0
         else:
-            raise Exception(f"invalid FSA_TOKEN_TYPE ({self._type})")
+            raise Exception(f"invalid FSA_TOKEN_TYPE ({self._token})")
         #
         # parameters
         #
@@ -397,6 +420,12 @@ class FlaskSimpleAuth:
             self._get_user_pass = conf["FSA_GET_USER_PASS"]
         if "FSA_USER_IN_GROUP" in conf:
             self._user_in_group = conf["FSA_USER_IN_GROUP"]
+        #
+        # register auth request hooks
+        #
+        app.before_request(self._auth_set_user)
+        app.after_request(self._auth_after_cleanup)
+        app.after_request(self._set_auth_cookie)
         #
         # blueprint hacks
         #
@@ -498,6 +527,13 @@ class FlaskSimpleAuth:
         self._check_password(user, pwd)
         return user
 
+    # basic or param auth
+    def _get_password_auth(self):
+        try:
+            return self._get_basic_auth()
+        except AuthException:  # failed, let's try param
+            return self._get_param_auth()
+
     #
     # TOKEN AUTH
     #
@@ -548,9 +584,9 @@ class FlaskSimpleAuth:
 
     def create_token(self, user):
         """Create a new token for user depending on the configuration."""
-        assert self._type is not None
+        assert self._token is not None
         realm, delay = self._realm, self._delay
-        if self._type == "fsa":
+        if self._token == "fsa":
             return self._get_fsa_token(realm, user, delay, self._secret)
         else:
             return self._get_jwt_token(realm, user, delay, self._sign)
@@ -605,14 +641,15 @@ class FlaskSimpleAuth:
     def _get_token_auth(self, token):
         log.debug(f"checking token: {token}")
         return \
-            self._get_fsa_token_auth(token) if self._type == "fsa" else \
+            self._get_fsa_token_auth(token) if self._token == "fsa" else \
             self._get_jwt_token_auth(token)
 
-    def _get_password_auth(self):
-        try:
-            return self._get_basic_auth()
-        except AuthException:  # failed, let's try param
-            return self._get_param_auth()
+    # a cookie is just another option for storing tokens
+    def _get_cookie_auth(self):
+        if self._name in request.cookies:
+            return self._get_token_auth(request.cookies.get(self._name))
+        else:
+            return None
 
     # map auth types to their functions
     _FSA_AUTH = {
@@ -644,16 +681,19 @@ class FlaskSimpleAuth:
         elif a in ("fake", "basic", "param", "password", "token"):
 
             # check for token
-            if self._type is not None:
-                params = request.values if request.json is None else request.json
-                if self._name is None:
+            if self._token is not None:
+                if self._carrier == "bearer":
                     auth = request.headers.get("Authorization", None)
                     if auth is not None and auth[:7] == "Bearer ":
                         self._user = self._get_token_auth(auth[7:])
-                else:
+                elif self._carrier == "cookie":
+                    self._user = self._get_cookie_auth()
+                elif self._carrier == "param":
+                    params = request.values if request.json is None else request.json
                     token = params.get(self._name, None)
                     if token is not None:
                         self._user = self._get_token_auth(token)
+                # else: cannot get there
 
             # else try other schemes
             if self._user is None:

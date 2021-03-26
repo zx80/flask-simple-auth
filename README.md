@@ -279,6 +279,10 @@ is missing an explicit authorization check.
 Default is *True*.
 
 
+#### `none` Authentication
+
+Use to disactivate authentication.
+
 #### `httpd` Authentication
 
 Inherit web server supplied authentication through `request.remote_user`.
@@ -289,10 +293,6 @@ such as Apache or Nginx, all of which probably more efficiently implemented
 than python code, so this should be the preferred option.
 However, it could require significant configuration effort compared to
 the application-side approach.
-
-#### `none` Authentication
-
-Use to disactivate authentication.
 
 #### `basic` Authentication
 
@@ -345,12 +345,13 @@ The following configuration directives are available:
 
  - `FSA_TOKEN_TYPE` type of token, either *fsa*, *jwt* or `None` to disable.
    Default is *fsa*.
+ - `FSA_TOKEN_CARRIER` how to transport the token: *bearer* (`Authentication`
+   HTTP header), *param* or *cookie*
+ - `FKA_TOKEN_NAME` name of parameter or cookie holding the token.
+   Default is *auth*.
  - `FSA_TOKEN_REALM` realm of token.
    Default is the simplified lower case application name.
    For *jwt*, this is translated as the audience.
- - `FKA_TOKEN_NAME` name of parameter holding the auth token, or
-   *None* to use a *bearer* authorization header.
-   Default is *None*.
  - `FSA_TOKEN_SECRET` secret string used for validating tokens.
    Default is a system-generated random string containing 256 bits.
    This default with only work with itself, as it is not shared
@@ -581,6 +582,8 @@ Add a `string` type.
 Add caching of `get_user_pass` and `user_in_group` helpers.
 Add `clear_caches` method.
 Warn on missing `authorize` on a route declaration.
+Add `FSA_TOKEN_CARRIER` to specify how token auth is transfered,
+including a new *cookie* option.
 
 ### 2.2.1
 
@@ -704,6 +707,6 @@ Initial release in beta.
 
 - cache other things?
 - use flask http auth somehow?
-- add cookie-based token?
 - could it be a single py file instead of a stupid `__init__.py` in a directory?
   how to package that?
+- use cookie expiration if possible?

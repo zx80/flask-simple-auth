@@ -74,44 +74,72 @@ def client3():
     with af.create_app().test_client() as c:
         yield c
 
+# push/pop auth
+app_saved_auth = {}
+
+def push_auth(app, auth, token = None, carrier = None, name = None):
+    assert auth in (None, "none", "fake", "basic", "param", "password", "token")
+    assert token in (None, "fsa", "jwt")
+    assert carrier in (None , "bearer", "param", "cookie")
+    app_saved_auth.update(a = app._auth, t = app._token, c = app._carrier, n = app._name)
+    app._auth, app._token, app._carrier, app._name = auth, token, carrier, name
+
+def pop_auth(app):
+    d = app_saved_auth
+    app._auth, app._token, app._carrier, app._name = d["a"], d["t"], d["c"], d["n"]
+    d.clear()
+
 # test all auth variants on GET
 def all_auth(client, user, pswd, check, *args, **kwargs):
-    asave, nsave = app._fsa._auth, app._fsa._name
     # fake login
-    app._fsa._auth, app._fsa._name = 'fake', 'auth'
+    push_auth(app._fsa, "fake", "fsa", "param", "auth")
     token_fake = json.loads(client.get("login", data={"LOGIN": user}).data)
     check(client.get(*args, **kwargs, data={"LOGIN": user}))
     check(client.get(*args, **kwargs, data={"auth": token_fake}))
+    pop_auth(app._fsa)
     # user-pass param
+    push_auth(app._fsa, "param", "fsa", "param", "auth")
     USERPASS = { "USER": user, "PASS": pswd }
-    app._fsa._auth = 'param'
     token_param = json.loads(client.get("login", data=USERPASS).data)
     check(client.get(*args, **kwargs, data=USERPASS))
     check(client.get(*args, **kwargs, data={"auth": token_param}))
-    app._fsa._auth = 'password'
+    pop_auth(app._fsa)
+    push_auth(app._fsa, "password", "fsa", "param", "auth")
     check(client.get(*args, **kwargs, data=USERPASS))
     check(client.get(*args, **kwargs, data={"auth": token_param}))
+    pop_auth(app._fsa)
     # user-pass basic
+    push_auth(app._fsa, "basic", "fsa", "param", "auth")
     from requests.auth import _basic_auth_str as basic_auth
     BASIC = {"Authorization": basic_auth(user, pswd)}
-    app._fsa._auth = 'basic'
     token_basic = json.loads(client.get("login", headers=BASIC).data)
     check(client.get(*args, **kwargs, headers=BASIC))
     check(client.get(*args, **kwargs, data={"auth": token_basic}))
-    app._fsa._auth = 'password'
+    pop_auth(app._fsa)
+    push_auth(app._fsa, "password", "fsa", "param", "auth")
     check(client.get(*args, **kwargs, headers=BASIC))
     check(client.get(*args, **kwargs, data={"auth": token_basic}))
+    pop_auth(app._fsa)
     # token only
-    app._fsa._auth = "token"
+    push_auth(app._fsa, "token", "fsa", "param", "auth")
     check(client.get(*args, **kwargs, data={"auth": token_fake}))
     check(client.get(*args, **kwargs, data={"auth": token_param}))
     check(client.get(*args, **kwargs, data={"auth": token_basic}))
-    app._fsa._name = None
+    pop_auth(app._fsa)
+    push_auth(app._fsa, "token", "fsa", "bearer", None)
     bearer = lambda t: {"Authorization": "Bearer " + t}
     check(client.get(*args, **kwargs, headers=bearer(token_fake)))
     check(client.get(*args, **kwargs, headers=bearer(token_param)))
     check(client.get(*args, **kwargs, headers=bearer(token_basic)))
-    app._fsa._auth, app._fsa._name = asave, nsave
+    pop_auth(app._fsa)
+    push_auth(app._fsa, "token", "fsa", "cookie", "auth")
+    client.set_cookie("localhost", "auth", token_fake)
+    check(client.get(*args, **kwargs))
+    client.set_cookie("localhost", "auth", token_param)
+    check(client.get(*args, **kwargs))
+    client.set_cookie("localhost", "auth", token_basic)
+    check(client.get(*args, **kwargs))
+    pop_auth(app._fsa)
 
 def test_perms(client):
     check_200(client.get("/any"))  # open route
@@ -178,11 +206,11 @@ def test_register(client):
     app._fsa._auth = sauth
 
 def test_fsa_token():
-    tsave, hsave, app._fsa._type, app._fsa._algo = app._fsa._type, app._fsa._algo, "fsa", "blake2s"
+    tsave, hsave, app._fsa._token, app._fsa._algo = app._fsa._token, app._fsa._algo, "fsa", "blake2s"
     calvin_token = app.create_token("calvin")
     assert calvin_token[:12] == "test:calvin:"
     assert app._fsa._get_token_auth(calvin_token) == "calvin"
-    app._fsa._type, app._fsa._algo = tsave, hsave
+    app._fsa._token, app._fsa._algo = tsave, hsave
 
 def test_expired_token():
     hobbes_token = app.create_token("hobbes")
@@ -214,7 +242,7 @@ JtTFy+PPh909GQIhAMokyDzv42nWS0hiE6ofuDQZZcqz1LVotcH4wN3rMExRAiAd
 """
 
 def test_jwt_token():
-    tsave, hsave, app._fsa._type, app._fsa._algo = app._fsa._type, app._fsa._algo, "jwt", "HS256"
+    tsave, hsave, app._fsa._token, app._fsa._algo = app._fsa._token, app._fsa._algo, "jwt", "HS256"
     Ksave, ksave = app._fsa._secret, app._fsa._sign
     # hmac signature scheme
     moe_token = app.create_token("moe")
@@ -229,7 +257,7 @@ def test_jwt_token():
     user = app._fsa._get_token_auth(mum_token)
     assert user == "mum"
     # cleanup
-    app._fsa._type, app._fsa._algo = tsave, hsave
+    app._fsa._token, app._fsa._algo = tsave, hsave
     app._fsa._secret, app._fsa._sign = Ksave, ksave
 
 def test_invalid_token():
@@ -411,10 +439,17 @@ def test_mail(client):
     check_400(client.get(f"/mail/{m}", data={"ad2": "bad-email-address"}))
 
 def test_appext(client2):
-    check_401(client2.get("/stuff"))
-    check_200(client2.get("/stuff", data={"LOGIN": "dad"}))
     check_401(client2.get("/bad"))
     check_500(client2.get("/bad", data={"LOGIN": "dad"}))
+    check_401(client2.get("/stuff"))
+    res = check_200(client2.get("/stuff", data={"LOGIN": "dad"}))
+    assert "auth=" in res.headers["Set-Cookie"]
+    # the auth cookie is kept automatically, it seems…
+    check_200(client2.get("/stuff"))
+    check_500(client2.get("/bad"))
+    client2.cookie_jar.clear()
+    check_401(client2.get("/stuff"))
+    check_401(client2.get("/bad"))
 
 def test_blueprint(client):
     check_401(client.get("/b1/words/foo"))
