@@ -702,5 +702,6 @@ Initial release in beta.
 
 ## TODO
 
-- cache password checks?
 - cache other things?
+- use flask http auth somehow?
+- add cookie-based token?
