@@ -585,7 +585,7 @@ Warn on missing `authorize` on a route declaration.
 Add `FSA_TOKEN_CARRIER` to specify how token auth is transfered,
 including a new *cookie* option.
 Rename `FSA_TYPE` to `FSA_AUTH`.
-Make `create_token` parameter optional.
+Make `create_token` argument optional.
 
 ### 2.2.1
 
