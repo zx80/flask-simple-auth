@@ -306,7 +306,7 @@ def test_authorize():
     app._fsa._lazy = lazy
 
 def test_self_care(client):
-    saved, app._fsa._auth = app._fsa._auth, 'fake'
+    push_auth(app._fsa, "fake")
     check_401(client.patch("/user/calvin"))
     check_403(client.patch("/user/calvin", data={"LOGIN":"dad"}))
     who, npass, opass = "calvin", "new-calvin-password", App.UP["calvin"]
@@ -318,7 +318,7 @@ def test_self_care(client):
     check_204(client.delete("user/rosalyn", data={"LOGIN":"rosalyn"}))  # self
     check_201(client.post("/register", data={"user":"rosalyn", "upass":"rosa-pass"}))
     check_204(client.delete("user/rosalyn", data={"LOGIN":"dad"}))  # admin
-    app._fsa._auth = saved
+    pop_auth(app._fsa)
 
 def test_typed_params(client):
     res = check_200(client.get("/add/2", data={"a":"2.0", "b":"4.0"}))
