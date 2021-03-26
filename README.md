@@ -710,3 +710,4 @@ Initial release in beta.
 - could it be a single py file instead of a stupid `__init__.py` in a directory?
   how to package that?
 - use cookie expiration if possible?
+- rename `FSA_TYPE` to `FSA_AUTH`?
