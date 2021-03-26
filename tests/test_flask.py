@@ -53,7 +53,7 @@ def test_sanity():
     assert App.app is not None and fsa is not None
     assert App.app.name == "Test"
     assert app._fsa._realm == "test"
-    assert 'FSA_TYPE' in app.config
+    assert 'FSA_AUTH' in app.config
     assert "dad" in App.UHP
     assert "calvin" in App.UHP
     assert "hobbes" in App.UHP

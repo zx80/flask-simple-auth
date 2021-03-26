@@ -18,7 +18,7 @@ app = Flask("Test")
 # AUTH
 #
 app.config.update(
-    FSA_TYPE = 'fake',
+    FSA_AUTH = 'fake',
     FSA_ALWAYS = True,
     FSA_SKIP_PATH = (r"/register",
                      r"/(add|div|mul|sub|type|params|any|mis[12]|nogo|one)",

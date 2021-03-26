@@ -323,7 +323,7 @@ class FlaskSimpleAuth:
         #
         # auth setup
         #
-        self._auth = conf.get("FSA_TYPE", "httpd")
+        self._auth = conf.get("FSA_AUTH", "httpd")
         assert self._auth in ("httpd", "none", "fake", "basic", "param", "password", "token")
         self._lazy = conf.get("FSA_LAZY", True)
         self._always = conf.get("FSA_ALWAYS", True)

@@ -10,7 +10,7 @@ from Shared import something
 
 def create_app(**config):
     app = Flask("4ops")
-    app.config.update(FSA_TYPE="fake", FSA_GET_USER_PASS=get_user_pass, FSA_USER_IN_GROUP=user_in_group)
+    app.config.update(FSA_AUTH="fake", FSA_GET_USER_PASS=get_user_pass, FSA_USER_IN_GROUP=user_in_group)
     app.config.update(**config)
     app.register_blueprint(subapp, url_prefix="/b")
 

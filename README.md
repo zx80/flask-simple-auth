@@ -44,7 +44,7 @@ Authentication is manage from the application flask configuration
 with `FSA_*` (Flask simple authentication) directives:
 
 ```Python
-FSA_TYPE = "httpd"     # inherit web-serveur authentication
+FSA_AUTH = "httpd"     # inherit web-serveur authentication
 # or others such as: basic, token (eg jwt), param…
 ```
 
@@ -253,10 +253,10 @@ headers for authenticating later requests, till it expires.
 ### Authentication
 
 Three directives impact how and when authentication is performed.
-The main configuration directive is `FSA_TYPE` which governs authentication
+The main configuration directive is `FSA_AUTH` which governs authentication
 methods used by the `get_user` function, as described in the following sections.
 
-- `FSA_TYPE` governs the *how*: `none`, `httpd`, `basic`, `param`, `password`,
+- `FSA_AUTH` governs the *how*: `none`, `httpd`, `basic`, `param`, `password`,
 `token`… as described in details in the next sections.  Default is `httpd`.
 
 - `FSA_ALWAYS` tells whether to perform authentication in a before request
@@ -373,7 +373,7 @@ Function `create_token(user)` creates a token for the user depending
 on the current scheme.
 
 Token authentication is always attempted unless the secret is empty.
-Setting `FSA_TYPE` to `token` results in *only* token authentication to be used.
+Setting `FSA_AUTH` to `token` results in *only* token authentication to be used.
 
 Token authentication is usually much faster than password verification because
 password checks are designed to be slow so as to hinder password cracking.
@@ -584,6 +584,7 @@ Add `clear_caches` method.
 Warn on missing `authorize` on a route declaration.
 Add `FSA_TOKEN_CARRIER` to specify how token auth is transfered,
 including a new *cookie* option.
+Rename `FSA_TYPE` to `FSA_AUTH`.
 
 ### 2.2.1
 
@@ -710,4 +711,3 @@ Initial release in beta.
 - could it be a single py file instead of a stupid `__init__.py` in a directory?
   how to package that?
 - use cookie expiration if possible?
-- rename `FSA_TYPE` to `FSA_AUTH`?
