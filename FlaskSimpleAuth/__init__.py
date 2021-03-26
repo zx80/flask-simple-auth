@@ -287,12 +287,12 @@ class FlaskSimpleAuth:
         return res
 
     # set a cookie if needed and none was sent
-    # FIXME set cookie expiration
     def _set_auth_cookie(self, res: Response):
         if self._carrier == "cookie":
             assert self._token is not None and self._name is not None
             if self._user is not None and self._name not in request.cookies:
-                res.set_cookie(self._name, self.create_token(self._user))
+                res.set_cookie(self._name, self.create_token(self._user),
+                               max_age=int(60 * self._delay))
         return res
 
     def get_user_pass(self, gup):
