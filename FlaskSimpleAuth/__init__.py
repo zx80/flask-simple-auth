@@ -407,6 +407,8 @@ class FlaskSimpleAuth:
         # round. Ident '2y' is same as '2b' but apache compatible.
         scheme = conf.get("FSA_PASSWORD_SCHEME", "bcrypt")
         if scheme is not None:
+            if scheme == "plaintext":
+                log.warning("plaintext password manager is a bad idea")
             options = conf.get("FSA_PASSWORD_OPTIONS",
                                {'bcrypt__default_rounds': 4,
                                 'bcrypt__default_ident': '2y'})
