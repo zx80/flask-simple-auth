@@ -228,7 +228,7 @@ class Flask(flask.Flask):
         """Hash password using current password manager scheme."""
         return self._fsa.hash_password(pwd)
 
-    def create_token(self, user):
+    def create_token(self, user: str = None):
         """Create a token with the current token scheme."""
         return self._fsa.create_token(user)
 
@@ -420,9 +420,9 @@ class FlaskSimpleAuth:
         # hooks
         #
         if "FSA_GET_USER_PASS" in conf:
-            self._get_user_pass = conf["FSA_GET_USER_PASS"]
+            self.get_user_pass(conf["FSA_GET_USER_PASS"])
         if "FSA_USER_IN_GROUP" in conf:
-            self._user_in_group = conf["FSA_USER_IN_GROUP"]
+            self.user_in_group(conf["FSA_USER_IN_GROUP"])
         #
         # register auth request hooks
         #
@@ -585,9 +585,11 @@ class FlaskSimpleAuth:
         return jwt.encode({"exp": exp, "sub": user, "aud": realm},
                           secret, algorithm=self._algo)
 
-    def create_token(self, user):
+    def create_token(self, user: str = None):
         """Create a new token for user depending on the configuration."""
         assert self._token is not None
+        if user is None:
+            user = self.get_user()
         realm, delay = self._realm, self._delay
         if self._token == "fsa":
             return self._get_fsa_token(realm, user, delay, self._secret)
@@ -719,8 +721,10 @@ class FlaskSimpleAuth:
     def clear_caches(self):
         """Clear internal caches."""
         self._get_jwt_token_auth_real.cache_clear()
-        self.get_user_pass.cache_clear()
-        self.user_in_group.cache_clear()
+        if self._get_user_pass is not None:
+            self._get_user_pass.cache_clear()
+        if self._user_in_group is not None:
+            self._user_in_group.cache_clear()
 
     #
     # authorize internal decorator

@@ -156,6 +156,7 @@ def test_perms(client):
     all_auth(client, "calvin", App.UP["calvin"], check_403, "/admin")
     assert not App.user_in_group("hobbes", App.ADMIN)
     all_auth(client, "hobbes", App.UP["hobbes"], check_403, "/admin")
+    app.clear_caches()
     # write only
     check_401(client.get("/write"))
     assert app._fsa._user_in_group("dad", App.WRITE)
