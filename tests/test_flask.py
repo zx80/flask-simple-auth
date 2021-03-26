@@ -182,13 +182,13 @@ def test_whatever(client):
     check_401(client.put("/whatever"))
     check_401(client.patch("/whatever"))
     check_401(client.delete("/whatever"))
-    saved, app._fsa._auth = app._fsa._auth, 'fake'
+    push_auth(app._fsa, "fake")
     check_404(client.get("/whatever", data={"LOGIN": "dad"}))
     check_404(client.post("/whatever", data={"LOGIN": "dad"}))
     check_404(client.put("/whatever", data={"LOGIN": "dad"}))
     check_404(client.patch("/whatever", data={"LOGIN": "dad"}))
     check_404(client.delete("/whatever", data={"LOGIN": "dad"}))
-    app._fsa._auth = saved
+    pop_auth(app._fsa)
 
 def test_register(client):
     # missing params
@@ -203,10 +203,10 @@ def test_register(client):
     all_auth(client, "susie", App.UP["susie"], check_403, "/write")
     all_auth(client, "susie", App.UP["susie"], check_200, "/read")
     # clean-up
-    sauth, app._fsa._auth = app._fsa._auth, "fake"
+    push_auth(app._fsa, "fake")
     check_204(client.delete("/user/susie", data={"LOGIN":"susie"}))
     assert "susie" not in App.UP and "susie" not in App.UHP
-    app._fsa._auth = sauth
+    pop_auth(app._fsa)
 
 def test_fsa_token():
     tsave, hsave, app._fsa._token, app._fsa._algo = app._fsa._token, app._fsa._algo, "fsa", "blake2s"
