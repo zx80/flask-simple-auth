@@ -295,6 +295,16 @@ class FlaskSimpleAuth:
                                max_age=int(60 * self._delay))
         return res
 
+    def _set_www_authenticate(self, res: Response):
+        if res.status_code == 401:
+            if self._auth in ("basic","password"):
+                res.headers["WWW-Authenticate"] = f"Basic realm=\"{self._realm}\""
+            elif self._auth == "param":
+                res.headers["WWW-Authenticate"] = f"Param realm=\"{self._realm}\""
+            elif self._carrier == "bearer":
+                res.headers["WWW-Authenticate"] = f"Bearer realm=\"{self._realm}\""
+        return res
+
     def get_user_pass(self, gup):
         """Set `get_user_pass` helper, can be used as a decorator."""
         self._get_user_pass = functools.lru_cache(maxsize=1024)(gup)
@@ -429,6 +439,7 @@ class FlaskSimpleAuth:
         app.before_request(self._auth_set_user)
         app.after_request(self._auth_after_cleanup)
         app.after_request(self._set_auth_cookie)
+        app.after_request(self._set_www_authenticate)
         #
         # blueprint hacks
         #

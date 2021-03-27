@@ -586,6 +586,7 @@ Add `FSA_TOKEN_CARRIER` to specify how token auth is transfered,
 including a new *cookie* option.
 Rename `FSA_TYPE` to `FSA_AUTH`.
 Make `create_token` argument optional.
+Add `WWW-Authenticate` headers when appropriate.
 
 ### 2.2.1
 
@@ -707,8 +708,8 @@ Initial release in beta.
 
 ## TODO
 
-- on 401, add WWW-Authenticate
 - cache other things?
-- use flask http auth somehow?
+- use flask http auth somehow? for digest only?
 - could it be a single py file instead of a stupid `__init__.py` in a directory?
   how to package that?
+- fix mime type on FSA responses

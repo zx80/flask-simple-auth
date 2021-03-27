@@ -544,3 +544,25 @@ def test_reference():
     r2 = fsa.Reference(set_name="set_object")
     r2.set_object(v2)
     assert r2 == v2
+
+def test_www_authenticate(client):
+    push_auth(app._fsa, "param")
+    res = check_401(client.get("/admin"))
+    assert res.www_authenticate.get("__auth_type__", None) == "param"
+    assert "realm" in res.www_authenticate
+    pop_auth(app._fsa)
+    push_auth(app._fsa, "basic")
+    res = check_401(client.get("/admin"))
+    assert res.www_authenticate.get("__auth_type__", None) == "basic"
+    assert "realm" in res.www_authenticate
+    pop_auth(app._fsa)
+    push_auth(app._fsa, "password")
+    res = check_401(client.get("/admin"))
+    assert res.www_authenticate.get("__auth_type__", None) == "basic"
+    assert "realm" in res.www_authenticate
+    pop_auth(app._fsa)
+    push_auth(app._fsa, "token", "fsa", "bearer")
+    res = check_401(client.get("/admin"))
+    assert res.www_authenticate.get("__auth_type__", None) == "bearer"
+    assert "realm" in res.www_authenticate
+    pop_auth(app._fsa)
