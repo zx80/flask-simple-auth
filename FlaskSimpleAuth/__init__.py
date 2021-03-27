@@ -710,7 +710,7 @@ class FlaskSimpleAuth:
     def _get_token_auth(self, token):
         log.debug(f"token: {token}")
         if token is None or token == "":
-            log.debug(f"AUTH (token): no token")
+            log.debug("AUTH (token): no token")
             raise AuthException("missing auth token", 401)
         return \
             self._get_fsa_token_auth(token) if self._token == "fsa" else \
