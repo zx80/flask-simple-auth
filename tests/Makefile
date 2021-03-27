@@ -20,7 +20,12 @@ stop:
 check:
 	pytest --log-level=debug --capture=tee-sys
 
+.PHONY: coverage
+coverage:
+	coverage run -m pytest --log-level=debug --capture=tee-sys
+	coverage html
+
 .PHONY: clean
 clean: stop
-	$(RM) -r __pycache__
+	$(RM) -r __pycache__ htmlcov
 	$(RM) $(F.log)

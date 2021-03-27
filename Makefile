@@ -20,7 +20,7 @@ install:
 # for local testing
 venv:
 	python3 -m venv venv
-	venv/bin/pip3 install wheel mypy flake8 pytest requests
+	venv/bin/pip3 install wheel mypy flake8 pytest coverage requests
 	venv/bin/pip3 install passlib bcrypt pyjwt cryptography
 	venv/bin/pip3 install -e .
 
