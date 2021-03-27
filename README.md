@@ -342,8 +342,8 @@ The `fsa` token syntax is: `<realm>:<user>:<limit>:<signature>`,
 for instance: `kiva:calvin:20380119031407:4ee89cd4cc7afe0a86b26bdce6d11126`.
 The time limit is an easily parsable UTC timestamp *YYYYMMDDHHmmSS* so that
 it can be checked easily by the application client.
-Compared to `jwt` tokens, they are easy to interpret manually, no
-decoding is involved.
+Compared to `jwt` tokens, they are easy to interpret and compare manually,
+no decoding is involved.
 
 The following configuration directives are available:
 
