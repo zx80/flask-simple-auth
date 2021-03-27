@@ -21,7 +21,7 @@ import flask
 from flask import Response, request
 # just for forwarding
 from flask import session, jsonify, redirect, url_for, Blueprint
-from flask import make_response, abort, render_template, current_app
+from flask import make_response, abort, render_template, current_app, session, g
 
 import logging
 log = logging.getLogger("fsa")
