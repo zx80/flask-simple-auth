@@ -23,7 +23,7 @@ check:
 .PHONY: coverage
 coverage:
 	coverage run -m pytest --log-level=debug --capture=tee-sys
-	coverage html
+	coverage html FlaskSimpleAuth/__init__.py
 
 .PHONY: clean
 clean: stop
