@@ -575,7 +575,7 @@ Sources are available on [GitHub](https://github.com/zx80/flask-simple-auth)
 and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 Software license is *public domain*.
 
-### dev
+### 2.3.0
 
 Use a fully dynamic method for `set` in `Reference`.
 Add a `string` type.
