@@ -590,7 +590,7 @@ Software license is *public domain*.
 
 Add `http-basic` and `http-token` authentication schemes based on flask-HTTPAuth.
 Add coverage report on tests.
-Work in progress.
+Distribute as a one file python module.
 
 ### 2.3.0
 
