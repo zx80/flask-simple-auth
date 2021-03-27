@@ -302,6 +302,10 @@ HTTP header in the request.
 See also Password Authentication below for how the password is retrieved
 and checked.
 
+### `http-basic` Authentication
+
+Same as previous based on [flask-HTTPAuth](https://pypi.org/project/Flask-HTTPAuth/).
+
 #### `param` Authentication
 
 HTTP parameter or JSON password authentication.
@@ -347,8 +351,10 @@ The following configuration directives are available:
    Default is *fsa*.
  - `FSA_TOKEN_CARRIER` how to transport the token: *bearer* (`Authentication`
    HTTP header), *param* or *cookie*
- - `FKA_TOKEN_NAME` name of parameter or cookie holding the token.
-   Default is *auth*.
+ - `FKA_TOKEN_NAME` name of parameter or cookie holding the token, or
+   bearer scheme.
+   Default is *auth* for parameter and cookie,
+   *Bearer* for HTTP Authentication header.
  - `FSA_TOKEN_REALM` realm of token.
    Default is the simplified lower case application name.
    For *jwt*, this is translated as the audience.
@@ -383,6 +389,11 @@ use it till it expires.
 
 Internally *jwt* token checks are cached so that even with slow public-key schemes
 the performance impact should be low.
+
+#### `http-token` Authentication
+
+Token scheme based on [flask-HTTPAuth](https://pypi.org/project/Flask-HTTPAuth/).
+Carrier is always implicitely *bearer*.
 
 #### `fake` Authentication
 
@@ -577,6 +588,7 @@ Software license is *public domain*.
 
 ### dev
 
+Add `http-basic` and `http-token` authentication schemes based on flask-HTTPAuth.
 Add coverage report on tests.
 Work in progress.
 

@@ -127,11 +127,17 @@ def all_auth(client, user, pswd, check, *args, **kwargs):
     check(client.get(*args, **kwargs, data={"auth": token_param}))
     check(client.get(*args, **kwargs, data={"auth": token_basic}))
     pop_auth(app._fsa)
-    push_auth(app._fsa, "token", "fsa", "bearer", None)
+    push_auth(app._fsa, "token", "fsa", "bearer", "Bearer")
     bearer = lambda t: {"Authorization": "Bearer " + t}
     check(client.get(*args, **kwargs, headers=bearer(token_fake)))
     check(client.get(*args, **kwargs, headers=bearer(token_param)))
     check(client.get(*args, **kwargs, headers=bearer(token_basic)))
+    pop_auth(app._fsa)
+    push_auth(app._fsa, "token", "fsa", "bearer", "Youpi")
+    youpi = lambda t: {"Authorization": "Youpi " + t}
+    check(client.get(*args, **kwargs, headers=youpi(token_fake)))
+    check(client.get(*args, **kwargs, headers=youpi(token_param)))
+    check(client.get(*args, **kwargs, headers=youpi(token_basic)))
     pop_auth(app._fsa)
     push_auth(app._fsa, "token", "fsa", "cookie", "auth")
     client.set_cookie("localhost", "auth", token_fake)
@@ -567,3 +573,39 @@ def test_www_authenticate(client):
     assert res.www_authenticate.get("__auth_type__", None) == "bearer"
     assert "realm" in res.www_authenticate
     pop_auth(app._fsa)
+
+import AppHttpAuth as aha
+
+@pytest.fixture
+def app_basic():
+    with aha.create_app_basic().test_client() as c:
+        yield c
+
+@pytest.fixture
+def app_digest():
+    with aha.create_app_digest().test_client() as c:
+        yield c
+
+def test_http_basic(app_basic):
+    check_401(app_basic.get("/basic"))
+    from requests.auth import _basic_auth_str as basic_auth
+    BASIC = {"Authorization": basic_auth("calvin", "hobbes")}
+    res = check_200(app_basic.get("/basic", headers=BASIC))
+    assert res.data == b"calvin"
+
+def test_http_digest(app_digest):
+    check_401(app_digest.get("/digest"))
+    # FIXME how to generate a digest authenticated request with werkzeug is unclear
+    # from requests.auth import HTTPDigestAuth as Digest
+    # AUTH = Digest("calvin", "hobbes")
+    # res = check_200(app_digest.get("/digest", auth=AUTH))
+    # assert res.data == b"calvin"
+
+def test_http_token():
+    app = aha.create_app_token()
+    with app.test_client() as client:
+        check_401(client.get("/token"))
+        calvin_token = app.create_token("calvin")
+        TOKEN = {"Authorization": f"Bearer {calvin_token}"}
+        res = check_200(client.get("/token", headers=TOKEN))
+        assert res.data == b"calvin"

@@ -21,7 +21,7 @@ import flask
 from flask import Response, request
 # just for forwarding
 from flask import session, jsonify, redirect, url_for, Blueprint
-from flask import make_response, abort, render_template, current_app, session, g
+from flask import make_response, abort, render_template, current_app, g
 
 import logging
 log = logging.getLogger("fsa")
@@ -262,9 +262,13 @@ class FlaskSimpleAuth:
         self._app = app
         self._get_user_pass = None
         self._user_in_group = None
+        self._http_auth = None
         # actual initialization is deferred
         self._initialized = False
 
+    #
+    # HOOKS
+    #
     def _auth_set_user(self):
         """Before request hook to perform early authentication."""
         self._user = None
@@ -321,6 +325,9 @@ class FlaskSimpleAuth:
         self._user_in_group = functools.lru_cache(maxsize=1024)(uig)
         return uig
 
+    #
+    # DEFERRED INITIALIZATION
+    #
     def initialize(self):
         """Run late initialization on current app."""
         assert self._app is not None
@@ -337,10 +344,11 @@ class FlaskSimpleAuth:
         self._app = app
         conf = app.config
         #
-        # auth setup
+        # overall auth setup
         #
         self._auth = conf.get("FSA_AUTH", "httpd")
-        assert self._auth in ("httpd", "none", "fake", "basic", "param", "password", "token")
+        assert self._auth in ("httpd", "none", "fake", "basic", "param", "password",
+                              "token", "http-basic", "http-digest", "http-token")
         self._lazy = conf.get("FSA_LAZY", True)
         self._always = conf.get("FSA_ALWAYS", True)
         self._check = conf.get("FSA_CHECK", True)
@@ -360,10 +368,13 @@ class FlaskSimpleAuth:
         # sanity checks
         if need_carrier and self._carrier is None:
             raise Exception(f"Token type {self._token} requires a carrier")
-        # name of token for cookie or param
-        need_name = self._carrier in ("param", "cookie")
-        self._name = conf.get("FSA_TOKEN_NAME", "auth" if need_name else None)
-        if need_name and self._name is None:
+        # name of token for cookie or param, FIXME scheme for bearer?
+        if self._carrier in ("param", "cookie"):
+            default_name = "auth"
+        else:
+            default_name = "Bearer"
+        self._name = conf.get("FSA_TOKEN_NAME", default_name)
+        if need_carrier and self._name is None:
             raise Exception(f"Token carrier {self._carrier} requires a name")
         # token realm… FIXME should it just accept the provided string?
         realm = conf.get("FSA_TOKEN_REALM", self._app.name).lower()
@@ -440,6 +451,25 @@ class FlaskSimpleAuth:
         if "FSA_USER_IN_GROUP" in conf:
             self.user_in_group(conf["FSA_USER_IN_GROUP"])
         #
+        # http auth setup
+        #
+        if self._auth in ("http-basic", "http-digest", "http-token"):
+            import flask_httpauth as fha
+            if self._auth == "http-basic":
+                self._http_auth = fha.HTTPBasicAuth()
+                self._http_auth.verify_password(self._check_password)
+            elif self._auth == "http-digest":
+                self._http_auth = fha.HTTPDigestAuth()
+                # FIXME nonce & opaque callbacks?
+                # FIXME session?
+            elif self._auth == "http-token":
+                self._http_auth = fha.HTTPTokenAuth(scheme=self._name)
+                self._http_auth.verify_token(self._get_token_auth)
+            self._http_auth.get_password(self._get_user_pass)
+            # FIXME error_handler?
+        else:
+            self._http_auth = None
+        #
         # register auth request hooks
         #
         app.before_request(self._auth_set_user)
@@ -503,6 +533,23 @@ class FlaskSimpleAuth:
         if not self.check_password(pwd, ref):
             log.debug(f"AUTH (password): invalid password for {user}")
             raise AuthException(f"invalid password for {user}", 401)
+        return user
+
+    #
+    # FLASK HTTP AUTH
+    #
+    # Use flask_httpauth implementation for basic & digest authentication.
+    #
+    def _get_http_auth(self):
+        assert self._http_auth is not None
+        auth = self._http_auth.get_auth()
+        log.debug(f"auth = {auth}")
+        password = self._http_auth.get_auth_password(auth)
+        log.debug(f"password = {password}")
+        if self._http_auth.authenticate(auth, password):
+            return auth.username
+        log.debug("AUTH (http-*): bad authentication")
+        raise AuthException("failed HTTP authentication", 401)
 
     #
     # HTTP BASIC AUTH
@@ -625,12 +672,12 @@ class FlaskSimpleAuth:
         ref = self._cmp_sig(f"{realm}:{user}:{limit}", self._secret)
         if ref != sig:
             log.debug("AUTH (fsa token): invalid signature")
-            raise AuthException("invalid jsa auth token signature", 401)
+            raise AuthException("invalid fsa auth token signature", 401)
         # check limit with a grace time
         now = self._timestamp(dt.datetime.utcnow() - dt.timedelta(minutes=self._grace))
         if now > limit:
             log.debug("AUTH (fsa token): token {token} has expired")
-            raise AuthException("expired jsa auth token", 401)
+            raise AuthException("expired fsa auth token", 401)
         # all is well
         return user
 
@@ -661,7 +708,10 @@ class FlaskSimpleAuth:
         return user
 
     def _get_token_auth(self, token):
-        log.debug(f"checking token: {token}")
+        log.debug(f"token: {token}")
+        if token is None or token == "":
+            log.debug(f"AUTH (token): no token")
+            raise AuthException("missing auth token", 401)
         return \
             self._get_fsa_token_auth(token) if self._token == "fsa" else \
             self._get_jwt_token_auth(token)
@@ -678,7 +728,10 @@ class FlaskSimpleAuth:
         "basic": _get_basic_auth,
         "param": _get_param_auth,
         "password": _get_password_auth,
-        "fake": _get_fake_auth
+        "fake": _get_fake_auth,
+        "http-basic": _get_http_auth,
+        "http-digest": _get_http_auth,
+        "http-token": _get_http_auth,
     }
 
     def get_user(self):
@@ -700,14 +753,18 @@ class FlaskSimpleAuth:
         elif a == "httpd":
             self._user = request.remote_user
 
-        elif a in ("fake", "basic", "param", "password", "token"):
+        elif a in ("fake", "basic", "param", "password", "token", "http-basic", "http-digest", "http-token"):
 
             # check for token
+            # FIXME http-token?
             if self._token is not None:
                 if self._carrier == "bearer":
                     auth = request.headers.get("Authorization", None)
-                    if auth is not None and auth[:7] == "Bearer ":
-                        self._user = self._get_token_auth(auth[7:])
+                    if auth is not None:
+                        slen = len(self._name) + 1
+                        if auth[:slen] == f"{self._name} ":
+                            self._user = self._get_token_auth(auth[slen:])
+                    # else we ignore… maybe it will be resolved later
                 elif self._carrier == "cookie":
                     self._user = self._get_cookie_auth()
                 elif self._carrier == "param":
@@ -784,8 +841,8 @@ class FlaskSimpleAuth:
                 if ALL in groups:
                     return fun(*args, **kwargs)
                 # check against all authorized groups/roles
-                for g in groups:
-                    if self._user_in_group(self._user, g):
+                for r in groups:
+                    if self._user_in_group(self._user, r):
                         return fun(*args, **kwargs)
                 # else no matching group
                 return Resp("", 403)
