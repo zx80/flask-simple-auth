@@ -388,7 +388,7 @@ the performance impact should be low.
 
 Trust a parameter for authentication claims.
 Only for local tests, obviously.
-This is inforced.
+This is enforced.
 
 The following configuration directive is available:
 
