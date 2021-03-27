@@ -577,6 +577,7 @@ Software license is *public domain*.
 
 ### dev
 
+Add coverage report on tests.
 Work in progress.
 
 ### 2.3.0
