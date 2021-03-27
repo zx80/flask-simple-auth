@@ -5,6 +5,7 @@ import App
 from App import app
 
 import FlaskSimpleAuth as fsa
+from FlaskSimpleAuth import Response
 import json
 
 import AppExt
@@ -292,17 +293,17 @@ def test_authorize():
     assert not app._fsa._user_in_group("hobbes", App.ADMIN)
     @app._fsa._authorize(App.ADMIN)
     def stuff():
-        return "", 200
+        return Response("", 200)
     app._fsa._user = "dad"
-    _, status = stuff()
-    assert status == 200
+    res = stuff()
+    assert res.status_code == 200
     app._fsa._user = "hobbes"
-    _, status = stuff()
-    assert status == 403
+    res = stuff()
+    assert res.status_code == 403
     lazy, app._fsa._lazy = app._fsa._lazy, False
     app._fsa._user = None
-    _, status = stuff()
-    assert status == 401
+    res = stuff()
+    assert res.status_code == 401
     app._fsa._lazy = lazy
 
 def test_self_care(client):

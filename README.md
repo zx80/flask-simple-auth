@@ -587,6 +587,7 @@ including a new *cookie* option.
 Rename `FSA_TYPE` to `FSA_AUTH`.
 Make `create_token` argument optional.
 Add `WWW-Authenticate` headers when appropriate.
+Set `Content-Type` to `text/plain` on generated responses.
 
 ### 2.2.1
 
@@ -712,4 +713,3 @@ Initial release in beta.
 - use flask http auth somehow? for digest only?
 - could it be a single py file instead of a stupid `__init__.py` in a directory?
   how to package that?
-- fix mime type on FSA responses
