@@ -728,5 +728,3 @@ Initial release in beta.
 
 - cache other things?
 - use flask http auth somehow? for digest only?
-- could it be a single py file instead of a stupid `__init__.py` in a directory?
-  how to package that?
