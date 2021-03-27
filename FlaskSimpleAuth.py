@@ -297,6 +297,7 @@ class FlaskSimpleAuth:
         return res
 
     # set a cookie if needed and none was sent
+    # we assume that thanks to max_age the client will not send stale cookies
     def _set_auth_cookie(self, res: Response):
         if self._carrier == "cookie":
             assert self._token is not None and self._name is not None
@@ -310,9 +311,10 @@ class FlaskSimpleAuth:
             if self._auth in ("basic", "password"):
                 res.headers["WWW-Authenticate"] = f"Basic realm=\"{self._realm}\""
             elif self._auth == "param":
+                # not sure this one makes much sense
                 res.headers["WWW-Authenticate"] = f"Param realm=\"{self._realm}\""
             elif self._carrier == "bearer":
-                res.headers["WWW-Authenticate"] = f"Bearer realm=\"{self._realm}\""
+                res.headers["WWW-Authenticate"] = f"{self._name} realm=\"{self._realm}\""
         return res
 
     def get_user_pass(self, gup):
