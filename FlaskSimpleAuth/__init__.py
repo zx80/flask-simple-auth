@@ -297,7 +297,7 @@ class FlaskSimpleAuth:
 
     def _set_www_authenticate(self, res: Response):
         if res.status_code == 401:
-            if self._auth in ("basic","password"):
+            if self._auth in ("basic", "password"):
                 res.headers["WWW-Authenticate"] = f"Basic realm=\"{self._realm}\""
             elif self._auth == "param":
                 res.headers["WWW-Authenticate"] = f"Param realm=\"{self._realm}\""
