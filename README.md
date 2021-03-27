@@ -302,7 +302,7 @@ HTTP header in the request.
 See also Password Authentication below for how the password is retrieved
 and checked.
 
-### `http-basic` Authentication
+#### `http-basic` Authentication
 
 Same as previous based on [flask-HTTPAuth](https://pypi.org/project/Flask-HTTPAuth/).
 
