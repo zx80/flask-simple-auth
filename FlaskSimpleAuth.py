@@ -371,10 +371,7 @@ class FlaskSimpleAuth:
         if need_carrier and self._carrier is None:
             raise Exception(f"Token type {self._token} requires a carrier")
         # name of token for cookie or param, FIXME scheme for bearer?
-        if self._carrier in ("param", "cookie"):
-            default_name = "auth"
-        else:
-            default_name = "Bearer"
+        default_name = "auth" if self._carrier in ("param", "cookie") else "Bearer"
         self._name = conf.get("FSA_TOKEN_NAME", default_name)
         if need_carrier and self._name is None:
             raise Exception(f"Token carrier {self._carrier} requires a name")
