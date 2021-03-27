@@ -365,7 +365,7 @@ class FlaskSimpleAuth:
         self._name = conf.get("FSA_TOKEN_NAME", "auth" if need_name else None)
         if need_name and self._name is None:
             raise Exception(f"Token carrier {self._carrier} requires a name")
-        # token realm
+        # token realm… FIXME should it just accept the provided string?
         realm = conf.get("FSA_TOKEN_REALM", self._app.name).lower()
         # tr -cd "[a-z0-9_]" "": is there a better way to do that?
         keep_char = re.compile(r"[-a-z0-9_]").match
