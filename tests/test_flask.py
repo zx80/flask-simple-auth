@@ -568,9 +568,9 @@ def test_www_authenticate(client):
     assert res.www_authenticate.get("__auth_type__", None) == "basic"
     assert "realm" in res.www_authenticate
     pop_auth(app._fsa)
-    push_auth(app._fsa, "token", "fsa", "bearer")
+    push_auth(app._fsa, "token", "fsa", "bearer", "Hello")
     res = check_401(client.get("/admin"))
-    assert res.www_authenticate.get("__auth_type__", None) == "bearer"
+    assert res.www_authenticate.get("__auth_type__", None) == "hello"
     assert "realm" in res.www_authenticate
     pop_auth(app._fsa)
 
