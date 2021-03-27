@@ -492,10 +492,10 @@ class FlaskSimpleAuth:
             log.warning("password authentication over an insecure request")
         ref = self._get_user_pass(user)
         if ref is None:
-            log.debug(f"LOGIN (password): no such user ({user})")
+            log.debug(f"AUTH (password): no such user ({user})")
             raise AuthException(f"no such user: {user}", 401)
         if not self.check_password(pwd, ref):
-            log.debug(f"LOGIN (password): invalid password for {user}")
+            log.debug(f"AUTH (password): invalid password for {user}")
             raise AuthException(f"invalid password for {user}", 401)
 
     #
@@ -507,15 +507,15 @@ class FlaskSimpleAuth:
         auth = request.headers.get("Authorization", None)
         log.debug(f"auth: {auth}")
         if auth is None:
-            log.debug("LOGIN (basic): missing authorization header")
+            log.debug("AUTH (basic): missing authorization header")
             raise AuthException("missing authorization header", 401)
         if auth[:6] != "Basic ":
-            log.debug(f"LOGIN (basic): unexpected auth \"{auth}\"")
+            log.debug(f"AUTH (basic): unexpected auth \"{auth}\"")
             raise AuthException("unexpected authorization header", 401)
         try:
             user, pwd = b64.b64decode(auth[6:]).decode().split(':', 1)
         except Exception as e:
-            log.debug(f"LOGIN (basic): error while decoding auth \"{auth}\" ({e})")
+            log.debug(f"AUTH (basic): error while decoding auth \"{auth}\" ({e})")
             raise AuthException("decoding error on authorization header", 401)
         finally:
             self._check_password(user, pwd)
@@ -613,17 +613,17 @@ class FlaskSimpleAuth:
         realm, user, limit, sig = token.split(':', 3)
         # check realm
         if realm != self._realm:
-            log.debug(f"LOGIN (token): unexpected realm {realm}")
+            log.debug(f"AUTH (fsa token): unexpected realm {realm}")
             raise AuthException(f"unexpected realm: {realm}", 401)
         # check signature
         ref = self._cmp_sig(f"{realm}:{user}:{limit}", self._secret)
         if ref != sig:
-            log.debug("LOGIN (token): invalid signature")
+            log.debug("AUTH (fsa token): invalid signature")
             raise AuthException("invalid jsa auth token signature", 401)
         # check limit with a grace time
         now = self._timestamp(dt.datetime.utcnow() - dt.timedelta(minutes=self._grace))
         if now > limit:
-            log.debug("LOGIN (token): token {token} has expired")
+            log.debug("AUTH (fsa token): token {token} has expired")
             raise AuthException("expired jsa auth token", 401)
         # all is well
         return user
@@ -639,10 +639,10 @@ class FlaskSimpleAuth:
             exp = dt.datetime.fromtimestamp(data['exp'])
             return data['sub'], exp
         except jwt.ExpiredSignatureError:
-            log.debug(f"LOGIN (token): token {token} has expired")
+            log.debug(f"AUTH (jwt token): token {token} has expired")
             raise AuthException("expired jwt auth token", 401)
         except Exception as e:
-            log.debug(f"LOGIN (token): invalide token ({e})")
+            log.debug(f"AUTH (jwt token): invalide token ({e})")
             raise AuthException("invalid jwt token", 401)
 
     def _get_jwt_token_auth(self, token):
@@ -650,7 +650,7 @@ class FlaskSimpleAuth:
         # recheck token expiration
         now = dt.datetime.utcnow() - dt.timedelta(minutes=self._grace)
         if now > exp:
-            log.debug(f"LOGIN (token): token {token} has expired")
+            log.debug(f"AUTH (jwt token): token {token} has expired")
             raise AuthException("expired jwt auth token", 401)
         return user
 
