@@ -307,6 +307,7 @@ class FlaskSimpleAuth:
 
     # set a cookie if needed and none was sent
     # we assume that thanks to max_age the client will not send stale cookies
+    # FIXME should the cookie be replaced from time to time nevertheless?
     def _set_auth_cookie(self, res: Response):
         if self._carrier == "cookie":
             assert self._token is not None and self._name is not None
