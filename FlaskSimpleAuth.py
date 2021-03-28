@@ -965,7 +965,6 @@ class FlaskSimpleAuth:
                 if ":" not in spec and spec in sig.parameters:
                     t = typeof(sig.parameters[spec])
                     # Flask supports 5 types, with string the default?
-                    # FIXME how to handle path?
                     if t in (int, float, UUID, path):
                         splits[i] = f"{t.__name__.lower()}:{spec}>{remainder}"
                     else:
