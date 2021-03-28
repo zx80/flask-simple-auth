@@ -102,7 +102,16 @@ def typeof(p: inspect.Parameter):
 class Reference:  # type: Any
     """Convenient object wrapper class.
 
-    The wrapper forwards most method calls to the wrapped object.
+    The wrapper forwards most method calls to the wrapped object, so that
+    the reference can be imported even if the object is not created yet.
+
+    ```python
+    r = Reference()
+    o = …
+    r.set(o)
+    r.whatever(…) # behaves as o.whatever(…)
+    ```
+
     """
 
     def __init__(self, obj: Any = None, set_name: str = "set"):
