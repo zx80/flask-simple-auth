@@ -53,7 +53,7 @@ def check_500(res):  # bad
 def test_sanity():
     assert App.app is not None and fsa is not None
     assert App.app.name == "Test"
-    assert app._fsa._realm == "test"
+    assert app._fsa._realm == "Test"
     assert 'FSA_AUTH' in app.config
     assert "dad" in App.UHP
     assert "calvin" in App.UHP
@@ -218,7 +218,7 @@ def test_register(client):
 def test_fsa_token():
     tsave, hsave, app._fsa._token, app._fsa._algo = app._fsa._token, app._fsa._algo, "fsa", "blake2s"
     calvin_token = app.create_token("calvin")
-    assert calvin_token[:12] == "test:calvin:"
+    assert calvin_token[:12] == "Test:calvin:"
     assert app._fsa._get_token_auth(calvin_token) == "calvin"
     app._fsa._token, app._fsa._algo = tsave, hsave
 

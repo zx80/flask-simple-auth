@@ -370,16 +370,19 @@ class FlaskSimpleAuth:
         # sanity checks
         if need_carrier and self._carrier is None:
             raise Exception(f"Token type {self._token} requires a carrier")
-        # name of token for cookie or param, FIXME scheme for bearer?
+        # name of token for cookie or param
         default_name = "auth" if self._carrier in ("param", "cookie") else "Bearer"
         self._name = conf.get("FSA_TOKEN_NAME", default_name)
         if need_carrier and self._name is None:
             raise Exception(f"Token carrier {self._carrier} requires a name")
-        # token realm… FIXME should it just accept the provided string?
-        realm = conf.get("FSA_TOKEN_REALM", self._app.name).lower()
-        # tr -cd "[a-z0-9_]" "": is there a better way to do that?
-        keep_char = re.compile(r"[-a-z0-9_]").match
-        self._realm = "".join(c for c in realm if keep_char(c))
+        # token realm…
+        realm = conf.get("FSA_TOKEN_REALM", self._app.name)
+        if self._token == "fsa":
+            # simplify realm for fsa
+            keep_char = re.compile(r"[-A-Za-z0-9]").match
+            realm = "".join(c if keep_char(c) else "-" for c in realm)
+            realm = "-".join(filter(lambda s: s != "", realm.split("-")))
+        self._realm = realm
         # time validity
         self._delay = conf.get("FSA_TOKEN_DELAY", 60.0)
         self._grace = conf.get("FSA_TOKEN_GRACE", 0.0)
@@ -421,7 +424,7 @@ class FlaskSimpleAuth:
         else:
             raise Exception(f"invalid FSA_TOKEN_TYPE ({self._token})")
         #
-        # parameters
+        # HTTP parameter names
         #
         self._login = conf.get("FSA_FAKE_LOGIN", "LOGIN")
         self._userp = conf.get("FSA_PARAM_USER", "USER")
