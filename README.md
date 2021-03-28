@@ -728,4 +728,5 @@ Initial release in beta.
 ## TODO
 
 - cache other things?
-- use flask http auth somehow? for digest only?
+- make flask auth for digest work?
+- replace nearly stale cookies?
