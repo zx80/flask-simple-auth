@@ -1,3 +1,5 @@
+# convenient makefile
+
 .ONESHELL:
 
 .PHONY: check
@@ -9,9 +11,12 @@ check: venv
 	# to select some tests: -k pattern
 	pytest --log-level=debug --capture=tee-sys tests
 
-.PHONY: clean
+.PHONY: clean clean-venv
 clean:
-	$(RM) -r venv __pycache__ */__pycache__ *.egg-info dist build .mypy_cache .pytest_cache
+	$(RM) -r __pycache__ */__pycache__ *.egg-info dist build .mypy_cache .pytest_cache
+
+clean-venv: clean
+	$(RM) -r venv
 
 .PHONY: install
 install:
@@ -30,5 +35,5 @@ dist:
 
 .PHONY: publish
 publish: dist
-	# provide pypi login/pw…
+	# provide pypi login/pw or token somewhere…
 	twine upload dist/*
