@@ -327,6 +327,8 @@ class FlaskSimpleAuth:
         if res.status_code == 401:
             if self._auth in ("basic", "password"):
                 res.headers["WWW-Authenticate"] = f"Basic realm=\"{self._realm}\""
+            elif self._auth in ("http-basic", "http-digest", "http-token"):
+                res.headers["WWW-Authenticate"] = self._http_auth.authenticate_header()
             elif self._auth == "param":
                 # not sure this one makes much sense
                 res.headers["WWW-Authenticate"] = f"Param realm=\"{self._realm}\""
@@ -475,10 +477,10 @@ class FlaskSimpleAuth:
         if self._auth in ("http-basic", "http-digest", "http-token"):
             import flask_httpauth as fha
             if self._auth == "http-basic":
-                self._http_auth = fha.HTTPBasicAuth()
+                self._http_auth = fha.HTTPBasicAuth(realm=self._realm)
                 self._http_auth.verify_password(self._check_password)
             elif self._auth == "http-digest":
-                self._http_auth = fha.HTTPDigestAuth()
+                self._http_auth = fha.HTTPDigestAuth(realm=self._realm)
                 # FIXME nonce & opaque callbacks?
                 # FIXME session?
             elif self._auth == "http-token":

@@ -2,15 +2,20 @@
 
 FLASK	= flask
 FLASK.opt	= --host 0.0.0.0
-F.log	= App.log
+APP	= App
+F.log	= $(wildcard *.log)
 
 .PHONY: run
 run:
-	export FLASK_APP=App.py
+	export FLASK_APP=$(APP).py
 	export FLASK_ENV=development
 	$(FLASK) routes
-	$(FLASK) run $(FLASK.opt) > $(F.log) 2>&1 &
-	echo "flask running, see $(F.log)"
+	$(FLASK) run $(FLASK.opt) > $(APP).log 2>&1 &
+	echo "flask running, see $(APP).log"
+
+.PHONY: log
+log:
+	tail -f $(APP).log
 
 .PHONY: stop
 stop:
