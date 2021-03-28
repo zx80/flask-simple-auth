@@ -592,6 +592,7 @@ Add `http-basic` and `http-token` authentication schemes based on flask-HTTPAuth
 Add coverage report on tests.
 Distribute as a one file python module.
 Only simplify realm for *fsa* tokens.
+Renew cookies when they are closing expiration.
 
 ### 2.3.0
 
@@ -729,4 +730,3 @@ Initial release in beta.
 
 - cache other things?
 - make flask auth for digest work?
-- replace nearly stale cookies?

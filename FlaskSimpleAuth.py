@@ -307,13 +307,20 @@ class FlaskSimpleAuth:
 
     # set a cookie if needed and none was sent
     # we assume that thanks to max_age the client will not send stale cookies
-    # FIXME should the cookie be replaced from time to time nevertheless?
     def _set_auth_cookie(self, res: Response):
         if self._carrier == "cookie":
             assert self._token is not None and self._name is not None
-            if self._user is not None and self._name not in request.cookies:
-                res.set_cookie(self._name, self.create_token(self._user),
-                               max_age=int(60 * self._delay))
+            if self._user is not None:
+                if self._name in request.cookies:
+                    user, exp = self._get_token_auth_exp(request.cookies[self._name])
+                    # reset token when 25% time remains
+                    limit = self._timestamp(dt.datetime.utcnow() + 0.25 * dt.timedelta(minutes=self._delay))
+                    set_cookie = exp < limit
+                else:
+                    set_cookie = True
+                if set_cookie:
+                    res.set_cookie(self._name, self.create_token(self._user),
+                                   max_age=int(60 * self._delay))
         return res
 
     def _set_www_authenticate(self, res: Response):
@@ -691,7 +698,7 @@ class FlaskSimpleAuth:
             log.debug("AUTH (fsa token): token {token} has expired")
             raise AuthException("expired fsa auth token", 401)
         # all is well
-        return user
+        return user, limit
 
     # jwt authentication can be expensive, especially with pubkey-signatures
     # so use a cache to keep track of already used tokens
@@ -717,9 +724,9 @@ class FlaskSimpleAuth:
         if now > exp:
             log.debug(f"AUTH (jwt token): token {token} has expired")
             raise AuthException("expired jwt auth token", 401)
-        return user
+        return user, self._timestamp(exp)
 
-    def _get_token_auth(self, token):
+    def _get_token_auth_exp(self, token):
         log.debug(f"token: {token}")
         if token is None or token == "":
             log.debug("AUTH (token): no token")
@@ -728,12 +735,13 @@ class FlaskSimpleAuth:
             self._get_fsa_token_auth(token) if self._token == "fsa" else \
             self._get_jwt_token_auth(token)
 
+    def _get_token_auth(self, token):
+        return self._get_token_auth_exp(token)[0]
+
     # a cookie is just another option for storing tokens
     def _get_cookie_auth(self):
-        if self._name in request.cookies:
-            return self._get_token_auth(request.cookies.get(self._name))
-        else:
-            return None
+        return self._get_token_auth(request.cookies[self._name]) \
+            if self._name in request.cookies else None
 
     # map auth types to their functions
     _FSA_AUTH = {
