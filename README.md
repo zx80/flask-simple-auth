@@ -307,6 +307,9 @@ and checked.
 
 Same as previous based on [flask-HTTPAuth](https://pypi.org/project/Flask-HTTPAuth/).
 
+Directive `FSA_HTTP_AUTH_OPTS` allow to pass additional options to the
+HTTPAuth authentication class.
+
 #### `param` Authentication
 
 HTTP parameter or JSON password authentication.
@@ -336,6 +339,9 @@ The documentation states that server-side sessions are needed because
 of some security issue. I disagree on that ground.
 However, I do think that the default cookie-based client-side session is
 a strange thing that is best avoided.
+
+Directive `FSA_HTTP_AUTH_OPTS` allow to pass additional options to the
+HTTPAuth authentication class, such as `use_ha1_pw`, as a dictionnary.
 
 #### `token` Authentication
 
@@ -406,6 +412,9 @@ the performance impact should be low.
 
 Token scheme based on [flask-HTTPAuth](https://pypi.org/project/Flask-HTTPAuth/).
 Carrier is always implicitely *bearer*.
+
+Directive `FSA_HTTP_AUTH_OPTS` allow to pass additional options to the
+HTTPAuth authentication class, such as `header`, as a dictionnary.
 
 #### `fake` Authentication
 
@@ -741,4 +750,3 @@ Initial release in beta.
 ## TODO
 
 - cache other things?
-- allow to control all HTTPAuth options?
