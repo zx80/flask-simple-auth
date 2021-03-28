@@ -741,3 +741,4 @@ Initial release in beta.
 ## TODO
 
 - cache other things?
+- allow to control all HTTPAuth options?
