@@ -326,6 +326,17 @@ and checked.
 
 Tries `basic` then `param` authentication.
 
+#### `http-digest` Authentication
+
+HTTP Digest based on [flask-HTTPAuth](https://pypi.org/project/Flask-HTTPAuth/).
+
+Note that the implementation relies on *sessions*, which required
+the `SECRET_KEY` option to be set to something.
+The documentation states that server-side sessions are needed because
+of some security issue. I disagree on that ground.
+However, I do think that the default cookie-based client-side session is
+a strange thing that is best avoided.
+
 #### `token` Authentication
 
 Only rely on signed tokens for authentication.
@@ -589,7 +600,7 @@ Software license is *public domain*.
 
 ### dev
 
-Add `http-basic` and `http-token` authentication schemes based on flask-HTTPAuth.
+Add `http-basic`, `http-digest` and `http-token` authentication schemes based on flask-HTTPAuth.
 Add coverage report on tests.
 Distribute as a one file python module.
 Only simplify realm for *fsa* tokens.
@@ -730,4 +741,3 @@ Initial release in beta.
 ## TODO
 
 - cache other things?
-- make flask auth for digest work?
