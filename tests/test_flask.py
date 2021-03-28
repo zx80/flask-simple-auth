@@ -583,7 +583,7 @@ def app_basic():
 
 @pytest.fixture
 def app_digest():
-    with aha.create_app_digest().test_client() as c:
+    with aha.create_app_digest(SECRET_KEY="top secret").test_client() as c:
         yield c
 
 def test_http_basic(app_basic):
