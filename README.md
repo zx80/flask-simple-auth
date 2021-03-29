@@ -45,7 +45,7 @@ with `FSA_*` (Flask simple authentication) directives:
 
 ```Python
 FSA_AUTH = "httpd"     # inherit web-serveur authentication
-# or others such as: basic, token (eg jwt), param…
+# or others schemes such as: basic, digest, token (eg jwt), param…
 ```
 
 If the `authorize` argument is not supplied, the security first approach
@@ -329,7 +329,7 @@ how the password is retrieved and checked.
 
 Tries `basic` then `param` authentication.
 
-#### `http-digest` Authentication
+#### `http-digest` or `digest` Authentication
 
 HTTP Digest based on [flask-HTTPAuth](https://pypi.org/project/Flask-HTTPAuth/).
 
@@ -437,7 +437,7 @@ The following configuration directive is available:
 #### Password Management
 
 Password authentication is performed for the following authentication
-schemes: `param`, `basic`, `http-basic`, `http-digest`, `password`.
+schemes: `param`, `basic`, `http-basic`, `http-digest`, `digest`, `password`.
 
 For checking passwords the password (salted hash) must be retrieved through
 `get_user_pass(user)`.
@@ -620,6 +620,7 @@ Software license is *public domain*.
 ### dev
 
 Work in progress.
+Add `digest` as a synonymous for `http-digest`.
 
 ### 2.4.0
 

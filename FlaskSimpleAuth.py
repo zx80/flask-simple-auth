@@ -327,7 +327,7 @@ class FlaskSimpleAuth:
         if res.status_code == 401:
             if self._auth in ("basic", "password"):
                 res.headers["WWW-Authenticate"] = f"Basic realm=\"{self._realm}\""
-            elif self._auth in ("http-basic", "http-digest", "http-token"):
+            elif self._auth in ("http-basic", "http-digest", "http-token", "digest"):
                 res.headers["WWW-Authenticate"] = self._http_auth.authenticate_header()
             elif self._auth == "param":
                 # not sure this one makes much sense
@@ -369,7 +369,7 @@ class FlaskSimpleAuth:
         #
         self._auth = conf.get("FSA_AUTH", "httpd")
         assert self._auth in ("httpd", "none", "fake", "basic", "param", "password",
-                              "token", "http-basic", "http-digest", "http-token")
+                              "token", "http-basic", "http-digest", "http-token", "digest")
         self._lazy = conf.get("FSA_LAZY", True)
         self._always = conf.get("FSA_ALWAYS", True)
         self._check = conf.get("FSA_CHECK", True)
@@ -474,13 +474,13 @@ class FlaskSimpleAuth:
         #
         # http auth setup
         #
-        if self._auth in ("http-basic", "http-digest", "http-token"):
+        if self._auth in ("http-basic", "http-digest", "http-token", "digest"):
             opts = conf.get("FSA_HTTP_AUTH_OPTS", {})
             import flask_httpauth as fha
             if self._auth == "http-basic":
                 self._http_auth = fha.HTTPBasicAuth(realm=self._realm, **opts)
                 self._http_auth.verify_password(self._check_password)
-            elif self._auth == "http-digest":
+            elif self._auth in ("http-digest", "digest"):
                 self._http_auth = fha.HTTPDigestAuth(realm=self._realm, **opts)
                 # FIXME nonce & opaque callbacks? session??
             elif self._auth == "http-token":
@@ -753,6 +753,7 @@ class FlaskSimpleAuth:
         "fake": _get_fake_auth,
         "http-basic": _get_http_auth,
         "http-digest": _get_http_auth,
+        "digest": _get_http_auth,
         "http-token": _get_http_auth,
     }
 
@@ -775,7 +776,8 @@ class FlaskSimpleAuth:
         elif a == "httpd":
             self._user = request.remote_user
 
-        elif a in ("fake", "basic", "param", "password", "token", "http-basic", "http-digest", "http-token"):
+        elif a in ("fake", "basic", "param", "password", "token", "http-basic",
+                   "http-digest", "http-token", "digest"):
 
             # check for token
             # FIXME http-token?
