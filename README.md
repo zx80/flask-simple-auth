@@ -546,6 +546,9 @@ def get_mail_addr(addr: EmailAddr):
 
 ### Utils
 
+Utilities include the `Reference` object wrapper class and the
+`CacheOK` decorator.
+
 #### `Reference` Object Wrapper
 
 This class implements a generic share-able global variable which can be
