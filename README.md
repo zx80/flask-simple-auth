@@ -323,7 +323,7 @@ Tries `basic` then `param` authentication.
 
 #### `http-digest` or `digest` Authentication
 
-HTTP Digest based on [flask-HTTPAuth](https://pypi.org/project/Flask-HTTPAuth/).
+HTTP Digest authentication based on [flask-HTTPAuth](https://pypi.org/project/Flask-HTTPAuth/).
 
 Note that the implementation relies on *sessions*, which may required
 the `SECRET_KEY` option to be set to something.
