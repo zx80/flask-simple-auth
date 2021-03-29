@@ -758,3 +758,4 @@ Initial release in beta.
 - cache other things?
 - add new header carrier for http-token?
 - test `FSA_HTTP_AUTH_OPTS`?
+- do test digest?
