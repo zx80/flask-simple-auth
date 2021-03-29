@@ -300,7 +300,7 @@ the application-side approach.
 HTTP Basic password authentication, which rely on the `Authorization`
 HTTP header in the request.
 
-See also [Password Authentication](#password-authentication) below for
+See also [Password Management](#password-management) below for
 how the password is retrieved and checked.
 
 #### `http-basic` Authentication
@@ -322,7 +322,7 @@ The following configuration directives are available:
  - `FSA_PARAM_PASS` parameter name for the password.
    Default is `PASS`.
 
-See also [Password Authentication](#password-authentication) below for
+See also [Password Management](#password-management) below for
 how the password is retrieved and checked.
 
 #### `password` Authentication
@@ -345,7 +345,7 @@ a strange thing that is best avoided.
 Directive `FSA_HTTP_AUTH_OPTS` allow to pass additional options to the
 HTTPAuth authentication class, such as `use_ha1_pw`, as a dictionnary.
 
-See also [Password Authentication](#password-authentication) below for
+See also [Password Management](#password-management) below for
 how the password is retrieved and checked. Note that password management
 is different for digest authentication because the simple hash of the
 password or the password itself is needed for the verification.
@@ -434,7 +434,7 @@ The following configuration directive is available:
  - `FSA_FAKE_LOGIN` name of parameter holding the user name.
    Default is `LOGIN`.
 
-#### Password Authentication
+#### Password Management
 
 Password authentication is performed for the following authentication
 schemes: `param`, `basic`, `http-basic`, `http-digest`, `password`.
