@@ -61,7 +61,8 @@ needed beyond choosing the authentication scheme.
 This module helps managing authentication, authorizations and parameters
 in a Flask REST application.
 
-**Authentication** is available through the `get_user` function.
+[**Authentication**](#authentication) is available through the `get_user`
+function.
 It is performed on demand when the function is called, automatically when
 checking for permissions in a per-role authorization model, or possibly
 forced for all/most paths.
@@ -73,8 +74,9 @@ It allows to have a login route to generate authentication tokens.
 For registration, support functions allow to hash new passwords consistently
 with password checks.
 
-**Authorization** are managed by declaring permissions on a route (eg a role name),
-and relies on a supplied function to check whether a user has this role.
+[**Authorizations**](#authorization) are managed by declaring permissions
+on a route (eg a role name), and relies on a supplied function to check
+whether a user has this role.
 This approach is enough for simple authorization management, but would be
 insufficient for realistic applications where users can edit their own data
 but not those of others.
@@ -82,14 +84,14 @@ An additional feature is that the application aborts requests on routes
 for which there is no explicit authorization declarations, allowing to
 catch forgotten requirements.
 
-**Parameters** expected in the request can be declared, their presence and type
-checked, and they are added automatically as named parameters to route functions,
-skipping the burden of checking them in typical REST functions. In practice,
-importing Flask's `request` global variable is not necessary.
+[**Parameters**](#parameters) expected in the request can be declared, their
+presence and type checked, and they are added automatically as named parameters
+to route functions, skipping the burden of checking them in typical REST functions.
+In practice, importing Flask's `request` global variable is not necessary.
 
-**Utils** include the convenient `Reference` class which allows to share for
-import an unitialized variable, and the `CacheOK` decorator to memoize true
-answers (eg for user/group checks).
+[**Utils**](#utils) include the convenient `Reference` class which allows to
+share for import an unitialized variable, and the `CacheOK` decorator to
+memoize true answers (eg for user/group checks).
 
 
 ## Documentation
@@ -542,8 +544,9 @@ def get_mail_addr(addr: EmailAddr):
     …
 ```
 
+### Utils
 
-## `Reference` Object Wrapper
+#### `Reference` Object Wrapper
 
 This class implements a generic share-able global variable which can be
 used by modules (eg app, blueprints…) with its initialization differed.
@@ -593,7 +596,7 @@ Shared.init_app(…)
 ```
 
 
-## `CacheOK` Decorator
+#### `CacheOK` Decorator
 
 This decorator memorize the underlying function true answers, but keep trying
 on false answers. Call `cache_clear` to reset cache.
