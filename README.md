@@ -617,12 +617,12 @@ Sources are available on [GitHub](https://github.com/zx80/flask-simple-auth)
 and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 Software license is *public domain*.
 
-### dev
+#### dev
 
 Work in progress.
 Add `digest` as a synonymous for `http-digest`.
 
-### 2.4.0
+#### 2.4.0
 
 Add `http-basic`, `http-digest` and `http-token` authentication schemes based on flask-HTTPAuth.
 Add coverage report on tests.
@@ -630,7 +630,7 @@ Distribute as a one file python module.
 Only simplify realm for *fsa* tokens.
 Renew cookies when they are closing expiration.
 
-### 2.3.0
+#### 2.3.0
 
 Use a fully dynamic method for `set` in `Reference`.
 Add a `string` type.
@@ -644,11 +644,11 @@ Make `create_token` argument optional.
 Add `WWW-Authenticate` headers when appropriate.
 Set `Content-Type` to `text/plain` on generated responses.
 
-### 2.2.1
+#### 2.2.1
 
 Partial fix for method renaming in `Reference`.
 
-### 2.2.0
+#### 2.2.0
 
 Rename `_setobj` to `set` in `Reference`, with an option to rename the method
 if needed.
@@ -657,7 +657,7 @@ Add `current_user` to `FlaskSimpleAuth` as well.
 Add python documentation on class and methods.
 Fix `Reference` issue when using several references.
 
-### 2.1.0
+#### 2.1.0
 
 Add `Reference` any object wrapper class.
 Add `CacheOK` positive caching decorator.
@@ -666,7 +666,7 @@ Add `none` authentication type.
 Add `path` parameter type.
 Add more tests.
 
-### 2.0.0
+#### 2.0.0
 
 Make the module as an extension *and* a full `Flask` wrapper.
 Advertise only the extended `route` decorator in the documentation
@@ -682,7 +682,7 @@ Allow to use any type as path parameters, not just Flask predefined ones.
 Make blueprints work.
 Add special `path` type for parameters taken from the path.
 
-### 1.9.0
+#### 1.9.0
 
 Add *bearer* authorization for tokens and make it the default.
 Add *JWT* tokens, both hmac and pubkey variants.
@@ -691,11 +691,11 @@ Add convenient `route` decorator.
 Add type inference for HTTP/JSON parameters based on default value, when provided.
 Add type inference for root path parameters based on function declaration.
 
-### 1.8.1
+#### 1.8.1
 
 Fix typo in distribution configuration file.
 
-### 1.8.0
+#### 1.8.0
 
 Merge `autoparams` and `parameters` decorators into a single `parameters`
 decorator.
@@ -705,7 +705,7 @@ Enhance integer type to accept other base syntaxes.
 Improve documentation to advertise the simple and elegant approach.
 Implement decorator with functions instead of a class.
 
-### 1.7.0
+#### 1.7.0
 
 Simplify code.
 Add `FSA_ALWAYS` configuration directive and move the authentication before request
@@ -714,7 +714,7 @@ Add `FSA_SKIP_PATH` to skip authentication for some paths.
 Update documentation to reflect this simplified model.
 Switch all decorators to functions.
 
-### 1.6.0
+#### 1.6.0
 
 Add `autoparams` decorator with required or optional parameters.
 Add typed parameters to `parameters` decorator.
@@ -723,46 +723,46 @@ Simplify `authorize` decorator syntax and implementation.
 Advise `authorize` *then* `parameters` or `autoparams` decorator order.
 Improved documentation.
 
-### 1.5.0
+#### 1.5.0
 
 Flask *internal* tests with a good coverage.
 Switch to `setup.cfg` configuration.
 Add convenient `parameters` decorator.
 
-### 1.4.0
+#### 1.4.0
 
 Add `FSA_LAZY` configuration directive.
 Simplify code.
 Improve warning on short secrets.
 Repackage…
 
-### 1.3.0
+#### 1.3.0
 
 Improved documentation.
 Reduce default token signature length and default token secret.
 Warn on random or short token secrets.
 
-### 1.2.0
+#### 1.2.0
 
 Add grace time for auth token validity.
 Some code refactoring.
 
-### 1.1.0
+#### 1.1.0
 
 Add after request module cleanup.
 
-### 1.0.0
+#### 1.0.0
 
 Add `authorize` decorator.
 Add `password` authentication scheme.
 Improved documentation.
 
-### 0.9.0
+#### 0.9.0
 
 Initial release in beta.
 
 
-## TODO
+### TODO
 
 - cache other things?
 - add new header carrier for http-token?
