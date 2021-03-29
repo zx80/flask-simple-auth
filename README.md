@@ -613,9 +613,9 @@ Sources are available on [GitHub](https://github.com/zx80/flask-simple-auth)
 and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 Software license is *public domain*.
 
-#### dev
+#### 2.4.1
 
-Work in progress.
+Fix packaging issue… the python file was missing.
 Add `digest` as a synonymous for `http-digest`.
 Improve documentation.
 
