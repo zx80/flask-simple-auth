@@ -24,14 +24,8 @@ from FlaskSimpleAuth import Flask
 app = Flask("demo")
 app.config.from_envvar("DEMO_CONFIG")
 
-# register hooks
-# user_to_password_fun is a function returning the hashed password for a user.
-app.get_user_pass(user_to_password_fun)
-# user_in_group_fun is a function telling whether a user is in a group.
-app.user_in_group(user_in_group_fun)
-
 # users belonging to the "patcher" group can patch "whatever/*"
-# the function gets 3 arguments: one int coming from the path (id)
+# the function gets 3 typed parameters: one int coming from the path (id)
 # and the remaining two coming from request parameters (some, stuff).
 # "some" is mandatory, stuff is optional because it has a default.
 @app.route("/whatever/<id>", methods=["PATCH"], authorize="patcher")
@@ -46,6 +40,8 @@ with `FSA_*` (Flask simple authentication) directives:
 ```Python
 FSA_AUTH = "httpd"     # inherit web-serveur authentication
 # or others schemes such as: basic, digest, token (eg jwt), param…
+# hooks must be provided for retrieving user's passwords and
+# checking whether a user belongs to a group, if these features are used.
 ```
 
 If the `authorize` argument is not supplied, the security first approach
