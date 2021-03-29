@@ -333,10 +333,12 @@ Tries `basic` then `param` authentication.
 
 HTTP Digest based on [flask-HTTPAuth](https://pypi.org/project/Flask-HTTPAuth/).
 
-Note that the implementation relies on *sessions*, which required
+Note that the implementation relies on *sessions*, which may required
 the `SECRET_KEY` option to be set to something.
 The documentation states that server-side sessions are needed because
-of some security issue. I disagree on that ground.
+of some security issue. I disagree on that ground: the *nonce* and *opaque*
+entries are sent anyway in the `WWW-Authenticate` header, the fact that they
+repeated in cookies would not induce more risks.
 However, I do think that the default cookie-based client-side session is
 a strange thing that is best avoided.
 
