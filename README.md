@@ -617,6 +617,7 @@ Software license is *public domain*.
 
 Work in progress.
 Add `digest` as a synonymous for `http-digest`.
+Improve documentation.
 
 #### 2.4.0
 
