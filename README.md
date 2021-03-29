@@ -129,7 +129,7 @@ Note that web-oriented flask authentication modules are not really
 relevant in the REST API context, where the server does not care about
 presenting login forms for instance.
 
-### Initialisation
+### Initialization
 
 The module is simply initialize by calling its `Flask` constructor
 and providing a configuration through `FSA_*` directives, or possibly
