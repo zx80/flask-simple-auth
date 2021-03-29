@@ -609,7 +609,7 @@ Sources are available on [GitHub](https://github.com/zx80/flask-simple-auth)
 and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 Software license is *public domain*.
 
-### dev
+### 2.4.0
 
 Add `http-basic`, `http-digest` and `http-token` authentication schemes based on flask-HTTPAuth.
 Add coverage report on tests.
