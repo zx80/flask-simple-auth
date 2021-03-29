@@ -123,12 +123,6 @@ However, there is still a "login" concept which is only dedicated at
 obtaining an auth token, that the application client needs to update from
 time to time.
 
-You should also consider the many options provided by
-[Flask HTTPAuth](https://github.com/miguelgrinberg/Flask-HTTPAuth).
-However, it cannot be easily configured to change authentication methods.
-Also, this module performs authentication before any user code is executed.
-It also adds a convenient management of request parameters.
-
 Note that web-oriented flask authentication modules are not really
 relevant in the REST API context, where the server does not care about
 presenting login forms for instance.
