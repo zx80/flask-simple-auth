@@ -117,7 +117,7 @@ because the point of the API is to serve and collect data
 to all who deserve it, i.e. are authorized, unlike a web application
 which is served while the client is on the page which maintains a session
 and should disappear when disconnected as the web browser page is wiped out.
-However, there is still a "login" concept which is only dedicated at
+However, there is still a "login" concept which is only dedicated to
 obtaining an auth token, that the application client needs to update from
 time to time.
 
@@ -325,7 +325,7 @@ Tries `basic` then `param` authentication.
 
 HTTP Digest authentication based on [flask-HTTPAuth](https://pypi.org/project/Flask-HTTPAuth/).
 
-Note that the implementation relies on *sessions*, which may required
+Note that the implementation relies on *sessions*, which may require
 the `SECRET_KEY` option to be set to something.
 The documentation states that server-side sessions are needed because
 of some security issue. I disagree on that ground: the *nonce* and *opaque*
