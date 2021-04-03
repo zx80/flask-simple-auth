@@ -762,6 +762,7 @@ Initial release in beta.
 ### TODO
 
 - cache other things?
-- add new header carrier for http-token?
+- control cache size from initialization?
+- add new `header` carrier for `http-token`?
 - test `FSA_HTTP_AUTH_OPTS`?
 - do test digest?
