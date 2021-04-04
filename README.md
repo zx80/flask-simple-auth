@@ -411,7 +411,7 @@ the performance impact should be low.
 #### `http-token` Authentication
 
 Token scheme based on [flask-HTTPAuth](https://pypi.org/project/Flask-HTTPAuth/).
-Carrier is *bearer* or *header*
+Carrier is *bearer* or *header*.
 
 Directive `FSA_HTTP_AUTH_OPTS` allow to pass additional options to the
 HTTPAuth authentication class, such as `header`, as a dictionnary.
