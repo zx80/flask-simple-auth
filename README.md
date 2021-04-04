@@ -614,7 +614,7 @@ Sources are available on [GitHub](https://github.com/zx80/flask-simple-auth)
 and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 Software license is *public domain*.
 
-#### dev
+#### 2.5.0
 
 Add *header* carrier for authentication tokens.
 Make it work both with internal and HTTPAuth implementations.
