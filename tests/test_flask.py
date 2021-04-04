@@ -81,7 +81,7 @@ app_saved_auth = {}
 def push_auth(app, auth, token = None, carrier = None, name = None):
     assert auth in (None, "none", "fake", "basic", "param", "password", "token")
     assert token in (None, "fsa", "jwt")
-    assert carrier in (None , "bearer", "param", "cookie")
+    assert carrier in (None , "bearer", "param", "cookie", "header")
     app_saved_auth.update(a = app._auth, t = app._token, c = app._carrier, n = app._name)
     app._auth, app._token, app._carrier, app._name = auth, token, carrier, name
 
@@ -609,3 +609,7 @@ def test_http_token():
         TOKEN = {"Authorization": f"Bearer {calvin_token}"}
         res = check_200(client.get("/token", headers=TOKEN))
         assert res.data == b"calvin"
+        push_auth(app._fsa, "fake", "fsa", "header", "HoHoHo")
+        res = check_200(client.get("/token", headers={"HoHoHo": calvin_token}))
+        assert res.data == b"calvin"
+        pop_auth(app._fsa)
