@@ -604,18 +604,20 @@ def test_http_digest(app_digest):
 def test_http_token():
     app = aha.create_app_token()
     with app.test_client() as client:
+        # http-token default bearer configuration
         check_401(client.get("/token"))
         calvin_token = app.create_token("calvin")
         log.debug(f"token: {calvin_token}")
         TOKEN = {"Authorization": f"Bearer {calvin_token}"}
         res = check_200(client.get("/token", headers=TOKEN))
         assert res.data == b"calvin"
-        # check header
-        # FIXME
-        #push_auth(app._fsa, "http-token", "fsa", "header", "HiHiHi")
-        #res = check_200(client.get("/token", headers={"HiHiHi": calvin_token}))
-        #assert res.data == b"calvin"
-        #pop_auth(app._fsa)
+        # check header with http auth
+        push_auth(app._fsa, "http-token", "fsa", "header", "HiHiHi")
+        app._fsa._http_auth.header = "HiHiHi"
+        res = check_200(client.get("/token", headers={"HiHiHi": calvin_token}))
+        assert res.data == b"calvin"
+        app._fsa._http_auth.header = None
+        pop_auth(app._fsa)
         # check header token fallback
         push_auth(app._fsa, "fake", "fsa", "header", "HoHoHo")
         res = check_200(client.get("/token", headers={"HoHoHo": calvin_token}))

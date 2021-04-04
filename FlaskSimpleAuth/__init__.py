@@ -491,6 +491,8 @@ class FlaskSimpleAuth:
                 self._http_auth = fha.HTTPDigestAuth(realm=self._realm, **opts)
                 # FIXME nonce & opaque callbacks? session??
             elif self._auth == "http-token":
+                if self._carrier == "header" and "header" not in opts and self._name is not None:
+                    opts["header"] = self._name
                 self._http_auth = fha.HTTPTokenAuth(scheme=self._name, realm=self._realm, **opts)
                 self._http_auth.verify_token(self._get_token_auth)
             self._http_auth.get_password(self._get_user_pass)
