@@ -617,6 +617,8 @@ Software license is *public domain*.
 #### dev
 
 Add *header* carrier for authentication tokens.
+Make it work both with internal and HTTPAuth implementations.
+Force HTTPAuth implementation on `http-token`.
 
 #### 2.4.1
 
