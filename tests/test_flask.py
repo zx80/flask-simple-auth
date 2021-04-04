@@ -79,7 +79,7 @@ def client3():
 app_saved_auth = {}
 
 def push_auth(app, auth, token = None, carrier = None, name = None):
-    assert auth in (None, "none", "fake", "basic", "param", "password", "token")
+    assert auth in (None, "none", "fake", "basic", "param", "password", "token", "http-token")
     assert token in (None, "fsa", "jwt")
     assert carrier in (None , "bearer", "param", "cookie", "header")
     app_saved_auth.update(a = app._auth, t = app._token, c = app._carrier, n = app._name)
@@ -606,9 +606,17 @@ def test_http_token():
     with app.test_client() as client:
         check_401(client.get("/token"))
         calvin_token = app.create_token("calvin")
+        log.debug(f"token: {calvin_token}")
         TOKEN = {"Authorization": f"Bearer {calvin_token}"}
         res = check_200(client.get("/token", headers=TOKEN))
         assert res.data == b"calvin"
+        # check header
+        # FIXME
+        #push_auth(app._fsa, "http-token", "fsa", "header", "HiHiHi")
+        #res = check_200(client.get("/token", headers={"HiHiHi": calvin_token}))
+        #assert res.data == b"calvin"
+        #pop_auth(app._fsa)
+        # check header token fallback
         push_auth(app._fsa, "fake", "fsa", "header", "HoHoHo")
         res = check_200(client.get("/token", headers={"HoHoHo": calvin_token}))
         assert res.data == b"calvin"

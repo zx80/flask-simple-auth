@@ -564,18 +564,23 @@ class FlaskSimpleAuth:
         return user
 
     #
-    # FLASK HTTP AUTH
-    #
-    # Use flask_httpauth implementation for basic & digest authentication.
+    # FLASK HTTP AUTH (BASIC, DIGEST, TOKEN)
     #
     def _get_http_auth(self):
         assert self._http_auth is not None
         auth = self._http_auth.get_auth()
         log.debug(f"auth = {auth}")
-        password = self._http_auth.get_auth_password(auth)
+        password = self._http_auth.get_auth_password(auth) \
+            if self._auth != "http-token" else None
         log.debug(f"password = {password}")
-        if self._http_auth.authenticate(auth, password):
-            return auth.username
+        try:
+            # note: "authenticate" signature is not very clean…
+            user = self._http_auth.authenticate(auth, password)
+            if user is not None and user is not False:
+                return auth.username if user is True else user
+        except AuthException as error:
+            log.debug(f"AUTH (http-*): bad authentication {error}")
+            raise error
         log.debug("AUTH (http-*): bad authentication")
         raise AuthException("failed HTTP authentication", 401)
 
@@ -736,7 +741,7 @@ class FlaskSimpleAuth:
         return user, self._timestamp(exp)
 
     def _get_token_auth_exp(self, token):
-        log.debug(f"token: {token}")
+        log.debug(f"{self._token} token: {token}")
         if token is None or token == "":
             log.debug("AUTH (token): no token")
             raise AuthException("missing auth token", 401)
@@ -787,9 +792,11 @@ class FlaskSimpleAuth:
                    "http-digest", "http-token", "digest"):
 
             # check for token
-            # FIXME http-token?
             if self._token is not None:
-                if self._carrier == "bearer":
+                if self._auth == "http-token":
+                    # force Flask HTTPAuth token
+                    self._user = self._get_http_auth()
+                elif self._carrier == "bearer":
                     auth = request.headers.get("Authorization", None)
                     if auth is not None:
                         slen = len(self._name) + 1
