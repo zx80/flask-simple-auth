@@ -393,7 +393,7 @@ class FlaskSimpleAuth:
         if self._carrier in ("param", "cookie"):
             default_name = "auth"
         elif self._carrier == "bearer":
-            default_name = "Barrier"
+            default_name = "Bearer"
         elif self._carrier == "header":
             default_name = "Auth"
         else:
