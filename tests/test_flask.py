@@ -353,6 +353,10 @@ def test_types(client):
     assert res.data == b"int 3"
     res = check_200(client.get("/type", data={"i": "0x11"}))
     assert res.data == b"int 17"
+    res = check_200(client.get("/type", data={"i": "0o11"}))
+    assert res.data == b"int 9"
+    #res = check_200(client.get("/type", data={"i": "011"}))
+    #assert res.data == b"int 9"
     res = check_200(client.get("/type", data={"i": "11"}))
     assert res.data == b"int 11"
     res = check_200(client.get("/type", data={"b": "0"}))
