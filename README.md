@@ -367,11 +367,12 @@ The following configuration directives are available:
  - `FSA_TOKEN_TYPE` type of token, either *fsa*, *jwt* or `None` to disable.
    Default is *fsa*.
  - `FSA_TOKEN_CARRIER` how to transport the token: *bearer* (`Authentication`
-   HTTP header), *param* or *cookie*
+   HTTP header), *param* , *cookie* or *header*.
  - `FKA_TOKEN_NAME` name of parameter or cookie holding the token, or
-   bearer scheme.
-   Default is *auth* for parameter and cookie,
-   *Bearer* for HTTP Authentication header.
+   bearer scheme, or header name.
+   Default is *auth* for *param* and *cookie* carrier,
+   *Bearer* for HTTP Authentication header (*bearer* carrier).
+   *Auth* for *header* carrier.
  - `FSA_TOKEN_REALM` realm of token.
    Default is the simplified lower case application name.
    For *jwt*, this is translated as the audience.
@@ -410,7 +411,7 @@ the performance impact should be low.
 #### `http-token` Authentication
 
 Token scheme based on [flask-HTTPAuth](https://pypi.org/project/Flask-HTTPAuth/).
-Carrier is always implicitely *bearer*.
+Carrier is *bearer* or *header*
 
 Directive `FSA_HTTP_AUTH_OPTS` allow to pass additional options to the
 HTTPAuth authentication class, such as `header`, as a dictionnary.
@@ -613,6 +614,10 @@ Sources are available on [GitHub](https://github.com/zx80/flask-simple-auth)
 and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 Software license is *public domain*.
 
+#### dev
+
+Add *header* carrier for authentication tokens.
+
 #### 2.4.1
 
 Fix packaging issue… the python file was missing.
@@ -763,6 +768,5 @@ Initial release in beta.
 
 - cache other things?
 - control cache size from initialization?
-- add new `header` carrier for `http-token`?
 - test `FSA_HTTP_AUTH_OPTS`?
 - do test digest?

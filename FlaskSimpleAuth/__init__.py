@@ -384,13 +384,20 @@ class FlaskSimpleAuth:
         # where to put/look for the token
         need_carrier = self._token is not None
         self._carrier = conf.get("FSA_TOKEN_CARRIER", "bearer" if need_carrier else None)
-        if self._carrier not in (None, "bearer", "param", "cookie"):
+        if self._carrier not in (None, "bearer", "param", "cookie", "header"):
             raise Exception(f"Unexpected token carrier (FSA_TOKEN_CARRIER): {self._carrier}")
         # sanity checks
         if need_carrier and self._carrier is None:
             raise Exception(f"Token type {self._token} requires a carrier")
-        # name of token for cookie or param
-        default_name = "auth" if self._carrier in ("param", "cookie") else "Bearer"
+        # name of token for cookie or param, Authentication scheme, or other header
+        if self._carrier in ("param", "cookie"):
+            default_name = "auth"
+        elif self._carrier == "bearer":
+            default_name = "Barrier"
+        elif self._carrier == "header":
+            default_name = "Auth"
+        else:
+            default_name = None
         self._name = conf.get("FSA_TOKEN_NAME", default_name)
         if need_carrier and self._name is None:
             raise Exception(f"Token carrier {self._carrier} requires a name")
@@ -786,7 +793,7 @@ class FlaskSimpleAuth:
                     auth = request.headers.get("Authorization", None)
                     if auth is not None:
                         slen = len(self._name) + 1
-                        if auth[:slen] == f"{self._name} ":
+                        if auth[:slen] == f"{self._name} ":  # FIXME lower case?
                             self._user = self._get_token_auth(auth[slen:])
                     # else we ignore… maybe it will be resolved later
                 elif self._carrier == "cookie":
@@ -794,6 +801,10 @@ class FlaskSimpleAuth:
                 elif self._carrier == "param":
                     params = request.values if request.json is None else request.json
                     token = params.get(self._name, None)
+                    if token is not None:
+                        self._user = self._get_token_auth(token)
+                elif self._carrier == "header":
+                    token = request.headers.get(self._name, None)
                     if token is not None:
                         self._user = self._get_token_auth(token)
                 # else: cannot get there
