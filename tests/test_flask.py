@@ -309,11 +309,11 @@ def test_authorize():
     app._fsa._user = "hobbes"
     res = stuff()
     assert res.status_code == 403
-    lazy, app._fsa._lazy = app._fsa._lazy, False
+    mode, app._fsa._mode = app._fsa._mode, "always"
     app._fsa._user = None
     res = stuff()
     assert res.status_code == 401
-    app._fsa._lazy = lazy
+    app._fsa._mode = mode
 
 def test_self_care(client):
     push_auth(app._fsa, "fake")

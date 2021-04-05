@@ -19,7 +19,7 @@ app = Flask("Test")
 #
 app.config.update(
     FSA_AUTH = 'fake',
-    FSA_ALWAYS = True,
+    FSA_MODE = "always",
     FSA_SKIP_PATH = (r"/register",
                      r"/(add|div|mul|sub|type|params|any|mis[12]|nogo|one)",
                      r"/(infer|superid|cplx|bool|mail|path|string)"),

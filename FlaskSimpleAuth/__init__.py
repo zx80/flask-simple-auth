@@ -283,7 +283,7 @@ class FlaskSimpleAuth:
         """Before request hook to perform early authentication."""
         self._user = None
         self._need_authorization = True
-        if not self._always:
+        if self._mode != "always":
             return
         for skip in self._skip_path:
             if skip(request.path):
@@ -341,7 +341,7 @@ class FlaskSimpleAuth:
     def _cache_function(self, fun):
         """Generate or regenerate cache for function."""
         if hasattr(fun, '__wrapped__'):
-           fun = fun.__wrapped__
+            fun = fun.__wrapped__
         # probaly maxsize should disable with None and unbound with 0.
         return fun if fun is None or self._maxsize == 0 else \
             functools.lru_cache(maxsize=self._maxsize)(fun)
@@ -377,13 +377,13 @@ class FlaskSimpleAuth:
         #
         # overall auth setup
         #
-        self._auth = conf.get("FSA_AUTH", "httpd")
+        self._auth: str = conf.get("FSA_AUTH", "httpd")
         assert self._auth in ("httpd", "none", "fake", "basic", "param", "password",
                               "token", "http-basic", "http-digest", "http-token", "digest")
-        self._lazy = conf.get("FSA_LAZY", True)
-        self._always = conf.get("FSA_ALWAYS", True)
-        self._check = conf.get("FSA_CHECK", True)
-        self._maxsize = conf.get("FSA_CACHE_SIZE", 1024)
+        self._mode = conf.get("FSA_MODE", "lazy")
+        assert self._mode in ("always", "lazy")
+        self._check: bool = conf.get("FSA_CHECK", True)
+        self._maxsize: int = conf.get("FSA_CACHE_SIZE", 1024)
         import re
         self._skip_path = [re.compile(r).match for r in conf.get("FSA_SKIP_PATH", [])]
         #
@@ -913,7 +913,7 @@ class FlaskSimpleAuth:
                 # get user if needed
                 if self._user is None:
                     # no current user, try to get one?
-                    if self._lazy:
+                    if self._mode == "lazy":
                         try:
                             self._user = self.get_user()
                         except AuthException:

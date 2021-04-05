@@ -252,20 +252,18 @@ methods used by the `get_user` function, as described in the following sections.
 - `FSA_AUTH` governs the *how*: `none`, `httpd`, `basic`, `param`, `password`,
 `token`… as described in details in the next sections.  Default is `httpd`.
 
-- `FSA_ALWAYS` tells whether to perform authentication in a before request
-hook. Default is *True*.  On authentication failures *401* are returned.
-Once in a route function, `get_user` will always return the authenticated
-user and cannot fail.
+- `FSA_MODE` tells when to attempt authentication.
+  - With `always`, authentication is performed in a before request hook.
+    Once in a route function, `get_user` will always return the authenticated
+    user and cannot fail.
+  - With `lazy`, it is performed lazily when needed by an authorization.
+  On authentication failures *401* are returned.
+  Default is `lazy`.
 
 - `FSA_SKIP_PATH` is a list of regular expression patterns which are matched
-against the request path for skipping systematic authentication when
-`FSA_ALWAYS` is enabled.  Default is empty, i.e. authentication is applied
-for all paths.
-
-- `FSA_LAZY` tells whether to attempt authentication lazily when checking an
-authorization through a `authorize` decorator or argument to the `route`
-decorator.
-Default is *True*.
+against the request path for skipping systematic authentication when in
+`always` mode.
+Default is empty, i.e. authentication is applied for all paths.
 
 - `FSA_CHECK` tells whether to generate a *500* internal error if a route
 is missing an explicit authorization check.
@@ -620,6 +618,7 @@ Software license is *public domain*.
 #### dev
 
 Add `FSA_CACHE_SIZE` to control caches.
+Merge `FSA_ALWAYS` and `FSA_LAZY` in a single `FSA_MODE` directive.
 
 #### 2.5.0
 
@@ -778,5 +777,4 @@ Initial release in beta.
 - cache other things?
 - test `FSA_HTTP_AUTH_OPTS`?
 - do test digest?
-- merge always and lazy?
 - simplify/shoften documentation?

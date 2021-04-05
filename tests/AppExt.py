@@ -21,8 +21,9 @@ fsa = FlaskSimpleAuth(app)
 # AUTH
 #
 app.config.update(
-    FSA_AUTH = 'fake',
-    FSA_TOKEN_CARRIER = 'cookie',
+    FSA_AUTH = "fake",
+    FSA_MODE = "always",
+    FSA_TOKEN_CARRIER = "cookie",
     FSA_GET_USER_PASS = get_user_pass,
     FSA_USER_IN_GROUP = user_in_group
 )
