@@ -253,10 +253,13 @@ methods used by the `get_user` function, as described in the following sections.
 `token`… as described in details in the next sections.  Default is `httpd`.
 
 - `FSA_MODE` tells when to attempt authentication.
+
   - With `always`, authentication is performed in a before request hook.
     Once in a route function, `get_user` will always return the authenticated
     user and cannot fail.
+
   - With `lazy`, it is performed lazily when needed by an authorization.
+
   On authentication failures *401* are returned.
   Default is `lazy`.
 
