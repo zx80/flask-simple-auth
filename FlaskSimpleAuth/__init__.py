@@ -269,6 +269,7 @@ class FlaskSimpleAuth:
     def __init__(self, app: flask.Flask = None):
         """Constructor parameter: flask application to extend."""
         self._app = app
+        self._maxsize = 1024
         self._get_user_pass = None
         self._user_in_group = None
         self._http_auth = None
@@ -305,9 +306,9 @@ class FlaskSimpleAuth:
                 return Resp("missing authorization check", 500)
         return res
 
-    # set a cookie if needed and none was sent
-    # we assume that thanks to max_age the client will not send stale cookies
     def _set_auth_cookie(self, res: Response):
+        """Set a cookie if needed and none was sent."""
+        # note: thanks to max_age the client should not send stale cookies
         if self._carrier == "cookie":
             assert self._token is not None and self._name is not None
             if self._user is not None:
@@ -324,6 +325,7 @@ class FlaskSimpleAuth:
         return res
 
     def _set_www_authenticate(self, res: Response):
+        """Set WWW-Authenticate response header depending on current scheme."""
         if res.status_code == 401:
             if self._auth in ("basic", "password"):
                 res.headers["WWW-Authenticate"] = f"Basic realm=\"{self._realm}\""
@@ -336,14 +338,22 @@ class FlaskSimpleAuth:
                 res.headers["WWW-Authenticate"] = f"{self._name} realm=\"{self._realm}\""
         return res
 
+    def _cache_function(self, fun):
+        """Generate or regenerate cache for function."""
+        if hasattr(fun, '__wrapped__'):
+           fun = fun.__wrapped__
+        # probaly maxsize should disable with None and unbound with 0.
+        return fun if fun is None or self._maxsize == 0 else \
+            functools.lru_cache(maxsize=self._maxsize)(fun)
+
     def get_user_pass(self, gup):
         """Set `get_user_pass` helper, can be used as a decorator."""
-        self._get_user_pass = functools.lru_cache(maxsize=1024)(gup)
+        self._get_user_pass = self._cache_function(gup)
         return gup
 
     def user_in_group(self, uig):
         """Set `user_in_group` helper, can be used as a decorator."""
-        self._user_in_group = functools.lru_cache(maxsize=1024)(uig)
+        self._user_in_group = self._cache_function(uig)
         return uig
 
     #
@@ -373,6 +383,7 @@ class FlaskSimpleAuth:
         self._lazy = conf.get("FSA_LAZY", True)
         self._always = conf.get("FSA_ALWAYS", True)
         self._check = conf.get("FSA_CHECK", True)
+        self._maxsize = conf.get("FSA_CACHE_SIZE", 1024)
         import re
         self._skip_path = [re.compile(r).match for r in conf.get("FSA_SKIP_PATH", [])]
         #
@@ -512,6 +523,10 @@ class FlaskSimpleAuth:
         self.blueprints = self._app.blueprints
         self._blueprint_order = self._app._blueprint_order
         self.debug = False
+        #
+        # caches
+        #
+        self._set_caches()
         # done!
         self._initialized = True
         return
@@ -524,6 +539,7 @@ class FlaskSimpleAuth:
     # FSA_FAKE_LOGIN: name of parameter holding the login ("LOGIN")
     #
     def _get_fake_auth(self):
+        """Return fake user. Only for local tests."""
         assert request.remote_user is None, "do not shadow web server auth"
         assert request.environ["REMOTE_ADDR"][:4] == "127.", \
             "fake auth only on localhost"
@@ -551,9 +567,10 @@ class FlaskSimpleAuth:
         """Hash password according to the current password scheme."""
         return self._pm.hash(pwd)
 
-    # check user password against internal credentials
-    # raise an exception if not ok, otherwise simply proceeds
     def _check_password(self, user, pwd):
+        """Check user password against internal credentials.
+
+        Raise an exception if not ok, otherwise simply proceeds."""
         if not request.is_secure:
             log.warning("password authentication over an insecure request")
         ref = self._get_user_pass(user)
@@ -569,12 +586,13 @@ class FlaskSimpleAuth:
     # FLASK HTTP AUTH (BASIC, DIGEST, TOKEN)
     #
     def _get_http_auth(self):
+        """Delegate user authentication to HTTPAuth."""
         assert self._http_auth is not None
         auth = self._http_auth.get_auth()
-        log.debug(f"auth = {auth}")
+        # log.debug(f"auth = {auth}")
         password = self._http_auth.get_auth_password(auth) \
             if self._auth != "http-token" else None
-        log.debug(f"password = {password}")
+        # log.debug(f"password = {password}")
         try:
             # note: "authenticate" signature is not very clean…
             user = self._http_auth.authenticate(auth, password)
@@ -590,6 +608,7 @@ class FlaskSimpleAuth:
     # HTTP BASIC AUTH
     #
     def _get_basic_auth(self):
+        """Get user with basic authentication."""
         import base64 as b64
         assert request.remote_user is None
         auth = request.headers.get("Authorization", None)
@@ -618,6 +637,7 @@ class FlaskSimpleAuth:
     # FSA_PARAM_PASS: parameter name for password ("PASS")
     #
     def _get_param_auth(self):
+        """Get user with parameter authentication."""
         assert request.remote_user is None
         params = request.values if request.json is None else request.json
         user = params.get(self._userp, None)
@@ -629,8 +649,8 @@ class FlaskSimpleAuth:
         self._check_password(user, pwd)
         return user
 
-    # basic or param auth
     def _get_password_auth(self):
+        """Get user from basic or param authentication."""
         try:
             return self._get_basic_auth()
         except AuthException:  # failed, let's try param
@@ -644,7 +664,7 @@ class FlaskSimpleAuth:
     #
     #
     # FSA_TOKEN_TYPE: 'jwt', 'fsa' or None to disactivate
-    # for fsa, the format is: <realm>:<user>:<validity-limit>:<signature>
+    # - for 'fsa': format is <realm>:<user>:<validity-limit>:<signature>
     # FSA_TOKEN_NAME: name of parameter holding the token, or None for bearer auth
     # FSA_TOKEN_ALGO:
     # - for 'fsa': hashlib algorithm for token authentication ("blake2s")
@@ -660,6 +680,7 @@ class FlaskSimpleAuth:
     #
     # sign data with secret
     def _cmp_sig(self, data, secret):
+        """Compute signature for data."""
         import hashlib
         h = hashlib.new(self._algo)
         h.update(f"{data}:{secret}".encode())
@@ -676,9 +697,9 @@ class FlaskSimpleAuth:
         sig = self._cmp_sig(data, secret)
         return f"{data}:{sig}"
 
-    # jwt generation
     # exp = expiration, sub = subject, iss = issuer, aud = audience
     def _get_jwt_token(self, realm, user, delay, secret):
+        """Json Web Token (JWT) generation."""
         exp = dt.datetime.utcnow() + dt.timedelta(minutes=delay)
         import jwt
         return jwt.encode({"exp": exp, "sub": user, "aud": realm},
@@ -718,7 +739,6 @@ class FlaskSimpleAuth:
 
     # jwt authentication can be expensive, especially with pubkey-signatures
     # so use a cache to keep track of already used tokens
-    @functools.lru_cache(maxsize=1024)
     def _get_jwt_token_auth_real(self, token):
         import jwt
         try:
@@ -836,13 +856,20 @@ class FlaskSimpleAuth:
         """Return current authenticated user, if any."""
         return self._user
 
+    def _set_caches(self):
+        """Create caches around jwt token and hooks."""
+        for name in ("_get_jwt_token_auth_real", "_get_user_pass", "_user_in_group"):
+            fun = getattr(self, name)
+            if fun is not None and hasattr(fun, "__wrapped__"):
+                fun = fun.__wrapped__
+            setattr(self, name, self._cache_function(fun))
+
     def clear_caches(self):
         """Clear internal caches."""
-        self._get_jwt_token_auth_real.cache_clear()
-        if self._get_user_pass is not None:
-            self._get_user_pass.cache_clear()
-        if self._user_in_group is not None:
-            self._user_in_group.cache_clear()
+        for name in ("_get_jwt_token_auth_real", "_get_user_pass", "_user_in_group"):
+            fun = getattr(self, name)
+            if fun is not None and hasattr(fun, "cache_clear"):
+                fun.cache_clear()
 
     #
     # authorize internal decorator

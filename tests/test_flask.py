@@ -165,6 +165,9 @@ def test_perms(client):
     all_auth(client, "calvin", App.UP["calvin"], check_403, "/admin")
     assert not App.user_in_group("hobbes", App.ADMIN)
     all_auth(client, "hobbes", App.UP["hobbes"], check_403, "/admin")
+    assert hasattr(app._fsa._get_jwt_token_auth_real, "cache_clear")
+    assert hasattr(app._fsa._user_in_group, "cache_clear")
+    assert hasattr(app._fsa._get_user_pass, "cache_clear")
     app.clear_caches()
     # write only
     check_401(client.get("/write"))

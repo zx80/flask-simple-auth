@@ -271,6 +271,9 @@ Default is *True*.
 is missing an explicit authorization check.
 Default is *True*.
 
+- `FSA_CACHE_SIZE` control size of internal lru caches. Default is *1024*.
+Disable with *0*.
+
 
 #### `none` Authentication
 
@@ -614,6 +617,10 @@ Sources are available on [GitHub](https://github.com/zx80/flask-simple-auth)
 and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 Software license is *public domain*.
 
+#### dev
+
+Add `FSA_CACHE_SIZE` to control caches.
+
 #### 2.5.0
 
 Add *header* carrier for authentication tokens.
@@ -769,6 +776,5 @@ Initial release in beta.
 ### TODO
 
 - cache other things?
-- control cache size from initialization?
 - test `FSA_HTTP_AUTH_OPTS`?
 - do test digest?
