@@ -272,7 +272,7 @@ is missing an explicit authorization check.
 Default is *True*.
 
 - `FSA_CACHE_SIZE` control size of internal lru caches. Default is *1024*.
-Disable with *0*.
+*None* means unbounded. Disable with *0*.
 
 
 #### `none` Authentication
