@@ -334,7 +334,7 @@ the `SECRET_KEY` option to be set to something.
 The documentation states that server-side sessions are needed because
 of some security issue. I disagree on that ground: the *nonce* and *opaque*
 entries are sent anyway in the `WWW-Authenticate` header, the fact that they
-repeated in cookies would not induce more risks.
+are repeated in cookies would not induce more risks.
 However, I do think that the default cookie-based client-side session is
 a strange thing that is best avoided.
 
