@@ -779,3 +779,4 @@ Initial release in beta.
 - test `FSA_HTTP_AUTH_OPTS`?
 - do test digest?
 - merge always and lazy?
+- simplify/shoften documentation?
