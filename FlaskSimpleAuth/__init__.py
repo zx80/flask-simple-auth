@@ -678,7 +678,6 @@ class FlaskSimpleAuth:
     # FSA_TOKEN_GRACE: grace delay for token validity in minutes (0)
     # FSA_TOKEN_REALM: token realm (lc simplified app name)
     #
-    # sign data with secret
     def _cmp_sig(self, data, secret):
         """Compute signature for data."""
         import hashlib
@@ -686,20 +685,25 @@ class FlaskSimpleAuth:
         h.update(f"{data}:{secret}".encode())
         return h.digest()[:self._siglen].hex()
 
-    # build a timestamp string
     def _timestamp(self, ts):
+        """Build a timestamp string."""
         return "%04d%02d%02d%02d%02d%02d" % ts.timetuple()[:6]
 
-    # compute a token for "user" valid for "delay" minutes, signed with "secret"
     def _get_fsa_token(self, realm, user, delay, secret):
+        """Compute a signed token for "user" valid for "delay" minutes."""
         limit = self._timestamp(dt.datetime.utcnow() + dt.timedelta(minutes=delay))
         data = f"{realm}:{user}:{limit}"
         sig = self._cmp_sig(data, secret)
         return f"{data}:{sig}"
 
-    # exp = expiration, sub = subject, iss = issuer, aud = audience
     def _get_jwt_token(self, realm, user, delay, secret):
-        """Json Web Token (JWT) generation."""
+        """Json Web Token (JWT) generation.
+
+        - exp: expiration
+        - sub: subject (the user)
+        - iss: issuer (not used)
+        - aud = audience (the realm)
+        """
         exp = dt.datetime.utcnow() + dt.timedelta(minutes=delay)
         import jwt
         return jwt.encode({"exp": exp, "sub": user, "aud": realm},
@@ -716,9 +720,9 @@ class FlaskSimpleAuth:
         else:
             return self._get_jwt_token(realm, user, delay, self._sign)
 
-    # tell whether token is ok: return validated user or None
-    # token form: "realm:calvin:20380119031407:<signature>"
     def _get_fsa_token_auth(self, token):
+        """Tell whether FSA token is ok: return validated user or None."""
+        # token format: "realm:calvin:20380119031407:<signature>"
         realm, user, limit, sig = token.split(':', 3)
         # check realm
         if realm != self._realm:
@@ -737,9 +741,12 @@ class FlaskSimpleAuth:
         # all is well
         return user, limit
 
-    # jwt authentication can be expensive, especially with pubkey-signatures
-    # so use a cache to keep track of already used tokens
     def _get_jwt_token_auth_real(self, token):
+        """Tell whether JWT token is ok: return validated user or None.
+
+        This function is expected to be cached, so it returns the token
+        expiration so that it can be rechecked later.
+        """
         import jwt
         try:
             data = jwt.decode(token, self._secret, leeway=self._delay * 60,
@@ -754,6 +761,10 @@ class FlaskSimpleAuth:
             raise AuthException("invalid jwt token", 401)
 
     def _get_jwt_token_auth(self, token):
+        """Tell whether JWT token is ok: return validated user or None.
+
+        This function is not cached, it uses the cached version and rechecks
+        the expiration limit."""
         user, exp = self._get_jwt_token_auth_real(token)
         # recheck token expiration
         now = dt.datetime.utcnow() - dt.timedelta(minutes=self._grace)
@@ -763,6 +774,7 @@ class FlaskSimpleAuth:
         return user, self._timestamp(exp)
 
     def _get_token_auth_exp(self, token):
+        """Tell whether token is ok: return validated user or None."""
         log.debug(f"{self._token} token: {token}")
         if token is None or token == "":
             log.debug("AUTH (token): no token")
@@ -772,10 +784,11 @@ class FlaskSimpleAuth:
             self._get_jwt_token_auth(token)
 
     def _get_token_auth(self, token):
+        """Tell whether token is ok: return validated user or None."""
         return self._get_token_auth_exp(token)[0]
 
-    # a cookie is just another option for storing tokens
     def _get_cookie_auth(self):
+        """Get user from cookie authentication."""
         return self._get_token_auth(request.cookies[self._name]) \
             if self._name in request.cookies else None
 
@@ -875,6 +888,7 @@ class FlaskSimpleAuth:
     # authorize internal decorator
     #
     def _authorize(self, *groups):
+        """Decorator to authorize groups."""
 
         if len(groups) > 1 and \
            (ANY in groups or ALL in groups or NONE in groups or None in groups):
@@ -936,6 +950,7 @@ class FlaskSimpleAuth:
     #   parameters with a str value.
     #
     def _parameters(self, required=None, allparams=False):
+        """Decorator to handle request parameters."""
 
         def decorate(fun: Callable):
 
