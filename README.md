@@ -778,3 +778,4 @@ Initial release in beta.
 - cache other things?
 - test `FSA_HTTP_AUTH_OPTS`?
 - do test digest?
+- merge always and lazy?
