@@ -477,12 +477,6 @@ There are three special values that can be passed to the `authorize` decorator:
  - `NONE` returns a *403* on all access. It can be used to close a route
    temporarily. This is the default.
 
-The following configuration directive is available:
-
- - `FSA_LAZY` allows the `authorize` decorator to perform the authentication
-   when needed, which mean that the before request hook can be skipped.
-   Default is *True*.
-
 Note that this simplistic model does is not enough for non-trivial applications,
 where permissions on objects often depend on the object owner.
 For those, careful per-operation authorization will still be needed.
