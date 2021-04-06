@@ -81,7 +81,7 @@ CASTS: Dict[type, Callable[[str], object]] = {
 # PREDEFINED GROUP NAMES
 #
 ANY = "ANY"    # anyone can come in, no authentication required
-ALL = "ALL"    # all authentified users are allowed
+ALL = "ALL"    # all authenticated users are allowed
 NONE = "NONE"  # non can come in, the path is forbidden
 
 
@@ -122,8 +122,7 @@ class Reference:  # type: Any
         """
         self._obj = None
         # create "set" method, which may use another name…
-        if set_name is None:
-            set_name = "set"
+        set_name = set_name or "set"
         setattr(self, set_name, getattr(self, "_set_obj"))
         # keep track of initial methods for later cleanup
         self._init = set(self.__dir__() + ["_init"])
@@ -543,7 +542,7 @@ class FlaskSimpleAuth:
         assert request.remote_user is None, "do not shadow web server auth"
         assert request.environ["REMOTE_ADDR"][:4] == "127.", \
             "fake auth only on localhost"
-        params = request.values if request.json is None else request.json
+        params = request.json or request.values
         user = params.get(self._login, None)
         # it could check that the user exists in db
         if user is None:
@@ -639,7 +638,7 @@ class FlaskSimpleAuth:
     def _get_param_auth(self):
         """Get user with parameter authentication."""
         assert request.remote_user is None
-        params = request.values if request.json is None else request.json
+        params = request.json or request.values
         user = params.get(self._userp, None)
         if user is None:
             raise AuthException(f"missing login parameter: {self._userp}", 401)
@@ -712,8 +711,7 @@ class FlaskSimpleAuth:
     def create_token(self, user: str = None):
         """Create a new token for user depending on the configuration."""
         assert self._token is not None
-        if user is None:
-            user = self.get_user()
+        user = user or self.get_user()
         realm, delay = self._realm, self._delay
         if self._token == "fsa":
             return self._get_fsa_token(realm, user, delay, self._secret)
@@ -841,7 +839,7 @@ class FlaskSimpleAuth:
                 elif self._carrier == "cookie":
                     self._user = self._get_cookie_auth()
                 elif self._carrier == "param":
-                    params = request.values if request.json is None else request.json
+                    params = request.json or request.values
                     token = params.get(self._name, None)
                     if token is not None:
                         self._user = self._get_token_auth(token)
@@ -979,7 +977,7 @@ class FlaskSimpleAuth:
                     return Resp("missing authorization check", 500)
 
                 # translate request parameters to named function parameters
-                params = request.values if request.json is None else request.json
+                params = request.json or request.values
                 for p, typing in typings.items():
                     # guess which function parameters are request parameters
                     if p not in kwargs:
