@@ -1,13 +1,14 @@
 # convenient makefile
 
 .ONESHELL:
+MODULE	= FlaskSimpleAuth
 
 .PHONY: check
 check: venv
 	. venv/bin/activate
 	type python3
-	mypy FlaskSimpleAuth
-	flake8 --ignore=E501,F401 FlaskSimpleAuth
+	mypy $(MODULE)
+	flake8 --ignore=E501,F401 $(MODULE)
 	# to select some tests: -k pattern
 	pytest --log-level=debug --capture=tee-sys tests
 
