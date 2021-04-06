@@ -14,7 +14,7 @@ from flask import Flask
 app = Flask("Test")
 
 # note that FSA initialization is delayed…
-from FlaskSimpleAuth import FlaskSimpleAuth, ALL
+from FlaskSimpleAuth import FlaskSimpleAuth
 fsa = FlaskSimpleAuth(app)
 
 #
@@ -31,7 +31,7 @@ app.config.update(
 #
 # ROUTES
 #
-@fsa.route("/stuff", methods=["GET"], authorize=ALL)
+@fsa.route("/stuff", methods=["GET"], authorize="ALL")
 def get_stuff():
     return "stuff", 200
 
@@ -50,6 +50,6 @@ import Shared
 from Shared import something
 Shared.init_app(something="AppExt")
 
-@fsa.route("/something", methods=["GET"], authorize=ALL)
+@fsa.route("/something", methods=["GET"], authorize="ALL")
 def get_something():
     return str(something), 200

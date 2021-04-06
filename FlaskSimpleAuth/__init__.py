@@ -80,9 +80,9 @@ CASTS: Dict[type, Callable[[str], object]] = {
 #
 # PREDEFINED GROUP NAMES
 #
-ANY = "ANYone can come in, no authentication required"
-ALL = "ALL authentified users are allowed"
-NONE = "NONE can come in, the path is forbidden"
+ANY = "ANY"    # anyone can come in, no authentication required
+ALL = "ALL"    # all authentified users are allowed
+NONE = "NONE"  # non can come in, the path is forbidden
 
 
 def typeof(p: inspect.Parameter):

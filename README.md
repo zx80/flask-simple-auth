@@ -175,7 +175,7 @@ from flask import Flask
 app = Flask("demo")
 app.config.from_envvar("DEMO_CONFIG")
 
-from FlaskSimpleAuth import FlaskSimpleAuth, ALL
+from FlaskSimpleAuth import FlaskSimpleAuth
 fsa = FlaskSimpleAuth(app)
 
 # imaginary blueprint registration on the fsa object:
@@ -183,7 +183,7 @@ from DemoAdmin import abp
 fsa.register_blueprint(abp, url_path="/admin")
 
 # define a route with an optional paramater "flt"
-@fsa.route("/users", methods=["GET"], authorize=ALL)
+@fsa.route("/users", methods=["GET"], authorize="ALL")
 def get_what(flt: str = None):
     …
 ```
@@ -221,7 +221,7 @@ could look like that:
 
 ```Python
 # with FSA_SKIP_PATH = (r"/register", …)
-@app.route("/register", methods=["POST"], authorize=ANY)
+@app.route("/register", methods=["POST"], authorize="ANY")
 def post_register(user: str, password: str):
     if user_already_exists_somewhere(user):
         return f"cannot create {user}", 409
@@ -234,7 +234,7 @@ by one of the other methods. The code for that would be:
 
 ```Python
 # token creation route for all registered users
-@app.route("/login", methods=["GET"], authorize=ALL)
+@app.route("/login", methods=["GET"], authorize="ALL")
 def get_login():
     return jsonify(app.create_token(app.get_user())), 200
 ```
@@ -515,7 +515,7 @@ The `allparams` parameter makes all request parameters be translated to
 named function parameters that can be manipulated as such, as shown below:
 
 ```Python
-@app.route("/awesome", methods=["PUT"], authorize=ALL, allparams=True)
+@app.route("/awesome", methods=["PUT"], authorize="ALL", allparams=True)
 def put_awesome(**kwargs):
     …
 ```
@@ -534,7 +534,7 @@ class EmailAddr:
     def __init__(self, addr: str):
         self._addr = addr
 
-@app.route("/mail/<addr>", methods=["GET"], authorize=ALL)
+@app.route("/mail/<addr>", methods=["GET"], authorize="ALL")
 def get_mail_addr(addr: EmailAddr):
     …
 ```
@@ -566,12 +566,12 @@ Then in a blueprint:
 
 ```Python
 # file SubStuff.py
-from FlaskSimpleAuth import Blueprint, ALL
+from FlaskSimpleAuth import Blueprint
 from Shared import stuff
 
 sub = Blueprint(…)
 
-@sub.add("/stuff", authorize=ALL):
+@sub.add("/stuff", authorize="ALL"):
 def get_stuff():
     return str(stuff), 200
 ```
@@ -616,6 +616,7 @@ Software license is *public domain*.
 
 Add `FSA_CACHE_SIZE` to control caches.
 Merge `FSA_ALWAYS` and `FSA_LAZY` in a single `FSA_MODE` directive.
+Make `ANY`, `ALL` and `NONE` special groups simple strings as well.
 
 #### 2.5.0
 
@@ -775,4 +776,3 @@ Initial release in beta.
 - test `FSA_HTTP_AUTH_OPTS`?
 - do test digest?
 - simplify/shoften documentation?
-- make ALL/ANY/NONE simpler string?
