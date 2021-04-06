@@ -1,7 +1,7 @@
 # convenient makefile
 
 .ONESHELL:
-MODULE	= FlaskSimpleAuth
+MODULE	= FlaskSimpleAuth.py
 
 .PHONY: check
 check: venv
@@ -10,7 +10,7 @@ check: venv
 	mypy $(MODULE)
 	flake8 --ignore=E501,F401 $(MODULE)
 	# to select some tests: -k pattern
-	pytest --log-level=debug --capture=tee-sys tests
+	pytest --log-level=debug --capture=tee-sys test
 
 .PHONY: clean clean-venv
 clean:
