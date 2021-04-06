@@ -260,7 +260,11 @@ methods used by the `get_user` function, as described in the following sections.
 
   - With `lazy`, it is performed lazily when needed by an authorization.
 
-  On authentication failures *401* are returned.
+  - With `all`, it is always performed in the hook, which may skip some path
+    because of `FSA_SKIP_PATH`, and may be re-attempted lazily for path that
+    were skipped.
+
+  On authentication failures *401* is returned.
   Default is `lazy`.
 
 - `FSA_SKIP_PATH` is a list of regular expression patterns which are matched
@@ -615,7 +619,8 @@ Software license is *public domain*.
 #### dev
 
 Add `FSA_CACHE_SIZE` to control caches.
-Merge `FSA_ALWAYS` and `FSA_LAZY` in a single `FSA_MODE` directive.
+Merge `FSA_ALWAYS` and `FSA_LAZY` in a single `FSA_MODE` directive
+with 3 values: `always`, `lazy` and `all`.
 Make `ANY`, `ALL` and `NONE` special groups simple strings as well.
 
 #### 2.5.0

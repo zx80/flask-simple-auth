@@ -381,7 +381,7 @@ class FlaskSimpleAuth:
         assert self._auth in ("httpd", "none", "fake", "basic", "param", "password",
                               "token", "http-basic", "http-digest", "http-token", "digest")
         self._mode = conf.get("FSA_MODE", "lazy")
-        assert self._mode in ("always", "lazy")
+        assert self._mode in ("always", "lazy", "all")
         self._check: bool = conf.get("FSA_CHECK", True)
         self._maxsize: int = conf.get("FSA_CACHE_SIZE", 1024)
         import re
@@ -913,7 +913,7 @@ class FlaskSimpleAuth:
                 # get user if needed
                 if self._user is None:
                     # no current user, try to get one?
-                    if self._mode == "lazy":
+                    if self._mode != "always":
                         try:
                             self._user = self.get_user()
                         except AuthException:
