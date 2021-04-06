@@ -10,7 +10,7 @@ This extension helps manage:
 This code is public domain.
 """
 
-from typing import Optional, Callable, Dict, List, Any
+from typing import Optional, Callable, Dict, List, Set, Any
 
 import functools
 import inspect
@@ -99,7 +99,7 @@ def typeof(p: inspect.Parameter):
         return str
 
 
-class Reference:  # type: Any
+class Reference:
     """Convenient object wrapper class.
 
     The wrapper forwards most method calls to the wrapped object, so that
@@ -188,7 +188,7 @@ class CacheOK:
 
     def __init__(self, fun: Callable[[List[Any]], bool]):
         self._fun = fun
-        self._cache = set()
+        self._cache: Set[Any] = set()
         self.cache_clear = self._cache.clear
 
     def __call__(self, *args):
@@ -329,6 +329,7 @@ class FlaskSimpleAuth:
             if self._auth in ("basic", "password"):
                 res.headers["WWW-Authenticate"] = f"Basic realm=\"{self._realm}\""
             elif self._auth in ("http-basic", "http-digest", "http-token", "digest"):
+                assert self._http_auth is not None
                 res.headers["WWW-Authenticate"] = self._http_auth.authenticate_header()
             elif self._auth == "param":
                 # not sure this one makes much sense
@@ -382,7 +383,7 @@ class FlaskSimpleAuth:
         self._mode = conf.get("FSA_MODE", "lazy")
         assert self._mode in ("always", "lazy", "all")
         self._check: bool = conf.get("FSA_CHECK", True)
-        self._maxsize: int = conf.get("FSA_CACHE_SIZE", 1024)
+        self._maxsize = conf.get("FSA_CACHE_SIZE", 1024)
         import re
         self._skip_path = [re.compile(r).match for r in conf.get("FSA_SKIP_PATH", [])]
         #
@@ -400,14 +401,13 @@ class FlaskSimpleAuth:
         if need_carrier and self._carrier is None:
             raise Exception(f"Token type {self._token} requires a carrier")
         # name of token for cookie or param, Authentication scheme, or other header
+        default_name: Optional[str] = None
         if self._carrier in ("param", "cookie"):
             default_name = "auth"
         elif self._carrier == "bearer":
             default_name = "Bearer"
         elif self._carrier == "header":
             default_name = "Auth"
-        else:
-            default_name = None
         self._name = conf.get("FSA_TOKEN_NAME", default_name)
         if need_carrier and self._name is None:
             raise Exception(f"Token carrier {self._carrier} requires a name")
@@ -493,7 +493,7 @@ class FlaskSimpleAuth:
         #
         if self._auth in ("http-basic", "http-digest", "http-token", "digest"):
             opts = conf.get("FSA_HTTP_AUTH_OPTS", {})
-            import flask_httpauth as fha
+            import flask_httpauth as fha  # type: ignore
             if self._auth == "http-basic":
                 self._http_auth = fha.HTTPBasicAuth(realm=self._realm, **opts)
                 self._http_auth.verify_password(self._check_password)
