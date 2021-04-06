@@ -336,11 +336,10 @@ HTTP Digest authentication based on [flask-HTTPAuth](https://pypi.org/project/Fl
 Note that the implementation relies on *sessions*, which may require
 the `SECRET_KEY` option to be set to something.
 The documentation states that server-side sessions are needed because
-of some security issue. I disagree on that ground: the *nonce* and *opaque*
-entries are sent anyway in the `WWW-Authenticate` header, the fact that they
-are repeated in cookies would not induce more risks.
-However, I do think that the default cookie-based client-side session is
-a strange thing that is best avoided.
+otherwise the *nonce* and *opaque* parameters could be reused, which
+may be a security issue under some conditions. I'm unsure about that,
+but I agree that client-side cookie sessions are strange things best
+avoided if possible.
 
 Directive `FSA_HTTP_AUTH_OPTS` allow to pass additional options to the
 HTTPAuth authentication class, such as `use_ha1_pw`, as a dictionnary.
