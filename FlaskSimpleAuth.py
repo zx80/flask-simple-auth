@@ -339,7 +339,7 @@ class FlaskSimpleAuth:
 
     def _cache_function(self, fun):
         """Generate or regenerate cache for function."""
-        if hasattr(fun, '__wrapped__'):
+        if hasattr(fun, "__wrapped__"):
             fun = fun.__wrapped__
         # probaly maxsize should disable with None and unbound with 0.
         return fun if fun is None or self._maxsize == 0 else \
@@ -438,7 +438,7 @@ class FlaskSimpleAuth:
             log.warning("random token secret, only ok for one process app")
             # list of 94 chars, about 6.5 bits per char
             chars = string.ascii_letters + string.digits + string.punctuation
-            self._secret = ''.join(random.SystemRandom().choices(chars, k=40))
+            self._secret = "".join(random.SystemRandom().choices(chars, k=40))
         if self._token is None:
             pass
         elif self._token == "fsa":
@@ -469,14 +469,14 @@ class FlaskSimpleAuth:
         # password setup
         #
         # passlib context is a pain, you have to know the scheme name to set its
-        # round. Ident '2y' is same as '2b' but apache compatible.
+        # round. Ident "2y" is same as "2b" but apache compatible.
         scheme = conf.get("FSA_PASSWORD_SCHEME", "bcrypt")
         if scheme is not None:
             if scheme == "plaintext":
                 log.warning("plaintext password manager is a bad idea")
             options = conf.get("FSA_PASSWORD_OPTIONS",
-                               {'bcrypt__default_rounds': 4,
-                                'bcrypt__default_ident': '2y'})
+                               {"bcrypt__default_rounds": 4,
+                                "bcrypt__default_ident": "2y"})
             from passlib.context import CryptContext  # type: ignore
             self._pm = CryptContext(schemes=[scheme], **options)
         else:
@@ -619,7 +619,7 @@ class FlaskSimpleAuth:
             log.debug(f"AUTH (basic): unexpected auth \"{auth}\"")
             raise AuthException("unexpected authorization header", 401)
         try:
-            user, pwd = b64.b64decode(auth[6:]).decode().split(':', 1)
+            user, pwd = b64.b64decode(auth[6:]).decode().split(":", 1)
         except Exception as e:
             log.debug(f"AUTH (basic): error while decoding auth \"{auth}\" ({e})")
             raise AuthException("decoding error on authorization header", 401)
@@ -721,7 +721,7 @@ class FlaskSimpleAuth:
     def _get_fsa_token_auth(self, token):
         """Tell whether FSA token is ok: return validated user or None."""
         # token format: "realm:calvin:20380119031407:<signature>"
-        realm, user, limit, sig = token.split(':', 3)
+        realm, user, limit, sig = token.split(":", 3)
         # check realm
         if realm != self._realm:
             log.debug(f"AUTH (fsa token): unexpected realm {realm}")
@@ -749,8 +749,8 @@ class FlaskSimpleAuth:
         try:
             data = jwt.decode(token, self._secret, leeway=self._delay * 60,
                               audience=self._realm, algorithms=[self._algo])
-            exp = dt.datetime.fromtimestamp(data['exp'])
-            return data['sub'], exp
+            exp = dt.datetime.fromtimestamp(data["exp"])
+            return data["sub"], exp
         except jwt.ExpiredSignatureError:
             log.debug(f"AUTH (jwt token): token {token} has expired")
             raise AuthException("expired jwt auth token", 401)
@@ -1051,7 +1051,7 @@ class FlaskSimpleAuth:
                         splits[i] = f"{t.__name__.lower()}:{spec}>{remainder}"
                     else:
                         splits[i] = f"string:{spec}>{remainder}"
-        newpath = '<'.join(splits)
+        newpath = "<".join(splits)
 
         assert self._app is not None
         par = self._parameters(required=required, allparams=allparams)(view_func)
