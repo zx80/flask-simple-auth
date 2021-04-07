@@ -374,11 +374,11 @@ The following configuration directives are available:
  - `FSA_TOKEN_TYPE` type of token, either *fsa*, *jwt* or `None` to disable.
    Default is *fsa*.
  - `FSA_TOKEN_CARRIER` how to transport the token: *bearer* (`Authentication`
-   HTTP header), *param* , *cookie* or *header*.
+   HTTP header), *param*, *cookie* or *header*.
  - `FKA_TOKEN_NAME` name of parameter or cookie holding the token, or
    bearer scheme, or header name.
    Default is *auth* for *param* and *cookie* carrier,
-   *Bearer* for HTTP Authentication header (*bearer* carrier).
+   *Bearer* for HTTP Authentication header (*bearer* carrier),
    *Auth* for *header* carrier.
  - `FSA_TOKEN_REALM` realm of token.
    Default is the simplified lower case application name.
