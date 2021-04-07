@@ -385,7 +385,7 @@ The following configuration directives are available:
    For *jwt*, this is translated as the audience.
  - `FSA_TOKEN_SECRET` secret string used for validating tokens.
    Default is a system-generated random string containing 256 bits.
-   This default with only work with itself, as it is not shared
+   This default will only work with itself, as it is not shared
    across server instances or processes.
  - `FSA_TOKEN_SIGN` secret string used for signing tokens, if
    different from previous secret. This is only relevant for public-key
