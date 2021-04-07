@@ -617,6 +617,9 @@ Software license is *public domain*.
 
 #### dev
 
+Defer password manager setup till it is actually needed, so as to avoid
+importing `passlib` for nothing.
+
 #### 3.0.0
 
 Add `FSA_CACHE_SIZE` to control caches.

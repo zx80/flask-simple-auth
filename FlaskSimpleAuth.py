@@ -273,7 +273,8 @@ class FlaskSimpleAuth:
         self._get_user_pass = None
         self._user_in_group = None
         self._http_auth = None
-        # actual initialization is deferred
+        self._pm = None
+        # actual main initialization is deferred
         self._initialized = False
 
     #
@@ -350,6 +351,7 @@ class FlaskSimpleAuth:
     def get_user_pass(self, gup):
         """Set `get_user_pass` helper, can be used as a decorator."""
         self._get_user_pass = self._cache_function(gup)
+        self._init_password_manager()
         return gup
 
     def user_in_group(self, uig):
@@ -358,7 +360,7 @@ class FlaskSimpleAuth:
         return uig
 
     #
-    # DEFERRED INITIALIZATION
+    # DEFERRED INITIALIZATIONS
     #
     def initialize(self):
         """Run late initialization on current app."""
@@ -467,22 +469,6 @@ class FlaskSimpleAuth:
         self._userp = conf.get("FSA_PARAM_USER", "USER")
         self._passp = conf.get("FSA_PARAM_PASS", "PASS")
         #
-        # password setup
-        #
-        # passlib context is a pain, you have to know the scheme name to set its
-        # round. Ident "2y" is same as "2b" but apache compatible.
-        scheme = conf.get("FSA_PASSWORD_SCHEME", "bcrypt")
-        if scheme is not None:
-            if scheme == "plaintext":
-                log.warning("plaintext password manager is a bad idea")
-            options = conf.get("FSA_PASSWORD_OPTIONS",
-                               {"bcrypt__default_rounds": 4,
-                                "bcrypt__default_ident": "2y"})
-            from passlib.context import CryptContext  # type: ignore
-            self._pm = CryptContext(schemes=[scheme], **options)
-        else:
-            self._pm = None
-        #
         # hooks
         #
         if "FSA_GET_USER_PASS" in conf:
@@ -530,6 +516,27 @@ class FlaskSimpleAuth:
         # done!
         self._initialized = True
         return
+
+    def _init_password_manager(self):
+        """Deferred password manager initialization."""
+        # only initialize if some password may need to be checked
+        # so that passlib is not imported for nothing
+        if self._get_user_pass is None or self._pm is not None:
+            return
+        assert self._app is not None
+        conf = self._app.config
+        scheme = conf.get("FSA_PASSWORD_SCHEME", "bcrypt")
+        log.info(f"initializing password manager with {scheme}")
+        if scheme is not None:
+            if scheme == "plaintext":
+                log.warning("plaintext password manager is a bad idea")
+            # passlib context is a pain, you have to know the scheme name to set its
+            # round. Ident "2y" is same as "2b" but apache compatible.
+            options = conf.get("FSA_PASSWORD_OPTIONS",
+                               {"bcrypt__default_rounds": 4,
+                                "bcrypt__default_ident": "2y"})
+            from passlib.context import CryptContext  # type: ignore
+            self._pm = CryptContext(schemes=[scheme], **options)
 
     #
     # HTTP FAKE AUTH
