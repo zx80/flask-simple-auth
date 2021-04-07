@@ -621,7 +621,7 @@ Add `FSA_CACHE_SIZE` to control caches.
 Merge `FSA_ALWAYS` and `FSA_LAZY` in a single `FSA_MODE` directive
 with 3 values: `always`, `lazy` and `all`.
 Make `ANY`, `ALL` and `NONE` special groups simple strings as well.
-Package as a one file module (again).
+Package as a one file module (again), and add more files to packaging.
 
 #### 2.5.0
 
