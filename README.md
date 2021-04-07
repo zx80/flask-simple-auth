@@ -615,7 +615,7 @@ Sources are available on [GitHub](https://github.com/zx80/flask-simple-auth)
 and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 Software license is *public domain*.
 
-#### dev
+#### 3.0.0
 
 Add `FSA_CACHE_SIZE` to control caches.
 Merge `FSA_ALWAYS` and `FSA_LAZY` in a single `FSA_MODE` directive
