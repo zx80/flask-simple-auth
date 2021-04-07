@@ -125,7 +125,8 @@ class Reference:
         set_name = set_name or "set"
         setattr(self, set_name, getattr(self, "_set_obj"))
         # keep track of initial methods for later cleanup
-        self._init = set(self.__dir__() + ["_init"])
+        self._init: Set[str] = set()
+        self._init.update(self.__dir__())
         if obj is not None:
             self._set_obj(obj)
 
@@ -499,14 +500,14 @@ class FlaskSimpleAuth:
                 self._http_auth.verify_password(self._check_password)
             elif self._auth in ("http-digest", "digest"):
                 self._http_auth = fha.HTTPDigestAuth(realm=self._realm, **opts)
-                # FIXME nonce & opaque callbacks? session??
+                # FIXME? nonce & opaque callbacks? session??
             elif self._auth == "http-token":
                 if self._carrier == "header" and "header" not in opts and self._name is not None:
                     opts["header"] = self._name
                 self._http_auth = fha.HTTPTokenAuth(scheme=self._name, realm=self._realm, **opts)
                 self._http_auth.verify_token(self._get_token_auth)
             self._http_auth.get_password(self._get_user_pass)
-            # FIXME error_handler?
+            # FIXME? error_handler?
         else:
             self._http_auth = None
         #
