@@ -805,13 +805,13 @@ class FlaskSimpleAuth:
 
     # map auth types to their functions
     _FSA_AUTH = {
+        "fake": _get_fake_auth,
         "basic": _get_basic_auth,
+        "digest": _get_http_auth,
         "param": _get_param_auth,
         "password": _get_password_auth,
-        "fake": _get_fake_auth,
         "http-basic": _get_http_auth,
         "http-digest": _get_http_auth,
-        "digest": _get_http_auth,
         "http-token": _get_http_auth,
     }
 
