@@ -407,10 +407,17 @@ Token authentication is always attempted unless the secret is empty.
 Setting `FSA_AUTH` to `token` results in *only* token authentication to be used.
 
 Token authentication is usually much faster than password verification because
-password checks are designed to be slow so as to hinder password cracking.
+password checks are designed to be slow so as to hinder password cracking,
+whereas token authentication relies on simple hashing for its security.
 Another benefit of token is that it avoids sending passwords over and over.
 The rational option is to use a password scheme to retrieve a token and then to
 use it till it expires.
+
+Token expiration can be understood as a kind of automatic logout, which suggests
+to choose the delay with some care depending on the use case.
+
+When the token is carried as a *cookie*, it is automatically updated when 25% of
+the delay remains, if possible.
 
 Internally *jwt* token checks are cached so that even with slow public-key schemes
 the performance impact should be low.
@@ -459,7 +466,17 @@ thwart password cracking if the hashed passwords are leaked, so that you
 do not want to have to use that on every request in real life (eg hundreds
 milliseconds for passlib bcrypt *12* rounds).
 The above defaults result in manageable password checks of a few milliseconds.
-Consider enabling tokens to reduce the authentication load on each request.
+Consider using tokens to reduce the authentication load on each request.
+
+For `digest` authentication, the password must be either in *plaintext* or a
+simple MD5 hash ([RFC 2617](https://www.rfc-editor.org/rfc/rfc2617.txt)), and
+the authentication setup must be consistent (set `use_ha1_pw` as *True* for the
+later).
+As retrieving the stored information is enough to steal the password (plaintext)
+or at least impersonate a user, consider avoiding `digest` altogether.
+HTTP Digest Authentication only makes sense for unencrypted connexions, which
+are a bad practice anyway.
+It is just provided here for completeness.
 
 Function `hash_password(pass)` computes the password salted digest compatible
 with the current configuration.
@@ -619,6 +636,8 @@ Software license is *public domain*.
 
 Defer password manager setup till it is actually needed, so as to avoid
 importing `passlib` for nothing.
+Do not attempt to re-create a token if it is not possible, i.e. when
+relying on a third party token provider.
 
 #### 3.0.0
 

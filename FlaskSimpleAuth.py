@@ -312,10 +312,10 @@ class FlaskSimpleAuth:
         # note: thanks to max_age the client should not send stale cookies
         if self._carrier == "cookie":
             assert self._token is not None and self._name is not None
-            if self._user is not None:
+            if self._user is not None and self._can_create_token():
                 if self._name in request.cookies:
                     user, exp = self._get_token_auth_exp(request.cookies[self._name])
-                    # reset token when 25% time remains
+                    # reset token when only 25% time remains
                     limit = self._timestamp(dt.datetime.utcnow() + 0.25 * dt.timedelta(minutes=self._delay))
                     set_cookie = exp < limit
                 else:
@@ -395,7 +395,7 @@ class FlaskSimpleAuth:
         self._token = conf.get("FSA_TOKEN_TYPE", "fsa")
         if self._token not in (None, "fsa", "jwt"):
             raise Exception(f"Unexpected token type (FSA_TOKEN_TYPE): {self._token}")
-        # where to put/look for the token
+        # token carrier
         need_carrier = self._token is not None
         self._carrier = conf.get("FSA_TOKEN_CARRIER", "bearer" if need_carrier else None)
         if self._carrier not in (None, "bearer", "param", "cookie", "header"):
@@ -422,15 +422,10 @@ class FlaskSimpleAuth:
             realm = "".join(c if keep_char(c) else "-" for c in realm)
             realm = "-".join(filter(lambda s: s != "", realm.split("-")))
         self._realm = realm
-        # time validity
+        # token expiration
         self._delay = conf.get("FSA_TOKEN_DELAY", 60.0)
         self._grace = conf.get("FSA_TOKEN_GRACE", 0.0)
         # token signature
-        if self._token is not None and self._token == "jwt":
-            algo = conf.get("FSA_TOKEN_ALGO", "HS256")
-            if algo[0] in ("R", "E", "P"):
-                assert "FSA_TOKEN_SECRET" in conf and "FSA_TOKEN_SIGN" in conf, \
-                    "pubkey kwt signature require explicit secret and sign"
         if "FSA_TOKEN_SECRET" in conf:
             self._secret = conf["FSA_TOKEN_SECRET"]
             if self._secret is not None and len(self._secret) < 16:
@@ -452,7 +447,9 @@ class FlaskSimpleAuth:
             algo = conf.get("FSA_TOKEN_ALGO", "HS256")
             self._algo = algo
             if algo[0] in ("R", "E", "P"):
-                self._sign = conf["FSA_TOKEN_SIGN"]
+                self._sign = conf.get("FSA_TOKEN_SIGN", None)
+                if self._sign is None:
+                    log.warning("cannot sign JWT token, assuming a third party provider")
             elif algo[0] == "H":
                 self._sign = self._secret
             elif algo == "none":
@@ -715,6 +712,11 @@ class FlaskSimpleAuth:
         import jwt
         return jwt.encode({"exp": exp, "sub": user, "aud": realm},
                           secret, algorithm=self._algo)
+
+    def _can_create_token(self):
+        """Whether it is possible to create a token."""
+        return self._token is not None and not \
+            (self._token == "jwt" and self._algo[0] in ("R", "E", "P") and self._sign is None)
 
     def create_token(self, user: str = None):
         """Create a new token for user depending on the configuration."""
