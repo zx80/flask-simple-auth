@@ -805,5 +805,5 @@ Initial release in beta.
 - test `FSA_HTTP_AUTH_OPTS`?
 - do test digest?
 - simplify/shoften documentation?
-- allow to redirect on auth success?
-- allow to redirect on auth failure?
+- allow to redirect on auth success/failure (for web apps)?
+  with a parametric URL?
