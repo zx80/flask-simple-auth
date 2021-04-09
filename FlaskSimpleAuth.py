@@ -865,7 +865,7 @@ class FlaskSimpleAuth:
         "http-token": _get_httpauth,
     }
 
-    def get_user(self):
+    def get_user(self) -> str:
         """Authenticate user or throw exception."""
         log.debug(f"get_user for {self._auth}")
 
@@ -874,13 +874,12 @@ class FlaskSimpleAuth:
         if self._user is not None:
             return self._user
 
-        if self._auth is None:
+        if not self._initialized:
             raise AuthException("FlaskSimpleAuth not initialized", 500)
 
+        # try authentication schemes
         lae = None
         for a in self._auth:
-            if a not in self._FSA_AUTH:
-                raise AuthException(f"unexpected authentication type: {a}", 500)
             try:
                 self._user = self._FSA_AUTH[a](self)
                 if self._user is not None:
@@ -890,7 +889,7 @@ class FlaskSimpleAuth:
 
         # rethrow last exception on failures
         if self._user is None:
-            raise lae if lae is not None else AuthException("missing authentication", 401)
+            raise lae or AuthException("missing authentication", 401)
 
         log.info(f"get_user({self._auth}): {self._user}")
         return self._user
