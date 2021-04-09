@@ -255,10 +255,9 @@ class Flask(flask.Flask):
         self._fsa.clear_caches()
 
 
-class Resp(Response):
+def Resp(msg: str, code: int):
     """Genenerate a text/plain Response."""
-    def __init__(self, msg: str, code: int):
-        super().__init__(msg, code, content_type="text/plain")
+    return Response(msg, code, content_type="text/plain")
 
 
 # actual class
