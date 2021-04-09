@@ -65,11 +65,11 @@ class string(str):
     pass
 
 
-# note: mypy complains wrongly about non-existing _empty.
 CASTS: Dict[type, Callable[[str], object]] = {
     bool: bool_cast,
     int: int_cast,
-    inspect._empty: str,
+    # note: mypy complains wrongly about non-existing _empty.
+    inspect._empty: str,  # type: ignore
     path: str,
     string: str,
     dt.date: dt.date.fromisoformat,
@@ -91,9 +91,9 @@ def typeof(p: inspect.Parameter):
         return dict
     elif p.kind is p.VAR_POSITIONAL:
         return list
-    elif p.annotation is not inspect._empty:
+    elif p.annotation is not inspect._empty:  # type: ignore
         return p.annotation
-    elif p.default is not None and p.default is not inspect._empty:
+    elif p.default is not None and p.default is not inspect._empty:  # type: ignore
         return type(p.default)  # type inference!
     else:
         return str
@@ -979,7 +979,7 @@ class FlaskSimpleAuth:
                     t = typeof(p)
                     types[n] = t
                     typings[n] = CASTS.get(t, t)
-                if p.default != inspect._empty:
+                if p.default != inspect._empty:  # type: ignore
                     defaults[n] = p.default
 
             @functools.wraps(fun)
