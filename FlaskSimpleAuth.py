@@ -333,11 +333,10 @@ class FlaskSimpleAuth:
             elif self._auth in ("http-basic", "http-digest", "http-token", "digest"):
                 assert self._http_auth is not None
                 res.headers["WWW-Authenticate"] = self._http_auth.authenticate_header()
-            elif self._auth == "param":
-                # not sure this one makes much sense
-                res.headers["WWW-Authenticate"] = f"Param realm=\"{self._realm}\""
             elif self._carrier == "bearer":
                 res.headers["WWW-Authenticate"] = f"{self._name} realm=\"{self._realm}\""
+            # else: scheme does not rely on WWW-Authenticate…
+        # else: no need for WWW-Authenticate
         return res
 
     def _cache_function(self, fun):

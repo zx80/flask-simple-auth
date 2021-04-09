@@ -561,8 +561,6 @@ def test_reference():
 def test_www_authenticate(client):
     push_auth(app._fsa, "param")
     res = check_401(client.get("/admin"))
-    assert res.www_authenticate.get("__auth_type__", None) == "param"
-    assert "realm" in res.www_authenticate
     pop_auth(app._fsa)
     push_auth(app._fsa, "basic")
     res = check_401(client.get("/admin"))
