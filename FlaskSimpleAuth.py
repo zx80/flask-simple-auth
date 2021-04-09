@@ -255,11 +255,6 @@ class Flask(flask.Flask):
         self._fsa.clear_caches()
 
 
-def Resp(msg: str, code: int):
-    """Genenerate a text/plain Response."""
-    return Response(msg, code, content_type="text/plain")
-
-
 # actual class
 class FlaskSimpleAuth:
     """Flask extension to implement authentication, authorization and parameter
@@ -277,6 +272,10 @@ class FlaskSimpleAuth:
         # actual main initialization is deferred
         self._initialized = False
 
+    def _Resp(self, msg: str, code: int):
+        """Genenerate a text/plain Response."""
+        return Response(msg, code, content_type="text/plain")
+
     #
     # HOOKS
     #
@@ -292,7 +291,7 @@ class FlaskSimpleAuth:
         try:
             self._user = self.get_user()
         except AuthException as e:
-            return Resp(e.message, e.status)
+            return self._Resp(e.message, e.status)
         assert self._user is not None
 
     def _auth_after_cleanup(self, res: Response):
@@ -304,7 +303,7 @@ class FlaskSimpleAuth:
             method, path = request.method, request.path
             log.warning(f"missing authorization on {method} {path}")
             if self._check:
-                return Resp("missing authorization check", 500)
+                return self._Resp("missing authorization check", 500)
         return res
 
     def _set_auth_cookie(self, res: Response):
@@ -918,7 +917,7 @@ class FlaskSimpleAuth:
                 self._need_authorization = False
                 # shortcuts
                 if NONE in groups or None in groups:
-                    return Resp("", 403)
+                    return self._Resp("", 403)
                 if ANY in groups:
                     return fun(*args, **kwargs)
                 # get user if needed
@@ -928,11 +927,11 @@ class FlaskSimpleAuth:
                         try:
                             self._user = self.get_user()
                         except AuthException:
-                            return Resp("", 401)
+                            return self._Resp("", 401)
                     else:
-                        return Resp("", 401)
+                        return self._Resp("", 401)
                 if self._user is None:
-                    return Resp("", 401)
+                    return self._Resp("", 401)
                 # shortcut for authenticated users
                 if ALL in groups:
                     return fun(*args, **kwargs)
@@ -941,7 +940,7 @@ class FlaskSimpleAuth:
                     if self._user_in_group(self._user, r):
                         return fun(*args, **kwargs)
                 # else no matching group
-                return Resp("", 403)
+                return self._Resp("", 403)
 
             return wrapper
 
@@ -987,7 +986,7 @@ class FlaskSimpleAuth:
 
                 # this cannot happen under normal circumstances
                 if self._need_authorization and self._check:
-                    return Resp("missing authorization check", 500)
+                    return self._Resp("missing authorization check", 500)
 
                 # translate request parameters to named function parameters
                 params = request.json or request.values
@@ -998,13 +997,13 @@ class FlaskSimpleAuth:
                             try:
                                 kwargs[p] = typing(params[p])
                             except Exception as e:
-                                return Resp(f"type error on HTTP parameter \"{p}\" ({e})", 400)
+                                return self._Resp(f"type error on HTTP parameter \"{p}\" ({e})", 400)
                         else:
                             if required is None:
                                 if p in defaults:
                                     kwargs[p] = defaults[p]
                                 else:
-                                    return Resp(f"missing HTTP parameter \"{p}\"", 400)
+                                    return self._Resp(f"missing HTTP parameter \"{p}\"", 400)
                             elif required:
                                 return f"missing HTTP parameter \"{p}\"", 400
                             else:
@@ -1015,7 +1014,7 @@ class FlaskSimpleAuth:
                             try:
                                 kwargs[p] = typing(kwargs[p])
                             except Exception as e:
-                                return Resp(f"type error on path parameter \"{p}\": ({e})", 404)
+                                return self._Resp(f"type error on path parameter \"{p}\": ({e})", 404)
 
                 # possibly add others, without shadowing already provided ones
                 if allparams:
