@@ -79,11 +79,11 @@ def client3():
 app_saved_auth = {}
 
 def push_auth(app, auth, token = None, carrier = None, name = None):
-    assert auth in (None, "none", "fake", "basic", "param", "password", "token", "http-token")
+    # assert auth in (None, "none", "fake", "basic", "param", "password", "token", "http-token")
     assert token in (None, "fsa", "jwt")
     assert carrier in (None , "bearer", "param", "cookie", "header")
     app_saved_auth.update(a = app._auth, t = app._token, c = app._carrier, n = app._name)
-    app._auth, app._token, app._carrier, app._name = auth, token, carrier, name
+    app._auth, app._token, app._carrier, app._name = [auth] if isinstance(auth, str) else auth, token, carrier, name
 
 def pop_auth(app):
     d = app_saved_auth
@@ -96,28 +96,30 @@ def all_auth(client, user, pswd, check, *args, **kwargs):
     push_auth(app._fsa, "fake", "fsa", "param", "auth")
     token_fake = json.loads(client.get("login", data={"LOGIN": user}).data)
     check(client.get(*args, **kwargs, data={"LOGIN": user}))
+    pop_auth(app._fsa)
+    push_auth(app._fsa, "token", "fsa", "param", "auth")
     check(client.get(*args, **kwargs, data={"auth": token_fake}))
     pop_auth(app._fsa)
     # user-pass param
-    push_auth(app._fsa, "param", "fsa", "param", "auth")
+    push_auth(app._fsa, ["token", "param"], "fsa", "param", "auth")
     USERPASS = { "USER": user, "PASS": pswd }
     token_param = json.loads(client.get("login", data=USERPASS).data)
     check(client.get(*args, **kwargs, data=USERPASS))
     check(client.get(*args, **kwargs, data={"auth": token_param}))
     pop_auth(app._fsa)
-    push_auth(app._fsa, "password", "fsa", "param", "auth")
+    push_auth(app._fsa, ["token", "password"], "fsa", "param", "auth")
     check(client.get(*args, **kwargs, data=USERPASS))
     check(client.get(*args, **kwargs, data={"auth": token_param}))
     pop_auth(app._fsa)
     # user-pass basic
-    push_auth(app._fsa, "basic", "fsa", "param", "auth")
+    push_auth(app._fsa, ["token", "basic"], "fsa", "param", "auth")
     from requests.auth import _basic_auth_str as basic_auth
     BASIC = {"Authorization": basic_auth(user, pswd)}
     token_basic = json.loads(client.get("login", headers=BASIC).data)
     check(client.get(*args, **kwargs, headers=BASIC))
     check(client.get(*args, **kwargs, data={"auth": token_basic}))
     pop_auth(app._fsa)
-    push_auth(app._fsa, "password", "fsa", "param", "auth")
+    push_auth(app._fsa, ["token", "password"], "fsa", "param", "auth")
     check(client.get(*args, **kwargs, headers=BASIC))
     check(client.get(*args, **kwargs, data={"auth": token_basic}))
     pop_auth(app._fsa)
@@ -222,14 +224,14 @@ def test_fsa_token():
     tsave, hsave, app._fsa._token, app._fsa._algo = app._fsa._token, app._fsa._algo, "fsa", "blake2s"
     calvin_token = app.create_token("calvin")
     assert calvin_token[:12] == "Test:calvin:"
-    assert app._fsa._get_token_auth(calvin_token) == "calvin"
+    assert app._fsa._get_this_token_auth(calvin_token) == "calvin"
     app._fsa._token, app._fsa._algo = tsave, hsave
 
 def test_expired_token():
     hobbes_token = app.create_token("hobbes")
     grace, app._fsa._grace = app._fsa._grace, -100
     try:
-        user = app._fsa._get_token_auth(hobbes_token)
+        user = app._fsa._get_this_token_auth(hobbes_token)
         assert False, "token should be invalid"
     except fsa.AuthException as e:
         assert e.status == 401
@@ -260,14 +262,14 @@ def test_jwt_token():
     # hmac signature scheme
     moe_token = app.create_token("moe")
     assert "." in moe_token and len(moe_token.split(".")) == 3
-    user = app._fsa._get_token_auth(moe_token)
+    user = app._fsa._get_this_token_auth(moe_token)
     assert user == "moe"
     # pubkey signature scheme
     app._fsa._algo, app._fsa._secret, app._fsa._sign = \
         "RS256", RSA_TEST_PUB_KEY, RSA_TEST_PRIV_KEY
     mum_token = app.create_token("mum")
     assert "." in mum_token and len(mum_token.split(".")) == 3
-    user = app._fsa._get_token_auth(mum_token)
+    user = app._fsa._get_this_token_auth(mum_token)
     assert user == "mum"
     # cleanup
     app._fsa._token, app._fsa._algo = tsave, hsave
@@ -277,7 +279,7 @@ def test_invalid_token():
     susie_token = app.create_token("susie")
     susie_token = susie_token[:-1] + "z"
     try:
-        user = app._fsa._get_token_auth(susie_token)
+        user = app._fsa._get_this_token_auth(susie_token)
         assert False, "token should be invalid"
     except fsa.AuthException as e:
         assert e.status == 401
@@ -287,7 +289,7 @@ def test_wrong_token():
     moe_token = app.create_token("moe")
     app._fsa._realm = realm
     try:
-        user = app._fsa._get_token_auth(moe_token)
+        user = app._fsa._get_this_token_auth(moe_token)
         assert False, "token should be invalid"
     except fsa.AuthException as e:
         assert e.status == 401
@@ -564,6 +566,7 @@ def test_www_authenticate(client):
     pop_auth(app._fsa)
     push_auth(app._fsa, "basic")
     res = check_401(client.get("/admin"))
+    log.debug(f"res auth = {res.www_authenticate.keys()}")
     assert res.www_authenticate.get("__auth_type__", None) == "basic"
     assert "realm" in res.www_authenticate
     pop_auth(app._fsa)
@@ -623,7 +626,7 @@ def test_http_token():
         app._fsa._http_auth.header = None
         pop_auth(app._fsa)
         # check header token fallback
-        push_auth(app._fsa, "fake", "fsa", "header", "HoHoHo")
+        push_auth(app._fsa, "token", "fsa", "header", "HoHoHo")
         res = check_200(client.get("/token", headers={"HoHoHo": calvin_token}))
         assert res.data == b"calvin"
         pop_auth(app._fsa)
