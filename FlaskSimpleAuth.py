@@ -479,15 +479,19 @@ class FlaskSimpleAuth:
             import flask_httpauth as fha  # type: ignore
             if self._auth == "http-basic":
                 self._http_auth = fha.HTTPBasicAuth(realm=self._realm, **opts)
+                assert self._http_auth is not None  # for pleasing mypy
                 self._http_auth.verify_password(self._check_password)
             elif self._auth in ("http-digest", "digest"):
                 self._http_auth = fha.HTTPDigestAuth(realm=self._realm, **opts)
+                assert self._http_auth is not None  # for pleasing mypy
                 # FIXME? nonce & opaque callbacks? session??
             elif self._auth == "http-token":
                 if self._carrier == "header" and "header" not in opts and self._name is not None:
                     opts["header"] = self._name
                 self._http_auth = fha.HTTPTokenAuth(scheme=self._name, realm=self._realm, **opts)
+                assert self._http_auth is not None  # for pleasing mypy
                 self._http_auth.verify_token(self._get_token_auth)
+            assert self._http_auth is not None  # for pleasing mypy
             self._http_auth.get_password(self._get_user_pass)
             # FIXME? error_handler?
         else:
