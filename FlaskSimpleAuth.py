@@ -398,8 +398,7 @@ class FlaskSimpleAuth:
         else:
             self._auth = auth
         for a in self._auth:
-            assert a in ("httpd", "none", "fake", "basic", "param", "password",
-                         "token", "http-basic", "http-digest", "http-token", "digest")
+            assert a in self._FSA_AUTH
         self._mode = conf.get("FSA_MODE", "lazy")
         assert self._mode in ("always", "lazy", "all")
         self._check: bool = conf.get("FSA_CHECK", True)
@@ -821,18 +820,15 @@ class FlaskSimpleAuth:
         return self._get_this_token_auth(request.cookies[self._name]) \
             if self._name in request.cookies else None
 
-    def _get_httpd_auth(self):
+    def _get_httpd_auth(self) -> Optional[str]:
         """Inherit HTTP server authentication."""
         return request.remote_user
 
-    def _get_token_auth(self):
+    def _get_token_auth(self) -> Optional[str]:
         """Get authentication from token."""
         user = None
         if self._token is not None:
-            if "http-token" in self._auth:
-                # force Flask HTTPAuth token
-                user = self._get_httpauth()
-            elif self._carrier == "bearer":
+            if self._carrier == "bearer":
                 auth = request.headers.get("Authorization", None)
                 if auth is not None:
                     slen = len(self._name) + 1
@@ -850,12 +846,13 @@ class FlaskSimpleAuth:
                 token = request.headers.get(self._name, None)
                 if token is not None:
                     user = self._get_this_token_auth(token)
-            # else: cannot get there
+            else:
+                raise AuthException("unexpected carrier {self._carrier}", 500)
         return user
 
     # map auth types to their functions
-    _FSA_AUTH = {
-        "none": lambda: None,
+    _FSA_AUTH: Dict[str, Callable[[Any], Optional[str]]] = {
+        "none": lambda s: None,
         "httpd": _get_httpd_auth,
         "token": _get_token_auth,
         "fake": _get_fake_auth,
