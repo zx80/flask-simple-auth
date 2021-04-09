@@ -250,7 +250,12 @@ The main configuration directive is `FSA_AUTH` which governs authentication
 methods used by the `get_user` function, as described in the following sections.
 
 - `FSA_AUTH` governs the *how*: `none`, `httpd`, `basic`, `param`, `password`,
-`token`… as described in details in the next sections.  Default is `httpd`.
+`token`… as described in details in the next sections.
+Default is `httpd`.
+If a single scheme is provided, authentication will be `token` then the provided
+scheme, i.e. `token` are tried first anyway.
+To take full control of authentication scheme, provide an ordered list.
+Not that it does not always make much sense to mix some schemes.
 
 - `FSA_MODE` tells when to attempt authentication.
 
@@ -808,3 +813,4 @@ Initial release in beta.
 - simplify/shoften documentation?
 - allow to redirect on auth success/failure (for web apps)?
   with a parametric URL?
+- add `any` token scheme?

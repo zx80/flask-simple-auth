@@ -387,8 +387,10 @@ class FlaskSimpleAuth:
         # overall auth setup
         #
         self._auth: List[str] = []
-        auth = conf.get("FSA_AUTH", "httpd")
-        if isinstance(auth, str):
+        auth = conf.get("FSA_AUTH", None)
+        if auth is None:
+            self._auth = ["httpd"]
+        elif isinstance(auth, str):
             if auth not in ("token", "http-token"):
                 self._auth = ["token", auth]
             else:
