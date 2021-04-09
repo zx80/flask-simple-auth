@@ -638,6 +638,7 @@ Defer password manager setup till it is actually needed, so as to avoid
 importing `passlib` for nothing.
 Do not attempt to re-create a token if it is not possible, i.e. when
 relying on a third party token provider.
+Allow to fully control the list of authentication schemes.
 
 #### 3.0.0
 

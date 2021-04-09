@@ -334,6 +334,7 @@ class FlaskSimpleAuth:
     def _set_www_authenticate(self, res: Response):
         """Set WWW-Authenticate response header depending on current scheme."""
         if res.status_code == 401:
+            # FIXME should it prioritize based on self._auth order?
             if self._auth_has("basic", "password"):
                 res.headers["WWW-Authenticate"] = f"Basic realm=\"{self._realm}\""
             elif self._auth_has("http-basic", "http-digest", "http-token", "digest"):
