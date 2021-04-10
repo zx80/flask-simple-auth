@@ -885,13 +885,15 @@ class FlaskSimpleAuth:
         lae = None
         for a in self._auth:
             try:
+                log.debug(f"trying {a}")
                 self._user = self._FSA_AUTH[a](self)
                 if self._user is not None:
                     break
             except AuthException as e:
                 lae = e
+            # FIXME other exceptions?
 
-        # rethrow last exception on failures
+        # rethrow last auth exception on failure
         if self._user is None:
             raise lae or AuthException("missing authentication", 401)
 
@@ -920,7 +922,7 @@ class FlaskSimpleAuth:
     #
     # authorize internal decorator
     #
-    def _authorize(self, *groups):
+    def _authorize(self, *groups, auth=None):
         """Decorator to authorize groups."""
 
         if len(groups) > 1 and \
@@ -947,10 +949,19 @@ class FlaskSimpleAuth:
                 if self._user is None:
                     # no current user, try to get one?
                     if self._mode != "always":
+                        # possibly overwrite the authentication scheme
+                        # NOTE this may or may not work because other settings may
+                        #   not be compatible with the provided scheme…
+                        if auth is not None:
+                            saved = self._auth
+                            self._auth = [auth] if isinstance(auth, str) else auth
                         try:
                             self._user = self.get_user()
                         except AuthException:
                             return self._Resp("", 401)
+                        finally:
+                            if auth is not None:
+                                self._auth = saved
                     else:
                         return self._Resp("", 401)
                 if self._user is None:
@@ -1052,7 +1063,7 @@ class FlaskSimpleAuth:
 
         return decorate
 
-    def add_url_rule(self, rule, endpoint=None, view_func=None, authorize=NONE, required=None, allparams=False, **options):
+    def add_url_rule(self, rule, endpoint=None, view_func=None, authorize=NONE, auth=None, required=None, allparams=False, **options):
 
         """Route decorator helper method."""
 
@@ -1090,7 +1101,7 @@ class FlaskSimpleAuth:
 
         assert self._app is not None
         par = self._parameters(required=required, allparams=allparams)(view_func)
-        aut = self._authorize(*roles)(par)
+        aut = self._authorize(*roles, auth=auth)(par)
         return flask.Flask.add_url_rule(self._app, newpath, endpoint=endpoint, view_func=aut, **options)
 
     def route(self, rule, **options):

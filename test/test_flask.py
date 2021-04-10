@@ -630,3 +630,40 @@ def test_http_token():
         res = check_200(client.get("/token", headers={"HoHoHo": calvin_token}))
         assert res.data == b"calvin"
         pop_auth(app._fsa)
+
+def test_per_route(client):
+    mode, app._fsa._mode = app._fsa._mode, "all"
+    token = app.create_token("calvin")
+    TOKEN = {"Authorization": f"Bearer {token}"}
+    from requests.auth import _basic_auth_str as basic_auth
+    BASIC = {"Authorization": basic_auth("calvin", App.UP["calvin"])}
+    FAKE = {"LOGIN": "calvin"}
+    PARAM = {"USER": "calvin", "PASS": App.UP["calvin"]}
+    # basic
+    log.debug("trying: basic")
+    check_200(client.get("/auth/basic", headers=BASIC))
+    check_401(client.get("/auth/basic", headers=TOKEN))
+    check_401(client.get("/auth/basic", data=PARAM))
+    check_401(client.get("/auth/basic", data=FAKE))
+    # param
+    check_200(client.get("/auth/param", data=PARAM))
+    check_401(client.get("/auth/param", headers=BASIC))
+    check_401(client.get("/auth/param", headers=TOKEN))
+    check_401(client.get("/auth/param", data=FAKE))
+    # password
+    check_200(client.get("/auth/password", headers=BASIC))
+    check_200(client.get("/auth/password", data=PARAM))
+    check_401(client.get("/auth/password", headers=TOKEN))
+    check_401(client.get("/auth/password", data=FAKE))
+    # token
+    check_200(client.get("/auth/token", headers=TOKEN))
+    check_401(client.get("/auth/token", data=PARAM))
+    check_401(client.get("/auth/token", headers=BASIC))
+    check_401(client.get("/auth/token", data=FAKE))
+    # fake
+    check_200(client.get("/auth/fake", data=FAKE))
+    check_401(client.get("/auth/fake", headers=TOKEN))
+    check_401(client.get("/auth/fake", data=PARAM))
+    check_401(client.get("/auth/fake", headers=BASIC))
+    # cleanup
+    app._fsa._mode = mode

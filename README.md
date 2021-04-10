@@ -284,6 +284,10 @@ Default is *True*.
 - `FSA_CACHE_SIZE` control size of internal lru caches. Default is *1024*.
 *None* means unbounded. Disable with *0*.
 
+The authentication scheme attempted on a route can be altered with the
+`auth` parameter added to the `route` decorator.
+This may be used to restrict the authentication scheme to a *subset*
+if those configured globally.
 
 #### `none` Authentication
 
@@ -644,6 +648,7 @@ importing `passlib` for nothing.
 Do not attempt to re-create a token if it is not possible, i.e. when
 relying on a third party token provider.
 Allow to fully control the list of authentication schemes.
+Allow to control the authentication scheme on a route.
 
 #### 3.0.0
 
@@ -814,3 +819,4 @@ Initial release in beta.
 - allow to redirect on auth success/failure (for web apps)?
   with a parametric URL?
 - add `any` token scheme?
+- check auth=… parameter?

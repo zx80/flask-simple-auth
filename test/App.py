@@ -18,11 +18,11 @@ app = Flask("Test")
 # AUTH
 #
 app.config.update(
-    FSA_AUTH = 'fake',
+    FSA_AUTH = "fake",
     FSA_MODE = "always",
     FSA_SKIP_PATH = (r"/register",
                      r"/(add|div|mul|sub|type|params|any|mis[12]|nogo|one)",
-                     r"/(infer|superid|cplx|bool|mail|path|string)"),
+                     r"/(infer|superid|cplx|bool|mail|path|string|auth)"),
     FSA_GET_USER_PASS = get_user_pass,
     FSA_USER_IN_GROUP = user_in_group
 )
@@ -228,3 +228,24 @@ def get_path(p: path):
 @app.route("/string/<s>", methods=["GET"], authorize=ANY)
 def get_string(s: string):
     return s, 200
+
+# per-route authentication scheme
+@app.route("/auth/token", methods=["GET"], authorize=ALL, auth="token")
+def get_auth_token():
+    return f"token auth: {app.get_user()}", 200
+
+@app.route("/auth/basic", methods=["GET"], authorize=ALL, auth="basic")
+def get_auth_basic():
+    return f"basic auth: {app.get_user()}", 200
+
+@app.route("/auth/param", methods=["GET"], authorize=ALL, auth="param")
+def get_auth_param():
+    return f"param auth: {app.get_user()}", 200
+
+@app.route("/auth/fake", methods=["GET"], authorize=ALL, auth="fake")
+def get_auth_fake():
+    return f"fake auth: {app.get_user()}", 200
+
+@app.route("/auth/password", methods=["GET"], authorize=ALL, auth="password")
+def get_auth_password():
+    return f"password auth: {app.get_user()}", 200
