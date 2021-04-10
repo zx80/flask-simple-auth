@@ -885,7 +885,6 @@ class FlaskSimpleAuth:
         lae = None
         for a in self._auth:
             try:
-                log.debug(f"trying {a}")
                 self._user = self._FSA_AUTH[a](self)
                 if self._user is not None:
                     break
