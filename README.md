@@ -824,3 +824,4 @@ Initial release in beta.
   with a parametric URL?
 - add `any` token scheme?
 - check auth=… parameter?
+- check json parameters
