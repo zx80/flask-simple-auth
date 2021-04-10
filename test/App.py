@@ -249,3 +249,7 @@ def get_auth_fake():
 @app.route("/auth/password", methods=["GET"], authorize=ALL, auth="password")
 def get_auth_password():
     return f"password auth: {app.get_user()}", 200
+
+@app.route("/auth/ftp", methods=["GET"], authorize=ALL, auth=["fake", "token", "param"])
+def get_auth_ftp():
+    return f"ftp auth: {app.get_user()}", 200

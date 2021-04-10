@@ -665,5 +665,10 @@ def test_per_route(client):
     check_401(client.get("/auth/fake", headers=TOKEN))
     check_401(client.get("/auth/fake", data=PARAM))
     check_401(client.get("/auth/fake", headers=BASIC))
+    # fake, token, param
+    check_200(client.get("/auth/ftp", data=FAKE))
+    check_200(client.get("/auth/ftp", headers=TOKEN))
+    check_200(client.get("/auth/ftp", data=PARAM))
+    check_401(client.get("/auth/ftp", headers=BASIC))
     # cleanup
     app._fsa._mode = mode
