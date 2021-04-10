@@ -17,9 +17,12 @@ import inspect
 import datetime as dt
 
 import flask
+
 # for local use & forwarding
 from flask import Response, request
+
 # just for forwarding
+# NOTE the only missing should be "Flask"
 from flask import session, jsonify, Blueprint, make_response, abort, \
     redirect, url_for, after_this_request, send_file, send_from_directory, \
     safe_join, escape, Markup, render_template, current_app, g
@@ -69,7 +72,7 @@ class string(str):
 CASTS: Dict[type, Callable[[str], object]] = {
     bool: bool_cast,
     int: int_cast,
-    # note: mypy complains wrongly about non-existing _empty.
+    # NOTE mypy complains wrongly about non-existing _empty.
     inspect._empty: str,  # type: ignore
     path: str,
     string: str,
@@ -79,11 +82,11 @@ CASTS: Dict[type, Callable[[str], object]] = {
 }
 
 #
-# PREDEFINED GROUP NAMES
+# SPECIAL PREDEFINED GROUP NAMES
 #
 ANY = "ANY"    # anyone can come in, no authentication required
 ALL = "ALL"    # all authenticated users are allowed
-NONE = "NONE"  # non can come in, the path is forbidden
+NONE = "NONE"  # none can come in, the path is forbidden
 
 
 def typeof(p: inspect.Parameter):
@@ -219,7 +222,7 @@ class Flask(flask.Flask):
         super().__init__(*args, **kwargs)
         self._fsa = FlaskSimpleAuth(self)
         # needed for blueprint registration
-        # overwritten late because called by upper Flask initialization
+        # overwritten late because called by upper Flask initialization for "static"
         self.add_url_rule = self._fsa.add_url_rule
 
     def get_user_pass(self, gup):
@@ -255,7 +258,7 @@ class Flask(flask.Flask):
         self._fsa.clear_caches()
 
 
-# actual class
+# actual extension
 class FlaskSimpleAuth:
     """Flask extension to implement authentication, authorization and parameter
     management.
@@ -308,7 +311,7 @@ class FlaskSimpleAuth:
 
     def _set_auth_cookie(self, res: Response):
         """Set a cookie if needed and none was sent."""
-        # note: thanks to max_age the client should not send stale cookies
+        # NOTE thanks to max_age the client should not send stale cookies
         if self._carrier == "cookie":
             assert self._token is not None and self._name is not None
             if self._user is not None and self._can_create_token():
@@ -340,7 +343,7 @@ class FlaskSimpleAuth:
             elif self._auth_has("http-basic", "http-digest", "http-token", "digest"):
                 assert self._http_auth is not None
                 res.headers["WWW-Authenticate"] = self._http_auth.authenticate_header()
-            elif self._carrier == "bearer":
+            elif "token" in self._auth and self._carrier == "bearer":
                 res.headers["WWW-Authenticate"] = f"{self._name} realm=\"{self._realm}\""
             # else: scheme does not rely on WWW-Authenticate…
         # else: no need for WWW-Authenticate
@@ -348,9 +351,10 @@ class FlaskSimpleAuth:
 
     def _cache_function(self, fun):
         """Generate or regenerate cache for function."""
+        # get the actual function when regenerating
         if hasattr(fun, "__wrapped__"):
             fun = fun.__wrapped__
-        # probaly maxsize should disable with None and unbound with 0.
+        # NOTE probaly maxsize should disable with None and unbound with 0.
         return fun if fun is None or self._maxsize == 0 else \
             functools.lru_cache(maxsize=self._maxsize)(fun)
 
@@ -580,7 +584,7 @@ class FlaskSimpleAuth:
     # FSA_PASSWORD_SCHEME: name of password scheme for passlib context
     # FSA_PASSWORD_OPTIONS: further options for passlib context
     #
-    # note: passlib bcrypt is Apache compatible
+    # NOTE passlib bcrypt is Apache compatible
     #
 
     def check_password(self, pwd, ref):
@@ -618,7 +622,7 @@ class FlaskSimpleAuth:
             if "http-token" not in self._auth else None
         # log.debug(f"password = {password}")
         try:
-            # note: "authenticate" signature is not very clean…
+            # NOTE "authenticate" signature is not very clean…
             user = self._http_auth.authenticate(auth, password)
             if user is not None and user is not False:
                 return auth.username if user is True else user
