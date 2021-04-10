@@ -287,7 +287,8 @@ Default is *True*.
 The authentication scheme attempted on a route can be altered with the
 `auth` parameter added to the `route` decorator.
 This may be used to restrict the authentication scheme to a *subset*
-if those configured globally.
+if those configured globally, and may or may not work otherwise
+depending on module internals.
 
 #### `none` Authentication
 
