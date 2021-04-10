@@ -255,7 +255,7 @@ Default is `httpd`.
 If a single scheme is provided, authentication will be `token` then the provided
 scheme, i.e. `token` are tried first anyway.
 To take full control of authentication scheme, provide an ordered list.
-Not that it does not always make much sense to mix some schemes.
+Note that it does not always make much sense to mix some schemes.
 
 - `FSA_MODE` tells when to attempt authentication.
 
