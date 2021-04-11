@@ -250,14 +250,17 @@ The main configuration directive is `FSA_AUTH` which governs authentication
 methods used by the `get_user` function, as described in the following sections.
 
 - `FSA_AUTH` governs the *how*: `none`, `httpd`, `basic`, `param`, `password`,
-`token`… as described in details in the next sections.
-Default is `httpd`.
-If a non-token single scheme is provided, authentication will be `token`
-followed by the provided scheme, i.e. `token` are tried first anyway.
-To take full control of authentication scheme, provide an ordered list.
-Note that it does not always make much sense to mix some schemes, e.g.
-*basic* and *digest* password storage assumptions are distinct and should
-not be merged.
+  `token`… as described in details in the next sections.
+  Default is `httpd`.
+
+  If a non-token single scheme is provided, authentication will be `token`
+  followed by the provided scheme, i.e. `token` are tried first anyway.
+
+  To take full control of authentication scheme, provide an ordered list.
+  Note that it does not always make much sense to mix some schemes, e.g.
+  *basic* and *digest* password storage assumptions are distinct and should
+  not be merged.
+  Also, only one HTTPAuth-based scheme can be active at a time.
 
 - `FSA_MODE` tells when to attempt authentication.
 
