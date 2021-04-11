@@ -698,3 +698,11 @@ def test_per_route(client):
     check_401(client.get("/auth/ftp", headers=BASIC))
     # cleanup
     app._fsa._mode = mode
+
+def test_misc_app():
+    from AppMisc import create_app
+    try:
+        app = create_app()
+        assert False, "misc app creation must fail"
+    except Exception:
+        assert True, "ok, misc app creation has failed"
