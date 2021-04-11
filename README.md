@@ -829,6 +829,5 @@ Initial release in beta.
 - allow to redirect on auth success/failure (for web apps)?
   with a parametric URL?
 - add `any` token scheme?
-- check auth=… parameter?
 - auth=…  does not persist long enough for after requets hooks
 - re-check test coverage

@@ -933,6 +933,13 @@ class FlaskSimpleAuth:
             assert self._user_in_group is not None, \
                 "user_in_group callback needed for authorize"
 
+        if auth is not None:
+            if isinstance(auth, str):
+                auth = [auth]
+            for a in auth:
+                if a not in self._FSA_AUTH:
+                    raise Exception(f"unexpected authentication scheme {auth}")
+
         def decorate(fun: Callable):
 
             @functools.wraps(fun)
@@ -952,8 +959,7 @@ class FlaskSimpleAuth:
                         # NOTE this may or may not work because other settings may
                         #   not be compatible with the provided scheme…
                         if auth is not None:
-                            saved = self._auth
-                            self._auth = [auth] if isinstance(auth, str) else auth
+                            saved, self._auth = self._auth, auth
                         try:
                             self._user = self.get_user()
                         except AuthException:
