@@ -699,10 +699,32 @@ def test_per_route(client):
     # cleanup
     app._fsa._mode = mode
 
-def test_misc_app():
-    from AppMisc import create_app
+def test_bad_app():
+    from AppBad import create_app
+    # working versions, we basically test that there is no exception
+    app = create_app(FSA_AUTH="basic")
+    app = create_app(FSA_AUTH=["token", "basic"])
+    app = create_app(auth="fake")
+    app = create_app(auth=["token", "fake"])
+    app = None
+    # bad scheme
     try:
-        app = create_app()
+        app = create_app(FSA_AUTH="bad")
+        assert False, "misc app creation must fail"
+    except Exception:
+        assert True, "ok, misc app creation has failed"
+    try:
+        app = create_app(FSA_AUTH=["fake", "basic", "bad"])
+        assert False, "misc app creation must fail"
+    except Exception:
+        assert True, "ok, misc app creation has failed"
+    try:
+        app = create_app(auth="bad")
+        assert False, "misc app creation must fail"
+    except Exception:
+        assert True, "ok, misc app creation has failed"
+    try:
+        app = create_app(auth=["basic", "token", "bad"])
         assert False, "misc app creation must fail"
     except Exception:
         assert True, "ok, misc app creation has failed"
