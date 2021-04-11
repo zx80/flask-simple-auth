@@ -831,3 +831,4 @@ Initial release in beta.
 - add `any` token scheme?
 - check auth=… parameter?
 - auth=…  does not persist long enough for after requets hooks
+- re-check test coverage
