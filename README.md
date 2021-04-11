@@ -289,6 +289,14 @@ Default is *True*.
 - `FSA_CACHE_SIZE` control size of internal lru caches. Default is *1024*.
 *None* means unbounded. Disable with *0*.
 
+- `FSA_401_REDIRECT` url to redirect to on *401*.
+Default is *None*.
+This can be used for the web application login page.
+
+- `FSA_URL_NAME` name of parameter for the target URL after a successful login.
+Default is `URL` if redirect is activated, else *None*.
+Currently, the login page should use this parameter to redirect to when ok.
+
 The authentication scheme attempted on a route can be altered with the
 `auth` parameter added to the `route` decorator.
 This may be used to restrict the authentication scheme to a *subset*
@@ -826,8 +834,7 @@ Initial release in beta.
 - test `FSA_HTTP_AUTH_OPTS`?
 - do test digest?
 - simplify/shoften documentation?
-- allow to redirect on auth success/failure (for web apps)?
-  with a parametric URL?
 - add `any` token scheme?
 - auth=…  does not persist long enough for after requets hooks
 - re-check test coverage
+- automate URL-parameter redirect?

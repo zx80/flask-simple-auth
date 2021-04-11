@@ -30,6 +30,10 @@ def check_204(res):  # no content
     assert res.status_code == 204
     return res
 
+def check_307(res):  # tmp redirect
+    assert res.status_code == 307
+    return res
+
 def check_400(res):  # client error
     assert res.status_code == 400
     return res
@@ -542,6 +546,16 @@ def test_something_3(client3):
     assert res.data == b"CALVIN"
     res = check_200(client3.get("/b/something", data={"LOGIN": "dad"}))
     assert res.data == b"CALVIN"
+
+def test_401_redirect(client):
+    app._fsa._401_redirect = "/login-page"
+    res = check_307(client.get("/auth/fake"))
+    assert "/login-page" in res.location
+    app._fsa._url_name = "URL"
+    res = check_307(client.get("/auth/fake"))
+    assert "/login-page" in res.location and "URL" in res.location and "fake" in res.location
+    app._fsa._401_redirect = None
+    app._fsa._url_name = None
 
 def test_cacheok():
     @fsa.CacheOK

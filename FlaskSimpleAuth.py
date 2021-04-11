@@ -309,6 +309,17 @@ class FlaskSimpleAuth:
                 return self._Resp("missing authorization check", 500)
         return res
 
+    def _possible_redirect(self, res: Response):
+        """After request hook to turn a 401 into a redirect."""
+        if res.status_code == 401 and self._401_redirect is not None:
+            location = self._401_redirect
+            # allow to come back later in some cases
+            if self._url_name is not None and request.method == "GET":
+                import urllib
+                location += "?" + urllib.parse.urlencode({self._url_name: request.url})
+            return redirect(location, 307)
+        return res
+
     def _set_auth_cookie(self, res: Response):
         """Set a cookie if needed and none was sent."""
         # NOTE thanks to max_age the client should not send stale cookies
@@ -409,6 +420,9 @@ class FlaskSimpleAuth:
         self._maxsize = conf.get("FSA_CACHE_SIZE", 1024)
         import re
         self._skip_path = [re.compile(r).match for r in conf.get("FSA_SKIP_PATH", [])]
+        # for web apps
+        self._401_redirect = conf.get("FSA_401_REDIRECT", None)
+        self._url_name = conf.get("FSA_URL_NAME", "URL" if self._401_redirect else None)
         #
         # token setup
         #
@@ -522,6 +536,7 @@ class FlaskSimpleAuth:
         #
         app.before_request(self._auth_set_user)
         app.after_request(self._auth_after_cleanup)
+        app.after_request(self._possible_redirect)
         app.after_request(self._set_auth_cookie)
         app.after_request(self._set_www_authenticate)
         #
