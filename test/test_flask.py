@@ -572,6 +572,11 @@ def test_reference():
     r2 = fsa.Reference(set_name="set_object")
     r2.set_object(v2)
     assert r2 == v2
+    r3 = fsa.Reference("1")
+    assert r3 == "1" and r3 != "one"
+    assert "0" < r3 and "1" <= r3 and "2" > r3 and "1" >= r3
+    assert "1".__hash__() == r3.__hash__()
+    assert repr("1") == repr(r3)
 
 def test_www_authenticate(client):
     push_auth(app._fsa, "param")
@@ -706,25 +711,50 @@ def test_bad_app():
     app = create_app(FSA_AUTH=["token", "basic"])
     app = create_app(auth="fake")
     app = create_app(auth=["token", "fake"])
+    # trigger default header name
+    app = create_app(FSA_AUTH="token", FSA_TOKEN_CARRIER="header", FSA_TOKEN_SECRET="too short")
+    # cover jwt initialization path
+    app = create_app(FSA_AUTH="token", FSA_TOKEN_TYPE="jwt")
+    app = create_app(FSA_AUTH="token", FSA_TOKEN_TYPE="jwt", FSA_TOKEN_ALGO="HS256")
+    app = create_app(FSA_AUTH="token", FSA_TOKEN_TYPE="jwt", FSA_TOKEN_ALGO="none")
     app = None
     # bad scheme
     try:
         app = create_app(FSA_AUTH="bad")
-        assert False, "misc app creation must fail"
+        assert False, "bad app creation must fail"
     except Exception:
-        assert True, "ok, misc app creation has failed"
+        assert True, "ok, bad app creation has failed"
     try:
         app = create_app(FSA_AUTH=["fake", "basic", "bad"])
-        assert False, "misc app creation must fail"
+        assert False, "bad app creation must fail"
     except Exception:
-        assert True, "ok, misc app creation has failed"
+        assert True, "ok, bad app creation has failed"
     try:
         app = create_app(auth="bad")
-        assert False, "misc app creation must fail"
+        assert False, "bad app creation must fail"
     except Exception:
-        assert True, "ok, misc app creation has failed"
+        assert True, "ok, bad app creation has failed"
     try:
         app = create_app(auth=["basic", "token", "bad"])
-        assert False, "misc app creation must fail"
+        assert False, "bad app creation must fail"
     except Exception:
-        assert True, "ok, misc app creation has failed"
+        assert True, "ok, bad app creation has failed"
+    # bad token type
+    try:
+        app = create_app(FSA_AUTH="token", FSA_TOKEN_TYPE="bad")
+        assert False, "bad app creation must fail"
+    except Exception:
+        assert True, "ok, bad app creation has failed"
+    # bad token carrier
+    try:
+        app = create_app(FSA_AUTH="token", FSA_TOKEN_CARRIER="bad")
+        assert False, "bad app creation must fail"
+    except Exception:
+        assert True, "ok, bad app creation has failed"
+    # bad token name
+    try:
+        app = create_app(FSA_AUTH="token", FSA_TOKEN_CARRIER="bearer", FSA_TOKEN_NAME=None)
+        assert False, "bad app creation must fail"
+    except Exception:
+        assert True, "ok, bad app creation has failed"
+    app = create_app(FSA_AUTH="token", FSA_TOKEN_TYPE="jwt", FSA_TOKEN_ALGO="RSA")
