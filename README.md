@@ -295,7 +295,7 @@ This may be used to restrict the authentication scheme to a *subset*
 if those configured globally, and may or may not work otherwise
 depending on module internals.
 This feature is best avoided but in very particular cases because
-it counters one aim of this module which is to remove authentication
+it counters a goal of this module which is to remove authentication
 considerations from the code and put them in the configuration only.
 
 #### `none` Authentication
