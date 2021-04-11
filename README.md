@@ -304,9 +304,10 @@ Use to disactivate authentication.
 Inherit web server supplied authentication through `request.remote_user`.
 This is the default.
 
-There are plenty authentication schemes available in a web server
-such as Apache or Nginx, all of which probably more efficiently implemented
-than python code, so this should be the preferred option.
+There are plenty authentication schemes available in a web server such as
+[Apache](https://httpd.apache.org/) or [Nginx](https://nginx.org/), all of
+which probably more efficiently implemented than python code, so this
+should be the preferred option.
 However, it could require significant configuration effort compared to
 the application-side approach.
 
