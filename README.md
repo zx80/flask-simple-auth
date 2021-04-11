@@ -830,5 +830,4 @@ Initial release in beta.
   with a parametric URL?
 - add `any` token scheme?
 - check auth=… parameter?
-- test json parameters
 - auth=…  does not persist long enough for after requets hooks

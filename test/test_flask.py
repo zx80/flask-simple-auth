@@ -337,12 +337,17 @@ def test_typed_params(client):
     assert float(res.data) == 12.0
     res = check_200(client.get("/mul/2", data={"j":"3", "k":"4"}))
     assert int(res.data) == 24
+    res = check_200(client.get("/mul/2", json={"j":"5", "k":"4"}))
+    assert int(res.data) == 40
     check_400(client.get("/mul/1", data={"j":"3"}))
     check_400(client.get("/mul/1", data={"k":"4"}))
     check_400(client.get("/mul/2", data={"j":"three", "k":"four"}))
+    check_400(client.get("/mul/2", json={"j":"three", "k":"four"}))
     # optional
     res = check_200(client.get("/div", data={"i":"10", "j":"3"}))
     assert int(res.data) == 3
+    res = check_200(client.get("/div", json={"i":"100", "j":"4"}))
+    assert int(res.data) == 25
     res = check_200(client.get("/div", data={"i":"10"}))
     assert int(res.data) == 0
     res = check_200(client.get("/sub", data={"i":"42", "j":"20"}))
@@ -358,10 +363,14 @@ def test_types(client):
     assert res.data == b"int 3"
     res = check_200(client.get("/type", data={"i": "0x11"}))
     assert res.data == b"int 17"
+    res = check_200(client.get("/type", json={"i": "0x11"}))
+    assert res.data == b"int 17"
     # note: 011 is not accepted as octal
     res = check_200(client.get("/type", data={"i": "0o11"}))
     assert res.data == b"int 9"
     res = check_200(client.get("/type", data={"i": "11"}))
+    assert res.data == b"int 11"
+    res = check_200(client.get("/type", json={"i": "11"}))
     assert res.data == b"int 11"
     res = check_200(client.get("/type", data={"b": "0"}))
     assert res.data == b"bool False"
@@ -379,8 +388,12 @@ def test_types(client):
     assert res.data == b"bool True"
     res = check_200(client.get("/type", data={"b": "True"}))
     assert res.data == b"bool True"
+    res = check_200(client.get("/type", json={"b": "True"}))
+    assert res.data == b"bool True"
     res = check_200(client.get("/type", data={"s": "Hello World!"}))
     assert res.data == b"str Hello World!"
+    res = check_200(client.get("/type", json={"s": "Hello World?"}))
+    assert res.data == b"str Hello World?"
 
 def test_params(client):
     res = check_200(client.get("/params", data={"a":1, "b":2, "c":3}))
@@ -645,31 +658,43 @@ def test_per_route(client):
     check_200(client.get("/auth/basic", headers=BASIC))
     check_401(client.get("/auth/basic", headers=TOKEN))
     check_401(client.get("/auth/basic", data=PARAM))
+    check_401(client.get("/auth/basic", json=PARAM))
     check_401(client.get("/auth/basic", data=FAKE))
+    check_401(client.get("/auth/basic", json=FAKE))
     # param
     check_200(client.get("/auth/param", data=PARAM))
+    check_200(client.get("/auth/param", json=PARAM))
     check_401(client.get("/auth/param", headers=BASIC))
     check_401(client.get("/auth/param", headers=TOKEN))
     check_401(client.get("/auth/param", data=FAKE))
+    check_401(client.get("/auth/param", json=FAKE))
     # password
     check_200(client.get("/auth/password", headers=BASIC))
     check_200(client.get("/auth/password", data=PARAM))
+    check_200(client.get("/auth/password", json=PARAM))
     check_401(client.get("/auth/password", headers=TOKEN))
     check_401(client.get("/auth/password", data=FAKE))
+    check_401(client.get("/auth/password", json=FAKE))
     # token
     check_200(client.get("/auth/token", headers=TOKEN))
     check_401(client.get("/auth/token", data=PARAM))
+    check_401(client.get("/auth/token", json=PARAM))
     check_401(client.get("/auth/token", headers=BASIC))
     check_401(client.get("/auth/token", data=FAKE))
+    check_401(client.get("/auth/token", json=FAKE))
     # fake
     check_200(client.get("/auth/fake", data=FAKE))
+    check_200(client.get("/auth/fake", json=FAKE))
     check_401(client.get("/auth/fake", headers=TOKEN))
     check_401(client.get("/auth/fake", data=PARAM))
+    check_401(client.get("/auth/fake", json=PARAM))
     check_401(client.get("/auth/fake", headers=BASIC))
     # fake, token, param
     check_200(client.get("/auth/ftp", data=FAKE))
+    check_200(client.get("/auth/ftp", json=FAKE))
     check_200(client.get("/auth/ftp", headers=TOKEN))
     check_200(client.get("/auth/ftp", data=PARAM))
+    check_200(client.get("/auth/ftp", json=PARAM))
     check_401(client.get("/auth/ftp", headers=BASIC))
     # cleanup
     app._fsa._mode = mode
