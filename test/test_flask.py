@@ -633,12 +633,13 @@ def test_http_token():
 
 def test_per_route(client):
     mode, app._fsa._mode = app._fsa._mode, "all"
-    token = app.create_token("calvin")
-    TOKEN = {"Authorization": f"Bearer {token}"}
+    # data for 4 various authentication schemes
     from requests.auth import _basic_auth_str as basic_auth
     BASIC = {"Authorization": basic_auth("calvin", App.UP["calvin"])}
-    FAKE = {"LOGIN": "calvin"}
     PARAM = {"USER": "calvin", "PASS": App.UP["calvin"]}
+    FAKE = {"LOGIN": "calvin"}
+    token = app.create_token("calvin")
+    TOKEN = {"Authorization": f"Bearer {token}"}
     # basic
     log.debug("trying: basic")
     check_200(client.get("/auth/basic", headers=BASIC))
