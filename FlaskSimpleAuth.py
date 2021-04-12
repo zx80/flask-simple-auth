@@ -664,12 +664,11 @@ class FlaskSimpleAuth:
             raise AuthException("unexpected authorization header", 401)
         try:
             user, pwd = b64.b64decode(auth[6:]).decode().split(":", 1)
+            self._check_password(user, pwd)
         except Exception as e:
             log.debug(f"AUTH (basic): error while decoding auth \"{auth}\" ({e})")
             raise AuthException("decoding error on authorization header", 401)
-        finally:
-            self._check_password(user, pwd)
-            return user
+        return user
 
     #
     # HTTP PARAM AUTH

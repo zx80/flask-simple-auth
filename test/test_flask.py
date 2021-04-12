@@ -298,10 +298,20 @@ def test_wrong_token():
     except fsa.AuthException as e:
         assert e.status == 401
 
-def test_password_check():
+def test_password_check(client):
     ref = app.hash_password("hello")
     assert app.check_password("hello", ref)
     assert not app.check_password("bad-pass", ref)
+    push_auth(app._fsa, ["password"])
+    res = check_401(client.get("/read", data={"USER": "dad", "PASS": "bad-dad-password"}))
+    assert b"invalid password for" in res.data
+    res = check_401(client.get("/read", data={"USER": "dad"}))
+    assert b"missing password parameter" in res.data
+    pop_auth(app._fsa)
+    push_auth(app._fsa, ["basic"])
+    res = check_401(client.get("/read", headers={"Authorization": "Basic !!!"}))
+    assert b"decoding error on authorization" in res.data
+    pop_auth(app._fsa)
 
 def test_authorize():
     assert app._fsa._user_in_group("dad", App.ADMIN)
@@ -731,6 +741,8 @@ def test_bad_app():
     app = create_app(FSA_AUTH="token", FSA_TOKEN_TYPE="jwt")
     app = create_app(FSA_AUTH="token", FSA_TOKEN_TYPE="jwt", FSA_TOKEN_ALGO="HS256")
     app = create_app(FSA_AUTH="token", FSA_TOKEN_TYPE="jwt", FSA_TOKEN_ALGO="none")
+    app = create_app(FSA_AUTH="token", FSA_TOKEN_TYPE="jwt", FSA_TOKEN_ALGO="RSA")
+    app = create_app(FSA_AUTH="http-token", FSA_TOKEN_CARRIER="header", FSA_TOKEN_NAME="Foo")
     app = None
     # bad scheme
     try:
@@ -759,9 +771,19 @@ def test_bad_app():
         assert False, "bad app creation must fail"
     except Exception:
         assert True, "ok, bad app creation has failed"
+    try:
+        app = create_app(FSA_AUTH="token", FSA_TOKEN_TYPE=None)
+        assert False, "bad app creation must fail"
+    except Exception:
+        assert True, "ok, bad app creation has failed"
     # bad token carrier
     try:
         app = create_app(FSA_AUTH="token", FSA_TOKEN_CARRIER="bad")
+        assert False, "bad app creation must fail"
+    except Exception:
+        assert True, "ok, bad app creation has failed"
+    try:
+        app = create_app(FSA_AUTH="token", FSA_TOKEN_CARRIER=None)
         assert False, "bad app creation must fail"
     except Exception:
         assert True, "ok, bad app creation has failed"
@@ -771,4 +793,9 @@ def test_bad_app():
         assert False, "bad app creation must fail"
     except Exception:
         assert True, "ok, bad app creation has failed"
-    app = create_app(FSA_AUTH="token", FSA_TOKEN_TYPE="jwt", FSA_TOKEN_ALGO="RSA")
+    # bad jwt talgorithm
+    try:
+        app = create_app(FSA_AUTH="token", FSA_TOKEN_TYPE="jwt", FSA_TOKEN_ALGO="bad")
+        assert False, "bad app creation must fail"
+    except Exception:
+        assert True, "ok, bad app creation has failed"
