@@ -491,7 +491,7 @@ class FlaskSimpleAuth:
             else:
                 raise Exception(f"unexpected jwt FSA_TOKEN_ALGO ({algo})")
             self._siglen = 0
-        else:
+        else:  # pragma: no cover
             raise Exception(f"invalid FSA_TOKEN_TYPE ({self._token})")
         #
         # HTTP parameter names
