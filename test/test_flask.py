@@ -268,13 +268,39 @@ def test_jwt_token():
     assert "." in moe_token and len(moe_token.split(".")) == 3
     user = app._fsa._get_this_token_auth(moe_token)
     assert user == "moe"
+    # expired token
+    delay, grace = app._fsa._delay, app._fsa._grace
+    app._fsa._delay, app._fsa._grace = -1, 0
+    susie_token = app.create_token("susie")
+    assert len(susie_token.split(".")) == 3
+    try:
+        user = app._fsa._get_this_token_auth(susie_token)
+        assert False, "expired token should fail"
+    except fsa.AuthException as ae:
+        assert "expired jwt auth token" in ae.message
+    finally:
+        app._fsa._delay, app._fsa._grace = delay, grace
+    # again to test caching?
+    #try:
+    #    user = app._fsa._get_this_token_auth(susie_token)
+    #    assert False, "expired token should fail"
+    #except fsa.AuthException as ae:
+    #    assert "expired jwt auth token" in ae.message
     # pubkey signature scheme
     app._fsa._algo, app._fsa._secret, app._fsa._sign = \
         "RS256", RSA_TEST_PUB_KEY, RSA_TEST_PRIV_KEY
     mum_token = app.create_token("mum")
-    assert "." in mum_token and len(mum_token.split(".")) == 3
+    pieces = mum_token.split(".")
+    assert len(pieces) == 3
     user = app._fsa._get_this_token_auth(mum_token)
     assert user == "mum"
+    # bad pubkey token
+    try:
+        bad_token = f"{pieces[0]}.{pieces[2]}.{pieces[1]}"
+        user = app._fsa._get_this_token_auth(bad_token)
+        assert False, "bad token should fail"
+    except fsa.AuthException as ae:
+        assert "invalid jwt token" in ae.message
     # cleanup
     app._fsa._token, app._fsa._algo = tsave, hsave
     app._fsa._secret, app._fsa._sign = Ksave, ksave
@@ -330,6 +356,13 @@ def test_authorize():
     res = stuff()
     assert res.status_code == 401
     app._fsa._mode = mode
+    try:
+        @app._fsa._authorize(fsa.ALL, fsa.ANY)
+        def foo():
+            return "foo", 200
+        assert False, "cannot mix ALL & ANY in authorize"
+    except Exception as e:
+        assert True, "mix is forbidden"
 
 def test_self_care(client):
     push_auth(app._fsa, "fake")

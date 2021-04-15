@@ -803,7 +803,7 @@ class FlaskSimpleAuth:
             log.debug(f"AUTH (jwt token): token {token} has expired")
             raise AuthException("expired jwt auth token", 401)
         except Exception as e:
-            log.debug(f"AUTH (jwt token): invalide token ({e})")
+            log.debug(f"AUTH (jwt token): invalid token ({e})")
             raise AuthException("invalid jwt token", 401)
 
     def _get_jwt_token_auth(self, token):
@@ -864,7 +864,7 @@ class FlaskSimpleAuth:
                 token = request.headers.get(self._name, None)
                 if token is not None:
                     user = self._get_this_token_auth(token)
-            else:
+            else:  # pragma: no cover
                 raise AuthException("unexpected carrier {self._carrier}", 500)
         return user
 
