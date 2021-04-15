@@ -795,7 +795,7 @@ class FlaskSimpleAuth:
         """
         import jwt
         try:
-            data = jwt.decode(token, self._secret, leeway=self._delay * 60,
+            data = jwt.decode(token, self._secret, leeway=self._grace * 60.0,
                               audience=self._realm, algorithms=[self._algo])
             exp = dt.datetime.fromtimestamp(data["exp"])
             return data["sub"], exp

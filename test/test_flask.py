@@ -268,25 +268,28 @@ def test_jwt_token():
     assert "." in moe_token and len(moe_token.split(".")) == 3
     user = app._fsa._get_this_token_auth(moe_token)
     assert user == "moe"
+    # again for caching
+    user = app._fsa._get_this_token_auth(moe_token)
+    assert user == "moe"
     # expired token
     delay, grace = app._fsa._delay, app._fsa._grace
     app._fsa._delay, app._fsa._grace = -1, 0
     susie_token = app.create_token("susie")
     assert len(susie_token.split(".")) == 3
+    # enough grace to accept it and set cache
+    # FIXME??
+    #app._fsa._grace = 2
+    #user = app._fsa._get_this_token_auth(susie_token)
+    #assert user == "susie"
+    #app._fsa._grace = 0
+    # possibly the cache keeps the limit *with* the leeway
     try:
         user = app._fsa._get_this_token_auth(susie_token)
         assert False, "expired token should fail"
     except fsa.AuthException as ae:
         assert "expired jwt auth token" in ae.message
-    finally:
-        app._fsa._delay, app._fsa._grace = delay, grace
-    # again to test caching?
-    #try:
-    #    user = app._fsa._get_this_token_auth(susie_token)
-    #    assert False, "expired token should fail"
-    #except fsa.AuthException as ae:
-    #    assert "expired jwt auth token" in ae.message
-    # pubkey signature scheme
+    app._fsa._delay, app._fsa._grace = delay, grace
+    # pubkey stuff
     app._fsa._algo, app._fsa._secret, app._fsa._sign = \
         "RS256", RSA_TEST_PUB_KEY, RSA_TEST_PRIV_KEY
     mum_token = app.create_token("mum")
