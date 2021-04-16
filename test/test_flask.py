@@ -1,6 +1,6 @@
 # tests with flask
 #
-# NOTE tests are not perfectly isolated as they should be…
+# FIXME tests are not perfectly isolated as they should be…
 #
 
 import pytest
@@ -90,7 +90,8 @@ def push_auth(app, auth, token = None, carrier = None, name = None):
     assert token in (None, "fsa", "jwt")
     assert carrier in (None , "bearer", "param", "cookie", "header")
     app_saved_auth.update(a = app._auth, t = app._token, c = app._carrier, n = app._name)
-    app._auth, app._token, app._carrier, app._name = [auth] if isinstance(auth, str) else auth, token, carrier, name
+    app._auth = [auth] if isinstance(auth, str) else auth
+    app._token, app._carrier, app._name = token, carrier, name
 
 def pop_auth(app):
     d = app_saved_auth
@@ -174,7 +175,8 @@ def test_perms(client):
     all_auth(client, "calvin", App.UP["calvin"], check_403, "/admin")
     assert not App.user_in_group("hobbes", App.ADMIN)
     all_auth(client, "hobbes", App.UP["hobbes"], check_403, "/admin")
-    assert hasattr(app._fsa._get_jwt_token_auth_real, "cache_clear")
+    assert hasattr(app._fsa._get_jwt_token_auth, "cache_clear")
+    assert hasattr(app._fsa._get_fsa_token_auth, "cache_clear")
     assert hasattr(app._fsa._user_in_group, "cache_clear")
     assert hasattr(app._fsa._get_user_pass, "cache_clear")
     app.clear_caches()
@@ -228,17 +230,41 @@ def test_register(client):
     pop_auth(app._fsa)
 
 def test_fsa_token():
-    tsave, hsave, app._fsa._token, app._fsa._algo = app._fsa._token, app._fsa._algo, "fsa", "blake2s"
+    tsave, hsave = app._fsa._token, app._fsa._algo
+    app._fsa._token, app._fsa._algo = "fsa", "blake2s"
     calvin_token = app.create_token("calvin")
     assert calvin_token[:12] == "Test:calvin:"
-    assert app._fsa._get_this_token_auth(calvin_token) == "calvin"
+    assert app._fsa._get_any_token_auth(calvin_token) == "calvin"
+    # bad timestamp format
+    try:
+        user = app._fsa._get_any_token_auth("R:U:demain:signature")
+        assert False, "expecting a bad timestamp format"
+    except Exception as e:
+        assert "unexpected timestamp format" in str(e)
+    # force expiration
+    grace = app._fsa._grace
+    app._fsa._grace = -1000000
+    try:
+        user = app._fsa._get_any_token_auth(calvin_token)
+        assert False, "token must have expired"
+    except fsa.AuthException as ae:
+        assert "expired auth token" in ae.message
+    # again after clear cache, so the expiration is detected at fsa level
+    app.clear_caches()
+    try:
+        user = app._fsa._get_any_token_auth(calvin_token)
+        assert False, "token must have expired"
+    except fsa.AuthException as ae:
+        assert "expired fsa auth token" in ae.message
+    # cleanup
+    app._fsa._grace = grace
     app._fsa._token, app._fsa._algo = tsave, hsave
 
 def test_expired_token():
     hobbes_token = app.create_token("hobbes")
     grace, app._fsa._grace = app._fsa._grace, -100
     try:
-        user = app._fsa._get_this_token_auth(hobbes_token)
+        user = app._fsa._get_any_token_auth(hobbes_token)
         assert False, "token should be invalid"
     except fsa.AuthException as e:
         assert e.status == 401
@@ -269,41 +295,35 @@ def test_jwt_token():
     # hmac signature scheme
     moe_token = app.create_token("moe")
     assert "." in moe_token and len(moe_token.split(".")) == 3
-    user = app._fsa._get_this_token_auth(moe_token)
+    user = app._fsa._get_any_token_auth(moe_token)
     assert user == "moe"
     # again for caching
-    user = app._fsa._get_this_token_auth(moe_token)
+    user = app._fsa._get_any_token_auth(moe_token)
     assert user == "moe"
     # expired token
     delay, grace = app._fsa._delay, app._fsa._grace
     app._fsa._delay, app._fsa._grace = -1, 0
     susie_token = app.create_token("susie")
     assert len(susie_token.split(".")) == 3
-    # enough grace to accept it and set cache
-    # FIXME??
-    #app._fsa._grace = 2
-    #user = app._fsa._get_this_token_auth(susie_token)
-    #assert user == "susie"
-    #app._fsa._grace = 0
-    # possibly the cache keeps the limit *with* the leeway
     try:
-        user = app._fsa._get_this_token_auth(susie_token)
+        user = app._fsa._get_any_token_auth(susie_token)
         assert False, "expired token should fail"
     except fsa.AuthException as ae:
         assert "expired jwt auth token" in ae.message
-    app._fsa._delay, app._fsa._grace = delay, grace
+    finally:
+        app._fsa._delay, app._fsa._grace = delay, grace
     # pubkey stuff
     app._fsa._algo, app._fsa._secret, app._fsa._sign = \
         "RS256", RSA_TEST_PUB_KEY, RSA_TEST_PRIV_KEY
     mum_token = app.create_token("mum")
     pieces = mum_token.split(".")
     assert len(pieces) == 3
-    user = app._fsa._get_this_token_auth(mum_token)
+    user = app._fsa._get_any_token_auth(mum_token)
     assert user == "mum"
     # bad pubkey token
     try:
         bad_token = f"{pieces[0]}.{pieces[2]}.{pieces[1]}"
-        user = app._fsa._get_this_token_auth(bad_token)
+        user = app._fsa._get_any_token_auth(bad_token)
         assert False, "bad token should fail"
     except fsa.AuthException as ae:
         assert "invalid jwt token" in ae.message
@@ -315,7 +335,7 @@ def test_invalid_token():
     susie_token = app.create_token("susie")
     susie_token = susie_token[:-1] + "z"
     try:
-        user = app._fsa._get_this_token_auth(susie_token)
+        user = app._fsa._get_any_token_auth(susie_token)
         assert False, "token should be invalid"
     except fsa.AuthException as e:
         assert e.status == 401
@@ -325,7 +345,7 @@ def test_wrong_token():
     moe_token = app.create_token("moe")
     app._fsa._realm = realm
     try:
-        user = app._fsa._get_this_token_auth(moe_token)
+        user = app._fsa._get_any_token_auth(moe_token)
         assert False, "token should be invalid"
     except fsa.AuthException as e:
         assert e.status == 401

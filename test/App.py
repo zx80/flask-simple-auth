@@ -53,6 +53,7 @@ def read_only():
 
 @app.route("/any", authorize=ANY)
 def any():
+    assert app._fsa._get_httpd_auth() is None
     return "no-auth", 200
 
 # change password in self-care with set_login

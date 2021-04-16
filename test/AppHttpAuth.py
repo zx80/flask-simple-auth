@@ -17,7 +17,9 @@ def create_app_basic(**config):
 
 def create_app_digest(**config):
     app = Flask("http-digest-auth")
-    app.config.update(FSA_AUTH="http-digest", FSA_GET_USER_PASS=Auth.UP.get)
+    app.config.update(FSA_AUTH="http-digest")
+    app.get_user_pass(Auth.UP.get)
+    app.user_in_group(None)
     app.config.update(**config)
 
     @app.route("/digest", methods=["GET"], authorize=ALL)

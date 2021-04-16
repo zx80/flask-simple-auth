@@ -15,6 +15,7 @@ from typing import Optional, Callable, Dict, List, Set, Any
 import functools
 import inspect
 import datetime as dt
+import re
 
 import flask
 
@@ -327,9 +328,9 @@ class FlaskSimpleAuth:
             assert self._token is not None and self._name is not None
             if self._user is not None and self._can_create_token():
                 if self._name in request.cookies:
-                    user, exp = self._get_token_auth_exp(request.cookies[self._name])
+                    user, exp = self._get_any_token_auth_exp(request.cookies[self._name])
                     # reset token when only 25% time remains
-                    limit = self._timestamp(dt.datetime.utcnow() + 0.25 * dt.timedelta(minutes=self._delay))
+                    limit = dt.datetime.utcnow() + 0.25 * dt.timedelta(minutes=self._delay)
                     set_cookie = exp < limit
                 else:
                     set_cookie = True
@@ -525,7 +526,7 @@ class FlaskSimpleAuth:
                     opts["header"] = self._name
                 self._http_auth = fha.HTTPTokenAuth(scheme=self._name, realm=self._realm, **opts)
                 assert self._http_auth is not None  # for pleasing mypy
-                self._http_auth.verify_token(self._get_this_token_auth)
+                self._http_auth.verify_token(self._get_any_token_auth)
             assert self._http_auth is not None  # for pleasing mypy
             self._http_auth.get_password(self._get_user_pass)
             # FIXME? error_handler?
@@ -573,6 +574,13 @@ class FlaskSimpleAuth:
                                 "bcrypt__default_ident": "2y"})
             from passlib.context import CryptContext  # type: ignore
             self._pm = CryptContext(schemes=[scheme], **options)
+
+    #
+    # INHERITED HTTP AUTH
+    #
+    def _get_httpd_auth(self) -> Optional[str]:
+        """Inherit HTTP server authentication."""
+        return request.remote_user
 
     #
     # HTTP FAKE AUTH
@@ -727,13 +735,22 @@ class FlaskSimpleAuth:
         h.update(f"{data}:{secret}".encode())
         return h.digest()[:self._siglen].hex()
 
-    def _timestamp(self, ts):
-        """Build a timestamp string."""
+    def _to_timestamp(self, ts):
+        """Build a simplistic timestamp string."""
+        # this is shorter than an iso format timestamp
         return "%04d%02d%02d%02d%02d%02d" % ts.timetuple()[:6]
+
+    def _from_timestamp(self, ts):
+        """Parses a simplistic timestamp string."""
+        p = re.match(r"^(\d{4})(\d\d)(\d\d)(\d\d)(\d\d)(\d\d)$", ts)
+        if not p:
+            raise Exception(f"unexpected timestamp format: {ts}")
+        iso = f"{p[1]}-{p[2]}-{p[3]}T{p[4]}:{p[5]}:{p[6]}"
+        return dt.datetime.fromisoformat(iso)
 
     def _get_fsa_token(self, realm, user, delay, secret):
         """Compute a signed token for "user" valid for "delay" minutes."""
-        limit = self._timestamp(dt.datetime.utcnow() + dt.timedelta(minutes=delay))
+        limit = self._to_timestamp(dt.datetime.utcnow() + dt.timedelta(minutes=delay))
         data = f"{realm}:{user}:{limit}"
         sig = self._cmp_sig(data, secret)
         return f"{data}:{sig}"
@@ -767,27 +784,32 @@ class FlaskSimpleAuth:
             return self._get_jwt_token(realm, user, delay, self._sign)
 
     def _get_fsa_token_auth(self, token):
-        """Tell whether FSA token is ok: return validated user or None."""
+        """Tell whether FSA token is ok: return validated user or None.
+
+        This function is expected to be cached, so it returns the token
+        expiration so that it can be rechecked later.
+        """
         # token format: "realm:calvin:20380119031407:<signature>"
-        realm, user, limit, sig = token.split(":", 3)
+        realm, user, slimit, sig = token.split(":", 3)
+        limit = self._from_timestamp(slimit)
         # check realm
         if realm != self._realm:
             log.debug(f"AUTH (fsa token): unexpected realm {realm}")
             raise AuthException(f"unexpected realm: {realm}", 401)
         # check signature
-        ref = self._cmp_sig(f"{realm}:{user}:{limit}", self._secret)
+        ref = self._cmp_sig(f"{realm}:{user}:{slimit}", self._secret)
         if ref != sig:
             log.debug("AUTH (fsa token): invalid signature")
             raise AuthException("invalid fsa auth token signature", 401)
         # check limit with a grace time
-        now = self._timestamp(dt.datetime.utcnow() - dt.timedelta(minutes=self._grace))
+        now = dt.datetime.utcnow() - dt.timedelta(minutes=self._grace)
         if now > limit:
             log.debug("AUTH (fsa token): token {token} has expired")
             raise AuthException("expired fsa auth token", 401)
         # all is well
         return user, limit
 
-    def _get_jwt_token_auth_real(self, token):
+    def _get_jwt_token_auth(self, token):
         """Tell whether JWT token is ok: return validated user or None.
 
         This function is expected to be cached, so it returns the token
@@ -806,65 +828,46 @@ class FlaskSimpleAuth:
             log.debug(f"AUTH (jwt token): invalid token ({e})")
             raise AuthException("invalid jwt token", 401)
 
-    def _get_jwt_token_auth(self, token):
-        """Tell whether JWT token is ok: return validated user or None.
-
-        This function is not cached, it uses the cached version and rechecks
-        the expiration limit."""
-        user, exp = self._get_jwt_token_auth_real(token)
-        # recheck token expiration
-        now = dt.datetime.utcnow() - dt.timedelta(minutes=self._grace)
-        if now > exp:
-            log.debug(f"AUTH (jwt token): token {token} has expired")
-            raise AuthException("expired jwt auth token", 401)
-        return user, self._timestamp(exp)
-
-    def _get_token_auth_exp(self, token):
-        """Tell whether token is ok: return validated user or None."""
-        log.debug(f"{self._token} token: {token}")
+    def _get_any_token_auth_exp(self, token):
+        """return validated user and expiration."""
         if token is None or token == "":
-            log.debug("AUTH (token): no token")
-            raise AuthException("missing auth token", 401)
+            raise AuthException("missing token", 401)
         return \
             self._get_fsa_token_auth(token) if self._token == "fsa" else \
             self._get_jwt_token_auth(token)
 
-    def _get_this_token_auth(self, token):
+    def _get_any_token_auth(self, token):
         """Tell whether token is ok: return validated user or None."""
-        return self._get_token_auth_exp(token)[0]
-
-    def _get_cookie_auth(self):
-        """Get user from cookie authentication."""
-        return self._get_this_token_auth(request.cookies[self._name]) \
-            if self._name in request.cookies else None
-
-    def _get_httpd_auth(self) -> Optional[str]:
-        """Inherit HTTP server authentication."""
-        return request.remote_user
+        user, exp = self._get_any_token_auth_exp(token)
+        # recheck token expiration
+        now = dt.datetime.utcnow() - dt.timedelta(minutes=self._grace)
+        if now > exp:
+            log.debug(f"AUTH (token): token {token} has expired")
+            raise AuthException("expired auth token", 401)
+        return user
 
     def _get_token_auth(self) -> Optional[str]:
         """Get authentication from token."""
         user = None
         if self._token is not None:
+            token: Optional[str] = None
             if self._carrier == "bearer":
                 auth = request.headers.get("Authorization", None)
                 if auth is not None:
                     slen = len(self._name) + 1
                     if auth[:slen] == f"{self._name} ":  # FIXME lower case?
-                        user = self._get_this_token_auth(auth[slen:])
+                        token = auth[slen:]
                 # else we ignore… maybe it will be resolved later
             elif self._carrier == "cookie":
-                user = self._get_cookie_auth()
+                token = request.cookies[self._name] \
+                    if self._name in request.cookies else None
             elif self._carrier == "param":
                 params = request.json or request.values
                 token = params.get(self._name, None)
-                if token is not None:
-                    user = self._get_this_token_auth(token)
             else:
                 assert self._carrier == "header" and self._name is not None
                 token = request.headers.get(self._name, None)
-                if token is not None:
-                    user = self._get_this_token_auth(token)
+            user = self._get_any_token_auth(token)
         return user
 
     # map auth types to their functions
@@ -916,9 +919,12 @@ class FlaskSimpleAuth:
         """Return current authenticated user, if any."""
         return self._user
 
+    # methods that may be cached
+    _CACHABLE = ("_get_jwt_token_auth", "_get_fsa_token_auth", "_get_user_pass", "_user_in_group")
+
     def _set_caches(self):
         """Create caches around jwt token and hooks."""
-        for name in ("_get_jwt_token_auth_real", "_get_user_pass", "_user_in_group"):
+        for name in self._CACHABLE:
             fun = getattr(self, name)
             if fun is not None and hasattr(fun, "__wrapped__"):
                 fun = fun.__wrapped__
@@ -926,7 +932,7 @@ class FlaskSimpleAuth:
 
     def clear_caches(self):
         """Clear internal caches."""
-        for name in ("_get_jwt_token_auth_real", "_get_user_pass", "_user_in_group"):
+        for name in self._CACHABLE:
             fun = getattr(self, name)
             if fun is not None and hasattr(fun, "cache_clear"):
                 fun.cache_clear()
@@ -975,8 +981,8 @@ class FlaskSimpleAuth:
                             saved, self._auth = self._auth, auth
                         try:
                             self._user = self.get_user()
-                        except AuthException:
-                            return self._Resp("", 401)
+                        except AuthException as ae:
+                            return self._Resp(ae.message, ae.status)
                         finally:
                             if auth is not None:
                                 self._auth = saved
@@ -1037,7 +1043,7 @@ class FlaskSimpleAuth:
             def wrapper(*args, **kwargs):
 
                 # this cannot happen under normal circumstances
-                if self._need_authorization and self._check:
+                if self._need_authorization and self._check:  # pragma: no cover
                     return self._Resp("missing authorization check", 500)
 
                 # translate request parameters to named function parameters
@@ -1087,7 +1093,7 @@ class FlaskSimpleAuth:
 
         # lazy initialization
         if not self._initialized:
-            self.init_app(self._app)
+            self.initialize()
 
         # make authorize parameter it a list/tuple
         roles = authorize
