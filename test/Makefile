@@ -33,5 +33,5 @@ coverage:
 
 .PHONY: clean
 clean: stop
-	$(RM) -r __pycache__ htmlcov
+	$(RM) -r __pycache__ htmlcov .mypy_cache
 	$(RM) $(F.log) .coverage
