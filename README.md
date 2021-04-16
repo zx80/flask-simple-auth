@@ -667,6 +667,7 @@ Do not attempt to re-create a token if it is not possible, i.e. when
 relying on a third party token provider.
 Allow to fully control the list of authentication schemes.
 Allow to control the authentication scheme on a route.
+Improve test code coverage.
 
 #### 3.0.0
 
