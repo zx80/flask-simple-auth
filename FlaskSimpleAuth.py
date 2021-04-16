@@ -895,8 +895,7 @@ class FlaskSimpleAuth:
         if self._user is not None:
             return self._user
 
-        if not self._initialized:
-            raise AuthException("FlaskSimpleAuth not initialized", 500)
+        assert self._initialized, "FlaskSimpleAuth must be initialized"
 
         # try authentication schemes
         lae = None
