@@ -4,6 +4,7 @@ FLASK	= flask
 FLASK.opt	= --host 0.0.0.0
 APP	= App
 F.log	= $(wildcard *.log)
+PYTEST	= pytest --log-level=debug --capture=tee-sys
 
 .PHONY: run
 run:
@@ -23,11 +24,11 @@ stop:
 
 .PHONY: check
 check:
-	pytest --log-level=debug --capture=tee-sys
+	$(PYTEST)
 
 .PHONY: coverage
 coverage:
-	coverage run -m pytest --log-level=debug --capture=tee-sys
+	coverage run -m $(PYTEST)
 	coverage html FlaskSimpleAuth.py
 
 .PHONY: clean
