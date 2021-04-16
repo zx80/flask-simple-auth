@@ -316,8 +316,9 @@ class FlaskSimpleAuth:
             location = self._401_redirect
             # allow to come back later in some cases
             if self._url_name is not None and request.method == "GET":
+                sep = "&" if "?" in self._url_name else "?"
                 import urllib
-                location += "?" + urllib.parse.urlencode({self._url_name: request.url})
+                location += sep + urllib.parse.urlencode({self._url_name: request.url})
             return redirect(location, 307)
         return res
 
