@@ -924,11 +924,9 @@ class FlaskSimpleAuth:
     _CACHABLE = ("_get_jwt_token_auth", "_get_fsa_token_auth", "_get_user_pass", "_user_in_group")
 
     def _set_caches(self):
-        """Create caches around jwt token and hooks."""
+        """Create caches around some functions."""
         for name in self._CACHABLE:
             fun = getattr(self, name)
-            if fun is not None and hasattr(fun, "__wrapped__"):
-                fun = fun.__wrapped__
             setattr(self, name, self._cache_function(fun))
 
     def clear_caches(self):
