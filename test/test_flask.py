@@ -1,4 +1,7 @@
 # tests with flask
+#
+# NOTE tests are not perfectly isolated as they should be…
+#
 
 import pytest
 import App

@@ -860,12 +860,11 @@ class FlaskSimpleAuth:
                 token = params.get(self._name, None)
                 if token is not None:
                     user = self._get_this_token_auth(token)
-            elif self._carrier == "header":
+            else:
+                assert self._carrier == "header" and self._name is not None
                 token = request.headers.get(self._name, None)
                 if token is not None:
                     user = self._get_this_token_auth(token)
-            else:  # pragma: no cover
-                raise AuthException("unexpected carrier {self._carrier}", 500)
         return user
 
     # map auth types to their functions
