@@ -471,6 +471,18 @@ def test_types(client):
 def test_params(client):
     res = check_200(client.get("/params", data={"a":1, "b":2, "c":3}))
     assert res.data == b"a b c"
+    res = check_200(client.get("/required/true", data={"s1": "su", "s2": "sie"}))
+    assert res.data == b"su sie"
+    check_400(client.get("/required/true", data={"s2": "sie"}))
+    check_400(client.get("/required/true", data={"s1": "su"}))
+    res = check_200(client.get("/required/false", data={"s1": "su", "s2": "sie"}))
+    assert res.data == b"su sie"
+    res = check_200(client.get("/required/false"))
+    assert res.data == b"hello world"
+    res = check_200(client.get("/required/false", data={"s2": "sie"}))
+    assert res.data == b"hello sie"
+    res = check_200(client.get("/required/false", data={"s1": "su"}))
+    assert res.data == b"su world"
 
 def test_missing(client):
     saved, app._fsa._check = app._fsa._check, True

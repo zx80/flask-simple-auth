@@ -20,7 +20,7 @@ app = Flask("Test")
 app.config.update(
     FSA_AUTH = "fake",
     FSA_MODE = "always",
-    FSA_SKIP_PATH = (r"/register",
+    FSA_SKIP_PATH = (r"/(register|required)",
                      r"/(add|div|mul|sub|type|params|any|mis[12]|nogo|one)",
                      r"/(infer|superid|cplx|bool|mail|path|string|auth)"),
     FSA_GET_USER_PASS = get_user_pass,
@@ -256,3 +256,15 @@ def get_auth_password():
 @app.route("/auth/ftp", methods=["GET"], authorize=ALL, auth=["fake", "token", "param"])
 def get_auth_ftp():
     return f"ftp auth: {app.get_user()}", 200
+
+@app._fsa.route("/403")
+def get_403():
+    return "missing authorize", 200
+
+@app.route("/required/true", required=True, authorize=ANY)
+def get_required_true(s1, s2):
+    return s1 + " " + s2, 200
+
+@app.route("/required/false", required=False, authorize=ANY)
+def get_required_false(s1 = "hello", s2 = "world"):
+    return s1 + " " + s2, 200
