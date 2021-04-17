@@ -92,9 +92,9 @@ NONE = "NONE"  # none can come in, the path is forbidden
 
 def typeof(p: inspect.Parameter):
     """Guess parameter type, possibly with some type inference."""
-    if p.kind is p.VAR_KEYWORD:
+    if p.kind is inspect.Parameter.VAR_KEYWORD:
         return dict
-    elif p.kind is p.VAR_POSITIONAL:
+    elif p.kind is inspect.Parameter.VAR_POSITIONAL:
         return list
     elif p.annotation is not inspect._empty:  # type: ignore
         return p.annotation
@@ -986,8 +986,8 @@ class FlaskSimpleAuth:
                                 self._auth = saved
                     else:
                         return self._Resp("", 401)
-                if self._user is None:
-                    return self._Resp("", 401)
+                if self._user is None:  # pragma: no cover
+                    return self._Resp("", 401)  # should be unreachable
                 # shortcut for authenticated users
                 if ALL in groups:
                     return fun(*args, **kwargs)

@@ -351,6 +351,7 @@ def test_wrong_token():
         assert e.status == 401
 
 def test_password_check(client):
+    app._fsa._init_password_manager()
     ref = app.hash_password("hello")
     assert app.check_password("hello", ref)
     assert not app.check_password("bad-pass", ref)
@@ -364,6 +365,12 @@ def test_password_check(client):
     res = check_401(client.get("/read", headers={"Authorization": "Basic !!!"}))
     assert b"decoding error on authorization" in res.data
     pop_auth(app._fsa)
+    pm = app._fsa._pm
+    app._fsa._pm = None
+    app.config.update(FSA_PASSWORD_SCHEME = "plaintext")
+    app._fsa._init_password_manager()
+    assert app.hash_password("hello") == "hello"
+    app._fsa._pm = pm
 
 def test_authorize():
     assert app._fsa._user_in_group("dad", App.ADMIN)
@@ -870,3 +877,13 @@ def test_bad_app():
         assert False, "bad app creation must fail"
     except Exception:
         assert True, "ok, bad app creation has failed"
+
+class PK():
+    def __init__(self, kind):
+        self.kind = kind
+
+def test_typeof():
+    import inspect
+    P = inspect.Parameter
+    assert fsa.typeof(PK(P.VAR_KEYWORD)) == dict
+    assert fsa.typeof(PK(P.VAR_POSITIONAL)) == list
