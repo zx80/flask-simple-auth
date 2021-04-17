@@ -57,7 +57,7 @@ def bool_cast(s: str) -> Optional[bool]:
 
 def int_cast(s: str) -> Optional[int]:
     """Parses an integer, allowing several bases."""
-    return int(s, base=0) if s is not None else None
+    return int(s, base=0) if s else None
 
 
 class path(str):
@@ -98,7 +98,7 @@ def typeof(p: inspect.Parameter):
         return list
     elif p.annotation is not inspect._empty:  # type: ignore
         return p.annotation
-    elif p.default is not None and p.default is not inspect._empty:  # type: ignore
+    elif p.default and p.default is not inspect._empty:  # type: ignore
         return type(p.default)  # type inference!
     else:
         return str
@@ -132,7 +132,7 @@ class Reference:
         # keep track of initial methods for later cleanup
         self._init: Set[str] = set()
         self._init.update(self.__dir__())
-        if obj is not None:
+        if obj:
             self._set_obj(obj)
 
     def _set_obj(self, obj):
@@ -294,7 +294,7 @@ class FlaskSimpleAuth:
             self._user = self.get_user()
         except AuthException as e:
             return self._Resp(e.message, e.status)
-        assert self._user is not None
+        assert self._user
 
     def _auth_after_cleanup(self, res: Response):
         """After request hook to cleanup authentication and detect missing
@@ -311,10 +311,10 @@ class FlaskSimpleAuth:
 
     def _possible_redirect(self, res: Response):
         """After request hook to turn a 401 into a redirect."""
-        if res.status_code == 401 and self._401_redirect is not None:
+        if res.status_code == 401 and self._401_redirect:
             location = self._401_redirect
             # allow to come back later in some cases
-            if self._url_name is not None and request.method == "GET":
+            if self._url_name and request.method == "GET":
                 sep = "&" if "?" in self._url_name else "?"
                 import urllib
                 location += sep + urllib.parse.urlencode({self._url_name: request.url})
@@ -325,8 +325,8 @@ class FlaskSimpleAuth:
         """Set a cookie if needed and none was sent."""
         # NOTE thanks to max_age the client should not send stale cookies
         if self._carrier == "cookie":
-            assert self._token is not None and self._name is not None
-            if self._user is not None and self._can_create_token():
+            assert self._token and self._name
+            if self._user and self._can_create_token():
                 if self._name in request.cookies:
                     user, exp = self._get_any_token_auth_exp(request.cookies[self._name])
                     # reset token when only 25% time remains
@@ -353,7 +353,7 @@ class FlaskSimpleAuth:
             if self._auth_has("basic", "password"):
                 res.headers["WWW-Authenticate"] = f"Basic realm=\"{self._realm}\""
             elif self._auth_has("http-basic", "http-digest", "http-token", "digest"):
-                assert self._http_auth is not None
+                assert self._http_auth
                 res.headers["WWW-Authenticate"] = self._http_auth.authenticate_header()
             elif "token" in self._auth and self._carrier == "bearer":
                 res.headers["WWW-Authenticate"] = f"{self._name} realm=\"{self._realm}\""
@@ -367,7 +367,7 @@ class FlaskSimpleAuth:
         if hasattr(fun, "__wrapped__"):
             fun = fun.__wrapped__
         # NOTE probaly maxsize should disable with None and unbound with 0.
-        return fun if fun is None or self._maxsize == 0 else \
+        return fun if not fun or self._maxsize == 0 else \
             functools.lru_cache(maxsize=self._maxsize)(fun)
 
     def get_user_pass(self, gup):
@@ -386,7 +386,7 @@ class FlaskSimpleAuth:
     #
     def initialize(self):
         """Run late initialization on current app."""
-        assert self._app is not None
+        assert self._app
         self.init_app(self._app)
 
     def init_app(self, app: flask.Flask):
@@ -396,7 +396,7 @@ class FlaskSimpleAuth:
         directives.
         """
         log.info("FSA initialization…")
-        assert app is not None
+        assert app
         self._app = app
         conf = app.config
         #
@@ -404,7 +404,7 @@ class FlaskSimpleAuth:
         #
         self._auth: List[str] = []
         auth = conf.get("FSA_AUTH", None)
-        if auth is None:
+        if not auth:
             self._auth = ["httpd"]
         elif isinstance(auth, str):
             if auth not in ("token", "http-token"):
@@ -436,7 +436,7 @@ class FlaskSimpleAuth:
         if self._carrier not in (None, "bearer", "param", "cookie", "header"):
             raise Exception(f"Unexpected token carrier (FSA_TOKEN_CARRIER): {self._carrier}")
         # sanity checks
-        if need_carrier and self._carrier is None:
+        if need_carrier and not self._carrier:
             raise Exception(f"Token type {self._token} requires a carrier")
         # name of token for cookie or param, Authentication scheme, or other header
         default_name: Optional[str] = None
@@ -447,7 +447,7 @@ class FlaskSimpleAuth:
         elif self._carrier == "header":
             default_name = "Auth"
         self._name = conf.get("FSA_TOKEN_NAME", default_name)
-        if need_carrier and self._name is None:
+        if need_carrier and not self._name:
             raise Exception(f"Token carrier {self._carrier} requires a name")
         # token realm…
         realm = conf.get("FSA_TOKEN_REALM", self._app.name)
@@ -463,7 +463,7 @@ class FlaskSimpleAuth:
         # token signature
         if "FSA_TOKEN_SECRET" in conf:
             self._secret = conf["FSA_TOKEN_SECRET"]
-            if self._secret is not None and len(self._secret) < 16:
+            if self._secret and len(self._secret) < 16:
                 log.warning("token secret is short")
         else:
             import random
@@ -472,7 +472,7 @@ class FlaskSimpleAuth:
             # list of 94 chars, about 6.5 bits per char
             chars = string.ascii_letters + string.digits + string.punctuation
             self._secret = "".join(random.SystemRandom().choices(chars, k=40))
-        if self._token is None:
+        if not self._token:
             pass
         elif self._token == "fsa":
             self._sign = self._secret
@@ -483,7 +483,7 @@ class FlaskSimpleAuth:
             self._algo = algo
             if algo[0] in ("R", "E", "P"):
                 self._sign = conf.get("FSA_TOKEN_SIGN", None)
-                if self._sign is None:
+                if not self._sign:
                     log.warning("cannot sign JWT token, assuming a third party provider")
             elif algo[0] == "H":
                 self._sign = self._secret
@@ -522,7 +522,7 @@ class FlaskSimpleAuth:
                 assert self._http_auth is not None  # for pleasing mypy
                 # FIXME? nonce & opaque callbacks? session??
             elif "http-token" in self._auth:
-                if self._carrier == "header" and "header" not in opts and self._name is not None:
+                if self._carrier == "header" and "header" not in opts and self._name:
                     opts["header"] = self._name
                 self._http_auth = fha.HTTPTokenAuth(scheme=self._name, realm=self._realm, **opts)
                 assert self._http_auth is not None  # for pleasing mypy
@@ -558,13 +558,13 @@ class FlaskSimpleAuth:
         """Deferred password manager initialization."""
         # only initialize if some password may need to be checked
         # so that passlib is not imported for nothing
-        if self._get_user_pass is None or self._pm is not None:
+        if not self._get_user_pass or self._pm:
             return
-        assert self._app is not None
+        assert self._app
         conf = self._app.config
         scheme = conf.get("FSA_PASSWORD_SCHEME", "bcrypt")
         log.info(f"initializing password manager with {scheme}")
-        if scheme is not None:
+        if scheme:
             if scheme == "plaintext":
                 log.warning("plaintext password manager is a bad idea")
             # passlib context is a pain, you have to know the scheme name to set its
@@ -597,7 +597,7 @@ class FlaskSimpleAuth:
         params = request.json or request.values
         user = params.get(self._login, None)
         # it could check that the user exists in db
-        if user is None:
+        if not user:
             raise AuthException("missing login parameter", 401)
         return user
 
@@ -625,7 +625,7 @@ class FlaskSimpleAuth:
         if not request.is_secure:
             log.warning("password authentication over an insecure request")
         ref = self._get_user_pass(user)
-        if ref is None:
+        if not ref:
             log.debug(f"AUTH (password): no such user ({user})")
             raise AuthException(f"no such user: {user}", 401)
         if not self.check_password(pwd, ref):
@@ -638,7 +638,7 @@ class FlaskSimpleAuth:
     #
     def _get_httpauth(self):
         """Delegate user authentication to HTTPAuth."""
-        assert self._http_auth is not None
+        assert self._http_auth
         auth = self._http_auth.get_auth()
         # log.debug(f"auth = {auth}")
         password = self._http_auth.get_auth_password(auth) \
@@ -664,7 +664,7 @@ class FlaskSimpleAuth:
         assert request.remote_user is None
         auth = request.headers.get("Authorization", None)
         log.debug(f"auth: {auth}")
-        if auth is None:
+        if not auth:
             log.debug("AUTH (basic): missing authorization header")
             raise AuthException("missing authorization header", 401)
         if auth[:6] != "Basic ":
@@ -691,10 +691,10 @@ class FlaskSimpleAuth:
         assert request.remote_user is None
         params = request.json or request.values
         user = params.get(self._userp, None)
-        if user is None:
+        if not user:
             raise AuthException(f"missing login parameter: {self._userp}", 401)
         pwd = params.get(self._passp, None)
-        if pwd is None:
+        if not pwd:
             raise AuthException(f"missing password parameter: {self._passp}", 401)
         self._check_password(user, pwd)
         return user
@@ -770,12 +770,12 @@ class FlaskSimpleAuth:
 
     def _can_create_token(self):
         """Whether it is possible to create a token."""
-        return self._token is not None and not \
-            (self._token == "jwt" and self._algo[0] in ("R", "E", "P") and self._sign is None)
+        return self._token and not \
+            (self._token == "jwt" and self._algo[0] in ("R", "E", "P") and not self._sign)
 
     def create_token(self, user: str = None):
         """Create a new token for user depending on the configuration."""
-        assert self._token is not None
+        assert self._token
         user = user or self.get_user()
         realm, delay = self._realm, self._delay
         if self._token == "fsa":
@@ -830,7 +830,7 @@ class FlaskSimpleAuth:
 
     def _get_any_token_auth_exp(self, token):
         """return validated user and expiration."""
-        if token is None or token == "":
+        if not token or token == "":
             raise AuthException("missing token", 401)
         return \
             self._get_fsa_token_auth(token) if self._token == "fsa" else \
@@ -849,11 +849,11 @@ class FlaskSimpleAuth:
     def _get_token_auth(self) -> Optional[str]:
         """Get authentication from token."""
         user = None
-        if self._token is not None:
+        if self._token:
             token: Optional[str] = None
             if self._carrier == "bearer":
                 auth = request.headers.get("Authorization", None)
-                if auth is not None:
+                if auth:
                     slen = len(self._name) + 1
                     if auth[:slen] == f"{self._name} ":  # FIXME lower case?
                         token = auth[slen:]
@@ -865,7 +865,7 @@ class FlaskSimpleAuth:
                 params = request.json or request.values
                 token = params.get(self._name, None)
             else:
-                assert self._carrier == "header" and self._name is not None
+                assert self._carrier == "header" and self._name
                 token = request.headers.get(self._name, None)
             user = self._get_any_token_auth(token)
         return user
@@ -891,7 +891,7 @@ class FlaskSimpleAuth:
 
         # _user is reset before/after requests
         # so relying on in-request persistance is safe
-        if self._user is not None:
+        if self._user:
             return self._user
 
         assert self._initialized, "FlaskSimpleAuth must be initialized"
@@ -901,14 +901,14 @@ class FlaskSimpleAuth:
         for a in self._auth:
             try:
                 self._user = self._FSA_AUTH[a](self)
-                if self._user is not None:
+                if self._user:
                     break
             except AuthException as e:
                 lae = e
             # FIXME other exceptions?
 
         # rethrow last auth exception on failure
-        if self._user is None:
+        if not self._user:
             raise lae or AuthException("missing authentication", 401)
 
         log.info(f"get_user({self._auth}): {self._user}")
@@ -931,7 +931,7 @@ class FlaskSimpleAuth:
         """Clear internal caches."""
         for name in self._CACHABLE:
             fun = getattr(self, name)
-            if fun is not None and hasattr(fun, "cache_clear"):
+            if fun and hasattr(fun, "cache_clear"):
                 fun.cache_clear()
 
     #
@@ -946,10 +946,10 @@ class FlaskSimpleAuth:
 
         if ANY not in groups and ALL not in groups and \
            NONE not in groups and None not in groups:
-            assert self._user_in_group is not None, \
+            assert self._user_in_group, \
                 "user_in_group callback needed for authorize"
 
-        if auth is not None:
+        if auth:
             if isinstance(auth, str):
                 auth = [auth]
             for a in auth:
@@ -968,24 +968,24 @@ class FlaskSimpleAuth:
                 if ANY in groups:
                     return fun(*args, **kwargs)
                 # get user if needed
-                if self._user is None:
+                if not self._user:
                     # no current user, try to get one?
                     if self._mode != "always":
                         # possibly overwrite the authentication scheme
                         # NOTE this may or may not work because other settings may
                         #   not be compatible with the provided scheme…
-                        if auth is not None:
+                        if auth:
                             saved, self._auth = self._auth, auth
                         try:
                             self._user = self.get_user()
                         except AuthException as ae:
                             return self._Resp(ae.message, ae.status)
                         finally:
-                            if auth is not None:
+                            if auth:
                                 self._auth = saved
                     else:
                         return self._Resp("", 401)
-                if self._user is None:  # pragma: no cover
+                if not self._user:  # pragma: no cover
                     return self._Resp("", 401)  # should be unreachable
                 # shortcut for authenticated users
                 if ALL in groups:
@@ -1054,7 +1054,7 @@ class FlaskSimpleAuth:
                             except Exception as e:
                                 return self._Resp(f"type error on HTTP parameter \"{p}\" ({e})", 400)
                         else:
-                            if required is None:
+                            if not required:
                                 if p in defaults:
                                     kwargs[p] = defaults[p]
                                 else:
@@ -1120,7 +1120,7 @@ class FlaskSimpleAuth:
                         splits[i] = f"string:{spec}>{remainder}"
         newpath = "<".join(splits)
 
-        assert self._app is not None
+        assert self._app
         par = self._parameters(required=required, allparams=allparams)(view_func)
         aut = self._authorize(*roles, auth=auth)(par)
         return flask.Flask.add_url_rule(self._app, newpath, endpoint=endpoint, view_func=aut, **options)
