@@ -661,6 +661,9 @@ Software license is *public domain*.
 
 #### dev
 
+Minor style improvements.
+Fix `all` authentication mode.
+
 #### 3.1.1
 
 Tell setup that Flask 2.0 is not yet supported.
