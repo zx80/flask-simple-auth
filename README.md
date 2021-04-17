@@ -659,7 +659,7 @@ Sources are available on [GitHub](https://github.com/zx80/flask-simple-auth)
 and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 Software license is *public domain*.
 
-#### dev
+#### 3.1.0
 
 Defer password manager setup till it is actually needed, so as to avoid
 importing `passlib` for nothing.
