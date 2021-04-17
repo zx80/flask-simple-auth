@@ -261,9 +261,7 @@ class Flask(flask.Flask):
 
 # actual extension
 class FlaskSimpleAuth:
-    """Flask extension to implement authentication, authorization and parameter
-    management.
-    """
+    """Flask extension for authentication, authorization and parameters."""
 
     def __init__(self, app: flask.Flask = None):
         """Constructor parameter: flask application to extend."""
@@ -287,7 +285,7 @@ class FlaskSimpleAuth:
         """Before request hook to perform early authentication."""
         self._user = None
         self._need_authorization = True
-        if self._mode != "always":
+        if self._mode == "lazy":
             return
         for skip in self._skip_path:
             if skip(request.path):
@@ -303,6 +301,7 @@ class FlaskSimpleAuth:
         authorization."""
         self._user = None
         # should it always return 500?
+        # NOTE this may be to late to prevent a commit
         if res.status_code < 400 and self._need_authorization:
             method, path = request.method, request.path
             log.warning(f"missing authorization on {method} {path}")
@@ -364,7 +363,7 @@ class FlaskSimpleAuth:
 
     def _cache_function(self, fun):
         """Generate or regenerate cache for function."""
-        # get the actual function when regenerating
+        # get the actual function when regenerating caches
         if hasattr(fun, "__wrapped__"):
             fun = fun.__wrapped__
         # NOTE probaly maxsize should disable with None and unbound with 0.
