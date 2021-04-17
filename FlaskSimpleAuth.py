@@ -269,6 +269,7 @@ class FlaskSimpleAuth:
         self._maxsize = 1024
         self._get_user_pass = None
         self._user_in_group = None
+        self._saved_auth = None
         self._http_auth = None
         self._pm = None
         # actual main initialization is deferred
@@ -359,6 +360,9 @@ class FlaskSimpleAuth:
                 res.headers["WWW-Authenticate"] = f"{self._name} realm=\"{self._realm}\""
             # else: scheme does not rely on WWW-Authenticate…
         # else: no need for WWW-Authenticate
+        # restore temporary auth if needed
+        if self._saved_auth:
+            self._auth, self._saved_auth = self._saved_auth, None
         return res
 
     def _cache_function(self, fun):
@@ -972,17 +976,15 @@ class FlaskSimpleAuth:
                     # no current user, try to get one?
                     if self._mode != "always":
                         # possibly overwrite the authentication scheme
+                        # it will be restored in an after request hook
                         # NOTE this may or may not work because other settings may
                         #   not be compatible with the provided scheme…
                         if auth:
-                            saved, self._auth = self._auth, auth
+                            self._saved_auth, self._auth = self._auth, auth
                         try:
                             self._user = self.get_user()
                         except AuthException as ae:
                             return self._Resp(ae.message, ae.status)
-                        finally:
-                            if auth:
-                                self._auth = saved
                     else:
                         return self._Resp("", 401)
                 if not self._user:  # pragma: no cover

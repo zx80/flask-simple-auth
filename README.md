@@ -844,5 +844,4 @@ Initial release in beta.
 - do test digest?
 - simplify/shoften documentation?
 - add `any` token scheme?
-- auth=…  does not persist long enough for after requets hooks
 - automate URL-parameter redirect?
