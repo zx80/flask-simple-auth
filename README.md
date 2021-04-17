@@ -833,11 +833,9 @@ Initial release in beta.
 
 ### TODO
 
-- cache other things?
 - test `FSA_HTTP_AUTH_OPTS`?
 - do test digest?
 - simplify/shoften documentation?
 - add `any` token scheme?
 - auth=…  does not persist long enough for after requets hooks
-- re-check test coverage
 - automate URL-parameter redirect?
