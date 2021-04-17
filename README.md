@@ -661,6 +661,9 @@ Software license is *public domain*.
 
 #### dev
 
+Minor style improvements.
+Fix `all` authentication mode.
+
 #### 3.1.0
 
 Defer password manager setup till it is actually needed, so as to avoid
