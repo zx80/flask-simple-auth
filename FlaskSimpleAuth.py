@@ -66,7 +66,7 @@ class path(str):
 
 
 class string(str):
-    """Type to distinguish str path parameters."""
+    """Type to distinguish str string parameters."""
     pass
 
 
