@@ -293,6 +293,7 @@ class FlaskSimpleAuth:
         self._need_authorization = True
         if self._mode == "lazy":
             return
+        # keep on under always & all
         for skip in self._skip_path:
             if skip(request.path):
                 return
