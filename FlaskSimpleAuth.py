@@ -226,6 +226,11 @@ class Flask(flask.Flask):
         # overwritten late because called by upper Flask initialization for "static"
         self.add_url_rule = self._fsa.add_url_rule
 
+    def clear_caches(self):
+        """Clear all internal caches."""
+        self._fsa.clear_caches()
+
+    # hooks
     def get_user_pass(self, gup):
         """Set `get_user_pass` helper function."""
         return self._fsa.get_user_pass(gup)
@@ -234,6 +239,7 @@ class Flask(flask.Flask):
         """Set `user_in_group` helper function."""
         return self._fsa.user_in_group(uig)
 
+    # password management
     def check_password(self, pwd, ref):
         """Check whether password is ok wrt to current password manager."""
         return self._fsa.check_password(pwd, ref)
@@ -242,21 +248,19 @@ class Flask(flask.Flask):
         """Hash password using current password manager scheme."""
         return self._fsa.hash_password(pwd)
 
+    # token
     def create_token(self, user: str = None):
         """Create a token with the current token scheme."""
         return self._fsa.create_token(user)
 
+    # user
     def get_user(self):
-        """Authenticate remote user."""
+        """Authenticate remote user or raise exception."""
         return self._fsa.get_user()
 
     def current_user(self):
-        """Get current authenticated user, if any."""
+        """Get current authenticated user, if any, or None."""
         return self._fsa.current_user()
-
-    def clear_caches(self):
-        """Clear internal caches."""
-        self._fsa.clear_caches()
 
 
 # actual extension
@@ -269,7 +273,8 @@ class FlaskSimpleAuth:
         self._maxsize = 1024
         self._get_user_pass = None
         self._user_in_group = None
-        self._saved_auth = None
+        self._auth: List[str] = []
+        self._saved_auth: Optional[List[str]] = None
         self._http_auth = None
         self._pm = None
         # actual main initialization is deferred
@@ -406,7 +411,6 @@ class FlaskSimpleAuth:
         #
         # overall auth setup
         #
-        self._auth: List[str] = []
         auth = conf.get("FSA_AUTH", None)
         if not auth:
             self._auth = ["httpd"]
