@@ -186,14 +186,14 @@ class Reference:
 # - automatic reset based on cache efficiency? expansion?
 #
 class CacheOK:
-    """Positive caching decorator.
+    """Positive caching decorator for boolean functions.
 
     Cache True answers, but still forwards False answers to the underlying
     function.
     """
 
     def __init__(self, fun: Callable[[List[Any]], bool]):
-        self._fun = fun
+        self.__wrapped__ = fun
         self._cache: Set[Any] = set()
         self.cache_clear = self._cache.clear
 
@@ -201,7 +201,7 @@ class CacheOK:
         if args in self._cache:
             return True
         else:
-            ok = self._fun(*args)
+            ok = self.__wrapped__(*args)
             if ok:
                 self._cache.add(args)
             return ok
