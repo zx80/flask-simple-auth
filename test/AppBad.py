@@ -1,6 +1,6 @@
 from FlaskSimpleAuth import Flask
 
-# test a bad authentication scheme
+# generic authentication scheme test
 def create_app(auth=None, **config):
     app = Flask("bad")
     app.config.update(**config)
@@ -8,6 +8,6 @@ def create_app(auth=None, **config):
     # next definition may raise an Exception
     @app.route("/misc", methods=["GET"], authorize="ALL", auth=auth)
     def get_misc():
-        return "never get there", 200
+        return "may get there, depending", 200
 
     return app
