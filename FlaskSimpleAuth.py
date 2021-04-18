@@ -840,7 +840,7 @@ class FlaskSimpleAuth:
 
     def _get_any_token_auth_exp(self, token):
         """return validated user and expiration."""
-        if not token or token == "":
+        if not token:
             raise AuthException("missing token", 401)
         return \
             self._get_fsa_token_auth(token) if self._token == "fsa" else \
