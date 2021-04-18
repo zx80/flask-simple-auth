@@ -660,6 +660,7 @@ Software license is *public domain*.
 
 Minor style improvements.
 Fix `all` authentication mode.
+Rework documentation.
 
 #### 3.1.0
 
