@@ -373,7 +373,7 @@ class FlaskSimpleAuth:
     def _cache_function(self, fun):
         """Generate or regenerate cache for function."""
         # get the actual function when regenerating caches
-        if hasattr(fun, "__wrapped__"):
+        while hasattr(fun, "__wrapped__"):
             fun = fun.__wrapped__
         # NOTE probaly maxsize should disable with None and unbound with 0.
         return fun if not fun or self._maxsize == 0 else \
