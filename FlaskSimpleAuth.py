@@ -707,6 +707,9 @@ class FlaskSimpleAuth:
         self._check_password(user, pwd)
         return user
 
+    #
+    # HTTP BASIC OR PARAM AUTH
+    #
     def _get_password_auth(self):
         """Get user from basic or param authentication."""
         try:
@@ -753,8 +756,7 @@ class FlaskSimpleAuth:
         p = re.match(r"^(\d{4})(\d\d)(\d\d)(\d\d)(\d\d)(\d\d)$", ts)
         if not p:
             raise Exception(f"unexpected timestamp format: {ts}")
-        iso = f"{p[1]}-{p[2]}-{p[3]}T{p[4]}:{p[5]}:{p[6]}"
-        return dt.datetime.fromisoformat(iso)
+        return dt.datetime(*[int(p[i]) for i in range(1, 7)])
 
     def _get_fsa_token(self, realm, user, delay, secret):
         """Compute a signed token for "user" valid for "delay" minutes."""
