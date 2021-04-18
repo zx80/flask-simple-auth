@@ -52,10 +52,30 @@ directives, with reasonable defaults provided so that not much is really
 needed beyond choosing the authentication scheme.
 
 
-## Description
+## Documentation
 
 This module helps managing authentication, authorizations and parameters
 in a Flask REST application.
+
+### Features
+
+The module provides a wrapper around the `Flask` class which
+extends its capabilities for managing authentication, authorization and
+parameters.
+
+This is intended for a REST API implementation serving a remote client application.
+It does not make much sense to "login" and "logout" to/from a REST API
+because the point of the API is to serve and collect data
+to all who deserve it, i.e. are authorized, unlike a web application
+which is served while the client is on the page which maintains a session
+and should disappear when disconnected as the web browser page is wiped out.
+However, there is still a "login" concept which is only dedicated to
+obtaining an auth token, that the application client needs to update from
+time to time.
+
+Note that web-oriented flask authentication modules are not really
+relevant in the REST API context, where the server does not care about
+presenting login forms for instance.
 
 [**Authentication**](#authentication) is available through the `get_user`
 function.
@@ -89,9 +109,6 @@ In practice, importing Flask's `request` global variable is not necessary.
 share for import an unitialized variable, and the `CacheOK` decorator to
 memoize true answers (eg for user/group checks).
 
-
-## Documentation
-
 ### Install
 
 Use `pip install FlaskSimpleAuth` to install the module, or whatever
@@ -104,26 +121,6 @@ Depending on options, the following modules should be installed:
 - [PyJWT](https://pypi.org/project/PyJWT/) for JSON Web Token (JWT).
 - [cryptography](https://pypi.org/project/cryptography/) for pubkey-signed JWT.
 - [Flask HTTPAuth](https://github.com/miguelgrinberg/Flask-HTTPAuth) for `http-*` authentication options.
-
-### Features
-
-The module provides a wrapper around the `Flask` class which
-extends its capabilities for managing authentication, authorization and
-parameters.
-
-This is intended for a REST API implementation serving a remote client application.
-It does not make much sense to "login" and "logout" to/from a REST API
-because the point of the API is to serve and collect data
-to all who deserve it, i.e. are authorized, unlike a web application
-which is served while the client is on the page which maintains a session
-and should disappear when disconnected as the web browser page is wiped out.
-However, there is still a "login" concept which is only dedicated to
-obtaining an auth token, that the application client needs to update from
-time to time.
-
-Note that web-oriented flask authentication modules are not really
-relevant in the REST API context, where the server does not care about
-presenting login forms for instance.
 
 ### Initialization
 
