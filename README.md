@@ -808,6 +808,5 @@ Initial release in beta.
 
 - test `FSA_HTTP_AUTH_OPTS`?
 - do test digest?
-- simplify/shoften documentation?
 - add `any` token scheme?
 - automate URL-parameter redirect?
