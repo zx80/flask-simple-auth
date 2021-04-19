@@ -185,61 +185,6 @@ def get_what(flt: str = None):
     …
 ```
 
-### Using Authentication, Authorization and Parameter Check
-
-The authentication, authorization and parameter chechs are managed
-automatically through the extented `route` decorator.
-
-**Authentication** is transparently activated and controlled by many
-configuration directives as described in the next section.
-
-**Authorization** is managed through the added `authorize` parameter
-to the `route` decorator.
-Three special group names are available in the module: `ANY`
-to declare a route opened to anyone, `NONE` to close a route (eg
-temporarily) and `ALL` for all authenticated users.
-If the authorize directive is absent or empty, the route is forbidden (*403*).
-Note that more advanced permissions (eg users can edit themselves) will
-still require manual permission checks at the beginning of the function.
-
-**Parameters** are managed transparently, either coming from the route path
-or from HTTP/JSON parameters. Type conversion are performed based on
-type annotations for all parameters. Parameters with default values are
-optional, those without are mandatory.
-
-```Python
-@app.route("/somewhere/<stuff>", methods=["POST"], authorize="posters")
-def post_somewhere(stuff: str, nstuff: int, bstuff: bool = False):
-    …
-```
-
-An opened route for user registration with mandatory parameters
-could look like that:
-
-```Python
-# with FSA_SKIP_PATH = (r"/register", …)
-@app.route("/register", methods=["POST"], authorize="ANY")
-def post_register(user: str, password: str):
-    if user_already_exists_somewhere(user):
-        return f"cannot create {user}", 409
-    add_new_user_with_hashed_pass(user, app.hash_password(password))
-    return "", 201
-```
-
-For `token` authentication, a token can be created on a path authenticated
-by one of the other methods. The code for that would be:
-
-```Python
-# token creation route for all registered users
-@app.route("/login", methods=["GET"], authorize="ALL")
-def get_login():
-    return jsonify(app.create_token(app.get_user())), 200
-```
-
-The client application will return the token as a parameter or in
-headers for authenticating later requests, till it expires.
-
-
 ### Authentication
 
 Three directives impact how and when authentication is performed.
@@ -504,6 +449,33 @@ It is just provided here for completeness.
 
 Function `hash_password(pass)` computes the password salted digest compatible
 with the current configuration.
+
+An opened route for user registration with mandatory parameters
+could look like that:
+
+```Python
+# with FSA_SKIP_PATH = (r"/register", …)
+@app.route("/register", methods=["POST"], authorize="ANY")
+def post_register(user: str, password: str):
+    if user_already_exists_somewhere(user):
+        return f"cannot create {user}", 409
+    add_new_user_with_hashed_pass(user, app.hash_password(password))
+    return "", 201
+```
+
+Because password checks are usually expensive, it is advisable to switch
+to `token` authentication. A token can be created on a path authenticated
+by a password method:
+
+```Python
+# token creation route for all registered users
+@app.route("/login", methods=["GET"], authorize="ALL")
+def get_login():
+    return jsonify(app.create_token(app.get_user())), 200
+```
+
+The client application will return the token as a parameter or in
+headers for authenticating later requests, till it expires.
 
 
 ### Authorization
