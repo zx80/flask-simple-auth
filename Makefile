@@ -38,4 +38,4 @@ dist:
 .PHONY: publish
 publish: dist
 	# provide pypi login/pw or token somewhere…
-	twine upload dist/*
+	twine upload --repository FlaskSimpleAuth dist/*
