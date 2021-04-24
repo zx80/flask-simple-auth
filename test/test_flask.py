@@ -259,8 +259,6 @@ def test_fsa_token():
     # cleanup
     app._fsa._grace = grace
     app._fsa._token, app._fsa._algo = tsave, hsave
-
-def test_expired_token():
     hobbes_token = app.create_token("hobbes")
     grace, app._fsa._grace = app._fsa._grace, -100
     try:
