@@ -84,8 +84,9 @@ checking for permissions in a per-role authorization model, or possibly
 forced for all/most paths.
 The module implements inheriting the web-server authentication,
 password authentication (HTTP Basic, or HTTP/JSON parameters),
-authentication tokens (custom or jwt passed in headers or as a
-parameter), and a fake authentication scheme useful for application testing.
+authentication tokens (custom or JWT passed in headers or as a
+parameter), and a fake authentication scheme useful for local application
+testing.
 It allows to have a login route to generate authentication tokens.
 For registration, support functions allow to hash new passwords consistently
 with password checks.
@@ -220,24 +221,24 @@ methods used by the `get_user` function, as described in the following sections.
   Default is `lazy`.
 
 - `FSA_SKIP_PATH` is a list of regular expression patterns which are matched
-against the request path for skipping systematic authentication when in
-`always` mode.
-Default is empty, i.e. authentication is applied for all paths.
+  against the request path for skipping systematic authentication when in
+  `always` mode.
+  Default is empty, i.e. authentication is applied for all paths.
 
 - `FSA_CHECK` tells whether to generate a *500* internal error if a route
-is missing an explicit authorization check.
-Default is *True*.
+  is missing an explicit authorization check.
+  Default is *True*.
 
 - `FSA_CACHE_SIZE` control size of internal lru caches. Default is *1024*.
-*None* means unbounded. Disable with *0*.
+  *None* means unbounded. Disable with *0*.
 
 - `FSA_401_REDIRECT` url to redirect to on *401*.
-Default is *None*.
-This can be used for the web application login page.
+  Default is *None*.
+  This can be used for the web application login page.
 
 - `FSA_URL_NAME` name of parameter for the target URL after a successful login.
-Default is `URL` if redirect is activated, else *None*.
-Currently, the login page should use this parameter to redirect to when ok.
+  Default is `URL` if redirect is activated, else *None*.
+  Currently, the login page should use this parameter to redirect to when ok.
 
 The authentication scheme attempted on a route can be altered with the
 `auth` parameter added to the `route` decorator.
