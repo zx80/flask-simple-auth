@@ -553,7 +553,14 @@ class FlaskSimpleAuth:
         # blueprint hacks
         #
         self.blueprints = self._app.blueprints
-        self._blueprint_order = self._app._blueprint_order
+        # self._blueprint_order = self._app._blueprint_order
+        self._is_setup_finished = self._app._is_setup_finished
+        self.before_request_funcs = self._app.before_request_funcs
+        self.after_request_funcs = self._app.after_request_funcs
+        self.teardown_request_funcs = self._app.teardown_request_funcs
+        self.url_default_functions = self._app.url_default_functions
+        self.url_value_preprocessors = self._app.url_value_preprocessors
+        self.template_context_processors = self._app.template_context_processors
         self.debug = False
         #
         # caches
@@ -1054,6 +1061,11 @@ class FlaskSimpleAuth:
 
                 # translate request parameters to named function parameters
                 params = request.json or request.values
+
+                import sys
+                print(f"params:{dict(params)}", file=sys.stderr)
+                log.debug(f"params:{dict(params)}")
+
                 for p, typing in typings.items():
                     # guess which function parameters are request parameters
                     if p not in kwargs:
