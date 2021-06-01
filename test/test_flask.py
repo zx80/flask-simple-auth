@@ -330,6 +330,7 @@ def test_jwt_token():
     app._fsa._secret, app._fsa._sign = Ksave, ksave
 
 def test_invalid_token():
+    # bad token
     susie_token = app.create_token("susie")
     susie_token = susie_token[:-1] + "z"
     try:
@@ -337,8 +338,7 @@ def test_invalid_token():
         assert False, "token should be invalid"
     except fsa.AuthException as e:
         assert e.status == 401
-
-def test_wrong_token():
+    # wrong token
     realm, app._fsa._realm = app._fsa._realm, "elsewhere"
     moe_token = app.create_token("moe")
     app._fsa._realm = realm
@@ -885,3 +885,15 @@ def test_typeof():
     P = inspect.Parameter
     assert fsa.typeof(PK(P.VAR_KEYWORD)) == dict
     assert fsa.typeof(PK(P.VAR_POSITIONAL)) == list
+
+def test_f2(client):
+    res = check_200(client.get("/f2/get"))
+    assert res.data == b'get ok'
+    res = check_200(client.post("/f2/post"))
+    assert res.data == b'post ok'
+    res = check_200(client.put("/f2/put"))
+    assert res.data == b'put ok'
+    res = check_200(client.delete("/f2/delete"))
+    assert res.data == b'delete ok'
+    res = check_200(client.patch("/f2/patch"))
+    assert res.data == b'patch ok'

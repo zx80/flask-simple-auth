@@ -28,6 +28,8 @@ from flask import session, jsonify, Blueprint, make_response, abort, \
     redirect, url_for, after_this_request, send_file, send_from_directory, \
     safe_join, escape, Markup, render_template, current_app, g
 
+from werkzeug.datastructures import CombinedMultiDict, MultiDict
+
 import logging
 log = logging.getLogger("fsa")
 
@@ -380,6 +382,17 @@ class FlaskSimpleAuth:
         return fun if not fun or self._maxsize == 0 else \
             functools.lru_cache(maxsize=self._maxsize)(fun)
 
+    def _params(self):
+        """Get request parameters wherever they are."""
+        if request.json:
+            return request.json
+        else:
+            # reimplement "request.values" after Flask 2.0 regression
+            # https://github.com/pallets/werkzeug/pull/2037
+            # https://github.com/pallets/flask/issues/4120
+            return CombinedMultiDict([MultiDict(d) if not isinstance(d, MultiDict) else d
+                                      for d in (request.args, request.form)])
+
     def get_user_pass(self, gup):
         """Set `get_user_pass` helper, can be used as a decorator."""
         self._get_user_pass = self._cache_function(gup)
@@ -553,15 +566,21 @@ class FlaskSimpleAuth:
         # blueprint hacks
         #
         self.blueprints = self._app.blueprints
-        # self._blueprint_order = self._app._blueprint_order
-        self._is_setup_finished = self._app._is_setup_finished
-        self.before_request_funcs = self._app.before_request_funcs
-        self.after_request_funcs = self._app.after_request_funcs
-        self.teardown_request_funcs = self._app.teardown_request_funcs
-        self.url_default_functions = self._app.url_default_functions
-        self.url_value_preprocessors = self._app.url_value_preprocessors
-        self.template_context_processors = self._app.template_context_processors
         self.debug = False
+        if hasattr(self._app, '_blueprint_order'):
+            # Flask 1.x
+            self._blueprint_order = self._app._blueprint_order
+        elif hasattr(self._app, '_is_setup_finished'):
+            # Flask 2.0
+            self._is_setup_finished = self._app._is_setup_finished
+            self.before_request_funcs = self._app.before_request_funcs
+            self.after_request_funcs = self._app.after_request_funcs
+            self.teardown_request_funcs = self._app.teardown_request_funcs
+            self.url_default_functions = self._app.url_default_functions
+            self.url_value_preprocessors = self._app.url_value_preprocessors
+            self.template_context_processors = self._app.template_context_processors
+        else:
+            log.warning("unexpected Flask version while dealing with blueprints?")
         #
         # caches
         #
@@ -610,7 +629,7 @@ class FlaskSimpleAuth:
         assert request.remote_user is None, "do not shadow web server auth"
         assert request.environ["REMOTE_ADDR"][:4] == "127.", \
             "fake auth only on localhost"
-        params = request.json or request.values
+        params = self._params()
         user = params.get(self._login, None)
         # it could check that the user exists in db
         if not user:
@@ -705,7 +724,7 @@ class FlaskSimpleAuth:
     def _get_param_auth(self):
         """Get user with parameter authentication."""
         assert request.remote_user is None
-        params = request.json or request.values
+        params = self._params()
         user = params.get(self._userp, None)
         if not user:
             raise AuthException(f"missing login parameter: {self._userp}", 401)
@@ -880,7 +899,7 @@ class FlaskSimpleAuth:
                 token = request.cookies[self._name] \
                     if self._name in request.cookies else None
             elif self._carrier == "param":
-                params = request.json or request.values
+                params = self._params()
                 token = params.get(self._name, None)
             else:
                 assert self._carrier == "header" and self._name
@@ -1060,11 +1079,7 @@ class FlaskSimpleAuth:
                     return self._Resp("missing authorization check", 500)
 
                 # translate request parameters to named function parameters
-                params = request.json or request.values
-
-                import sys
-                print(f"params:{dict(params)}", file=sys.stderr)
-                log.debug(f"params:{dict(params)}")
+                params = self._params()
 
                 for p, typing in typings.items():
                     # guess which function parameters are request parameters
@@ -1155,7 +1170,24 @@ class FlaskSimpleAuth:
             self.add_url_rule(rule, view_func=fun, **options)
         return decorate
 
-    # duck-typing blueprint code stealing: needs blueprints, _blueprint_order, debug
+    # support Flask 2.0 per-method decorator shortcuts
+    # note that app.get("/", methods=["POST"], ...) would do a POST.
+    def get(self, rule, **options):
+        return self.route(rule, methods=["GET"], **options)
+
+    def post(self, rule, **options):
+        return self.route(rule, methods=["POST"], **options)
+
+    def put(self, rule, **options):
+        return self.route(rule, methods=["PUT"], **options)
+
+    def delete(self, rule, **options):
+        return self.route(rule, methods=["DELETE"], **options)
+
+    def patch(self, rule, **options):
+        return self.route(rule, methods=["PATCH"], **options)
+
+    # duck-typing blueprint code stealing: needs blueprints and some other attributes.
     def register_blueprint(self, blueprint, **options):
         """Register a blueprint."""
         flask.Flask.register_blueprint(self, blueprint, **options)

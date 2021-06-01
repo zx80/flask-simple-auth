@@ -629,14 +629,14 @@ Sources are available on [GitHub](https://github.com/zx80/flask-simple-auth)
 and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 Software license is *public domain*.
 
-#### 3.2.0
+#### 4.0.0
 
-WIP
-
-Port to Flask 2.0 (in progress).
+Port to Flask 2.0, working around a regression on `request.values` handling.
+Add support for Flask 2.0 per-method decorator shortcuts `get`, `post`, `put`,
+`delete` and `patch`.
+Rework documentation.
 Minor style improvements.
 Fix `all` authentication mode.
-Rework documentation.
 
 #### 3.1.1
 

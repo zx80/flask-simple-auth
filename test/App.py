@@ -22,7 +22,7 @@ app.config.update(
     FSA_MODE = "always",
     FSA_SKIP_PATH = (r"/(register|required)",
                      r"/(add|div|mul|sub|type|params|any|mis[12]|nogo|one)",
-                     r"/(infer|superid|cplx|bool|mail|path|string|auth)"),
+                     r"/(infer|superid|cplx|bool|mail|path|string|auth|f2)"),
     FSA_GET_USER_PASS = get_user_pass,
     FSA_USER_IN_GROUP = user_in_group
 )
@@ -268,3 +268,25 @@ def get_required_true(s1, s2):
 @app.route("/required/false", required=False, authorize=ANY)
 def get_required_false(s1 = "hello", s2 = "world"):
     return s1 + " " + s2, 200
+
+# check Flask 2.0 compatibility
+@app.get("/f2/get", authorize=ANY)
+def get_f2():
+    return "get ok", 200
+
+@app.post("/f2/post", authorize=ANY)
+def post_f2():
+    return "post ok", 200
+
+@app.put("/f2/put", authorize=ANY)
+def put_f2():
+    return "put ok", 200
+
+@app.delete("/f2/delete", authorize=ANY)
+def delete_f2():
+    return "delete ok", 200
+
+@app.patch("/f2/patch", authorize=ANY)
+def patch_f2():
+    return "patch ok", 200
+
