@@ -372,7 +372,7 @@ The following configuration directives are available:
    Default is *16* for `fsa`. The directive is ignored for `jwt`.
 
 Function `create_token(user)` creates a token for the user depending
-on the current scheme.
+on the current scheme. If `user` is not given, the current user is taken.
 
 Token authentication is always attempted unless the secret is empty.
 Setting `FSA_AUTH` to `token` results in *only* token authentication to be used.
@@ -473,7 +473,7 @@ by a password method:
 # token creation route for all registered users
 @app.route("/login", methods=["GET"], authorize="ALL")
 def get_login():
-    return jsonify(app.create_token(app.get_user())), 200
+    return jsonify(app.create_token()), 200
 ```
 
 The client application will return the token as a parameter or in
