@@ -629,6 +629,10 @@ Sources are available on [GitHub](https://github.com/zx80/flask-simple-auth)
 and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 Software license is *public domain*.
 
+#### dev
+
+Check configuration directive names to warn about possible typos or errors.
+
 #### 4.0.0
 
 Port to Flask 2.0, working around a regression on `request.values` handling.

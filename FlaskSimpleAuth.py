@@ -264,6 +264,22 @@ class Flask(flask.Flask):
         """Get current authenticated user, if any, or None."""
         return self._fsa.current_user()
 
+    # per-method decorator forwarding
+    def get(self, rule, **options):
+        return self._fsa.get(rule, **options)
+
+    def post(self, rule, **options):
+        return self._fsa.post(rule, **options)
+
+    def put(self, rule, **options):
+        return self._fsa.put(rule, **options)
+
+    def delete(self, rule, **options):
+        return self._fsa.delete(rule, **options)
+
+    def patch(self, rule, **options):
+        return self._fsa.patch(rule, **options)
+
 
 # actual extension
 class FlaskSimpleAuth:
@@ -404,6 +420,17 @@ class FlaskSimpleAuth:
         self._user_in_group = self._cache_function(uig)
         return uig
 
+    _DIRECTIVES = {
+        "FSA_401_REDIRECT", "FSA_AUTH", "FSA_CACHE_SIZE", "FSA_CHECK",
+        "FSA_FAKE_LOGIN", "FSA_GET_USER_PASS", "FSA_HTTP_AUTH_OPTS",
+        "FSA_MODE", "FSA_PARAM_PASS", "FSA_PARAM_USER", "FSA_PASSWORD_OPTIONS"
+        "FSA_PASSWORD_SCHEME", "FSA_SKIP_PATH", "FSA_TOKEN_ALGO",
+        "FSA_TOKEN_CARRIER", "FSA_TOKEN_DELAY", "FSA_TOKEN_GRACE",
+        "FSA_TOKEN_LENGTH", "FSA_TOKEN_NAME", "FSA_TOKEN_REALM",
+        "FSA_TOKEN_SECRET", "FSA_TOKEN_SIGN", "FSA_TOKEN_TYPE",
+        "FSA_URL_NAME", "FSA_USER_IN_GROUP"
+    }
+
     #
     # DEFERRED INITIALIZATIONS
     #
@@ -422,6 +449,10 @@ class FlaskSimpleAuth:
         assert app
         self._app = app
         conf = app.config
+        # check directives
+        for name in conf:
+            if name[:4] == "FSA_" and name not in self._DIRECTIVES:
+                log.warning(f"unexpected directive: {name}")
         #
         # overall auth setup
         #
