@@ -633,6 +633,7 @@ Software license is *public domain*.
 #### dev
 
 Check configuration directive names to warn about possible typos or errors.
+Update documentation.
 
 #### 4.0.0
 
