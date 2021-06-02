@@ -420,6 +420,11 @@ class FlaskSimpleAuth:
         self._user_in_group = self._cache_function(uig)
         return uig
 
+    #
+    # DEFERRED INITIALIZATIONS
+    #
+
+    # all possible directives
     _DIRECTIVES = {
         "FSA_401_REDIRECT", "FSA_AUTH", "FSA_CACHE_SIZE", "FSA_CHECK",
         "FSA_FAKE_LOGIN", "FSA_GET_USER_PASS", "FSA_HTTP_AUTH_OPTS",
@@ -431,9 +436,6 @@ class FlaskSimpleAuth:
         "FSA_URL_NAME", "FSA_USER_IN_GROUP"
     }
 
-    #
-    # DEFERRED INITIALIZATIONS
-    #
     def initialize(self):
         """Run late initialization on current app."""
         assert self._app
