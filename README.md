@@ -632,6 +632,7 @@ Software license is *public domain*.
 
 #### dev
 
+Add support for per-method decorator shortcuts to `Flask` wrapper class.
 Check configuration directive names to warn about possible typos or errors.
 Update documentation.
 
