@@ -433,7 +433,7 @@ class FlaskSimpleAuth:
         "FSA_TOKEN_CARRIER", "FSA_TOKEN_DELAY", "FSA_TOKEN_GRACE",
         "FSA_TOKEN_LENGTH", "FSA_TOKEN_NAME", "FSA_TOKEN_REALM",
         "FSA_TOKEN_SECRET", "FSA_TOKEN_SIGN", "FSA_TOKEN_TYPE",
-        "FSA_URL_NAME", "FSA_USER_IN_GROUP"
+        "FSA_URL_NAME", "FSA_USER_IN_GROUP", "FSA_LOGGING_LEVEL",
     }
 
     def initialize(self):
@@ -451,6 +451,8 @@ class FlaskSimpleAuth:
         assert app
         self._app = app
         conf = app.config
+        if "FSA_LOGGING_LEVEL" in conf:
+            log.setLevel(conf["FSA_LOGGING_LEVEL"])
         # check directives
         for name in conf:
             if name[:4] == "FSA_" and name not in self._DIRECTIVES:
