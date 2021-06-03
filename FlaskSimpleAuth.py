@@ -281,6 +281,19 @@ class Flask(flask.Flask):
         return self._fsa.patch(rule, **options)
 
 
+# all possible directives
+_DIRECTIVES = {
+    "FSA_401_REDIRECT", "FSA_AUTH", "FSA_CACHE_SIZE", "FSA_CHECK",
+    "FSA_FAKE_LOGIN", "FSA_GET_USER_PASS", "FSA_HTTP_AUTH_OPTS",
+    "FSA_MODE", "FSA_PARAM_PASS", "FSA_PARAM_USER", "FSA_PASSWORD_OPTIONS"
+    "FSA_PASSWORD_SCHEME", "FSA_SKIP_PATH", "FSA_TOKEN_ALGO",
+    "FSA_TOKEN_CARRIER", "FSA_TOKEN_DELAY", "FSA_TOKEN_GRACE",
+    "FSA_TOKEN_LENGTH", "FSA_TOKEN_NAME", "FSA_TOKEN_REALM",
+    "FSA_TOKEN_SECRET", "FSA_TOKEN_SIGN", "FSA_TOKEN_TYPE",
+    "FSA_URL_NAME", "FSA_USER_IN_GROUP", "FSA_LOGGING_LEVEL",
+}
+
+
 # actual extension
 class FlaskSimpleAuth:
     """Flask extension for authentication, authorization and parameters."""
@@ -423,19 +436,6 @@ class FlaskSimpleAuth:
     #
     # DEFERRED INITIALIZATIONS
     #
-
-    # all possible directives
-    _DIRECTIVES = {
-        "FSA_401_REDIRECT", "FSA_AUTH", "FSA_CACHE_SIZE", "FSA_CHECK",
-        "FSA_FAKE_LOGIN", "FSA_GET_USER_PASS", "FSA_HTTP_AUTH_OPTS",
-        "FSA_MODE", "FSA_PARAM_PASS", "FSA_PARAM_USER", "FSA_PASSWORD_OPTIONS"
-        "FSA_PASSWORD_SCHEME", "FSA_SKIP_PATH", "FSA_TOKEN_ALGO",
-        "FSA_TOKEN_CARRIER", "FSA_TOKEN_DELAY", "FSA_TOKEN_GRACE",
-        "FSA_TOKEN_LENGTH", "FSA_TOKEN_NAME", "FSA_TOKEN_REALM",
-        "FSA_TOKEN_SECRET", "FSA_TOKEN_SIGN", "FSA_TOKEN_TYPE",
-        "FSA_URL_NAME", "FSA_USER_IN_GROUP", "FSA_LOGGING_LEVEL",
-    }
-
     def initialize(self):
         """Run late initialization on current app."""
         assert self._app
@@ -455,7 +455,7 @@ class FlaskSimpleAuth:
             log.setLevel(conf["FSA_LOGGING_LEVEL"])
         # check directives
         for name in conf:
-            if name[:4] == "FSA_" and name not in self._DIRECTIVES:
+            if name[:4] == "FSA_" and name not in _DIRECTIVES:
                 log.warning(f"unexpected directive: {name}")
         #
         # overall auth setup
