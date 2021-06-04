@@ -535,7 +535,11 @@ class FlaskSimpleAuth:
             self._sign = self._secret
             self._algo = conf.get("FSA_TOKEN_ALGO", "blake2s")
             self._siglen = conf.get("FSA_TOKEN_LENGTH", 16)
+            if "FSA_TOKEN_SIGN" in conf:
+                log.warning("ignoring FSA_TOKEN_SIGN directive for fsa tokens")
         elif self._token == "jwt":
+            if "FSA_TOKEN_LENGTH" in conf:
+                log.warning("ignoring FSA_TOKEN_LENGTH directive for jwt tokens")
             algo = conf.get("FSA_TOKEN_ALGO", "HS256")
             self._algo = algo
             if algo[0] in ("R", "E", "P"):

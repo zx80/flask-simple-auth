@@ -635,6 +635,7 @@ Software license is *public domain*.
 Add support for per-method decorator shortcuts to `Flask` wrapper class.
 Add `FSA_LOGGING_LEVEL` directive.
 Check configuration directive names to warn about possible typos or errors.
+Warn about some unused directives.
 Update documentation.
 
 #### 4.0.0
