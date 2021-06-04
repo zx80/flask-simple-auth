@@ -483,7 +483,7 @@ headers for authenticating later requests, till it expires.
 ### Authorization
 
 Role-oriented authorizations are managed through the `authorize` parameter to
-the `route` decorator, which provides a just one or possibly a list of roles
+the `route` decorator, which provides just one or possibly a list of roles
 authorized to call a route. A role is identified as an integer or a string.
 The check calls `user_in_group(user, group)` function to check whether the
 authenticated user belongs to any of the authorized roles.
@@ -509,7 +509,7 @@ provided default values, i.e. they are optional when a default is provided.
 
 ```python
 @app.route("/something/<id>", methods=…, authorize=…)
-def do_some_id(id: int, when: date, what: str = "nothing):
+def do_some_id(id: int, when: date, what: str = "nothing"):
     # `id` is an integer path-parameter
     # `when` is a mandatory date HTTP or JSON parameter
     # `what` is an optional string HTTP or JSON parameter
