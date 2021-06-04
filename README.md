@@ -827,3 +827,4 @@ Initial release in beta.
 - do test digest?
 - add `any` token scheme?
 - automate URL-parameter redirect?
+- provide a full ready-to-run example?
