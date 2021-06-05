@@ -794,6 +794,7 @@ class FlaskSimpleAuth:
     #
     # FSA_TOKEN_TYPE: 'jwt', 'fsa' or None to disactivate
     # - for 'fsa': format is <realm>:<user>:<validity-limit>:<signature>
+    # FSA_TOKEN_CARRIER: 'param', 'header' or 'bearer'
     # FSA_TOKEN_NAME: name of parameter holding the token, or None for bearer auth
     # FSA_TOKEN_ALGO:
     # - for 'fsa': hashlib algorithm for token authentication ("blake2s")
