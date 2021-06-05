@@ -486,12 +486,12 @@ class FlaskSimpleAuth:
         #
         self._token = conf.get("FSA_TOKEN_TYPE", "fsa")
         if self._token not in (None, "fsa", "jwt"):
-            raise Exception(f"Unexpected token type (FSA_TOKEN_TYPE): {self._token}")
+            raise Exception(f"Unexpected FSA_TOKEN_TYPE: {self._token}")
         # token carrier
         need_carrier = self._token is not None
         self._carrier = conf.get("FSA_TOKEN_CARRIER", "bearer" if need_carrier else None)
         if self._carrier not in (None, "bearer", "param", "cookie", "header"):
-            raise Exception(f"Unexpected token carrier (FSA_TOKEN_CARRIER): {self._carrier}")
+            raise Exception(f"Unexpected FSA_TOKEN_CARRIER: {self._carrier}")
         # sanity checks
         if need_carrier and not self._carrier:
             raise Exception(f"Token type {self._token} requires a carrier")
