@@ -699,11 +699,11 @@ class FlaskSimpleAuth:
         if not request.is_secure:
             log.warning("password authentication over an insecure request")
         ref = self._get_user_pass(user)
-        if ref and not (isinstance(ref, str) or isinstance(ref, bytes)):
-            raise AuthException(f"get_user_pass must return str or bytes", 500)
         if not ref:
             log.debug(f"AUTH (password): no such user ({user})")
             raise AuthException(f"no such user: {user}", 401)
+        if not isinstance(ref, (str, bytes)):
+            raise AuthException("get_user_pass must return None or str or bytes", 500)
         if not self.check_password(pwd, ref):
             log.debug(f"AUTH (password): invalid password for {user}")
             raise AuthException(f"invalid password for {user}", 401)
@@ -1068,7 +1068,10 @@ class FlaskSimpleAuth:
                     return fun(*args, **kwargs)
                 # check against all authorized groups/roles
                 for r in groups:
-                    if self._user_in_group(self._user, r):
+                    uig = self._user_in_group(self._user, r)
+                    if not isinstance(uig, bool):
+                        return self._Resp("user_in_group must return a boolean", 500)
+                    if uig:
                         return fun(*args, **kwargs)
                 # else no matching group
                 return self._Resp("", 403)
