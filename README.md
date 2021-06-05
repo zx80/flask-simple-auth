@@ -829,3 +829,4 @@ Initial release in beta.
 - add `any` token scheme?
 - automate URL-parameter redirect?
 - provide a full ready-to-run example?
+- script to generate compatible passwords?
