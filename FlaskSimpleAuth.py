@@ -699,6 +699,8 @@ class FlaskSimpleAuth:
         if not request.is_secure:
             log.warning("password authentication over an insecure request")
         ref = self._get_user_pass(user)
+        if ref and not (isinstance(ref, str) or isinstance(ref, bytes)):
+            raise AuthException(f"get_user_pass must return str or bytes", 500)
         if not ref:
             log.debug(f"AUTH (password): no such user ({user})")
             raise AuthException(f"no such user: {user}", 401)
