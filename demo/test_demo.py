@@ -103,3 +103,4 @@ def test_users(client):
     check(401, client.get("/users", headers=TMP_BASIC))
     check(200, client.get("/users", headers=TMP_BASIC_2))
     check(204, client.delete("/users/tmp", headers=FOO_BASIC))
+    check(404, client.get("/users/tmp", headers=FOO_BASIC))
