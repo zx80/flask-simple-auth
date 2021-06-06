@@ -26,8 +26,8 @@ object.
    `Stuff` table.
  - [users.py](users.py) defines `/users` routes for user management by admins.
  - [care.py](care.py) defines `/self` routes for user self-care, that is
-   registration, obtaining authentication tokens, changing one's password and
-   deleting oneself.
+   self registration, obtaining authentication tokens, changing one's password
+   and deleting oneself, all this in under *30* lines of code.
 
 The next sections describe the convenient features which distinguish this
 demo compared to what it would require if only Flask was being used.
