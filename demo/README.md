@@ -36,8 +36,8 @@ demo compared to what would be required if only Flask was being used.
 
 The application uses *fsa* tokens or *HTTP basic* authentication… but there
 is no single trace of that in the application code. **THIS IS A GOOD THING**.
-The authentication requirements can be changed without changing any line
-of code, just by changing the configurations in [app.conf](app.conf):
+The authentication requirements can be changed without editing any line
+of code, just by updating the configurations in [app.conf](app.conf):
 
  - Do you want parameter-based authentication? Set `FSA_AUTH` to `param`.
  - Do you rather want the application to inherit the authentication performed
@@ -69,23 +69,22 @@ which must be provided.
 The application retrieve API parameters transparently and turns them
 into typed function parameters at the python level. The application code
 does not need to dive into `request`, which does not appear anywhere.
-Parameters may come through `args`, `form` or `json`, the application
+Parameters may come from `args`, `form` or `json`, the application
 does not need to care.
 
 For instance in [users.py](users.py), the `PATCH /users/<login>` route
-includes a mandatory `login` string parameter to identify the user, and two
-optional `upass` string and `admin` boolean parameters to describe
+includes a mandatory `login` url string parameter to identify the user,
+and two optional `upass` string and `admin` boolean parameters to describe
 expected changes.
 
 ## Database
 
-Flask, I guess because Python memory management requires a global lock (GIL)
-which is a universal pain (who would use multiprocessing if decent threads were
+Flask, because Python memory management requires a global lock (GIL) which
+is a universal pain (who would use multiprocessing if decent threads were
 available?), basically enforces a one thread process which relies on global
 variables instead of functions parameters (eg `request`, `app`, `g`).
-
-Thus database interactions are also managed by a global object named `db` in
-the demo application.
+Thus database interactions follow this disputable model and are managed by
+a global object named `db` in the demo application.
 
 When trying to split their application in distinct files, the user quickly
 bumps into a reference sharing and initialization chicken-and-egg problem,
