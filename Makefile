@@ -16,6 +16,7 @@ check: venv
 clean:
 	$(RM) -r __pycache__ */__pycache__ *.egg-info dist build .mypy_cache .pytest_cache
 	$(MAKE) -C test clean
+	$(MAKE) -C demo clean
 
 clean-venv: clean
 	$(RM) -r venv
