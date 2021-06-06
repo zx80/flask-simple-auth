@@ -84,6 +84,6 @@ def test_care(client):
     check(401, client.patch("/self", json={"opass": "TMP", "npass": "tmp"}, headers=TMP_BASIC))
     check(204, client.patch("/self", json={"opass": "TMP", "npass": "tmp"}, headers=TMP_BASIC_2))
     check(204, client.delete("/self", headers=TMP_BASIC))
-    res = check(401, client.get("/self", headers=TMP_BASIC))
+    check(401, client.get("/self", headers=TMP_BASIC))
 
 # TODO test_users
