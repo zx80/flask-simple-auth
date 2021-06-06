@@ -30,7 +30,7 @@ object.
    and deleting oneself, all this in under *30* lines of code.
 
 The next sections describe the convenient features which distinguish this
-demo compared to what it would require if only Flask was being used.
+demo compared to what would be required if only Flask was being used.
 
 ## Application Authentication
 
