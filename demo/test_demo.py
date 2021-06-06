@@ -86,4 +86,20 @@ def test_care(client):
     check(204, client.delete("/self", headers=TMP_BASIC))
     check(401, client.get("/self", headers=TMP_BASIC))
 
-# TODO test_users
+def test_users(client):
+    res = check(200, client.get("/users", headers=FOO_BASIC))
+    assert b"foo" in res.data
+    assert b"bla" in res.data
+    res = check(200, client.get("/users/foo", headers=BLA_BASIC))
+    assert b"foo" in res.data
+    assert b"bla" not in res.data
+    check(401, client.get("/stuff/1", headers=TMP_BASIC))
+    check(201, client.post("/users", data={"login": "tmp", "upass": "tmp", "admin": False}, headers=FOO_BASIC))
+    check(200, client.get("/stuff/1", headers=TMP_BASIC))
+    check(403, client.get("/users", headers=TMP_BASIC))
+    check(204, client.patch("/users/tmp", data={"admin": True}, headers=FOO_BASIC))
+    check(200, client.get("/users", headers=TMP_BASIC))
+    check(204, client.patch("/users/tmp", data={"upass": "TMP"}, headers=FOO_BASIC))
+    check(401, client.get("/users", headers=TMP_BASIC))
+    check(200, client.get("/users", headers=TMP_BASIC_2))
+    check(204, client.delete("/users/tmp", headers=FOO_BASIC))

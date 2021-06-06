@@ -22,6 +22,7 @@ def get_users_login(login: str):
 @users.post("/users", authorize="ADMIN")
 def post_users(login: str, upass: str, admin: bool = False):
     db.add_user(login=login, upass=app.hash_password(upass), admin=admin)
+    app.clear_caches()
     return "", 201
 
 # PATCH /users/<login> (upass?, admin?): update user data
@@ -31,6 +32,7 @@ def patch_users_login(login: str, upass: str = None, admin: bool = None):
         db.upd_user_password(login=login, upass=app.hash_password(upass))
     if admin is not None:
         db.upd_user_admin(login=login, admin=admin)
+    app.clear_caches()
     return "", 204
 
 # DELETE /users/<login>: delete this user
@@ -40,3 +42,5 @@ def delete_users_login(login: str):
     if not res:
         return "", 404
     db.del_user_login(login=login)
+    app.clear_caches()
+    return "", 204
