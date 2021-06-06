@@ -831,3 +831,4 @@ Initial release in beta.
 - do test digest?
 - add `any` token scheme?
 - automate URL-parameter redirect?
+- add `get_user` attempt on ANY? TRY?
