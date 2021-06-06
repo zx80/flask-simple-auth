@@ -50,6 +50,8 @@ def test_stuff(client):
     assert b"STUFF" in res.data
     sn = get_stuff_id(client, b"STUFF")
     assert sn is not None
+    res = check(200, client.get(f"/stuff/{sn}", headers=FOO_BASIC))
+    assert b"STUFF" in res.data
     check(204, client.delete(f"/stuff/{sn}", headers=FOO_BASIC))
     res = check(200, client.get("/stuff", headers=FOO_BASIC))
     assert b"STUFF" not in res.data
