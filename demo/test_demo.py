@@ -16,6 +16,7 @@ def basic(login, upass):
 # 2 predefined admins
 FOO_BASIC = basic("foo", "bla")
 BLA_BASIC = basic("bla", "foo")
+
 # temporary users for testing
 TMP_BASIC = basic("tmp", "tmp")
 TMP_BASIC_2 = basic("tmp", "TMP")
