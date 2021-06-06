@@ -21,41 +21,15 @@ log = logging.getLogger("tests")
 # log.setLevel(logging.DEBUG)
 # app._fsa._initialize()
 
-def check_200(res):  # ok
-    assert res.status_code == 200
+def check(code, res):
+    assert res.status_code == code
     return res
 
-def check_201(res):  # created
-    assert res.status_code == 201
-    return res
+def check_200(res):
+    return check(200, res)
 
-def check_204(res):  # no content
-    assert res.status_code == 204
-    return res
-
-def check_307(res):  # tmp redirect
-    assert res.status_code == 307
-    return res
-
-def check_400(res):  # client error
-    assert res.status_code == 400
-    return res
-
-def check_401(res):  # authentication required
-    assert res.status_code == 401
-    return res
-
-def check_403(res):  # forbidden
-    assert res.status_code == 403
-    return res
-
-def check_404(res):  # not found
-    assert res.status_code == 404
-    return res
-
-def check_500(res):  # bad
-    assert res.status_code == 500
-    return res
+def check_403(res):
+    return check(403, res)
 
 def test_sanity():
     assert App.app is not None and fsa is not None
@@ -161,11 +135,11 @@ def all_auth(client, user, pswd, check, *args, **kwargs):
     pop_auth(app._fsa)
 
 def test_perms(client):
-    check_200(client.get("/any"))  # open route
-    check_401(client.get("/login"))  # login without login
-    check_401(client.get("/"))  # empty path
+    check(200, client.get("/any"))  # open route
+    check(401, client.get("/login"))  # login without login
+    check(401, client.get("/"))  # empty path
     # admin only
-    check_401(client.get("/admin"))
+    check(401, client.get("/admin"))
     log.debug(f"App.user_in_group: {App.user_in_group}")
     log.debug(f"app._fsa._user_in_group: {app._fsa._user_in_group}")
     assert App.user_in_group("dad", App.ADMIN)
@@ -181,7 +155,7 @@ def test_perms(client):
     assert hasattr(app._fsa._get_user_pass, "cache_clear")
     app.clear_caches()
     # write only
-    check_401(client.get("/write"))
+    check(401, client.get("/write"))
     assert app._fsa._user_in_group("dad", App.WRITE)
     all_auth(client, "dad", App.UP["dad"], check_200, "/write")
     assert app._fsa._user_in_group("calvin", App.WRITE)
@@ -189,7 +163,7 @@ def test_perms(client):
     assert not App.user_in_group("hobbes", App.WRITE)
     all_auth(client, "hobbes", App.UP["hobbes"], check_403, "/write")
     # read only
-    check_401(client.get("/read"))
+    check(401, client.get("/read"))
     assert not app._fsa._user_in_group("dad", App.READ)
     all_auth(client, "dad", App.UP["dad"], check_403, "/read")
     assert app._fsa._user_in_group("calvin", App.READ)
@@ -198,34 +172,34 @@ def test_perms(client):
     all_auth(client, "hobbes", App.UP["hobbes"], check_200, "/read")
 
 def test_whatever(client):
-    check_401(client.get("/whatever"))
-    check_401(client.post("/whatever"))
-    check_401(client.put("/whatever"))
-    check_401(client.patch("/whatever"))
-    check_401(client.delete("/whatever"))
+    check(401, client.get("/whatever"))
+    check(401, client.post("/whatever"))
+    check(401, client.put("/whatever"))
+    check(401, client.patch("/whatever"))
+    check(401, client.delete("/whatever"))
     push_auth(app._fsa, "fake")
-    check_404(client.get("/whatever", data={"LOGIN": "dad"}))
-    check_404(client.post("/whatever", data={"LOGIN": "dad"}))
-    check_404(client.put("/whatever", data={"LOGIN": "dad"}))
-    check_404(client.patch("/whatever", data={"LOGIN": "dad"}))
-    check_404(client.delete("/whatever", data={"LOGIN": "dad"}))
+    check(404, client.get("/whatever", data={"LOGIN": "dad"}))
+    check(404, client.post("/whatever", data={"LOGIN": "dad"}))
+    check(404, client.put("/whatever", data={"LOGIN": "dad"}))
+    check(404, client.patch("/whatever", data={"LOGIN": "dad"}))
+    check(404, client.delete("/whatever", data={"LOGIN": "dad"}))
     pop_auth(app._fsa)
 
 def test_register(client):
     # missing params
-    check_400(client.post("/register", data={"user":"calvin"}))
-    check_400(client.post("/register", data={"upass":"calvin-pass"}))
+    check(400, client.post("/register", data={"user":"calvin"}))
+    check(400, client.post("/register", data={"upass":"calvin-pass"}))
     # existing user
-    check_403(client.post("/register", data={"user":"calvin", "upass":"calvin-pass"}))
+    check(403, client.post("/register", data={"user":"calvin", "upass":"calvin-pass"}))
     # new user
-    check_201(client.post("/register", data={"user":"susie", "upass":"derkins"}))
+    check(201, client.post("/register", data={"user":"susie", "upass":"derkins"}))
     assert App.UP["susie"] == "derkins"
     all_auth(client, "susie", App.UP["susie"], check_403, "/admin")
     all_auth(client, "susie", App.UP["susie"], check_403, "/write")
     all_auth(client, "susie", App.UP["susie"], check_200, "/read")
     # clean-up
     push_auth(app._fsa, "fake")
-    check_204(client.delete("/user/susie", data={"LOGIN":"susie"}))
+    check(204, client.delete("/user/susie", data={"LOGIN":"susie"}))
     assert "susie" not in App.UP and "susie" not in App.UHP
     pop_auth(app._fsa)
 
@@ -354,13 +328,13 @@ def test_password_check(client):
     assert app.check_password("hello", ref)
     assert not app.check_password("bad-pass", ref)
     push_auth(app._fsa, ["password"])
-    res = check_401(client.get("/read", data={"USER": "dad", "PASS": "bad-dad-password"}))
+    res = check(401, client.get("/read", data={"USER": "dad", "PASS": "bad-dad-password"}))
     assert b"invalid password for" in res.data
-    res = check_401(client.get("/read", data={"USER": "dad"}))
+    res = check(401, client.get("/read", data={"USER": "dad"}))
     assert b"missing password parameter" in res.data
     pop_auth(app._fsa)
     push_auth(app._fsa, ["basic"])
-    res = check_401(client.get("/read", headers={"Authorization": "Basic !!!"}))
+    res = check(401, client.get("/read", headers={"Authorization": "Basic !!!"}))
     assert b"decoding error on authorization" in res.data
     pop_auth(app._fsa)
     pm = app._fsa._pm
@@ -397,248 +371,248 @@ def test_authorize():
 
 def test_self_care(client):
     push_auth(app._fsa, "fake")
-    check_401(client.patch("/user/calvin"))
-    check_403(client.patch("/user/calvin", data={"LOGIN":"dad"}))
+    check(401, client.patch("/user/calvin"))
+    check(403, client.patch("/user/calvin", data={"LOGIN":"dad"}))
     who, npass, opass = "calvin", "new-calvin-password", App.UP["calvin"]
-    check_204(client.patch(f"/user/{who}", data={"oldpass":opass, "newpass":npass, "LOGIN":who}))
+    check(204, client.patch(f"/user/{who}", data={"oldpass":opass, "newpass":npass, "LOGIN":who}))
     assert App.UP[who] == npass
-    check_204(client.patch(f"/user/{who}", data={"oldpass":npass, "newpass":opass, "LOGIN":who}))
+    check(204, client.patch(f"/user/{who}", data={"oldpass":npass, "newpass":opass, "LOGIN":who}))
     assert App.UP[who] == opass
-    check_201(client.post("/register", data={"user":"rosalyn", "upass":"rosa-pass"}))
-    check_204(client.delete("user/rosalyn", data={"LOGIN":"rosalyn"}))  # self
-    check_201(client.post("/register", data={"user":"rosalyn", "upass":"rosa-pass"}))
-    check_204(client.delete("user/rosalyn", data={"LOGIN":"dad"}))  # admin
+    check(201, client.post("/register", data={"user":"rosalyn", "upass":"rosa-pass"}))
+    check(204, client.delete("user/rosalyn", data={"LOGIN":"rosalyn"}))  # self
+    check(201, client.post("/register", data={"user":"rosalyn", "upass":"rosa-pass"}))
+    check(204, client.delete("user/rosalyn", data={"LOGIN":"dad"}))  # admin
     pop_auth(app._fsa)
 
 def test_typed_params(client):
-    res = check_200(client.get("/add/2", data={"a":"2.0", "b":"4.0"}))
+    res = check(200, client.get("/add/2", data={"a":"2.0", "b":"4.0"}))
     assert float(res.data) == 12.0
-    res = check_200(client.get("/mul/2", data={"j":"3", "k":"4"}))
+    res = check(200, client.get("/mul/2", data={"j":"3", "k":"4"}))
     assert int(res.data) == 24
-    res = check_200(client.get("/mul/2", json={"j":"5", "k":"4"}))
+    res = check(200, client.get("/mul/2", json={"j":"5", "k":"4"}))
     assert int(res.data) == 40
-    check_400(client.get("/mul/1", data={"j":"3"}))
-    check_400(client.get("/mul/1", data={"k":"4"}))
-    check_400(client.get("/mul/2", data={"j":"three", "k":"four"}))
-    check_400(client.get("/mul/2", json={"j":"three", "k":"four"}))
+    check(400, client.get("/mul/1", data={"j":"3"}))
+    check(400, client.get("/mul/1", data={"k":"4"}))
+    check(400, client.get("/mul/2", data={"j":"three", "k":"four"}))
+    check(400, client.get("/mul/2", json={"j":"three", "k":"four"}))
     # optional
-    res = check_200(client.get("/div", data={"i":"10", "j":"3"}))
+    res = check(200, client.get("/div", data={"i":"10", "j":"3"}))
     assert int(res.data) == 3
-    res = check_200(client.get("/div", json={"i":"100", "j":"4"}))
+    res = check(200, client.get("/div", json={"i":"100", "j":"4"}))
     assert int(res.data) == 25
-    res = check_200(client.get("/div", data={"i":"10"}))
+    res = check(200, client.get("/div", data={"i":"10"}))
     assert int(res.data) == 0
-    res = check_200(client.get("/sub", data={"i":"42", "j":"20"}))
+    res = check(200, client.get("/sub", data={"i":"42", "j":"20"}))
     assert int(res.data) == 22
-    check_400(client.get("/sub", data={"j":"42"}))
-    res = check_200(client.get("/sub", data={"i":"42"}))
+    check(400, client.get("/sub", data={"j":"42"}))
+    res = check(200, client.get("/sub", data={"i":"42"}))
     assert int(res.data) == 42
 
 def test_types(client):
-    res = check_200(client.get("/type", data={"f": "1.0"}))
+    res = check(200, client.get("/type", data={"f": "1.0"}))
     assert res.data == b"float 1.0"
-    res = check_200(client.get("/type", data={"i": "0b11"}))
+    res = check(200, client.get("/type", data={"i": "0b11"}))
     assert res.data == b"int 3"
-    res = check_200(client.get("/type", data={"i": "0x11"}))
+    res = check(200, client.get("/type", data={"i": "0x11"}))
     assert res.data == b"int 17"
-    res = check_200(client.get("/type", json={"i": "0x11"}))
+    res = check(200, client.get("/type", json={"i": "0x11"}))
     assert res.data == b"int 17"
     # note: 011 is not accepted as octal
-    res = check_200(client.get("/type", data={"i": "0o11"}))
+    res = check(200, client.get("/type", data={"i": "0o11"}))
     assert res.data == b"int 9"
-    res = check_200(client.get("/type", data={"i": "11"}))
+    res = check(200, client.get("/type", data={"i": "11"}))
     assert res.data == b"int 11"
-    res = check_200(client.get("/type", json={"i": "11"}))
+    res = check(200, client.get("/type", json={"i": "11"}))
     assert res.data == b"int 11"
-    res = check_200(client.get("/type", data={"b": "0"}))
+    res = check(200, client.get("/type", data={"b": "0"}))
     assert res.data == b"bool False"
-    res = check_200(client.get("/type", data={"b": ""}))
+    res = check(200, client.get("/type", data={"b": ""}))
     assert res.data == b"bool False"
-    res = check_200(client.get("/type", data={"b": "False"}))
+    res = check(200, client.get("/type", data={"b": "False"}))
     assert res.data == b"bool False"
-    res = check_200(client.get("/type", data={"b": "fALSE"}))
+    res = check(200, client.get("/type", data={"b": "fALSE"}))
     assert res.data == b"bool False"
-    res = check_200(client.get("/type", data={"b": "F"}))
+    res = check(200, client.get("/type", data={"b": "F"}))
     assert res.data == b"bool False"
-    res = check_200(client.get("/type", data={"b": "1"}))
+    res = check(200, client.get("/type", data={"b": "1"}))
     assert res.data == b"bool True"
-    res = check_200(client.get("/type", data={"b": "foofoo"}))
+    res = check(200, client.get("/type", data={"b": "foofoo"}))
     assert res.data == b"bool True"
-    res = check_200(client.get("/type", data={"b": "True"}))
+    res = check(200, client.get("/type", data={"b": "True"}))
     assert res.data == b"bool True"
-    res = check_200(client.get("/type", json={"b": "True"}))
+    res = check(200, client.get("/type", json={"b": "True"}))
     assert res.data == b"bool True"
-    res = check_200(client.get("/type", data={"s": "Hello World!"}))
+    res = check(200, client.get("/type", data={"s": "Hello World!"}))
     assert res.data == b"str Hello World!"
-    res = check_200(client.get("/type", json={"s": "Hello World?"}))
+    res = check(200, client.get("/type", json={"s": "Hello World?"}))
     assert res.data == b"str Hello World?"
 
 def test_params(client):
-    res = check_200(client.get("/params", data={"a":1, "b":2, "c":3}))
+    res = check(200, client.get("/params", data={"a":1, "b":2, "c":3}))
     assert res.data == b"a b c"
-    res = check_200(client.get("/required/true", data={"s1": "su", "s2": "sie"}))
+    res = check(200, client.get("/required/true", data={"s1": "su", "s2": "sie"}))
     assert res.data == b"su sie"
-    check_400(client.get("/required/true", data={"s2": "sie"}))
-    check_400(client.get("/required/true", data={"s1": "su"}))
-    res = check_200(client.get("/required/false", data={"s1": "su", "s2": "sie"}))
+    check(400, client.get("/required/true", data={"s2": "sie"}))
+    check(400, client.get("/required/true", data={"s1": "su"}))
+    res = check(200, client.get("/required/false", data={"s1": "su", "s2": "sie"}))
     assert res.data == b"su sie"
-    res = check_200(client.get("/required/false"))
+    res = check(200, client.get("/required/false"))
     assert res.data == b"hello world"
-    res = check_200(client.get("/required/false", data={"s2": "sie"}))
+    res = check(200, client.get("/required/false", data={"s2": "sie"}))
     assert res.data == b"hello sie"
-    res = check_200(client.get("/required/false", data={"s1": "su"}))
+    res = check(200, client.get("/required/false", data={"s1": "su"}))
     assert res.data == b"su world"
 
 def test_missing(client):
     saved, app._fsa._check = app._fsa._check, True
-    check_403(client.get("/mis1"))
-    check_403(client.get("/mis2"))
-    check_403(client.get("/empty", data={"LOGIN": "dad"}))
+    check(403, client.get("/mis1"))
+    check(403, client.get("/mis2"))
+    check(403, client.get("/empty", data={"LOGIN": "dad"}))
     app._fsa._check = False
-    # check_200(client.get("/mis1"))
-    # check_200(client.get("/mis2"))
-    check_403(client.get("/empty", data={"LOGIN": "dad"}))
+    # check(200, client.get("/mis1"))
+    # check(200, client.get("/mis2"))
+    check(403, client.get("/empty", data={"LOGIN": "dad"}))
     app._fsa._check = saved
 
 def test_nogo(client):
-    check_403(client.get("/nogo"))
+    check(403, client.get("/nogo"))
 
 def test_route(client):
-    res = check_200(client.get("/one/42", data={"msg":"hello"}))
+    res = check(200, client.get("/one/42", data={"msg":"hello"}))
     assert res.data == b"42: hello !"
-    res = check_200(client.get("/one/42", data={"msg":"hello", "punct":"?"}))
+    res = check(200, client.get("/one/42", data={"msg":"hello", "punct":"?"}))
     assert res.data == b"42: hello ?"
-    check_400(client.get("/one/42"))   # missing "msg"
-    check_404(client.get("/one/bad", data={"msg":"hi"}))  # bad "i" type
-    check_403(client.get("/two", data={"LOGIN":"calvin"}))
+    check(400, client.get("/one/42"))   # missing "msg"
+    check(404, client.get("/one/bad", data={"msg":"hi"}))  # bad "i" type
+    check(403, client.get("/two", data={"LOGIN":"calvin"}))
 
 def test_infer(client):
-    res = check_200(client.get("/infer/1.000"))
+    res = check(200, client.get("/infer/1.000"))
     assert res.data == b"1.0 4"
-    res = check_200(client.get("/infer/2.000", data={"i":"2", "s":"hello"}))
+    res = check(200, client.get("/infer/2.000", data={"i":"2", "s":"hello"}))
     assert res.data == b"2.0 10"
 
 def test_when(client):
-    res = check_200(client.get("/when", data={"d": "1970-03-20", "LOGIN": "calvin"}))
+    res = check(200, client.get("/when", data={"d": "1970-03-20", "LOGIN": "calvin"}))
     assert b"days" in res.data
-    check_400(client.get("/when", data={"d": "not a date", "LOGIN": "calvin"}))
-    check_400(client.get("/when", data={"d": "2005-04-21", "t": "not a time", "LOGIN": "calvin"}))
+    check(400, client.get("/when", data={"d": "not a date", "LOGIN": "calvin"}))
+    check(400, client.get("/when", data={"d": "2005-04-21", "t": "not a time", "LOGIN": "calvin"}))
 
 def test_uuid(client):
     u1 = "12345678-1234-1234-1234-1234567890ab"
     u2 = "23456789-1234-1234-1234-1234567890ab"
-    res = check_200(client.get(f"/superid/{u1}"))
-    check_404(client.get("/superid/not-a-valid-uuid"))
-    res = check_200(client.get(f"/superid/{u2}", data={"u": u1}))
-    check_400(client.get(f"/superid/{u1}", data={"u": "invalid uuid"}))
+    res = check(200, client.get(f"/superid/{u1}"))
+    check(404, client.get("/superid/not-a-valid-uuid"))
+    res = check(200, client.get(f"/superid/{u2}", data={"u": u1}))
+    check(400, client.get(f"/superid/{u1}", data={"u": "invalid uuid"}))
 
 def test_complex(client):
-    res = check_200(client.get("/cplx", data={"c1": "-1-1j"}))
+    res = check(200, client.get("/cplx", data={"c1": "-1-1j"}))
     assert res.data == b"0j"
-    res = check_200(client.get("/cplx/-1j"))
+    res = check(200, client.get("/cplx/-1j"))
     assert res.data == b"0j"
-    check_404(client.get("/cplx/zero"))
+    check(404, client.get("/cplx/zero"))
 
 def test_bool(client):
-    res = check_200(client.get("/bool/1"))
+    res = check(200, client.get("/bool/1"))
     assert res.data == b"True"
-    res = check_200(client.get("/bool/f"))
+    res = check(200, client.get("/bool/f"))
     assert res.data == b"False"
-    res = check_200(client.get("/bool/0"))
+    res = check(200, client.get("/bool/0"))
     assert res.data == b"False"
-    res = check_200(client.get("/bool/hello"))
+    res = check(200, client.get("/bool/hello"))
     assert res.data == b"True"
-    check_404(client.get("/bool/"))
+    check(404, client.get("/bool/"))
 
 def test_mail(client):
     s, h, m = "susie@comics.net", "hobbes@comics.net", "moe@comics.net"
-    res = check_200(client.get(f"/mail/{s}"))
+    res = check(200, client.get(f"/mail/{s}"))
     assert b"susie" in res.data and b"calvin" in res.data
-    res = check_200(client.get(f"/mail/{h}", data={"ad2": m}))
+    res = check(200, client.get(f"/mail/{h}", data={"ad2": m}))
     assert b"hobbes" in res.data and b"moe" in res.data
-    check_404(client.get(f"/mail/bad-email-address"))
-    check_400(client.get(f"/mail/{m}", data={"ad2": "bad-email-address"}))
+    check(404, client.get(f"/mail/bad-email-address"))
+    check(400, client.get(f"/mail/{m}", data={"ad2": "bad-email-address"}))
 
 def test_appext(client2):
-    check_401(client2.get("/bad"))
-    check_500(client2.get("/bad", data={"LOGIN": "dad"}))
-    check_401(client2.get("/stuff"))
-    res = check_200(client2.get("/stuff", data={"LOGIN": "dad"}))
+    check(401, client2.get("/bad"))
+    check(500, client2.get("/bad", data={"LOGIN": "dad"}))
+    check(401, client2.get("/stuff"))
+    res = check(200, client2.get("/stuff", data={"LOGIN": "dad"}))
     assert "auth=" in res.headers["Set-Cookie"]
     # the auth cookie is kept automatically, it seems…
-    check_200(client2.get("/stuff"))
-    check_500(client2.get("/bad"))
+    check(200, client2.get("/stuff"))
+    check(500, client2.get("/bad"))
     client2.cookie_jar.clear()
-    check_401(client2.get("/stuff"))
-    check_401(client2.get("/bad"))
+    check(401, client2.get("/stuff"))
+    check(401, client2.get("/bad"))
 
 def test_blueprint(client):
-    check_401(client.get("/b1/words/foo"))
-    res = check_200(client.get("/b1/words/foo", data={"LOGIN": "dad"}))
+    check(401, client.get("/b1/words/foo"))
+    res = check(200, client.get("/b1/words/foo", data={"LOGIN": "dad"}))
     assert res.data == b"foo"
-    res = check_200(client.get("/b1/words/bla", data={"LOGIN": "dad", "n": "2"}))
+    res = check(200, client.get("/b1/words/bla", data={"LOGIN": "dad", "n": "2"}))
     assert res.data == b"bla_bla"
-    check_403(client.get("/b1/blue", data={"LOGIN": "dad"}))
+    check(403, client.get("/b1/blue", data={"LOGIN": "dad"}))
 
 def test_blueprint_2(client2):
-    check_401(client2.get("/b2/words/foo"))
-    res = check_200(client2.get("/b2/words/foo", data={"LOGIN": "dad"}))
+    check(401, client2.get("/b2/words/foo"))
+    res = check(200, client2.get("/b2/words/foo", data={"LOGIN": "dad"}))
     assert res.data == b"foo"
-    res = check_200(client2.get("/b2/words/bla", data={"LOGIN": "dad", "n": "2"}))
+    res = check(200, client2.get("/b2/words/bla", data={"LOGIN": "dad", "n": "2"}))
     assert res.data == b"bla_bla"
-    check_403(client2.get("/b2/blue", data={"LOGIN": "dad"}))
+    check(403, client2.get("/b2/blue", data={"LOGIN": "dad"}))
 
 def test_appfact(client3):
-    check_401(client3.get("/add", data={"i": "7", "j": "2"}))
-    res = check_200(client3.get("/add", data={"i": "7", "j": "2", "LOGIN": "dad"}))
+    check(401, client3.get("/add", data={"i": "7", "j": "2"}))
+    res = check(200, client3.get("/add", data={"i": "7", "j": "2", "LOGIN": "dad"}))
     assert res.data == b"9"
-    res = check_200(client3.get("/sub", data={"i": "7", "j": "2", "LOGIN": "dad"}))
+    res = check(200, client3.get("/sub", data={"i": "7", "j": "2", "LOGIN": "dad"}))
     assert res.data == b"5"
-    res = check_200(client3.get("/mul", data={"i": "7", "j": "2", "LOGIN": "dad"}))
+    res = check(200, client3.get("/mul", data={"i": "7", "j": "2", "LOGIN": "dad"}))
     assert res.data == b"14"
-    res = check_200(client3.get("/div", data={"i": "7", "j": "2", "LOGIN": "dad"}))
+    res = check(200, client3.get("/div", data={"i": "7", "j": "2", "LOGIN": "dad"}))
     assert res.data == b"3"
-    res = check_200(client3.get("/div", data={"i": "0xf", "j": "0b10", "LOGIN": "dad"}))
+    res = check(200, client3.get("/div", data={"i": "0xf", "j": "0b10", "LOGIN": "dad"}))
     assert res.data == b"7"
-    check_400(client3.get("/add", data={"i": "sept", "j": "deux", "LOGIN": "dad"}))
-    check_400(client3.get("/add", data={"i": "7", "LOGIN": "dad"}))
+    check(400, client3.get("/add", data={"i": "sept", "j": "deux", "LOGIN": "dad"}))
+    check(400, client3.get("/add", data={"i": "7", "LOGIN": "dad"}))
     # blueprint
-    check_401(client3.get("/b/word/fun"))
-    res = check_200(client3.get("/b/words/fun", data={"LOGIN": "dad"}))
+    check(401, client3.get("/b/word/fun"))
+    res = check(200, client3.get("/b/words/fun", data={"LOGIN": "dad"}))
     assert res.data == b"fun"
-    res = check_200(client3.get("/b/words/bin", data={"LOGIN": "dad", "n": "2"}))
+    res = check(200, client3.get("/b/words/bin", data={"LOGIN": "dad", "n": "2"}))
     assert res.data == b"bin_bin"
-    check_403(client3.get("/b/blue", data={"LOGIN": "dad"}))
+    check(403, client3.get("/b/blue", data={"LOGIN": "dad"}))
 
 import Shared
 
 def test_something_1(client):
     Shared.init_app(something="HELLO")
-    res = check_200(client.get("/something", data={"LOGIN": "dad"}))
+    res = check(200, client.get("/something", data={"LOGIN": "dad"}))
     assert res.data == b"HELLO"
-    res = check_200(client.get("/b1/something", data={"LOGIN": "dad"}))
+    res = check(200, client.get("/b1/something", data={"LOGIN": "dad"}))
     assert res.data == b"HELLO"
 
 def test_something_2(client2):
     Shared.init_app(something="WORLD")
-    res = check_200(client2.get("/something", data={"LOGIN": "dad"}))
+    res = check(200, client2.get("/something", data={"LOGIN": "dad"}))
     assert res.data == b"WORLD"
-    res = check_200(client2.get("/b2/something", data={"LOGIN": "dad"}))
+    res = check(200, client2.get("/b2/something", data={"LOGIN": "dad"}))
     assert res.data == b"WORLD"
 
 def test_something_3(client3):
     Shared.init_app(something="CALVIN")
-    res = check_200(client3.get("/something", data={"LOGIN": "dad"}))
+    res = check(200, client3.get("/something", data={"LOGIN": "dad"}))
     assert res.data == b"CALVIN"
-    res = check_200(client3.get("/b/something", data={"LOGIN": "dad"}))
+    res = check(200, client3.get("/b/something", data={"LOGIN": "dad"}))
     assert res.data == b"CALVIN"
 
 def test_401_redirect(client):
     app._fsa._401_redirect = "/login-page"
-    res = check_307(client.get("/auth/fake"))
+    res = check(307, client.get("/auth/fake"))
     assert "/login-page" in res.location
     app._fsa._url_name = "URL"
-    res = check_307(client.get("/auth/fake"))
+    res = check(307, client.get("/auth/fake"))
     assert "/login-page" in res.location and "URL" in res.location and "fake" in res.location
     app._fsa._401_redirect = None
     app._fsa._url_name = None
@@ -655,13 +629,13 @@ def test_cacheok():
                 assert v == randBool(c)
 
 def test_path(client):
-    res = check_200(client.get("/path/foo"))
+    res = check(200, client.get("/path/foo"))
     assert res.data == b"foo"
-    res = check_200(client.get("/path/foo/bla"))
+    res = check(200, client.get("/path/foo/bla"))
     assert res.data == b"foo/bla"
 
 def test_string(client):
-    res = check_200(client.get("/string/foo"))
+    res = check(200, client.get("/string/foo"))
     assert res.data == b"foo"
 
 def test_reference():
@@ -680,21 +654,21 @@ def test_reference():
 
 def test_www_authenticate(client):
     push_auth(app._fsa, "param")
-    res = check_401(client.get("/admin"))
+    res = check(401, client.get("/admin"))
     pop_auth(app._fsa)
     push_auth(app._fsa, "basic")
-    res = check_401(client.get("/admin"))
+    res = check(401, client.get("/admin"))
     log.debug(f"res auth = {res.www_authenticate.keys()}")
     assert res.www_authenticate.get("__auth_type__", None) == "basic"
     assert "realm" in res.www_authenticate
     pop_auth(app._fsa)
     push_auth(app._fsa, "password")
-    res = check_401(client.get("/admin"))
+    res = check(401, client.get("/admin"))
     assert res.www_authenticate.get("__auth_type__", None) == "basic"
     assert "realm" in res.www_authenticate
     pop_auth(app._fsa)
     push_auth(app._fsa, "token", "fsa", "bearer", "Hello")
-    res = check_401(client.get("/admin"))
+    res = check(401, client.get("/admin"))
     assert res.www_authenticate.get("__auth_type__", None) == "hello"
     assert "realm" in res.www_authenticate
     pop_auth(app._fsa)
@@ -712,40 +686,40 @@ def app_digest():
         yield c
 
 def test_http_basic(app_basic):
-    check_401(app_basic.get("/basic"))
+    check(401, app_basic.get("/basic"))
     from requests.auth import _basic_auth_str as basic_auth
     BASIC = {"Authorization": basic_auth("calvin", "hobbes")}
-    res = check_200(app_basic.get("/basic", headers=BASIC))
+    res = check(200, app_basic.get("/basic", headers=BASIC))
     assert res.data == b"calvin"
 
 def test_http_digest(app_digest):
-    check_401(app_digest.get("/digest"))
+    check(401, app_digest.get("/digest"))
     # FIXME how to generate a digest authenticated request with werkzeug is unclear
     # from requests.auth import HTTPDigestAuth as Digest
     # AUTH = Digest("calvin", "hobbes")
-    # res = check_200(app_digest.get("/digest", auth=AUTH))
+    # res = check(200, app_digest.get("/digest", auth=AUTH))
     # assert res.data == b"calvin"
 
 def test_http_token():
     app = aha.create_app_token()
     with app.test_client() as client:
         # http-token default bearer configuration
-        check_401(client.get("/token"))
+        check(401, client.get("/token"))
         calvin_token = app.create_token("calvin")
         log.debug(f"token: {calvin_token}")
         TOKEN = {"Authorization": f"Bearer {calvin_token}"}
-        res = check_200(client.get("/token", headers=TOKEN))
+        res = check(200, client.get("/token", headers=TOKEN))
         assert res.data == b"calvin"
         # check header with http auth
         push_auth(app._fsa, "http-token", "fsa", "header", "HiHiHi")
         app._fsa._http_auth.header = "HiHiHi"
-        res = check_200(client.get("/token", headers={"HiHiHi": calvin_token}))
+        res = check(200, client.get("/token", headers={"HiHiHi": calvin_token}))
         assert res.data == b"calvin"
         app._fsa._http_auth.header = None
         pop_auth(app._fsa)
         # check header token fallback
         push_auth(app._fsa, "token", "fsa", "header", "HoHoHo")
-        res = check_200(client.get("/token", headers={"HoHoHo": calvin_token}))
+        res = check(200, client.get("/token", headers={"HoHoHo": calvin_token}))
         assert res.data == b"calvin"
         pop_auth(app._fsa)
 
@@ -760,47 +734,47 @@ def test_per_route(client):
     TOKEN = {"Authorization": f"Bearer {token}"}
     # basic
     log.debug("trying: basic")
-    check_200(client.get("/auth/basic", headers=BASIC))
-    check_401(client.get("/auth/basic", headers=TOKEN))
-    check_401(client.get("/auth/basic", data=PARAM))
-    check_401(client.get("/auth/basic", json=PARAM))
-    check_401(client.get("/auth/basic", data=FAKE))
-    check_401(client.get("/auth/basic", json=FAKE))
+    check(200, client.get("/auth/basic", headers=BASIC))
+    check(401, client.get("/auth/basic", headers=TOKEN))
+    check(401, client.get("/auth/basic", data=PARAM))
+    check(401, client.get("/auth/basic", json=PARAM))
+    check(401, client.get("/auth/basic", data=FAKE))
+    check(401, client.get("/auth/basic", json=FAKE))
     # param
-    check_200(client.get("/auth/param", data=PARAM))
-    check_200(client.get("/auth/param", json=PARAM))
-    check_401(client.get("/auth/param", headers=BASIC))
-    check_401(client.get("/auth/param", headers=TOKEN))
-    check_401(client.get("/auth/param", data=FAKE))
-    check_401(client.get("/auth/param", json=FAKE))
+    check(200, client.get("/auth/param", data=PARAM))
+    check(200, client.get("/auth/param", json=PARAM))
+    check(401, client.get("/auth/param", headers=BASIC))
+    check(401, client.get("/auth/param", headers=TOKEN))
+    check(401, client.get("/auth/param", data=FAKE))
+    check(401, client.get("/auth/param", json=FAKE))
     # password
-    check_200(client.get("/auth/password", headers=BASIC))
-    check_200(client.get("/auth/password", data=PARAM))
-    check_200(client.get("/auth/password", json=PARAM))
-    check_401(client.get("/auth/password", headers=TOKEN))
-    check_401(client.get("/auth/password", data=FAKE))
-    check_401(client.get("/auth/password", json=FAKE))
+    check(200, client.get("/auth/password", headers=BASIC))
+    check(200, client.get("/auth/password", data=PARAM))
+    check(200, client.get("/auth/password", json=PARAM))
+    check(401, client.get("/auth/password", headers=TOKEN))
+    check(401, client.get("/auth/password", data=FAKE))
+    check(401, client.get("/auth/password", json=FAKE))
     # token
-    check_200(client.get("/auth/token", headers=TOKEN))
-    check_401(client.get("/auth/token", data=PARAM))
-    check_401(client.get("/auth/token", json=PARAM))
-    check_401(client.get("/auth/token", headers=BASIC))
-    check_401(client.get("/auth/token", data=FAKE))
-    check_401(client.get("/auth/token", json=FAKE))
+    check(200, client.get("/auth/token", headers=TOKEN))
+    check(401, client.get("/auth/token", data=PARAM))
+    check(401, client.get("/auth/token", json=PARAM))
+    check(401, client.get("/auth/token", headers=BASIC))
+    check(401, client.get("/auth/token", data=FAKE))
+    check(401, client.get("/auth/token", json=FAKE))
     # fake
-    check_200(client.get("/auth/fake", data=FAKE))
-    check_200(client.get("/auth/fake", json=FAKE))
-    check_401(client.get("/auth/fake", headers=TOKEN))
-    check_401(client.get("/auth/fake", data=PARAM))
-    check_401(client.get("/auth/fake", json=PARAM))
-    check_401(client.get("/auth/fake", headers=BASIC))
+    check(200, client.get("/auth/fake", data=FAKE))
+    check(200, client.get("/auth/fake", json=FAKE))
+    check(401, client.get("/auth/fake", headers=TOKEN))
+    check(401, client.get("/auth/fake", data=PARAM))
+    check(401, client.get("/auth/fake", json=PARAM))
+    check(401, client.get("/auth/fake", headers=BASIC))
     # fake, token, param
-    check_200(client.get("/auth/ftp", data=FAKE))
-    check_200(client.get("/auth/ftp", json=FAKE))
-    check_200(client.get("/auth/ftp", headers=TOKEN))
-    check_200(client.get("/auth/ftp", data=PARAM))
-    check_200(client.get("/auth/ftp", json=PARAM))
-    check_401(client.get("/auth/ftp", headers=BASIC))
+    check(200, client.get("/auth/ftp", data=FAKE))
+    check(200, client.get("/auth/ftp", json=FAKE))
+    check(200, client.get("/auth/ftp", headers=TOKEN))
+    check(200, client.get("/auth/ftp", data=PARAM))
+    check(200, client.get("/auth/ftp", json=PARAM))
+    check(401, client.get("/auth/ftp", headers=BASIC))
     # cleanup
     app._fsa._mode = mode
 
@@ -887,13 +861,13 @@ def test_typeof():
     assert fsa.typeof(PK(P.VAR_POSITIONAL)) == list
 
 def test_f2(client):
-    res = check_200(client.get("/f2/get"))
+    res = check(200, client.get("/f2/get"))
     assert res.data == b'get ok'
-    res = check_200(client.post("/f2/post"))
+    res = check(200, client.post("/f2/post"))
     assert res.data == b'post ok'
-    res = check_200(client.put("/f2/put"))
+    res = check(200, client.put("/f2/put"))
     assert res.data == b'put ok'
-    res = check_200(client.delete("/f2/delete"))
+    res = check(200, client.delete("/f2/delete"))
     assert res.data == b'delete ok'
-    res = check_200(client.patch("/f2/patch"))
+    res = check(200, client.patch("/f2/patch"))
     assert res.data == b'patch ok'
