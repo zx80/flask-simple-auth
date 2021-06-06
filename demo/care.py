@@ -29,11 +29,12 @@ def post_self(login: str, upass: str):
 # PATCH /self (opass, npass): change one's password
 @care.patch("/self", authorize="ALL")
 def patch_self(opass: str, npass: str):
-    res = db.get_user_data(login=app.get_user())
+    login = app.get_user()
+    res = db.get_user_data(login=login)
     assert res
     if not app.check_password(opass, res[1]):
         return "invalid password provided", 403
-    db.upd_user_password(login=app.get_user(), upass=app.hash_password(npass))
+    db.upd_user_password(login=login, upass=app.hash_password(npass))
     app.clear_caches()
     return "", 204
 
