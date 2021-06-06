@@ -88,7 +88,7 @@ a global object named `db` in the demo application.
 
 When trying to split their application in distinct files, the user quickly
 bumps into a reference sharing and initialization chicken-and-egg problem,
-which is fixed thanks to the `Reference` object provided by `FlaskSimpleAuth`:
+which is solved thanks to the `Reference` object provided by `FlaskSimpleAuth`:
 the class provides method access indirections so that the order of imports
 and initialization does not matter.
 
