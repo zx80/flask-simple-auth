@@ -28,7 +28,7 @@ def post_users(login: str, upass: str, admin: bool = False):
 @users.patch("/users/<login>", authorize="ADMIN")
 def patch_users_login(login: str, upass: str = None, admin: bool = None):
     if upass is not None:
-        db.upd_user_password(login=login, upass=app.has_password(upass))
+        db.upd_user_password(login=login, upass=app.hash_password(upass))
     if admin is not None:
         db.upd_user_admin(login=login, admin=admin)
     return "", 204
