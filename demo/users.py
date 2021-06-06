@@ -1,0 +1,41 @@
+from FlaskSimpleAuth import Blueprint, current_app as app, jsonify as json
+users = Blueprint("users", __name__)
+
+from database import db
+
+#
+# AUTH management by ADMIN
+#
+# GET /users: get all users data
+@users.get("/users", authorize="ADMIN")
+def get_users():
+    return json(db.get_user_all()), 200
+
+# GET /users/<login>: get this user data
+@users.get("/users/<login>", authorize="ADMIN")
+def get_users_login(login: str):
+    res = db.get_user_data(login=login)
+    return (json(res), 200) if res else ("", 404)
+
+# POST /users (login, upass, admin): add a new user
+@users.post("/users", authorize="ADMIN")
+def post_users(login: str, upass: str, admin: bool = False):
+    db.add_user(login=login, upass=app.hash_password(upass), admin=admin)
+    return "", 201
+
+# PATCH /users/<login> (upass?, admin?): update user data
+@users.patch("/users/<login>", authorize="ADMIN")
+def patch_users_login(login: str, upass: str = None, admin: bool = None):
+    if upass is not None:
+        db.upd_user_password(login=login, upass=app.has_password(upass))
+    if admin is not None:
+        db.upd_user_admin(login=login, admin=admin)
+    return "", 204
+
+# DELETE /users/<login>: delete this user
+@users.delete("/users/<login>", authorize="ADMIN")
+def delete_users_login(login: str):
+    res = db.get_user_data(login=login)
+    if not res:
+        return "", 404
+    db.del_user_login(login=login)
