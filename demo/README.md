@@ -36,7 +36,6 @@ demo compared to what it would require if only Flask was being used.
 
 The application uses *fsa* tokens or *HTTP basic* authentication… but there
 is no single trace of that in the application code. **THIS IS A GOOD THING**.
-
 The authentication requirements can be changed without changing any line
 of code, just by changing the configurations in [app.conf](app.conf):
 
