@@ -4,6 +4,7 @@
 
 from anodb import DB  # type: ignore
 from FlaskSimpleAuth import Reference, Flask, Response
+
 db = Reference()
 
 def db_commit(res: Response):
