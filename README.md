@@ -51,6 +51,8 @@ Various aspects of the implemented schemes can be configured with other
 directives, with reasonable defaults provided so that not much is really
 needed beyond choosing the authentication scheme.
 
+Look at the [demo application](demo/README.md) for a simple full-featured
+application.
 
 ## Documentation
 
@@ -638,6 +640,7 @@ Check configuration directive names to warn about possible typos or errors.
 Warn about some unused directives.
 Check `get_user_pass` and `user_in_group` returned types.
 Update documentation.
+Add a demo application.
 
 #### 4.0.0 on 2021-06-01
 
@@ -828,5 +831,3 @@ Initial release in beta.
 - do test digest?
 - add `any` token scheme?
 - automate URL-parameter redirect?
-- provide a full ready-to-run example?
-- script to generate compatible passwords?
