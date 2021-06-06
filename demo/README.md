@@ -42,7 +42,7 @@ of code, just by updating the configurations in [app.conf](app.conf):
  - Do you want parameter-based authentication? Set `FSA_AUTH` to `param`.
  - Do you rather want the application to inherit the authentication performed
    by the web server? Set `FSA_AUTH` to `httpd`.
- - Do you want password stored with another scheme? Adjust `FSA_PASSWORD_SCHEME`
+ - Do you want passwords stored with another scheme? Adjust `FSA_PASSWORD_SCHEME`
    to anything `passlib` provides.
  - Do you want *JWT* authentication tokens? Set `FSA_TOKEN_TYPE` to `jwt`.
  - Do you want tokens carried by a *bearer* authentication header?
