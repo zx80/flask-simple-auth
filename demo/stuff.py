@@ -1,11 +1,12 @@
+#
+# STUFF are managed by ALL authenticated users
+#
+
 from FlaskSimpleAuth import Blueprint, jsonify as json
 stuff = Blueprint("stuff", __name__)
 
 from database import db
 
-#
-# STUFF are managed by ALL authenticated users
-#
 # GET /stuff: get all stuff
 @stuff.get("/stuff", authorize="ALL")
 def get_stuff():

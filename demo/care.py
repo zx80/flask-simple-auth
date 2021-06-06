@@ -1,13 +1,14 @@
+#
+# AUTH self-care
+#
+# not a clean REST API because "self" is relative to the current user…
+#
+
 from FlaskSimpleAuth import Blueprint, jsonify as json, current_app as app
 care = Blueprint("care", __name__)
 
 from database import db
 
-#
-# AUTH self-care
-#
-# not a clean REST API because "self" is relative to the current user
-#
 # GET /self: consult one's data
 @care.get("/self", authorize="ALL")
 def get_self():

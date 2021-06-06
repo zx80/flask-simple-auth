@@ -1,5 +1,5 @@
 #
-# AUTHENTICATION HOOKS
+# AUTHENTICATION AND AUTHORIZATION HOOKS
 #
 
 from FlaskSimpleAuth import Flask
