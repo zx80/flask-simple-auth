@@ -37,7 +37,7 @@ def get_stuff_id(client, stuff):
     res = check(200, client.get("/stuff", headers=FOO_BASIC))
     # assert stuff in res.data
     for t in json.loads(res.data):
-        if t[1] == "STUFF":
+        if t[1] == stuff:
             return t[0]
     return None
 
@@ -48,7 +48,7 @@ def test_stuff(client):
     res = check(201, client.post("/stuff", data={"sname": "STUFF"}, headers=FOO_BASIC))
     res = check(200, client.get("/stuff", headers=FOO_BASIC))
     assert b"STUFF" in res.data
-    sn = get_stuff_id(client, b"STUFF")
+    sn = get_stuff_id(client, "STUFF")
     assert sn is not None
     res = check(200, client.get(f"/stuff/{sn}", headers=FOO_BASIC))
     assert b"STUFF" in res.data
