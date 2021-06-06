@@ -1,3 +1,7 @@
+#
+# NON REGRESSION TESTS FOR DEMO APP
+#
+
 import pytest
 from app import app
 
@@ -5,8 +9,8 @@ import base64
 import json
 
 import logging
-# logging.basicConfig()
-log = logging.getLogger()
+# logging.basicConfig()  # done in app
+log = logging.getLogger("test")
 log.setLevel(logging.DEBUG)
 
 # authentication for tests
