@@ -3,9 +3,9 @@
 #
 
 from FlaskSimpleAuth import Blueprint, jsonify as json
-stuff = Blueprint("stuff", __name__)
-
 from database import db
+
+stuff = Blueprint("stuff", __name__)
 
 # GET /stuff: get all stuff
 @stuff.get("/stuff", authorize="ALL")

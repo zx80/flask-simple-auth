@@ -5,9 +5,9 @@
 #
 
 from FlaskSimpleAuth import Blueprint, jsonify as json, current_app as app
-care = Blueprint("care", __name__)
-
 from database import db
+
+care = Blueprint("care", __name__)
 
 # GET /self: consult one's data
 @care.get("/self", authorize="ALL")
