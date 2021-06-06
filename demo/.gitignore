@@ -2,4 +2,5 @@ app.log
 app.pid
 stuff.db
 __pycache__
+.mypy_cache
 venv

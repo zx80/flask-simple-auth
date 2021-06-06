@@ -3,7 +3,7 @@
 # cleaning
 .PHONY: clean clean-venv
 clean: stop
-	$(RM) -r __pycache__
+	$(RM) -r __pycache__ .mypy_cache
 	$(RM) stuff.db app.pid app.log users.sql
 	pkill flask || true
 
