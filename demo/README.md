@@ -72,6 +72,11 @@ does not need to dive into `request`, which does not appear anywhere.
 Parameters may come through `args`, `form` or `json`, the application
 does not need to care.
 
+For instance in [users.py](users.py), the `PATCH /users/<sid>` route
+includes a mandatory `sid` integer parameter to identify the user, and two
+optional `upass` string and `admin` boolean parameters to describe
+expected changes.
+
 ## Database
 
 Flask, I guess because Python memory management requires a global lock (GIL)
@@ -118,11 +123,11 @@ for initial application users.
 
 A [Makefile](Makefile) is provided to ease running the demo application.
 
- - `make venv` generates a suitable virtual environment
- - `make check` runs `pytest` on the demonstration
+ - `make venv` generates a suitable virtual environment.
+ - `make check` runs `pytest` on the demonstration.
  - `make run` starts the demo application, with logs in `app.log` and
     process id in `app.pid`.
  - `make log` runs and tails logs.
  - `make stop` stops the application.
- - `make clean` cleans generated files
- - `make clean-venv` removes the virtual environment
+ - `make clean` cleans generated files.
+ - `make clean-venv` removes the virtual environment.
