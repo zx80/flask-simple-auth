@@ -63,7 +63,8 @@ Further permissions are checked within route functions, for instance
 the `PATCH /self` route for changing one's password rejects a user if the
 provided old password (`opass`) is not validated.
 
-FlaskSimpleAuth roles (groups) are checked with the `user_in_group` hook.
+FlaskSimpleAuth roles (groups) are checked with the `user_in_group` hook,
+which must be provided.
 
 ## API Parameters
 
