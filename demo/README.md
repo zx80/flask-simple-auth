@@ -50,7 +50,6 @@ of code, just by changing the configurations in [app.conf](app.conf):
 
 FlaskSimpleAuth passwords are retrieved with the `get_user_pass` hook,
 which must be provided.
-
 The `pass.py` script allows to generate initial credentials for the
 demo application.
 
