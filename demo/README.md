@@ -92,7 +92,7 @@ and initialization does not matter.
 The database catalogue must be initialized before starting the application.
 This is done by running [create.sql](create.sql) to create the two tables,
 [data.sql](data.sql) for initial application data, and
-[users.sql](users.sql) generated with script [pass.py](pass.py)
+`users.sql` generated with script [pass.py](pass.py)
 for initial application users.
 
  - database interactions are methods associated to the `db` object, which
