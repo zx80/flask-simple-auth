@@ -31,7 +31,7 @@ venv:
 	. venv/bin/activate
 	pip install -e ..
 	pip install passlib bcrypt anodb
-	pip install pytest 
+	pip install pytest
 
 .PHONY: stop run log check
 

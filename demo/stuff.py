@@ -22,7 +22,7 @@ def post_stuff(sname: str):
 @stuff.get("/stuff/<sid>", authorize="ALL")
 def get_stuff_sid(sid: int):
     res = db.get_stuff_sid(sid=sid)
-    return (jsonify(res), 200) if res else ("", 404)
+    return (json(res), 200) if res else ("", 404)
 
 # DELETE /stuff/<sid>: delete this stuff
 @stuff.delete("/stuff/<sid>", authorize="ALL")
