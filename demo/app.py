@@ -22,7 +22,6 @@ def get_now():
     return db.now()[0], 200
 
 # register 3 blueprints to app
-
 # stuff management by users
 from stuff import stuff
 app.register_blueprint(stuff)
