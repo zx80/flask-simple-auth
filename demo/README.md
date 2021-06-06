@@ -72,8 +72,8 @@ does not need to dive into `request`, which does not appear anywhere.
 Parameters may come through `args`, `form` or `json`, the application
 does not need to care.
 
-For instance in [users.py](users.py), the `PATCH /users/<sid>` route
-includes a mandatory `sid` integer parameter to identify the user, and two
+For instance in [users.py](users.py), the `PATCH /users/<login>` route
+includes a mandatory `login` string parameter to identify the user, and two
 optional `upass` string and `admin` boolean parameters to describe
 expected changes.
 
