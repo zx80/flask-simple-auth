@@ -36,7 +36,7 @@ def check(status, res):
 
 def test_now(client):
     res = check(200, client.get("/now"))
-    assert b"2" in res.data
+    assert b"2" in res.data  # okay, this test breaks on year 3000 :-)
     check(405, client.post("/now"))
     check(405, client.put("/now"))
     check(405, client.patch("/now"))
