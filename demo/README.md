@@ -106,7 +106,7 @@ for initial application users.
    initialization by `init_app`. The initialization consists in loading the
    queries and creating a persistent database connection.
  - the configuration parameters are declared in [app.conf](app.conf) with 4 `DB_*`
-   directives which provide the engine name, connection, queries and options. 
+   directives which provide the engine name, connection, queries and options.
  - the initialization is performed when [app.py](app.py) calls the
    [database.py](database.py) `init_app` function, which is a clean application
    pattern to ensure that it is done once, but which also allows to share the
