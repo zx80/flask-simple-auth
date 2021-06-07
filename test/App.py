@@ -36,7 +36,7 @@ app.register_blueprint(subapp, url_prefix="/b1")
 @app.route("/login", authorize=ALL)
 def login():
     cur = app.current_user()
-    assert cur and cur == app.get_user()
+    assert cur
     return jsonify(app.create_token(app.get_user())), 200
 
 @app.route("/admin", authorize=ADMIN)
