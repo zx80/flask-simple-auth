@@ -18,10 +18,12 @@ shared object, initialized from the application. See later section for details.
 Authentication and authorization hooks are declared in [auth.py](auth.py)
 and rely on the database for storing user credentials.
 
-The basic open route `GET /now` allows to test that the application is running.
-Other routes are splitted in three blueprints which all used the shared database
-object.
+There are two open routes: `GET /now` returns the current time from the database
+thus checkng that all is running, and `GET /who` returns the authenticated user
+if there is any, or possibly `null`.
 
+Other routes are splitted in three blueprints which all used the shared database
+object:
  - [stuff.py](stuff.py) defines `/stuff` routes which simply stores string in the
    `Stuff` table.
  - [users.py](users.py) defines `/users` routes for user management by admins.

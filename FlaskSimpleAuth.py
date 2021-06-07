@@ -256,9 +256,9 @@ class Flask(flask.Flask):
         return self._fsa.create_token(user)
 
     # user
-    def get_user(self):
+    def get_user(self, required=True):
         """Authenticate remote user or raise exception."""
-        return self._fsa.get_user()
+        return self._fsa.get_user(required)
 
     def current_user(self):
         """Get current authenticated user, if any, or None."""
@@ -320,6 +320,7 @@ class FlaskSimpleAuth:
     #
     def _auth_set_user(self):
         """Before request hook to perform early authentication."""
+        self._user_set = False
         self._user = None
         self._need_authorization = True
         if self._mode == "lazy":
@@ -329,10 +330,9 @@ class FlaskSimpleAuth:
             if skip(request.path):
                 return
         try:
-            self._user = self.get_user()
+            self.get_user()
         except AuthException as e:
             return self._Resp(e.message, e.status)
-        assert self._user
 
     def _auth_after_cleanup(self, res: Response):
         """After request hook to cleanup authentication and detect missing
@@ -964,13 +964,13 @@ class FlaskSimpleAuth:
         "http-token": _get_httpauth,
     }
 
-    def get_user(self) -> str:
+    def get_user(self, required=True) -> Optional[str]:
         """Authenticate user or throw exception."""
         log.debug(f"get_user for {self._auth}")
 
         # _user is reset before/after requests
         # so relying on in-request persistance is safe
-        if self._user:
+        if self._user_set:
             return self._user
 
         assert self._initialized, "FlaskSimpleAuth must be initialized"
@@ -986,16 +986,19 @@ class FlaskSimpleAuth:
                 lae = e
             # FIXME other exceptions?
 
+        # even if not set, we say that the answer is the right one.
+        self._user_set = True
+
         # rethrow last auth exception on failure
-        if not self._user:
+        if required and not self._user:
             raise lae or AuthException("missing authentication", 401)
 
-        log.info(f"get_user({self._auth}): {self._user}")
+        log.debug(f"get_user({self._auth}): {self._user}")
         return self._user
 
     def current_user(self):
         """Return current authenticated user, if any."""
-        return self._user
+        return self.get_user(required=False)
 
     # methods that may be cached
     _CACHABLE = ("_get_jwt_token_auth", "_get_fsa_token_auth", "_get_user_pass", "_user_in_group")

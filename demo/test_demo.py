@@ -37,6 +37,22 @@ def check(status, res):
 def test_now(client):
     res = check(200, client.get("/now"))
     assert b"2" in res.data
+    check(405, client.post("/now"))
+    check(405, client.put("/now"))
+    check(405, client.patch("/now"))
+    check(405, client.delete("/now"))
+    check(405, client.trace("/now"))
+
+def test_who(client):
+    res = check(200, client.get("/who"))
+    assert b"null" in res.data
+    res = check(200, client.get("/who", headers=FOO_BASIC))
+    assert b"\"foo\"" in res.data
+    check(405, client.post("/who"))
+    check(405, client.put("/who"))
+    check(405, client.patch("/who"))
+    check(405, client.delete("/who"))
+    check(405, client.trace("/who"))
 
 def get_stuff_id(client, stuff):
     res = check(200, client.get("/stuff", headers=FOO_BASIC))

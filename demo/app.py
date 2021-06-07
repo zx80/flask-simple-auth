@@ -3,7 +3,7 @@
 import logging
 logging.basicConfig()
 
-from FlaskSimpleAuth import Flask
+from FlaskSimpleAuth import Flask, jsonify as json
 app = Flask("demo")
 app.config.from_envvar("APP_CONFIG")
 
@@ -20,6 +20,11 @@ auth.init_app(app)
 @app.get("/now", authorize="ANY")
 def get_now():
     return db.now()[0], 200
+
+# GET /who: given authenticated user if available
+@app.get("/who", authorize="ANY")
+def get_who():
+    return json(app.current_user()), 200
 
 # register 3 blueprints to app
 # stuff management by users

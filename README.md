@@ -213,7 +213,8 @@ methods used by the `get_user` function, as described in the following sections.
     Once in a route function, `get_user` will always return the authenticated
     user and cannot fail.
 
-  - With `lazy`, it is performed lazily when needed by an authorization.
+  - With `lazy`, it is performed lazily when needed by an authorization
+    or when calling the `get_user` function.
 
   - With `all`, it is always performed in the hook, which may skip some path
     because of `FSA_SKIP_PATH`, and may be re-attempted lazily for path that
@@ -636,6 +637,7 @@ Software license is *public domain*.
 
 Add support for per-method decorator shortcuts to `Flask` wrapper class.
 Add `FSA_LOGGING_LEVEL` directive.
+Make `current_user` attempt an authentication, but not fail on errors.
 Check configuration directive names to warn about possible typos or errors.
 Warn about some unused directives.
 Check `get_user_pass` and `user_in_group` returned types.
@@ -831,4 +833,3 @@ Initial release in beta.
 - do test digest?
 - add `any` token scheme?
 - automate URL-parameter redirect?
-- add `get_user` attempt on ANY? TRY?
