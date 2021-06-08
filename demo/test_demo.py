@@ -86,7 +86,7 @@ def test_stuff(client):
     assert b"Hello" in res.data
     assert b"Calvin" not in res.data
 
-def test_care(client):
+def test_scare(client):
     res = check(200, client.get("/scare", headers=FOO_BASIC))
     assert b"foo" in res.data
     assert b"bla" not in res.data
