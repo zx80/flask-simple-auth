@@ -558,7 +558,14 @@ class FlaskSimpleAuth:
         #
         # HTTP parameter names
         #
+        if "fake" not in self._auth and "FSA_FAKE_LOGIN" in conf:
+            log.warning("ignoring directive FSA_FAKE_LOGIN")
         self._login = conf.get("FSA_FAKE_LOGIN", "LOGIN")
+        if "param" not in self._auth and "password" not in self._auth:
+            if "FSA_PARAM_USER" in conf:
+                log.warning("ignoring directive FSA_PARAM_USER")
+            if "FSA_PARAM_PASS" in conf:
+                log.warning("ignoring directive FSA_PARAM_PASS")
         self._userp = conf.get("FSA_PARAM_USER", "USER")
         self._passp = conf.get("FSA_PARAM_PASS", "PASS")
         #
