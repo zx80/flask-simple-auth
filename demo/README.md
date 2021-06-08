@@ -82,8 +82,7 @@ expected changes.
 ## Database
 
 Flask, because Python memory management requires a global lock (GIL) which
-is a universal pain (who would use multiprocessing if decent threads were
-available?), basically enforces a one thread process which relies on global
+is a pain. It enforces a one thread process which relies on global
 variables instead of functions parameters (eg `request`, `app`, `g`).
 Thus database interactions follow this disputable model and are managed by
 a global object named `db` in the demo application.
