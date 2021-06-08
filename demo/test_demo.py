@@ -111,8 +111,8 @@ def test_scare(client):
     res = check(401, client.get("/scare", headers=TMP_BASIC))
     res = check(200, client.get("/scare", headers=TMP_BASIC_2))
     assert b"tmp" in res.data
-    check(401, client.patch("/scare", json={"opass": "TMP", "npass": "tmp"}, headers=TMP_BASIC))
-    check(204, client.patch("/scare", json={"opass": "TMP", "npass": "tmp"}, headers=TMP_BASIC_2))
+    check(401, client.patch("/scare", data={"opass": "TMP", "npass": "tmp"}, headers=TMP_BASIC))
+    check(204, client.patch("/scare", data={"opass": "TMP", "npass": "tmp"}, headers=TMP_BASIC_2))
     check(204, client.delete("/scare", headers=TMP_BASIC))
     check(401, client.get("/scare", headers=TMP_BASIC))
 
