@@ -27,7 +27,7 @@ object:
  - [stuff.py](stuff.py) defines `/stuff` routes which simply stores string in the
    `Stuff` table.
  - [users.py](users.py) defines `/users` routes for user management by admins.
- - [care.py](care.py) defines `/self` routes for user self-care, that is
+ - [scare.py](scare.py) defines `/scare` routes for user self-care, that is
    self registration, obtaining authentication tokens, changing one's password
    and deleting oneself, all this in under *30* lines of code.
 
@@ -113,7 +113,7 @@ for initial application users.
    database python file between applications.
  - the global shared `db` object is used locally in [app.py](app.py), but also in
    [auth.py](auth.py) for user authentification and authorization hooks, and in the
-   3 blueprints [care.py](care.py), [users.py](users.py) and [stuff.py](stuff.py),
+   3 blueprints [scare.py](scare.py), [users.py](users.py) and [stuff.py](stuff.py),
    only at the price of a trivial one liner:
 
    ```python

@@ -36,5 +36,5 @@ from users import users
 app.register_blueprint(users)
 
 # self-care for users (register, consult, get token, change password)
-from care import care
-app.register_blueprint(care)
+from scare import scare
+app.register_blueprint(scare)
