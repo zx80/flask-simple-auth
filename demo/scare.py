@@ -1,5 +1,5 @@
 #
-# AUTH scare-care
+# AUTH self-care
 #
 # not a clean REST API because "scare" is relative to the current user…
 #
