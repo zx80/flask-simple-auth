@@ -337,9 +337,10 @@ class FlaskSimpleAuth:
     def _auth_after_cleanup(self, res: Response):
         """After request hook to cleanup authentication and detect missing
         authorization."""
+        self._user_set = False
         self._user = None
         # should it always return 500?
-        # NOTE this may be to late to prevent a commit
+        # NOTE this may be too late to prevent a commit
         if res.status_code < 400 and self._need_authorization:
             method, path = request.method, request.path
             log.warning(f"missing authorization on {method} {path}")
