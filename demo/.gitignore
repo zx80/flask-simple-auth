@@ -1,6 +1,8 @@
 app.log
 app.pid
 stuff.db
+stuff.pg
+users.sql
 __pycache__
 .mypy_cache
 venv
