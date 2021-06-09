@@ -118,6 +118,9 @@ for initial application users.
    ```python
    from database import db
    ```
+If someone wants to change the underlying DB, the SQL files may need to be updated
+for the SQL variant syntax, as the `DB_*` configurations directives for driver
+and connection management.
 
 ## Demo Run
 
