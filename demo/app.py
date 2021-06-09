@@ -19,7 +19,7 @@ auth.init_app(app)
 # GET /now: give current time from database
 @app.get("/now", authorize="ANY")
 def get_now():
-    return db.now()[0], 200
+    return json(db.now()[0]), 200
 
 # GET /who: given authenticated user if available
 @app.get("/who", authorize="ANY")

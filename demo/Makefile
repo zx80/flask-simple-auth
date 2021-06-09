@@ -1,10 +1,13 @@
 .ONESHELL:
 
+# switch to pg to test with postgres
+DB	= db
+
 # cleaning
 .PHONY: clean clean-venv
 clean: stop
 	$(RM) -r __pycache__ .mypy_cache
-	$(RM) stuff.db app.pid app.log users.sql
+	$(RM) stuff.db stuff.pg app.pid app.log users.sql
 	pkill flask || true
 
 clean-venv:
@@ -17,12 +20,19 @@ users.sql:
 	./pass.py $(SCHEME) $(CREDS) > $@
 
 stuff.db: users.sql
-	sqlite3 $@ < create.sql
+	sqlite3 $@ < create-db.sql
 	sqlite3 $@ < data.sql
 	sqlite3 $@ < users.sql
 
-app.pid: stuff.db
-	export FLASK_APP=app.py FLASK_ENV=development APP_CONFIG=app.conf
+stuff.pg: users.sql
+	createdb stuff
+	psql stuff < create-pg.sql
+	psql stuff < data.sql
+	psql stuff < users.sql
+	touch $@
+
+app.pid: stuff.$(DB)
+	export FLASK_APP=app.py FLASK_ENV=development APP_CONFIG=app-$(DB).conf
 	flask run > app.log 2>&1 &
 	echo $$! > $@
 
@@ -30,14 +40,14 @@ venv:
 	python3 -m venv venv
 	. venv/bin/activate
 	pip install -e ..
-	pip install passlib bcrypt anodb
+	pip install passlib bcrypt anodb psycopg2-binary
 	pip install pytest
 
 .PHONY: stop run log check
 
 PYTEST  = pytest --log-level=debug --capture=tee-sys
-check: stuff.db
-	export FLASK_APP=app.py FLASK_ENV=development APP_CONFIG=app.conf
+check: stuff.$(DB)
+	export FLASK_APP=app.py FLASK_ENV=development APP_CONFIG=app-$(DB).conf
 	$(PYTEST) test_demo.py
 
 stop:

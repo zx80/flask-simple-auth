@@ -5,12 +5,14 @@ API implementation with [Flask](https://palletsprojects.com/p/flask/) extension
 [FlaskSimpleAuth](https://pypi.org/project/FlaskSimpleAuth/) used for authentication,
 authorization and parameter management, and sharing database object which handles the
 connection and queries using [AnoDB](https://pypi.org/project/anodb/),
-[AioSQL](https://pypi.org/project/aiosql/) and [SQLite](https://sqlite.org).
+[AioSQL](https://pypi.org/project/aiosql/) and [SQLite](https://sqlite.org)
+or [Postgres](https://postgresql.org).
 
 ## Application
 
 The application is structured through [app.py](app.py) which is configured from
-[app.conf](app.conf).
+[app-db.conf](app-db.conf) (for SQLite) or
+[app-pg.conf](app-pg.conf) (for Postgres).
 
 Database management is put in [database.py](database.py) which handles the `db`
 shared object, initialized from the application. See later section for details.
@@ -94,7 +96,8 @@ the class provides method access indirections so that the order of imports
 and initialization does not matter.
 
 The database catalogue must be initialized before starting the application.
-This is done by running [create.sql](create.sql) to create the two tables,
+This is done by running [create-db.sql](create-db.sql) for SQLite or
+[create-pg.sql](create-pg.sql) for Postgres to create the two tables,
 [data.sql](data.sql) for initial application data, and
 `users.sql` generated with script [pass.py](pass.py)
 for initial application users.
@@ -104,8 +107,9 @@ for initial application users.
  - [database.py](database.py) holds the global `db` object, including its
    initialization by `init_app`. The initialization consists in loading the
    queries and creating a persistent database connection.
- - the configuration parameters are declared in [app.conf](app.conf) with 4 `DB_*`
-   directives which provide the engine name, connection, queries and options.
+ - the configuration parameters are declared in [app-db.conf](app-db.conf)
+   or [app-pg.conf](app-pg.conf) with 4 `DB_*` directives which provide the
+   engine name, connection, queries and options.
  - the initialization is performed when [app.py](app.py) calls the
    [database.py](database.py) `init_app` function, which is a clean application
    pattern to ensure that it is done once, but which also allows to share the
@@ -119,15 +123,18 @@ for initial application users.
    from database import db
    ```
 If someone wants to change the underlying DB, the SQL files may need to be updated
-for the SQL variant syntax, as the `DB_*` configurations directives for driver
+for the SQL variant syntax, as the `DB_*` configuration directives for driver
 and connection management.
+Compare [create-db.sql](create-db.sql) vs [create-pg.sql](create-pg.sql)
+and [app-db.conf](app-db.conf) vs [app-pg.conf](app-pg.conf).
 
 ## Demo Run
 
 A [Makefile](Makefile) is provided to ease running the demo application.
 
  - `make venv` generates a suitable virtual environment.
- - `make check` runs `pytest` on the demonstration.
+ - `make check` runs `pytest` on the demonstration with SQLite.
+ - `make DB=pg check` to run tests with Postgres.
  - `make run` starts the demo application, with logs in `app.log` and
     process id in `app.pid`.
  - `make log` runs and tails logs.
