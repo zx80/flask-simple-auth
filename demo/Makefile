@@ -43,7 +43,7 @@ venv:
 	pip install passlib bcrypt anodb psycopg2-binary
 	pip install pytest
 
-.PHONY: stop run log check
+.PHONY: stop run log check run-pg run-db
 
 PYTEST  = pytest --log-level=debug --capture=tee-sys
 check: stuff.$(DB)
@@ -58,6 +58,10 @@ run: app.pid
 	sleep 1  # wait for flask to start
 	curl -i -X GET http://0.0.0.0:5000/now
 	echo
+
+run-pg: DB=pg
+run-pg: run
+run-db: run
 
 log: run
 	tail -f app.log
