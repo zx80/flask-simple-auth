@@ -43,12 +43,15 @@ venv:
 	pip install passlib bcrypt anodb psycopg2-binary
 	pip install pytest
 
-.PHONY: stop run log check run-pg run-db
+.PHONY: stop run run-pg check check-pg log
 
 PYTEST  = pytest --log-level=debug --capture=tee-sys
 check: stuff.$(DB)
 	export FLASK_APP=app.py FLASK_ENV=development APP_CONFIG=app-$(DB).conf
 	$(PYTEST) test_demo.py
+
+check-pg:
+	$(MAKE) DB=pg check
 
 stop:
 	[ -f app.pid ] && kill $(shell cat app.pid)
@@ -59,9 +62,8 @@ run: app.pid
 	curl -i -X GET http://0.0.0.0:5000/now
 	echo
 
-run-pg: DB=pg
-run-pg: run
-run-db: run
+run-pg:
+	$(MAKE) DB=pg run
 
 log: run
 	tail -f app.log
