@@ -634,7 +634,7 @@ Sources are available on [GitHub](https://github.com/zx80/flask-simple-auth)
 and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 Software license is *public domain*.
 
-#### dev
+#### 4.1.0 on 2021-06-12
 
 Add support for per-method decorator shortcuts to `Flask` wrapper class.
 Add `FSA_LOGGING_LEVEL` directive.
