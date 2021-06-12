@@ -10,7 +10,7 @@ or [Postgres](https://postgresql.org).
 
 ## Application
 
-The application is structured through [app.py](app.py) which is configured from
+The application is structured around [app.py](app.py) which is configured from
 [app-db.conf](app-db.conf) (for SQLite) or
 [app-pg.conf](app-pg.conf) (for Postgres).
 
@@ -22,8 +22,8 @@ Authentication and authorization hooks are declared in [auth.py](auth.py)
 and rely on the database for storing user credentials.
 
 There are two open routes: `GET /now` returns the current time from the database
-thus checkng that all is running, and `GET /who` returns the authenticated user
-if there is any, or possibly `null`.
+thus checking that all is running, and `GET /who` returns the authenticated user
+if there is any, else `null`.
 
 Other routes are splitted in three blueprints which all used the shared database
 object:
