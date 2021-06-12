@@ -15,7 +15,8 @@ The application is structured through [app.py](app.py) which is configured from
 [app-pg.conf](app-pg.conf) (for Postgres).
 
 Database management is put in [database.py](database.py) which handles the `db`
-shared object, initialized from the application. See later section for details.
+shared object, initialized from the application.
+See later [Database](#database) section for details.
 
 Authentication and authorization hooks are declared in [auth.py](auth.py)
 and rely on the database for storing user credentials.
