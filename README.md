@@ -8,7 +8,8 @@ Flask configuration and the extended `route` decorator.
 ## Example
 
 The application code below performs authentication, authorization and
-parameter checks triggered by the extended `route` decorator.
+parameter checks triggered by the extended `route` decorator,
+or per-request shortcut decorators (`get`, `patch`, `post`…).
 There is no clue in the source about what kind of authentication is used,
 which is the whole point: authentication schemes are managed in the configuration,
 not explicitely in the application code.
@@ -25,10 +26,10 @@ app = Flask("demo")
 app.config.from_envvar("DEMO_CONFIG")
 
 # users belonging to the "patcher" group can patch "whatever/*"
-# the function gets 3 typed parameters: one int coming from the path (id)
+# the function gets 3 typed parameters: one integer coming from the path (id)
 # and the remaining two coming from request parameters (some, stuff).
 # "some" is mandatory, stuff is optional because it has a default.
-@app.route("/whatever/<id>", methods=["PATCH"], authorize="patcher")
+@app.patch("/whatever/<id>", authorize="patcher")
 def patch_whatever(id: int, some: int, stuff: str = "wow"):
     # ok to do it, with parameters id, some & stuff
     return "", 204
