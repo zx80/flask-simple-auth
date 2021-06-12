@@ -1,2 +1,3 @@
 include test/*.py
-include Makefile test/Makefile
+include Makefile test/Makefile demo/Makefile
+include demo/*.py demo/*.sql demo/*.conf
