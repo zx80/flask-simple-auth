@@ -831,6 +831,6 @@ Initial release in beta.
 ### TODO
 
 - test `FSA_HTTP_AUTH_OPTS`?
-- do test digest?
 - add `any` token scheme?
 - automate URL-parameter redirect?
+- allow to register new types with associated conversion functions?
