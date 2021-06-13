@@ -9,8 +9,9 @@ stuff = Blueprint("stuff", __name__)
 
 # GET /stuff: get all stuff
 @stuff.get("/stuff", authorize="ALL")
-def get_stuff():
-    return json(db.get_stuff_all()), 200
+def get_stuff(pattern: str = None):
+    res = db.get_stuff_like(pattern=pattern) if pattern else db.get_stuff_all()
+    return json(res), 200
 
 # POST /stuff: add new stuff
 @stuff.post("/stuff", authorize="ALL")

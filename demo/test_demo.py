@@ -88,7 +88,11 @@ def test_stuff(client):
     check(204, client.patch("/stuff/1", json={"sname": "Hello"}, headers=FOO_BASIC))
     res = check(200, client.get("/stuff", headers=FOO_BASIC))
     assert b"Hello" in res.data
+    assert b"World" in res.data
     assert b"Calvin" not in res.data
+    res = check(200, client.get("/stuff", data={"pattern": "H%"}, headers=FOO_BASIC))
+    assert b"Hello" in res.data
+    assert b"World" not in res.data
 
 def test_scare(client):
     res = check(200, client.get("/scare", headers=FOO_BASIC))
