@@ -31,7 +31,7 @@ def post_scare(login: str, upass: str):
 def patch_scare(opass: str, npass: str):
     login = app.get_user()
     res = db.get_user_data(login=login)
-    assert res
+    assert res  # ok because authorize did authenticate user
     if not app.check_password(opass, res[1]):
         return "invalid password provided", 403
     db.upd_user_password(login=login, upass=app.hash_password(npass))
