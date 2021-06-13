@@ -656,6 +656,7 @@ Software license is *public domain*.
 
 Add `register_cast` to provide a cast function for custom types, if the type
 itself would not work.
+Add `VERSION` as a string.
 Improve documentation.
 
 #### 4.1.0 on 2021-06-12

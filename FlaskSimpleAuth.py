@@ -33,6 +33,9 @@ from werkzeug.datastructures import CombinedMultiDict, MultiDict
 import logging
 log = logging.getLogger("fsa")
 
+# module version…
+VERSION = "4.2.0dev"
+
 
 class AuthException(BaseException):
     """Exception class to carry fields for an error Response."""

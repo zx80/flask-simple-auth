@@ -3,7 +3,7 @@
 import logging
 logging.basicConfig()
 
-from FlaskSimpleAuth import Flask, jsonify as json
+from FlaskSimpleAuth import Flask, jsonify as json, VERSION
 app = Flask("demo")
 app.config.from_envvar("APP_CONFIG")
 
@@ -15,6 +15,11 @@ db = database.db
 # authentication hooks, which use the shared db
 import auth
 auth.init_app(app)
+
+# GET /version: show running FlaskSimpleAuth version
+@app.get("/version", authorize="ANY")
+def get_version():
+    return json(VERSION), 200
 
 # GET /now: give current time from database
 @app.get("/now", authorize="ANY")

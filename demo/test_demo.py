@@ -54,6 +54,10 @@ def test_who(client):
     check(405, client.delete("/who"))
     check(405, client.trace("/who"))
 
+def test_version(client):
+    res = check(200, client.get("/version"))
+    assert b"." in res.data
+
 def get_stuff_id(client, stuff):
     res = check(200, client.get("/stuff", headers=FOO_BASIC))
     # assert stuff in res.data
