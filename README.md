@@ -646,6 +646,14 @@ def user_in_group(user, group):
 ```
 
 
+## LICENSE
+
+This software is public domain.
+All software has bug, this is software, hence…
+Beware that you may lose your hairs or your friends because of it.
+If you like it, feel free to send a postcard to the author.
+
+
 ## Versions
 
 Sources are available on [GitHub](https://github.com/zx80/flask-simple-auth)
