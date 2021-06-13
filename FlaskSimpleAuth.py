@@ -35,6 +35,7 @@ log = logging.getLogger("fsa")
 
 # module version…
 VERSION = "4.2.0dev"
+VERSION_NUM = (4, 2, -1)
 
 
 class AuthException(BaseException):
