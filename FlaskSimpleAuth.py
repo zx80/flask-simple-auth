@@ -1247,18 +1247,23 @@ class FlaskSimpleAuth:
     # support Flask 2.0 per-method decorator shortcuts
     # note that app.get("/", methods=["POST"], ...) would do a POST.
     def get(self, rule, **options):
+        """Shortcut for `route` with `GET` method."""
         return self.route(rule, methods=["GET"], **options)
 
     def post(self, rule, **options):
+        """Shortcut for `route` with `POST` method."""
         return self.route(rule, methods=["POST"], **options)
 
     def put(self, rule, **options):
+        """Shortcut for `route` with `PUT` method."""
         return self.route(rule, methods=["PUT"], **options)
 
     def delete(self, rule, **options):
+        """Shortcut for `route` with `DELETE` method."""
         return self.route(rule, methods=["DELETE"], **options)
 
     def patch(self, rule, **options):
+        """Shortcut for `route` with `PATCH` method."""
         return self.route(rule, methods=["PATCH"], **options)
 
     # duck-typing blueprint code stealing: needs blueprints and some other attributes.
