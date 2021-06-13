@@ -424,6 +424,8 @@ schemes: `param`, `basic`, `http-basic`, `http-digest`, `digest`, `password`.
 For checking passwords the password (salted hash) must be retrieved through
 `get_user_pass(user)`.
 This function must be provided by the application when the module is initialized.
+Because this function is cached by default, caches must be reset when users
+are changed by calling `clear_caches`.
 
 The following configuration directives are available to configure
 `passlib` password checks:
@@ -491,6 +493,8 @@ the `route` decorator, which provides just one or possibly a list of roles
 authorized to call a route. A role is identified as an integer or a string.
 The check calls `user_in_group(user, group)` function to check whether the
 authenticated user belongs to any of the authorized roles.
+Because this function is cached by default, caches must be reset when roles
+are changed by calling `clear_caches`.
 
 There are three special values that can be passed to the `authorize` decorator:
 
