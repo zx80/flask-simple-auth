@@ -224,9 +224,11 @@ class Flask(flask.Flask):
 
     - the `route` decorator manages authentication, authorization and
       parameters transparently.
+    - per-methods shortcut decorators allow to handle root for a given
+      method: `get`, `post`, `put`, `patch`, `delete`.
     - several additional methods are provided: `get_user_pass`,
       `user_in_group`, `check_password`, `hash_password`, `create_token`,
-      `get_user`, `current_user`, `clear_caches`.
+      `get_user`, `current_user`, `clear_caches`, `register_cast`.
     """
 
     def __init__(self, *args, **kwargs):
@@ -248,6 +250,10 @@ class Flask(flask.Flask):
     def user_in_group(self, uig):
         """Set `user_in_group` helper function."""
         return self._fsa.user_in_group(uig)
+
+    def register_cast(self, t, c):
+        """Register a cast function for a type."""
+        self._fsa.register_cast(t, c)
 
     # password management
     def check_password(self, pwd, ref):
@@ -441,6 +447,10 @@ class FlaskSimpleAuth:
         """Set `user_in_group` helper, can be used as a decorator."""
         self._user_in_group = self._cache_function(uig)
         return uig
+
+    def register_cast(self, t, c):
+        """Register a cast function for a type."""
+        register_cast(t, c)
 
     #
     # DEFERRED INITIALIZATIONS
