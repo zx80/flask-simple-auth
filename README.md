@@ -561,6 +561,20 @@ def get_mail_addr(addr: EmailAddr):
     …
 ```
 
+If the constructor does not match, a custom function can be provided
+with `register_cast` and will be called automatically to convert
+parameters:
+
+```Python
+class SomeType:
+    …
+
+def str_to_SomeType(s: str) -> SomeType:
+    return …
+
+FlaskSimpleAuth.register_cast(SomeType, str_to_SomeType)
+```
+
 ### Utils
 
 Utilities include the `Reference` generic object wrapper class and the
