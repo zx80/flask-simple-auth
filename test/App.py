@@ -11,7 +11,8 @@ log = logging.getLogger("app")
 #
 # APP
 #
-from FlaskSimpleAuth import Flask, jsonify, ANY, ALL, NONE, path, string
+from FlaskSimpleAuth \
+    import Flask, jsonify, ANY, ALL, NONE, path, string, register_cast
 app = Flask("Test")
 
 #
@@ -22,7 +23,7 @@ app.config.update(
     FSA_MODE = "always",
     FSA_SKIP_PATH = (r"/(register|required)",
                      r"/(add|div|mul|sub|type|params|any|mis[12]|nogo|one)",
-                     r"/(infer|superid|cplx|bool|mail|path|string|auth|f2)"),
+                     r"/(infer|superid|cplx|bool|mail|path|string|auth|f2|myint)"),
     FSA_GET_USER_PASS = get_user_pass,
     FSA_USER_IN_GROUP = user_in_group
 )
@@ -214,6 +215,24 @@ class Mail:
 @app.route("/mail/<ad1>", methods=["GET"], authorize=ANY)
 def get_mail_address(ad1: Mail, ad2: Mail = "calvin@comics.net"):
     return f"{ad1} {ad2}", 200
+
+# custom class with custom cast
+class my_int:
+    def __init__(self):
+        self.val = 0
+    def __str__(self):
+        return f"my_int: {self.val}"
+    @staticmethod
+    def str_to_my_int(s):
+        i = my_int()
+        i.val = int(s)
+        return i
+
+register_cast(my_int, my_int.str_to_my_int)
+
+@app.get("/myint/<i>", authorize=ANY)
+def get_myint_i(i: my_int):
+    return str(i), 200
 
 # shared initialized object
 import Shared

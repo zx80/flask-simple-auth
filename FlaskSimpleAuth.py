@@ -84,6 +84,14 @@ CASTS: Dict[type, Callable[[str], object]] = {
     dt.datetime: dt.datetime.fromisoformat
 }
 
+
+def register_cast(t: type, c: Callable[[str], object]):
+    """Add a cast for a custom type, if the type itself does not work."""
+    if t in CASTS:
+        log.warning(f"overriding type casting function for {t}")
+    CASTS[t] = c
+
+
 #
 # SPECIAL PREDEFINED GROUP NAMES
 #

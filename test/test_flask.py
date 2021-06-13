@@ -524,7 +524,7 @@ def test_bool(client):
     assert res.data == b"True"
     check(404, client.get("/bool/"))
 
-def test_mail(client):
+def test_custom(client):
     s, h, m = "susie@comics.net", "hobbes@comics.net", "moe@comics.net"
     res = check(200, client.get(f"/mail/{s}"))
     assert b"susie" in res.data and b"calvin" in res.data
@@ -532,6 +532,8 @@ def test_mail(client):
     assert b"hobbes" in res.data and b"moe" in res.data
     check(404, client.get(f"/mail/bad-email-address"))
     check(400, client.get(f"/mail/{m}", data={"ad2": "bad-email-address"}))
+    res = check(200, client.get("/myint/5432"))
+    assert b"my_int: 5432" in res.data
 
 def test_appext(client2):
     check(401, client2.get("/bad"))

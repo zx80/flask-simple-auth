@@ -634,6 +634,11 @@ Sources are available on [GitHub](https://github.com/zx80/flask-simple-auth)
 and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 Software license is *public domain*.
 
+#### dev
+
+Add `register_cast` to provide a cast function for custom types, if the type
+itself would not work.
+
 #### 4.1.0 on 2021-06-12
 
 Add support for per-method decorator shortcuts to `Flask` wrapper class.
@@ -833,4 +838,3 @@ Initial release in beta.
 - test `FSA_HTTP_AUTH_OPTS`?
 - add `any` token scheme?
 - automate URL-parameter redirect?
-- allow to register new types with associated conversion functions?
