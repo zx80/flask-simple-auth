@@ -11,8 +11,7 @@ log = logging.getLogger("app")
 #
 # APP
 #
-from FlaskSimpleAuth \
-    import Flask, jsonify, ANY, ALL, NONE, path, string, register_cast
+from FlaskSimpleAuth import Flask, jsonify, ANY, ALL, NONE, path, string
 app = Flask("Test")
 
 #
@@ -228,7 +227,7 @@ class my_int:
         i.val = int(s)
         return i
 
-register_cast(my_int, my_int.str_to_my_int)
+app.register_cast(my_int, my_int.str_to_my_int)
 
 @app.get("/myint/<i>", authorize=ANY)
 def get_myint_i(i: my_int):
