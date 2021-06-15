@@ -646,7 +646,7 @@ def user_in_group(user, group):
 ```
 
 
-## LICENSE
+## License
 
 This software is public domain.
 All software has bug, this is software, hence…
