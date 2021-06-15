@@ -76,7 +76,7 @@ class string(str):
     pass
 
 
-CASTS: Dict[type, Callable[[str], object]] = {
+_CASTS: Dict[type, Callable[[str], object]] = {
     bool: bool_cast,
     int: int_cast,
     # NOTE mypy complains wrongly about non-existing _empty.
@@ -91,9 +91,9 @@ CASTS: Dict[type, Callable[[str], object]] = {
 
 def register_cast(t: type, c: Callable[[str], object]):
     """Add a cast for a custom type, if the type itself does not work."""
-    if t in CASTS:
+    if t in _CASTS:
         log.warning(f"overriding type casting function for {t}")
-    CASTS[t] = c
+    _CASTS[t] = c
 
 
 #
@@ -1145,7 +1145,7 @@ class FlaskSimpleAuth:
                     # guess parameter type
                     t = typeof(p)
                     types[n] = t
-                    typings[n] = CASTS.get(t, t)
+                    typings[n] = _CASTS.get(t, t)
                 if p.default != inspect._empty:  # type: ignore
                     defaults[n] = p.default
 
