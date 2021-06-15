@@ -83,24 +83,18 @@ def test_stuff(client):
     assert b"STUFF" not in res.data
     check(204, client.patch("/stuff/1", json={"sname": "Calvin"}, headers=BLA_BASIC))
     res = check(200, client.get("/stuff", headers=FOO_BASIC))
-    assert b"Calvin" in res.data
-    assert b"Hello" not in res.data
+    assert b"Calvin" in res.data and b"Hello" not in res.data
     check(204, client.patch("/stuff/1", json={"sname": "Hello"}, headers=FOO_BASIC))
     res = check(200, client.get("/stuff", headers=FOO_BASIC))
-    assert b"Hello" in res.data
-    assert b"World" in res.data
-    assert b"Calvin" not in res.data
+    assert b"Hello" in res.data and b"World" in res.data and b"Calvin" not in res.data
     res = check(200, client.get("/stuff", data={"pattern": "H%"}, headers=FOO_BASIC))
-    assert b"Hello" in res.data
-    assert b"World" not in res.data
+    assert b"Hello" in res.data and b"World" not in res.data
 
 def test_scare(client):
     res = check(200, client.get("/scare", headers=FOO_BASIC))
-    assert b"foo" in res.data
-    assert b"bla" not in res.data
+    assert b"foo" in res.data and b"bla" not in res.data
     res = check(200, client.get("/scare", headers=BLA_BASIC))
-    assert b"bla" in res.data
-    assert b"foo" not in res.data
+    assert b"bla" in res.data and b"foo" not in res.data
     res = check(200, client.get("/scare/token", headers=FOO_BASIC))
     assert b"demo:foo:" in res.data
     foo_token = json.loads(res.data)
@@ -126,11 +120,9 @@ def test_scare(client):
 
 def test_users(client):
     res = check(200, client.get("/users", headers=FOO_BASIC))
-    assert b"foo" in res.data
-    assert b"bla" in res.data
+    assert b"foo" in res.data and b"bla" in res.data
     res = check(200, client.get("/users/foo", headers=BLA_BASIC))
-    assert b"foo" in res.data
-    assert b"bla" not in res.data
+    assert b"foo" in res.data and b"bla" not in res.data
     check(401, client.get("/stuff/1", headers=TMP_BASIC))
     check(201, client.post("/users", data={"login": "tmp", "upass": "tmp", "admin": False}, headers=FOO_BASIC))
     check(200, client.get("/stuff/1", headers=TMP_BASIC))
