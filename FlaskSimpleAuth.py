@@ -1198,9 +1198,11 @@ class FlaskSimpleAuth:
 
         return decorate
 
-    def add_url_rule(self, rule, endpoint=None, view_func=None, authorize=NONE, auth=None, required=None, allparams=False, **options):
-
+    def add_url_rule(self, rule, endpoint=None, view_func=None, authorize=NONE,
+                     auth=None, required=None, allparams=False, **options):
         """Route decorator helper method."""
+
+        log.debug(f"adding {rule}")
 
         # lazy initialization
         if not self._initialized:
@@ -1273,4 +1275,9 @@ class FlaskSimpleAuth:
     # duck-typing blueprint code stealing: needs blueprints and some other attributes.
     def register_blueprint(self, blueprint, **options):
         """Register a blueprint."""
+
+        # lazy initialization
+        if not self._initialized:
+            self.initialize()
+
         flask.Flask.register_blueprint(self, blueprint, **options)
