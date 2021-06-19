@@ -9,8 +9,8 @@ check: venv
 	type python3
 	mypy $(MODULE)
 	flake8 --ignore=E501,F401 $(MODULE)
-	# to select some tests: -k pattern
-	pytest --log-level=debug --capture=tee-sys test
+	$(MAKE) -C test check
+	$(MAKE) -C demo check
 
 .PHONY: clean clean-venv
 clean:
