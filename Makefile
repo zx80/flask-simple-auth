@@ -2,6 +2,8 @@
 
 .ONESHELL:
 MODULE	= FlaskSimpleAuth.py
+F.md	= $(wildcard *.md)
+F.pdf	= $(F.md:%.md=%.pdf)
 
 .PHONY: check
 check: venv
@@ -14,7 +16,7 @@ check: venv
 
 .PHONY: clean clean-venv
 clean:
-	$(RM) -r __pycache__ */__pycache__ *.egg-info dist build .mypy_cache .pytest_cache
+	$(RM) -r __pycache__ */__pycache__ *.egg-info dist build .mypy_cache .pytest_cache $(F.pdf)
 	$(MAKE) -C test clean
 	$(MAKE) -C demo clean
 
@@ -40,3 +42,9 @@ dist:
 publish: dist
 	# provide pypi login/pw or token somewhere…
 	twine upload --repository FlaskSimpleAuth dist/*
+
+# generate pdf doc
+MD2PDF  = pandoc -f markdown -t latex -V papersize:a4 -V geometry:hmargin=2.5cm -V geometry:vmargin=3cm
+
+%.pdf: %.md
+	$(MD2PDF) -o $@ $<
