@@ -30,10 +30,12 @@ def client():
     with app.test_client() as c:
         yield c
 
+# check that a request returned the expected result
 def check(status, res):
     assert res.status_code == status
     return res
 
+# GET /now
 def test_now(client):
     res = check(200, client.get("/now"))
     assert b"2" in res.data  # okay, this test breaks on year 3000 :-)
@@ -43,6 +45,7 @@ def test_now(client):
     check(405, client.delete("/now"))
     check(405, client.trace("/now"))
 
+# GET /who
 def test_who(client):
     res = check(200, client.get("/who"))
     assert b"null" in res.data
@@ -54,10 +57,12 @@ def test_who(client):
     check(405, client.delete("/who"))
     check(405, client.trace("/who"))
 
+# GET /version
 def test_version(client):
     res = check(200, client.get("/version"))
     assert b"." in res.data
 
+# GET /stuff helper
 def get_stuff_id(client, stuff):
     res = check(200, client.get("/stuff", headers=FOO_BASIC))
     # assert stuff in res.data
@@ -66,6 +71,7 @@ def get_stuff_id(client, stuff):
             return t[0]
     return None
 
+# GET POST DELETE PATCH /stuff
 def test_stuff(client):
     res = check(401, client.get("/stuff"))
     res = check(200, client.get("/stuff", headers=FOO_BASIC))
@@ -90,6 +96,7 @@ def test_stuff(client):
     res = check(200, client.get("/stuff", data={"pattern": "H%"}, headers=FOO_BASIC))
     assert b"Hello" in res.data and b"World" not in res.data
 
+# GET, POST, PATCH, DELETE /scare (self-care)
 def test_scare(client):
     res = check(200, client.get("/scare", headers=FOO_BASIC))
     assert b"foo" in res.data and b"bla" not in res.data
@@ -118,6 +125,7 @@ def test_scare(client):
     check(204, client.delete("/scare", headers=TMP_BASIC))
     check(401, client.get("/scare", headers=TMP_BASIC))
 
+# GET POST PATCH DELETE /users 
 def test_users(client):
     res = check(200, client.get("/users", headers=FOO_BASIC))
     assert b"foo" in res.data and b"bla" in res.data
