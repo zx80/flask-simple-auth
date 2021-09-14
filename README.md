@@ -617,7 +617,7 @@ from Shared import stuff
 
 sub = Blueprint(…)
 
-@sub.add("/stuff", authorize="ALL"):
+@sub.get("/stuff", authorize="ALL"):
 def get_stuff():
     return str(stuff), 200
 ```
