@@ -79,7 +79,7 @@ does not need to care.
 
 For instance in [users.py](users.py), the `PATCH /users/<login>` route
 includes a mandatory `login` url string parameter to identify the user,
-and two optional `upass` string and `admin` boolean parameters to describe
+and two optional `pass` string and `admin` boolean parameters to describe
 expected changes.
 
 ## Database
