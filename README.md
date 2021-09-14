@@ -666,6 +666,10 @@ Sources are available on [GitHub](https://github.com/zx80/flask-simple-auth)
 and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 Software license is *public domain*.
 
+#### dev
+
+To be continued.
+
 #### 4.2.0 on 2021-09-14
 
 Add `register_cast` to provide a cast function for custom types, if the type
