@@ -19,10 +19,10 @@ def get_scare():
 def get_scare_token():
     return json(app.create_token()), 200
 
-# POST /scare (login, upass): register a new user, or 500 if already exists
+# POST /scare (login, pass): register a new user, or 500 if already exists
 @scare.post("/scare", authorize="ANY")
-def post_scare(login: str, upass: str):
-    db.add_user(login=login, upass=app.hash_password(upass), admin=False)
+def post_scare(login: str, _pass: str):
+    db.add_user(login=login, upass=app.hash_password(_pass), admin=False)
     app.clear_caches()
     return "", 201
 

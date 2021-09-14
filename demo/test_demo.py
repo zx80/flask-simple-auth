@@ -112,7 +112,7 @@ def test_scare(client):
     bad_token = foo_token[:-1] + "z"
     check(401, client.get("/scare", data={"auth": bad_token}))
     check(401, client.get("/stuff", headers=TMP_BASIC))
-    check(201, client.post("/scare", data={"login": "tmp", "upass": "tmp"}, headers=FOO_BASIC))
+    check(201, client.post("/scare", data={"login": "tmp", "pass": "tmp"}, headers=FOO_BASIC))
     res = check(200, client.get("/scare", headers=TMP_BASIC))
     assert b"tmp" in res.data
     check(401, client.patch("/scare", json={"opass": "tmp", "npass": "TMP"}, headers=TMP_BASIC_2))
@@ -132,12 +132,12 @@ def test_users(client):
     res = check(200, client.get("/users/foo", headers=BLA_BASIC))
     assert b"foo" in res.data and b"bla" not in res.data
     check(401, client.get("/stuff/1", headers=TMP_BASIC))
-    check(201, client.post("/users", data={"login": "tmp", "upass": "tmp", "admin": False}, headers=FOO_BASIC))
+    check(201, client.post("/users", data={"login": "tmp", "pass": "tmp", "admin": False}, headers=FOO_BASIC))
     check(200, client.get("/stuff/1", headers=TMP_BASIC))
     check(403, client.get("/users", headers=TMP_BASIC))
     check(204, client.patch("/users/tmp", data={"admin": True}, headers=FOO_BASIC))
     check(200, client.get("/users", headers=TMP_BASIC))
-    check(204, client.patch("/users/tmp", data={"upass": "TMP"}, headers=FOO_BASIC))
+    check(204, client.patch("/users/tmp", data={"pass": "TMP"}, headers=FOO_BASIC))
     check(401, client.get("/users", headers=TMP_BASIC))
     check(200, client.get("/users", headers=TMP_BASIC_2))
     check(204, client.delete("/users/tmp", headers=FOO_BASIC))

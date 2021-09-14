@@ -18,18 +18,18 @@ def get_users_login(login: str):
     res = db.get_user_data(login=login)
     return (json(res), 200) if res else ("", 404)
 
-# POST /users (login, upass, admin): add a new user
+# POST /users (login, pass, admin): add a new user
 @users.post("/users", authorize="ADMIN")
-def post_users(login: str, upass: str, admin: bool = False):
-    db.add_user(login=login, upass=app.hash_password(upass), admin=admin)
+def post_users(login: str, _pass: str, admin: bool = False):
+    db.add_user(login=login, upass=app.hash_password(_pass), admin=admin)
     app.clear_caches()
     return "", 201
 
-# PATCH /users/<login> (upass?, admin?): update user data
+# PATCH /users/<login> (pass?, admin?): update user data
 @users.patch("/users/<login>", authorize="ADMIN")
-def patch_users_login(login: str, upass: str = None, admin: bool = None):
-    if upass is not None:
-        db.upd_user_password(login=login, upass=app.hash_password(upass))
+def patch_users_login(login: str, _pass: str = None, admin: bool = None):
+    if _pass is not None:
+        db.upd_user_password(login=login, upass=app.hash_password(_pass))
     if admin is not None:
         db.upd_user_admin(login=login, admin=admin)
     app.clear_caches()

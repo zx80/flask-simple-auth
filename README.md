@@ -579,6 +579,12 @@ def str_to_SomeType(s: str) -> SomeType:
 FlaskSimpleAuth.register_cast(SomeType, str_to_SomeType)
 ```
 
+Finally, python parameter names can be prepended with a `_`,
+which is ignored when translating HTTP parameters.
+This allows to use python keywords as parameter names, such
+as `pass` or `def`.
+
+
 ### Utils
 
 Utilities include the `Reference` generic object wrapper class and the
@@ -666,6 +672,8 @@ Add `register_cast` to provide a cast function for custom types, if the type
 itself would not work.
 Add `VERSION` as a string and `VERSION_NUM` as an integer tuple.
 Improve documentation.
+Allow to use Python keywords as HTTP parameters by prepending the
+parameter with a `_`.
 
 #### 4.1.0 on 2021-06-12
 
@@ -866,4 +874,3 @@ Initial release in beta.
 - test `FSA_HTTP_AUTH_OPTS`?
 - add `any` token scheme?
 - automate URL-parameter redirect?
-- support python keywords as parameters with a leading `_`

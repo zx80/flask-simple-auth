@@ -1132,11 +1132,12 @@ class FlaskSimpleAuth:
 
         def decorate(fun: Callable):
 
+            # for each parameter name, its expected type, cast and default value
             types: Dict[str, type] = {}
             typings: Dict[str, Callable[[str], Any]] = {}
             defaults: Dict[str, Any] = {}
 
-            # parameters types/casts and defaults from signature
+            # parameters types/casts and defaults taken from signature
             sig = inspect.signature(fun)
 
             for n, p in sig.parameters.items():
@@ -1161,20 +1162,21 @@ class FlaskSimpleAuth:
 
                 for p, typing in typings.items():
                     # guess which function parameters are request parameters
+                    pn = p[1:] if p[0] == '_' else p
                     if p not in kwargs:
-                        if p in params:
+                        if pn in params:
                             try:
-                                kwargs[p] = typing(params[p])
+                                kwargs[p] = typing(params[pn])
                             except Exception as e:
-                                return self._Resp(f"type error on HTTP parameter \"{p}\" ({e})", 400)
+                                return self._Resp(f"type error on HTTP parameter \"{pn}\" ({e})", 400)
                         else:
                             if not required:
                                 if p in defaults:
                                     kwargs[p] = defaults[p]
                                 else:
-                                    return self._Resp(f"missing HTTP parameter \"{p}\"", 400)
+                                    return self._Resp(f"missing HTTP parameter \"{pn}\"", 400)
                             elif required:
-                                return f"missing HTTP parameter \"{p}\"", 400
+                                return f"missing HTTP parameter \"{pn}\"", 400
                             else:
                                 kwargs[p] = defaults.get(p, None)
                     else:
@@ -1183,7 +1185,7 @@ class FlaskSimpleAuth:
                             try:
                                 kwargs[p] = typing(kwargs[p])
                             except Exception as e:
-                                return self._Resp(f"type error on path parameter \"{p}\": ({e})", 404)
+                                return self._Resp(f"type error on path parameter \"{pn}\": ({e})", 404)
 
                 # possibly add others, without shadowing already provided ones
                 if allparams:
