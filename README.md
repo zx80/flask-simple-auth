@@ -273,6 +273,7 @@ the application-side approach.
 
 HTTP Basic password authentication, which rely on the `Authorization`
 HTTP header in the request.
+Directive `FSA_REALM` provides the authentication realm.
 
 See also [Password Management](#password-management) below for
 how the password is retrieved and checked.
@@ -281,6 +282,7 @@ how the password is retrieved and checked.
 
 Same as previous based on [flask-HTTPAuth](https://pypi.org/project/Flask-HTTPAuth/).
 
+Directive `FSA_REALM` provides the authentication realm.
 Directive `FSA_HTTP_AUTH_OPTS` allow to pass additional options to the
 HTTPAuth authentication class.
 
@@ -315,6 +317,7 @@ may be a security issue under some conditions. I'm unsure about that,
 but I agree that client-side cookie sessions are strange things best
 avoided if possible.
 
+Directive `FSA_REALM` provides the authentication realm.
 Directive `FSA_HTTP_AUTH_OPTS` allow to pass additional options to the
 HTTPAuth authentication class, such as `use_ha1_pw`, as a dictionnary.
 
@@ -355,7 +358,7 @@ The following configuration directives are available:
    Default is *auth* for *param* and *cookie* carrier,
    *Bearer* for HTTP Authentication header (*bearer* carrier),
    *Auth* for *header* carrier.
- - `FSA_TOKEN_REALM` realm of token.
+ - `FSA_REALM` realm of authentication for token, basic or digest.
    Default is the simplified lower case application name.
    For *jwt*, this is translated as the audience.
  - `FSA_TOKEN_SECRET` secret string used for validating tokens.
@@ -668,6 +671,7 @@ Software license is *public domain*.
 
 #### dev
 
+Rename `FSA_TOKEN_REALM` as `FSA_REALM`, because it is not token specific.
 To be continued.
 
 #### 4.2.0 on 2021-09-14

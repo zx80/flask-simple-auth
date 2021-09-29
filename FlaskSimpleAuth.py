@@ -306,7 +306,7 @@ _DIRECTIVES = {
     "FSA_MODE", "FSA_PARAM_PASS", "FSA_PARAM_USER", "FSA_PASSWORD_OPTIONS",
     "FSA_PASSWORD_SCHEME", "FSA_SKIP_PATH", "FSA_TOKEN_ALGO",
     "FSA_TOKEN_CARRIER", "FSA_TOKEN_DELAY", "FSA_TOKEN_GRACE",
-    "FSA_TOKEN_LENGTH", "FSA_TOKEN_NAME", "FSA_TOKEN_REALM",
+    "FSA_TOKEN_LENGTH", "FSA_TOKEN_NAME", "FSA_REALM",
     "FSA_TOKEN_SECRET", "FSA_TOKEN_SIGN", "FSA_TOKEN_TYPE",
     "FSA_URL_NAME", "FSA_USER_IN_GROUP", "FSA_LOGGING_LEVEL",
 }
@@ -530,7 +530,7 @@ class FlaskSimpleAuth:
         if need_carrier and not self._name:
             raise Exception(f"Token carrier {self._carrier} requires a name")
         # token realm…
-        realm = conf.get("FSA_TOKEN_REALM", self._app.name)
+        realm = conf.get("FSA_REALM", self._app.name)
         if self._token == "fsa":
             # simplify realm for fsa
             keep_char = re.compile(r"[-A-Za-z0-9]").match
@@ -836,7 +836,7 @@ class FlaskSimpleAuth:
     # FSA_TOKEN_SIGN: secret for signing new tokens for jwt pubkey algorithms
     # FSA_TOKEN_DELAY: token validity in minutes (60)
     # FSA_TOKEN_GRACE: grace delay for token validity in minutes (0)
-    # FSA_TOKEN_REALM: token realm (lc simplified app name)
+    # FSA_REALM: realm (lc simplified app name)
     #
     def _cmp_sig(self, data, secret):
         """Compute signature for data."""
