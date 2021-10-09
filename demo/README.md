@@ -25,7 +25,7 @@ There are two open routes: `GET /now` returns the current time from the database
 thus checking that all is running, and `GET /who` returns the authenticated user
 if there is any, else `null`.
 
-Other routes are splitted in three blueprints which all used the shared database
+Other routes are splitted in three blueprints which all use the shared database
 object:
  - [stuff.py](stuff.py) defines `/stuff` routes which simply stores string in the
    `Stuff` table.
