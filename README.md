@@ -669,10 +669,10 @@ Sources are available on [GitHub](https://github.com/zx80/flask-simple-auth)
 and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 Software license is *public domain*.
 
-#### dev
+#### 4.3.0 on 2021-10-14
 
 Rename `FSA_TOKEN_REALM` as `FSA_REALM`, because it is not token specific.
-To be continued.
+Make demo work with psycopg 3.
 
 #### 4.2.0 on 2021-09-14
 
