@@ -421,12 +421,14 @@ class FlaskSimpleAuth:
             self._auth, self._saved_auth = self._saved_auth, None
         return res
 
+    # NOTE for multiprocess setups:
+    # clearing a cache in a process does not tell others to do it as well…
     def _cache_function(self, fun):
         """Generate or regenerate cache for function."""
         # get the actual function when regenerating caches
         while hasattr(fun, "__wrapped__"):
             fun = fun.__wrapped__
-        # NOTE probaly maxsize should disable with None and unbound with 0.
+        # NOTE probaly maxsize should disable with None and unbound with 0?
         return fun if not fun or self._maxsize == 0 else \
             functools.lru_cache(maxsize=self._maxsize)(fun)
 
