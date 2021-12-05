@@ -308,7 +308,8 @@ _DIRECTIVES = {
     "FSA_TOKEN_CARRIER", "FSA_TOKEN_DELAY", "FSA_TOKEN_GRACE",
     "FSA_TOKEN_LENGTH", "FSA_TOKEN_NAME", "FSA_REALM",
     "FSA_TOKEN_SECRET", "FSA_TOKEN_SIGN", "FSA_TOKEN_TYPE",
-    "FSA_URL_NAME", "FSA_USER_IN_GROUP", "FSA_LOGGING_LEVEL",
+    "FSA_TOKEN_RENEWAL", "FSA_URL_NAME", "FSA_USER_IN_GROUP",
+    "FSA_LOGGING_LEVEL",
 }
 
 
@@ -386,8 +387,8 @@ class FlaskSimpleAuth:
             if self._user and self._can_create_token():
                 if self._name in request.cookies:
                     user, exp = self._get_any_token_auth_exp(request.cookies[self._name])
-                    # reset token when only 25% time remains
-                    limit = dt.datetime.utcnow() + 0.25 * dt.timedelta(minutes=self._delay)
+                    # renew token when closing expiration
+                    limit = dt.datetime.utcnow() + self._renewal * dt.timedelta(minutes=self._delay)
                     set_cookie = exp < limit
                 else:
                     set_cookie = True
@@ -541,6 +542,7 @@ class FlaskSimpleAuth:
         # token expiration
         self._delay = conf.get("FSA_TOKEN_DELAY", 60.0)
         self._grace = conf.get("FSA_TOKEN_GRACE", 0.0)
+        self._renewal = conf.get("FSA_TOKEN_RENEWAL", 0.25)  # only for cookies
         # token signature
         if "FSA_TOKEN_SECRET" in conf:
             self._secret = conf["FSA_TOKEN_SECRET"]
