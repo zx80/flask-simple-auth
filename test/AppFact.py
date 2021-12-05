@@ -16,23 +16,23 @@ def create_app(**config):
 
     Shared.init_app(something="AppFact")
 
-    @app.route("/mul", methods=["GET"], authorize=ALL)
+    @app.get("/mul", authorize=ALL)
     def get_mul(i: int, j: int):
         return str(i * j), 200
 
-    @app.route("/add", methods=["GET"], authorize=ALL)
+    @app.get("/add", authorize=ALL)
     def get_add(i: int, j: int):
         return str(i + j), 200
 
-    @app.route("/div", methods=["GET"], authorize=ALL)
+    @app.get("/div", authorize=ALL)
     def get_div(i: int, j: int):
         return str(i // j), 200
 
-    @app.route("/sub", methods=["GET"], authorize=ALL)
+    @app.get("/sub", authorize=ALL)
     def get_sub(i: int, j: int):
         return str(i - j), 200
 
-    @app.route("/something", methods=["GET"], authorize=ALL)
+    @app.get("/something", authorize=ALL)
     def get_something():
         return str(something), 200
 
