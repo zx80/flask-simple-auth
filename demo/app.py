@@ -12,9 +12,13 @@ import database
 database.init_app(app)
 db = database.db
 
-# authentication hooks, which use the shared db
+# authentication hooks, which use the shared db initialized above
 import auth
 auth.init_app(app)
+
+#
+# first, direct routes
+#
 
 # GET /version: show running FlaskSimpleAuth version
 @app.get("/version", authorize="ANY")
@@ -31,7 +35,10 @@ def get_now():
 def get_who():
     return json(app.current_user()), 200
 
-# register 3 blueprints to app
+#
+# then register 3 blueprints
+#
+
 # stuff management by users
 from stuff import stuff
 app.register_blueprint(stuff)

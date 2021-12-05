@@ -8,6 +8,7 @@ from FlaskSimpleAuth import Reference, Flask, Response
 # this reference will behave as a DB
 db = Reference()
 
+# always commit
 def db_commit(res: Response):
     db.commit()
     return res
