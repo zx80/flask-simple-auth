@@ -669,6 +669,10 @@ Sources are available on [GitHub](https://github.com/zx80/flask-simple-auth)
 and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 Software license is *public domain*.
 
+#### dev
+
+WIP.
+
 #### 4.3.1 on 2021-12-05
 
 Add `FSA_TOKEN_RENEWAL` directive to manage automatic renewal of cookie-based
