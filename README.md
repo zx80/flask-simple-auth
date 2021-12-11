@@ -125,6 +125,7 @@ Depending on options, the following modules should be installed:
 - [PyJWT](https://pypi.org/project/PyJWT/) for JSON Web Token (JWT).
 - [cryptography](https://pypi.org/project/cryptography/) for pubkey-signed JWT.
 - [Flask HTTPAuth](https://github.com/miguelgrinberg/Flask-HTTPAuth) for `http-*` authentication options.
+- [Flask CORS](https://github.com/corydolphin/flask-cors) for CORS handling.
 
 ### Initialization
 
