@@ -31,8 +31,8 @@ install:
 venv:
 	python3 -m venv venv
 	venv/bin/pip3 install -e .
-	venv/bin/pip3 install wheel mypy flake8 pytest coverage requests ipython
-	venv/bin/pip3 install passlib bcrypt pyjwt cryptography flask_httpauth anodb
+	venv/bin/pip3 install wheel mypy flake8 pytest coverage requests ipython \
+		 passlib bcrypt pyjwt cryptography flask_httpauth flask_cors anodb
 
 # generate source and built distribution
 dist:

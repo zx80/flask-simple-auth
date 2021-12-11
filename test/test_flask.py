@@ -56,6 +56,12 @@ def client3():
     with af.create_app().test_client() as c:
         yield c
 
+@pytest.fixture
+def client4():
+    import AppFact as af
+    with af.create_app(FSA_CORS=True).test_client() as c:
+        yield c
+
 # push/pop auth
 app_saved_auth = {}
 
@@ -873,3 +879,15 @@ def test_f2(client):
     assert res.data == b'delete ok'
     res = check(200, client.patch("/f2/patch"))
     assert res.data == b'patch ok'
+
+def test_no_cors(client3):
+    check(401, client3.get("/add", data={"i": "7", "j": "2"}))
+    res = check(200, client3.get("/add", data={"i": "7", "j": "2", "LOGIN": "dad"}))
+    assert res.data == b"9"
+    res = check(500, client3.options("/add", data={"LOGIN": "dad"}))
+
+def test_no_cors(client4):
+    check(401, client4.get("/add", data={"i": "7", "j": "2"}))
+    res = check(200, client4.get("/add", data={"i": "7", "j": "2", "LOGIN": "dad"}))
+    assert res.data == b"9"
+    res = check(200, client4.options("/add", data={"LOGIN": "dad"}))

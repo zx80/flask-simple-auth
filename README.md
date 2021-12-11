@@ -590,8 +590,8 @@ as `pass` or `def`.
 
 ### Utils
 
-Utilities include the `Reference` generic object wrapper class and the
-`CacheOK` decorator.
+Utilities include the `Reference` generic object wrapper class, the
+`CacheOK` decorator, and CORS handling.
 
 #### `Reference` Object Wrapper
 
@@ -655,6 +655,24 @@ def user_in_group(user, group):
 ```
 
 
+#### CORS -- Cross Origin Resource Sharing
+
+[CORS](https://en.wikipedia.org/wiki/Cross-origin_resource_sharing) is a
+security feature implemented by web browsers, and does only make sense for
+web applications. It allows the browser to check whether a server
+accepts requests from a given origin (*i.e.* from JavaScript code
+provided by some domain).
+
+The module allows to enable CORS request handling on the application
+by setting the `FSA_CORS` directive to true, and to add additional
+options with `FSA_CORS_OPTIONS`.  The implementation is delegated to the
+[`flask_cors`](https://pypi.org/project/Flask-Cors/) Flask extension
+which must be available if the feature is enabled.
+
+Setting the directive to True allows requests from any origin.
+The default is not to enable CORS.
+
+
 ## License
 
 This software is public domain.
@@ -669,9 +687,9 @@ Sources are available on [GitHub](https://github.com/zx80/flask-simple-auth)
 and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 Software license is *public domain*.
 
-#### dev
+#### 4.4.0 dev
 
-WIP.
+Add support for CORS with directives `FSA_CORS` and `FSA_CORS_OPTIONS`.
 
 #### 4.3.1 on 2021-12-05
 

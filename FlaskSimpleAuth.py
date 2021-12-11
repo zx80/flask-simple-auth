@@ -309,7 +309,7 @@ _DIRECTIVES = {
     "FSA_TOKEN_LENGTH", "FSA_TOKEN_NAME", "FSA_REALM",
     "FSA_TOKEN_SECRET", "FSA_TOKEN_SIGN", "FSA_TOKEN_TYPE",
     "FSA_TOKEN_RENEWAL", "FSA_URL_NAME", "FSA_USER_IN_GROUP",
-    "FSA_LOGGING_LEVEL",
+    "FSA_LOGGING_LEVEL", "FSA_CORS", "FSA_CORS_OPTIONS",
 }
 
 
@@ -363,7 +363,7 @@ class FlaskSimpleAuth:
         if res.status_code < 400 and self._need_authorization:
             method, path = request.method, request.path
             log.warning(f"missing authorization on {method} {path}")
-            if self._check:
+            if self._check and not (self._cors and method == "OPTIONS"):
                 return self._Resp("missing authorization check", 500)
         return res
 
@@ -500,6 +500,12 @@ class FlaskSimpleAuth:
         self._mode = conf.get("FSA_MODE", "lazy")
         assert self._mode in ("always", "lazy", "all")
         self._check: bool = conf.get("FSA_CHECK", True)
+        # for web apps…
+        self._cors: bool = conf.get("FSA_CORS", False)
+        self._cors_options: Dict[str,Any] = conf.get("FSA_CORS_OPTIONS", {})
+        if self._cors:
+            from flask_cors import CORS
+            CORS(self._app, **self._cors_options)
         self._maxsize = conf.get("FSA_CACHE_SIZE", 1024)
         import re
         self._skip_path = [re.compile(r).match for r in conf.get("FSA_SKIP_PATH", [])]
@@ -1157,7 +1163,8 @@ class FlaskSimpleAuth:
             def wrapper(*args, **kwargs):
 
                 # this cannot happen under normal circumstances
-                if self._need_authorization and self._check:  # pragma: no cover
+                if self._need_authorization and self._check and \
+                    not (self._cors and request.method == 'OPTIONS'):  # pragma: no cover
                     return self._Resp("missing authorization check", 500)
 
                 # translate request parameters to named function parameters
