@@ -502,9 +502,9 @@ class FlaskSimpleAuth:
         self._check: bool = conf.get("FSA_CHECK", True)
         # for web apps…
         self._cors: bool = conf.get("FSA_CORS", False)
-        self._cors_options: Dict[str,Any] = conf.get("FSA_CORS_OPTIONS", {})
+        self._cors_options: Dict[str, Any] = conf.get("FSA_CORS_OPTIONS", {})
         if self._cors:
-            from flask_cors import CORS
+            from flask_cors import CORS  # type: ignore
             CORS(self._app, **self._cors_options)
         self._maxsize = conf.get("FSA_CACHE_SIZE", 1024)
         import re
@@ -645,6 +645,7 @@ class FlaskSimpleAuth:
         #
         self.blueprints = self._app.blueprints
         self.debug = False
+        # portability tricks which generates mypy errors…
         if hasattr(self._app, '_blueprint_order'):
             # Flask 1.x
             self._blueprint_order = self._app._blueprint_order
@@ -1164,7 +1165,7 @@ class FlaskSimpleAuth:
 
                 # this cannot happen under normal circumstances
                 if self._need_authorization and self._check and \
-                    not (self._cors and request.method == 'OPTIONS'):  # pragma: no cover
+                        not (self._cors and request.method == 'OPTIONS'):  # pragma: no cover
                     return self._Resp("missing authorization check", 500)
 
                 # translate request parameters to named function parameters
