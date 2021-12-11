@@ -34,8 +34,8 @@ import logging
 log = logging.getLogger("fsa")
 
 # module version… FIXME should be initialized from setup?
-VERSION = "4.4.0"
 VERSION_NUM = (4, 4, 0)
+VERSION = ".".join(str(i) for i in VERSION_NUM)
 
 
 class AuthException(BaseException):
