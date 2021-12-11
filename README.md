@@ -9,7 +9,7 @@ Flask configuration and the extended `route` decorator.
 
 The application code below performs authentication, authorization and
 parameter checks triggered by the extended `route` decorator,
-or per-request shortcut decorators (`get`, `patch`, `post`…).
+or per-method shortcut decorators (`get`, `patch`, `post`…).
 There is no clue in the source about what kind of authentication is used,
 which is the whole point: authentication schemes are managed in the configuration,
 not explicitely in the application code.
