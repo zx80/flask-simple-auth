@@ -687,7 +687,7 @@ Sources are available on [GitHub](https://github.com/zx80/flask-simple-auth)
 and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 Software license is *public domain*.
 
-#### 4.4.0 dev
+#### 4.4.0 on 2021-12-11
 
 Add support for CORS with directives `FSA_CORS` and `FSA_CORS_OPTIONS`.
 

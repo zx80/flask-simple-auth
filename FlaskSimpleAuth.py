@@ -33,9 +33,9 @@ from werkzeug.datastructures import CombinedMultiDict, MultiDict
 import logging
 log = logging.getLogger("fsa")
 
-# module version…
-VERSION = "4.4.0dev"
-VERSION_NUM = (4, 4, -1)
+# module version… FIXME should be initialized from setup?
+VERSION = "4.4.0"
+VERSION_NUM = (4, 4, 0)
 
 
 class AuthException(BaseException):
