@@ -3,7 +3,7 @@
 import logging
 logging.basicConfig()
 
-from FlaskSimpleAuth import Flask, jsonify as json, VERSION
+from FlaskSimpleAuth import Flask, jsonify as json, __version__ as VERSION
 app = Flask("demo")
 app.config.from_envvar("APP_CONFIG")
 
