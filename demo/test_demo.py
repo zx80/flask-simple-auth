@@ -4,6 +4,7 @@
 
 import pytest
 from app import app
+from FlaskSimpleAuth import AuthException
 
 import base64
 import json
@@ -12,6 +13,7 @@ import logging
 # logging.basicConfig()  # done in app
 log = logging.getLogger("test")
 log.setLevel(logging.DEBUG)
+
 
 # authentication for tests
 def basic(login, upass):
@@ -122,6 +124,18 @@ def test_scare(client):
     assert b"tmp" in res.data
     check(401, client.patch("/scare", data={"opass": "TMP", "npass": "tmp"}, headers=TMP_BASIC))
     check(204, client.patch("/scare", data={"opass": "TMP", "npass": "tmp"}, headers=TMP_BASIC_2))
+    # rejected password changes
+    try:
+        check(400, client.patch("/scare", data={"opass": "tmp", "npass": "a"}, headers=TMP_BASIC))
+        assert False, "password 'a' must be rejected"
+    except AuthException as ae:
+        assert ae.status == 400
+    try:
+        check(400, client.patch("/scare", data={"opass": "tmp", "npass": "!.?"}, headers=TMP_BASIC))
+        assert False, "password '!.?' must be rejected"
+    except AuthException as ae:
+        assert ae.status == 400
+    # cleanup
     check(204, client.delete("/scare", headers=TMP_BASIC))
     check(401, client.get("/scare", headers=TMP_BASIC))
 

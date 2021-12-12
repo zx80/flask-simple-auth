@@ -10,7 +10,7 @@ check: venv
 	. venv/bin/activate
 	type python3
 	mypy $(MODULE)
-	flake8 --ignore=E501,F401 $(MODULE)
+	flake8 --ignore=E402,E501,F401 $(MODULE)
 	$(MAKE) -C test check
 	$(MAKE) -C demo check
 

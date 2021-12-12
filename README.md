@@ -688,10 +688,12 @@ Sources are available on [GitHub](https://github.com/zx80/flask-simple-auth)
 and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 Software license is *public domain*.
 
-#### dev
+#### 4.5.0 on 2021-12-12
 
-Remove `VERSION` and `VERSION\_NUM`, replaced with `__version__` extracted
-from the package resources.
+Add `FSA_PASSWORD_LEN` and `FSA_PASSWORD_RE` directives to check
+for password quality when hashing.
+Remove `VERSION` and `VERSION\_NUM`, replaced with `__version__`,
+although not from the package resources because of some issue obscure issue…
 
 #### 4.4.0 on 2021-12-11
 

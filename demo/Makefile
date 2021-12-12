@@ -50,9 +50,10 @@ venv:
 .PHONY: stop run run-pg check check-db check-pg check-pg2 log
 
 PYTEST  = pytest --log-level=debug --capture=tee-sys
+PTOPT	=
 check: stuff.$(DB)
 	export FLASK_APP=app.py FLASK_ENV=development APP_CONFIG=app-$(DB).conf
-	$(PYTEST) test_demo.py
+	$(PYTEST) $(PTOPT) test_demo.py
 
 check-pg:
 	$(MAKE) DB=pg check

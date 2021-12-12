@@ -34,8 +34,10 @@ import logging
 log = logging.getLogger("fsa")
 
 # get module version
-import pkg_resources as pkg
-__version__ = pkg.require("FlaskSimpleAuth")[0].version
+__version__ = "4.5.0"
+# FIXME currently broken because of dependency issues with typing_extensions
+# import pkg_resources as pkg  # type: ignore
+# __version__ = pkg.require("FlaskSimpleAuth")[0].version
 
 
 class AuthException(BaseException):
@@ -310,6 +312,7 @@ _DIRECTIVES = {
     "FSA_TOKEN_SECRET", "FSA_TOKEN_SIGN", "FSA_TOKEN_TYPE",
     "FSA_TOKEN_RENEWAL", "FSA_URL_NAME", "FSA_USER_IN_GROUP",
     "FSA_LOGGING_LEVEL", "FSA_CORS", "FSA_CORS_OPTIONS",
+    "FSA_PASSWORD_LEN", "FSA_PASSWORD_RE",
 }
 
 
@@ -688,6 +691,8 @@ class FlaskSimpleAuth:
                                 "bcrypt__default_ident": "2y"})
             from passlib.context import CryptContext  # type: ignore
             self._pm = CryptContext(schemes=[scheme], **options)
+        self._password_len: int = conf.get("FSA_PASSWORD_LEN", 0)
+        self._password_re: List[str] = conf.get("FSA_PASSWORD_RE", [])
 
     #
     # INHERITED HTTP AUTH
@@ -720,6 +725,8 @@ class FlaskSimpleAuth:
     #
     # FSA_PASSWORD_SCHEME: name of password scheme for passlib context
     # FSA_PASSWORD_OPTIONS: further options for passlib context
+    # FSA_PASSWORD_LEN: minimal length of provided passwords
+    # FSA_PASSWORD_RE: list of re a password must match
     #
     # NOTE passlib bcrypt is Apache compatible
     #
@@ -728,8 +735,15 @@ class FlaskSimpleAuth:
         """Verify whether a password is correct."""
         return self._pm.verify(pwd, ref)
 
-    def hash_password(self, pwd):
+    def hash_password(self, pwd, check=True):
         """Hash password according to the current password scheme."""
+        # check password quality
+        if check:
+            if len(pwd) < self._password_len:
+                raise AuthException(f"password is too short, must be at least {self._password_len}", 400)
+            for r in self._password_re:
+                if not re.search(r, pwd):
+                    raise AuthException(f"password must match {r}", 400)
         return self._pm.hash(pwd)
 
     def _check_password(self, user, pwd):
