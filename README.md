@@ -697,7 +697,7 @@ Ensure that FSA internal exceptions are always translated into HTTP responses.
 Add `FSA_PASSWORD_LEN` and `FSA_PASSWORD_RE` directives to check
 for password quality when hashing.
 Remove `VERSION` and `VERSION\_NUM`, replaced with `__version__`,
-although not from the package resources because of some issue obscure issue…
+although not from the package resources because of some obscure issue…
 
 #### 4.4.0 on 2021-12-11
 
