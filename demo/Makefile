@@ -47,7 +47,7 @@ venv:
 	pip install passlib bcrypt anodb psycopg psycopg2
 	pip install pytest
 
-.PHONY: stop run run-pg check check-db check-pg check-pg2 log
+.PHONY: stop run run-pg check check-all check-db check-pg check-pg2 log
 
 PYTEST  = pytest --log-level=debug --capture=tee-sys
 PTOPT	=
@@ -63,6 +63,11 @@ check-pg2:
 
 check-db:
 	$(MAKE) DB=db check
+
+check-all:
+	$(MAKE) check-db
+	$(MAKE) check-pg
+	$(MAKE) check-pg2
 
 stop:
 	[ -f app.pid ] && kill $(shell cat app.pid)
