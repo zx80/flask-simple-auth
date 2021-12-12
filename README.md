@@ -688,6 +688,10 @@ Sources are available on [GitHub](https://github.com/zx80/flask-simple-auth)
 and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 Software license is *public domain*.
 
+#### 4.5.1 on 2021-12-12
+
+Ensure that FSA internal exceptions are always translated into HTTP responses.
+
 #### 4.5.0 on 2021-12-12
 
 Add `FSA_PASSWORD_LEN` and `FSA_PASSWORD_RE` directives to check

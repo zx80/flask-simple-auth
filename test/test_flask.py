@@ -227,15 +227,15 @@ def test_fsa_token():
     try:
         user = app._fsa._get_any_token_auth(calvin_token)
         assert False, "token must have expired"
-    except fsa.AuthException as ae:
-        assert "expired auth token" in ae.message
+    except fsa.FSAException as e:
+        assert "expired auth token" in e.message
     # again after clear cache, so the expiration is detected at fsa level
     app.clear_caches()
     try:
         user = app._fsa._get_any_token_auth(calvin_token)
         assert False, "token must have expired"
-    except fsa.AuthException as ae:
-        assert "expired fsa auth token" in ae.message
+    except fsa.FSAException as e:
+        assert "expired fsa auth token" in e.message
     # cleanup
     app._fsa._grace = grace
     app._fsa._token, app._fsa._algo = tsave, hsave
@@ -244,7 +244,7 @@ def test_fsa_token():
     try:
         user = app._fsa._get_any_token_auth(hobbes_token)
         assert False, "token should be invalid"
-    except fsa.AuthException as e:
+    except fsa.FSAException as e:
         assert e.status == 401
     app._fsa._grace = grace
 
@@ -286,8 +286,8 @@ def test_jwt_token():
     try:
         user = app._fsa._get_any_token_auth(susie_token)
         assert False, "expired token should fail"
-    except fsa.AuthException as ae:
-        assert "expired jwt auth token" in ae.message
+    except fsa.FSAException as e:
+        assert "expired jwt auth token" in e.message
     finally:
         app._fsa._delay, app._fsa._grace = delay, grace
     # pubkey stuff
@@ -303,8 +303,8 @@ def test_jwt_token():
         bad_token = f"{pieces[0]}.{pieces[2]}.{pieces[1]}"
         user = app._fsa._get_any_token_auth(bad_token)
         assert False, "bad token should fail"
-    except fsa.AuthException as ae:
-        assert "invalid jwt token" in ae.message
+    except fsa.FSAException as e:
+        assert "invalid jwt token" in e.message
     # cleanup
     app._fsa._token, app._fsa._algo = tsave, hsave
     app._fsa._secret, app._fsa._sign = Ksave, ksave
@@ -316,7 +316,7 @@ def test_invalid_token():
     try:
         user = app._fsa._get_any_token_auth(susie_token)
         assert False, "token should be invalid"
-    except fsa.AuthException as e:
+    except fsa.FSAException as e:
         assert e.status == 401
     # wrong token
     realm, app._fsa._realm = app._fsa._realm, "elsewhere"
@@ -325,7 +325,7 @@ def test_invalid_token():
     try:
         user = app._fsa._get_any_token_auth(moe_token)
         assert False, "token should be invalid"
-    except fsa.AuthException as e:
+    except fsa.FSAException as e:
         assert e.status == 401
 
 def test_password_check(client):
