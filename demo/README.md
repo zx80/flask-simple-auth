@@ -8,6 +8,7 @@ connection and queries using [AnoDB](https://pypi.org/project/anodb/),
 [AioSQL](https://pypi.org/project/aiosql/) and [SQLite](https://sqlite.org)
 or [Postgres](https://postgresql.org).
 
+
 ## Application
 
 The application is structured around [app.py](app.py) which is configured from
@@ -37,6 +38,7 @@ object:
 The next sections describe the convenient features which distinguish this
 demo compared to what would be required if only Flask was being used.
 
+
 ## Application Authentication
 
 The application uses *fsa* tokens or *HTTP basic* authentication… but there
@@ -58,6 +60,7 @@ which must be provided.
 The `pass.py` script allows to generate initial credentials for the
 demo application.
 
+
 ## Application Authorization
 
 Authorization are declared on each route with the `authorize` parameter.
@@ -68,6 +71,7 @@ provided old password (`opass`) is not validated.
 
 FlaskSimpleAuth roles (groups) are checked with the `user_in_group` hook,
 which must be provided.
+
 
 ## API Parameters
 
@@ -81,6 +85,7 @@ For instance in [users.py](users.py), the `PATCH /users/<login>` route
 includes a mandatory `login` url string parameter to identify the user,
 and two optional `pass` string and `admin` boolean parameters to describe
 expected changes.
+
 
 ## Database
 
@@ -129,13 +134,14 @@ and connection management.
 Compare [create-db.sql](create-db.sql) vs [create-pg.sql](create-pg.sql)
 and [app-db.conf](app-db.conf) vs [app-pg.conf](app-pg.conf).
 
+
 ## Demo Run
 
 A [Makefile](Makefile) is provided to ease running the demo application.
 
  - `make venv` generates a suitable virtual environment.
  - `make check` runs `pytest` on the demonstration with SQLite.
- - `make DB=pg check` to run tests with Postgres.
+ - `make DB=pg check` to run tests with Postgres using the psycopg 3 driver.
  - `make run` starts the demo application, with logs in `app.log` and
     process id in `app.pid`.
  - `make log` runs and tails logs.
