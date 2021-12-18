@@ -34,7 +34,7 @@ import logging
 log = logging.getLogger("fsa")
 
 # get module version
-__version__ = "4.5.1"
+__version__ = "4.6.0"
 # FIXME currently broken because of dependency issues with typing_extensions
 # import pkg_resources as pkg  # type: ignore
 # __version__ = pkg.require("FlaskSimpleAuth")[0].version
@@ -196,33 +196,6 @@ class Reference:
         return self._obj.__gt__(o)
 
 
-#
-# TODO
-# - LRU? LFU?
-# - automatic reset based on cache efficiency? expansion?
-#
-class CacheOK:
-    """Positive caching decorator for boolean functions.
-
-    Cache True answers, but still forwards False answers to the underlying
-    function.
-    """
-
-    def __init__(self, fun: Callable[[List[Any]], bool]):
-        self.__wrapped__ = fun
-        self._cache: Set[Any] = set()
-        self.cache_clear = self._cache.clear
-
-    def __call__(self, *args):
-        if args in self._cache:
-            return True
-        else:
-            ok = self.__wrapped__(*args)
-            if ok:
-                self._cache.add(args)
-            return ok
-
-
 class Flask(flask.Flask):
     """Flask class wrapper.
 
@@ -303,15 +276,16 @@ class Flask(flask.Flask):
 
 # all possible directives
 _DIRECTIVES = {
-    "FSA_401_REDIRECT", "FSA_AUTH", "FSA_CACHE_SIZE", "FSA_CHECK",
+    "FSA_401_REDIRECT", "FSA_AUTH", "FSA_CHECK",
+    "FSA_CACHE", "FSA_CACHE_SIZE", "FSA_CACHE_OPTS",
     "FSA_FAKE_LOGIN", "FSA_GET_USER_PASS", "FSA_HTTP_AUTH_OPTS",
-    "FSA_MODE", "FSA_PARAM_PASS", "FSA_PARAM_USER", "FSA_PASSWORD_OPTIONS",
+    "FSA_MODE", "FSA_PARAM_PASS", "FSA_PARAM_USER", "FSA_PASSWORD_OPTS",
     "FSA_PASSWORD_SCHEME", "FSA_SKIP_PATH", "FSA_TOKEN_ALGO",
     "FSA_TOKEN_CARRIER", "FSA_TOKEN_DELAY", "FSA_TOKEN_GRACE",
     "FSA_TOKEN_LENGTH", "FSA_TOKEN_NAME", "FSA_REALM",
     "FSA_TOKEN_SECRET", "FSA_TOKEN_SIGN", "FSA_TOKEN_TYPE",
     "FSA_TOKEN_RENEWAL", "FSA_URL_NAME", "FSA_USER_IN_GROUP",
-    "FSA_LOGGING_LEVEL", "FSA_CORS", "FSA_CORS_OPTIONS",
+    "FSA_LOGGING_LEVEL", "FSA_CORS", "FSA_CORS_OPTS",
     "FSA_PASSWORD_LEN", "FSA_PASSWORD_RE",
 }
 
@@ -323,7 +297,6 @@ class FlaskSimpleAuth:
     def __init__(self, app: flask.Flask = None):
         """Constructor parameter: flask application to extend."""
         self._app = app
-        self._maxsize = 1024
         self._get_user_pass = None
         self._user_in_group = None
         self._auth: List[str] = []
@@ -432,8 +405,8 @@ class FlaskSimpleAuth:
         # get the actual function when regenerating caches
         while hasattr(fun, "__wrapped__"):
             fun = fun.__wrapped__
-        return fun if not fun or self._maxsize == 0 else \
-            functools.lru_cache(maxsize=self._maxsize)(fun)
+        return fun if not fun or self._cache is None else \
+            self._cache(**self._cache_opts)(fun)
 
     def _params(self):
         """Get request parameters wherever they are."""
@@ -503,18 +476,34 @@ class FlaskSimpleAuth:
         self._mode = conf.get("FSA_MODE", "lazy")
         assert self._mode in ("always", "lazy", "all")
         self._check: bool = conf.get("FSA_CHECK", True)
-        # for web apps…
+        self._skip_path = [re.compile(r).match for r in conf.get("FSA_SKIP_PATH", [])]
+        #
+        # web apps…
+        #
         self._cors: bool = conf.get("FSA_CORS", False)
-        self._cors_options: Dict[str, Any] = conf.get("FSA_CORS_OPTIONS", {})
+        self._cors_opts: Dict[str, Any] = conf.get("FSA_CORS_OPTS", {})
         if self._cors:
             from flask_cors import CORS  # type: ignore
-            CORS(self._app, **self._cors_options)
-        self._maxsize = conf.get("FSA_CACHE_SIZE", 1024)
-        import re
-        self._skip_path = [re.compile(r).match for r in conf.get("FSA_SKIP_PATH", [])]
-        # for web apps
+            CORS(self._app, **self._cors_opts)
         self._401_redirect = conf.get("FSA_401_REDIRECT", None)
         self._url_name = conf.get("FSA_URL_NAME", "URL" if self._401_redirect else None)
+        #
+        # cache management
+        #
+        self._cache_opts: Dict[str, Any] = conf.get("FSA_CACHE_OPTS", {})
+        self._cache_opts.update("maxsize", conf.get("FSA_CACHE_SIZE", 1024))
+        self._cache = conf.get("FSA_CACHE", "lru")
+        if isinstance(self._cache, str):
+            if self._cache == "lru":
+                self._cache = functools.lru_cache
+            elif self._cache == "ttl":
+                import cachetools
+                self._cache = cachetools.TTLCache
+                if not "ttl" in self._cache_opts:
+                    self._cache_opts.update("ttl", 60*10)
+            else:
+                raise Exception(f"Unexpected FSA_CACHE: {self._cache}")
+        # else keep whatever it is…
         #
         # token setup
         #
@@ -686,7 +675,7 @@ class FlaskSimpleAuth:
                 log.warning("plaintext password manager is a bad idea")
             # passlib context is a pain, you have to know the scheme name to set its
             # round. Ident "2y" is same as "2b" but apache compatible.
-            options = conf.get("FSA_PASSWORD_OPTIONS",
+            options = conf.get("FSA_PASSWORD_OPTS",
                                {"bcrypt__default_rounds": 4,
                                 "bcrypt__default_ident": "2y"})
             from passlib.context import CryptContext  # type: ignore
@@ -724,7 +713,7 @@ class FlaskSimpleAuth:
     # PASSWORD MANAGEMENT
     #
     # FSA_PASSWORD_SCHEME: name of password scheme for passlib context
-    # FSA_PASSWORD_OPTIONS: further options for passlib context
+    # FSA_PASSWORD_OPTS: further options for passlib context
     # FSA_PASSWORD_LEN: minimal length of provided passwords
     # FSA_PASSWORD_RE: list of re a password must match
     #

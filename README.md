@@ -108,8 +108,7 @@ to route functions, skipping the burden of checking them in typical REST functio
 In practice, importing Flask's `request` global variable is not necessary anymore.
 
 [**Utils**](#utils) include the convenient `Reference` class which allows to
-share for import an unitialized variable, the `CacheOK` decorator to
-memoize true answers (eg for user/group checks), and CORS handling.
+share for import an unitialized variable and CORS handling.
 
 ### Install
 
@@ -232,8 +231,14 @@ methods used by the `get_user` function, as described in the following sections.
   is missing an explicit authorization check.
   Default is *True*.
 
-- `FSA_CACHE_SIZE` control size of internal lru caches. Default is *1024*.
-  *None* means unbounded. Disable with *0*.
+- `FSA_CACHE` controls the type of cache to use, set to None to disallow
+  caches. Values can be `lru` or `ttl` (default 10 minutes), or any
+  cache-like class.
+
+- `FSA_CACHE_OPTS` sets internal cache options with a dictionary.
+
+- `FSA_CACHE_SIZE` controls size of internal caches. Default is *1024*.
+  *None* means unbounded.
 
 - `FSA_401_REDIRECT` url to redirect to on *401*.
   Default is *None*.
@@ -318,7 +323,7 @@ avoided if possible.
 
 Directive `FSA_REALM` provides the authentication realm.
 Directive `FSA_HTTP_AUTH_OPTS` allow to pass additional options to the
-HTTPAuth authentication class, such as `use_ha1_pw`, as a dictionnary.
+HTTPAuth authentication class, such as `use_ha1_pw`, as a dictionary.
 
 See also [Password Management](#password-management) below for
 how the password is retrieved and checked. Note that password management
@@ -405,7 +410,7 @@ Token scheme based on [flask-HTTPAuth](https://pypi.org/project/Flask-HTTPAuth/)
 Carrier is *bearer* or *header*.
 
 Directive `FSA_HTTP_AUTH_OPTS` allow to pass additional options to the
-HTTPAuth authentication class, such as `header`, as a dictionnary.
+HTTPAuth authentication class, such as `header`, as a dictionary.
 
 #### `fake` Authentication
 
@@ -437,7 +442,7 @@ The following configuration directives are available to configure
    See [passlib documentation](https://passlib.readthedocs.io/en/stable/lib/passlib.hash.html)
    for available options.
    Set to `None` to disable password checking.
- - `FSA_PASSWORD_OPTIONS` relevant options (for `passlib.CryptContext`).
+ - `FSA_PASSWORD_OPTS` relevant options (for `passlib.CryptContext`).
    Default is `{'bcrypt__default_rounds': 4, 'bcrypt__default_ident': '2y'}`.
 
 Beware that modern password checking is often pretty expensive in order to
@@ -589,8 +594,8 @@ as `pass` or `def`.
 
 ### Utils
 
-Utilities include the `Reference` generic object wrapper class, the
-`CacheOK` decorator, and CORS handling.
+Utilities include the `Reference` generic object wrapper class and
+CORS handling.
 
 #### `Reference` Object Wrapper
 
@@ -641,19 +646,6 @@ Shared.init_app(…)
 …
 ```
 
-
-#### `CacheOK` Decorator
-
-This decorator memorize the underlying function true answers, but keep trying
-on false answers. Call `cache_clear` to reset cache.
-
-```Python
-@CacheOK
-def user_in_group(user, group):
-    return …
-```
-
-
 #### CORS -- Cross Origin Resource Sharing
 
 [CORS](https://en.wikipedia.org/wiki/Cross-origin_resource_sharing) is a
@@ -664,7 +656,7 @@ provided by some domain).
 
 The module allows to enable CORS request handling on the application
 by setting the `FSA_CORS` directive to true, and to add additional
-options with `FSA_CORS_OPTIONS`.  The implementation is delegated to the
+options with `FSA_CORS_OPTS`.  The implementation is delegated to the
 [`flask_cors`](https://pypi.org/project/Flask-Cors/) Flask extension
 which must be available if the feature is enabled.
 
@@ -685,6 +677,12 @@ If you like it, feel free to send a postcard to the author.
 Sources are available on [GitHub](https://github.com/zx80/flask-simple-auth)
 and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 Software license is *public domain*.
+
+#### 4.6.0 on ?
+
+Rework caching: remove `CacheOK`, add `FSA_CACHE` and `FSA_CACHE_OPTS` to
+give more ability to control the type of cache behavior.
+Rename `*_OPTIONS` to `_OPTS` for consistency.
 
 #### 4.5.1 on 2021-12-12
 
