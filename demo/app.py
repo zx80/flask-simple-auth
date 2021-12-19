@@ -3,8 +3,9 @@
 import logging
 logging.basicConfig()
 
-from FlaskSimpleAuth import Flask, jsonify as json, __version__ as VERSION
-app = Flask("demo")
+import FlaskSimpleAuth as fsa
+json = fsa.jsonify
+app = fsa.Flask("demo")
 app.config.from_envvar("APP_CONFIG")
 
 # database initialisation
@@ -23,7 +24,7 @@ auth.init_app(app)
 # GET /version: show running FlaskSimpleAuth version
 @app.get("/version", authorize="ANY")
 def get_version():
-    return json(VERSION), 200
+    return json(fsa.__version__), 200
 
 # GET /now: give current time from database
 @app.get("/now", authorize="ANY")
