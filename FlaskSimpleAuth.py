@@ -28,8 +28,6 @@ from flask import session, jsonify, Blueprint, make_response, abort, \
     redirect, url_for, after_this_request, send_file, send_from_directory, \
     safe_join, escape, Markup, render_template, current_app, g
 
-from werkzeug.datastructures import CombinedMultiDict, MultiDict
-
 import logging
 log = logging.getLogger("fsa")
 
@@ -418,6 +416,7 @@ class FlaskSimpleAuth:
             # reimplement "request.values" after Flask 2.0 regression
             # https://github.com/pallets/werkzeug/pull/2037
             # https://github.com/pallets/flask/issues/4120
+            from werkzeug.datastructures import CombinedMultiDict, MultiDict
             return CombinedMultiDict([MultiDict(d) if not isinstance(d, MultiDict) else d
                                       for d in (request.args, request.form)])
 
