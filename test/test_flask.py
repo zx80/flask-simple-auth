@@ -625,17 +625,6 @@ def test_401_redirect(client):
     app._fsa._401_redirect = None
     app._fsa._url_name = None
 
-def test_cacheok():
-    @fsa.CacheOK
-    def randBool(p: str):
-        import random
-        return random.choice([False, True])
-    for c in "abcdefghijklmnopqrstivwxyz":
-        v = randBool(c)
-        if v:
-            for i in range(10):
-                assert v == randBool(c)
-
 def test_path(client):
     res = check(200, client.get("/path/foo"))
     assert res.data == b"foo"
