@@ -11,8 +11,8 @@ check: venv
 	type python3
 	mypy $(MODULE)
 	flake8 --ignore=E402,E501,F401 $(MODULE)
-	$(MAKE) -C test check
-	$(MAKE) -C demo check
+	$(MAKE) -C test check && \
+	$(MAKE) -C demo check-all
 
 .PHONY: clean clean-venv
 clean:

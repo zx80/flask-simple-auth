@@ -10,7 +10,7 @@ This extension helps manage:
 This code is public domain.
 """
 
-from typing import Optional, Callable, Dict, List, Set, Any
+from typing import Optional, Callable, Dict, List, Set, Any, Union
 
 import functools
 import inspect
@@ -289,6 +289,7 @@ _DIRECTIVES = {
     "FSA_PASSWORD_LEN", "FSA_PASSWORD_RE",
 }
 
+_DEFAULT_CACHE_SIZE = 16384
 
 # actual extension
 class FlaskSimpleAuth:
@@ -303,6 +304,7 @@ class FlaskSimpleAuth:
         self._saved_auth: Optional[List[str]] = None
         self._http_auth = None
         self._pm = None
+        self._cache: Optional[Callable[[Any], Callable]] = None
         # actual main initialization is deferred
         self._initialized = False
 
@@ -364,7 +366,7 @@ class FlaskSimpleAuth:
                 if self._name in request.cookies:
                     user, exp = self._get_any_token_auth_exp(request.cookies[self._name])
                     # renew token when closing expiration
-                    limit = dt.datetime.utcnow() + self._renewal * dt.timedelta(minutes=self._delay)
+                    limit = dt.datetime.now(dt.timezone.utc) + self._renewal * dt.timedelta(minutes=self._delay)
                     set_cookie = exp < limit
                 else:
                     set_cookie = True
@@ -488,22 +490,36 @@ class FlaskSimpleAuth:
         self._401_redirect = conf.get("FSA_401_REDIRECT", None)
         self._url_name = conf.get("FSA_URL_NAME", "URL" if self._401_redirect else None)
         #
-        # cache management
+        # internal cache management for passwords, permissions, tokens…
         #
         self._cache_opts: Dict[str, Any] = conf.get("FSA_CACHE_OPTS", {})
-        self._cache_opts.update("maxsize", conf.get("FSA_CACHE_SIZE", 1024))
-        self._cache = conf.get("FSA_CACHE", "lru")
-        if isinstance(self._cache, str):
-            if self._cache == "lru":
+        if "FSA_CACHE_SIZE" in conf or "maxsize" not in self._cache_opts:
+            self._cache_opts.update(maxsize=conf.get("FSA_CACHE_SIZE", _DEFAULT_CACHE_SIZE))
+        cache: Union[str, Callable[[Any], Callable]] = conf.get("FSA_CACHE", "fc-lru")
+        if isinstance(cache, str):
+            if cache == "ttl":
+                import cachetools.func
+                self._cache = cachetools.func.ttl_cache
+                if "ttl" not in self._cache_opts:
+                    self._cache_opts.update(ttl=60 * 10)  # 10 minutes default
+            elif cache == "lru":
+                import cachetools.func
+                self._cache = cachetools.func.lru_cache
+            elif cache == "lfu":
+                import cachetools.func
+                self._cache = cachetools.func.lfu_cache
+            elif cache == "fifo":
+                import cachetools.func
+                self._cache = cachetools.func.fifo_cache
+            elif cache == "rr":
+                import cachetools.func
+                self._cache = cachetools.func.rr_cache
+            elif cache == "fc-lru":
                 self._cache = functools.lru_cache
-            elif self._cache == "ttl":
-                import cachetools
-                self._cache = cachetools.TTLCache
-                if not "ttl" in self._cache_opts:
-                    self._cache_opts.update("ttl", 60*10)
             else:
-                raise Exception(f"Unexpected FSA_CACHE: {self._cache}")
-        # else keep whatever it is…
+                raise Exception(f"Unexpected FSA_CACHE: {cache}")
+        else:  # hopefully a callable
+            self._cache = cache
         #
         # token setup
         #
@@ -868,11 +884,11 @@ class FlaskSimpleAuth:
         p = re.match(r"^(\d{4})(\d\d)(\d\d)(\d\d)(\d\d)(\d\d)$", ts)
         if not p:
             raise Exception(f"unexpected timestamp format: {ts}")
-        return dt.datetime(*[int(p[i]) for i in range(1, 7)])
+        return dt.datetime(*[int(p[i]) for i in range(1, 7)], tzinfo=dt.timezone.utc)
 
     def _get_fsa_token(self, realm, user, delay, secret):
         """Compute a signed token for "user" valid for "delay" minutes."""
-        limit = self._to_timestamp(dt.datetime.utcnow() + dt.timedelta(minutes=delay))
+        limit = self._to_timestamp(dt.datetime.now(dt.timezone.utc) + dt.timedelta(minutes=delay))
         data = f"{realm}:{user}:{limit}"
         sig = self._cmp_sig(data, secret)
         return f"{data}:{sig}"
@@ -885,7 +901,7 @@ class FlaskSimpleAuth:
         - iss: issuer (not used)
         - aud = audience (the realm)
         """
-        exp = dt.datetime.utcnow() + dt.timedelta(minutes=delay)
+        exp = dt.datetime.now(dt.timezone.utc) + dt.timedelta(minutes=delay)
         import jwt
         return jwt.encode({"exp": exp, "sub": user, "aud": realm},
                           secret, algorithm=self._algo)
@@ -924,7 +940,7 @@ class FlaskSimpleAuth:
             log.debug("AUTH (fsa token): invalid signature")
             raise FSAException("invalid fsa auth token signature", 401)
         # check limit with a grace time
-        now = dt.datetime.utcnow() - dt.timedelta(minutes=self._grace)
+        now = dt.datetime.now(dt.timezone.utc) - dt.timedelta(minutes=self._grace)
         if now > limit:
             log.debug("AUTH (fsa token): token {token} has expired")
             raise FSAException("expired fsa auth token", 401)
@@ -941,7 +957,7 @@ class FlaskSimpleAuth:
         try:
             data = jwt.decode(token, self._secret, leeway=self._grace * 60.0,
                               audience=self._realm, algorithms=[self._algo])
-            exp = dt.datetime.fromtimestamp(data["exp"])
+            exp = dt.datetime.fromtimestamp(data["exp"], tz=dt.timezone.utc)
             return data["sub"], exp
         except jwt.ExpiredSignatureError:
             log.debug(f"AUTH (jwt token): token {token} has expired")
@@ -962,7 +978,7 @@ class FlaskSimpleAuth:
         """Tell whether token is ok: return validated user or None."""
         user, exp = self._get_any_token_auth_exp(token)
         # recheck token expiration
-        now = dt.datetime.utcnow() - dt.timedelta(minutes=self._grace)
+        now = dt.datetime.now(dt.timezone.utc) - dt.timedelta(minutes=self._grace)
         if now > exp:
             log.debug(f"AUTH (token): token {token} has expired")
             raise FSAException("expired auth token", 401)

@@ -232,12 +232,13 @@ methods used by the `get_user` function, as described in the following sections.
   Default is *True*.
 
 - `FSA_CACHE` controls the type of cache to use, set to None to disallow
-  caches. Values can be `lru` or `ttl` (default 10 minutes), or any
-  cache-like class.
+  caches. Values for `cachetools` cache classes are `ttl`, `lru`, `lfu`,
+  `fifo`, `rr`, and `fc-lru` for the `functools` cache class.
+  Default is `ttl` at 10 minutes.
 
 - `FSA_CACHE_OPTS` sets internal cache options with a dictionary.
 
-- `FSA_CACHE_SIZE` controls size of internal caches. Default is *1024*.
+- `FSA_CACHE_SIZE` controls size of internal caches. Default is *16384*.
   *None* means unbounded.
 
 - `FSA_401_REDIRECT` url to redirect to on *401*.
@@ -678,11 +679,13 @@ Sources are available on [GitHub](https://github.com/zx80/flask-simple-auth)
 and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 Software license is *public domain*.
 
-#### 4.6.0 on ?
+#### 4.6.0 on 2021-12-19
 
-Rework caching: remove `CacheOK`, add `FSA_CACHE` and `FSA_CACHE_OPTS` to
-give more ability to control the type of cache behavior.
-Rename `*_OPTIONS` to `_OPTS` for consistency.
+Fix timezone issues by putting everything explicitely in UTC.
+Rework caching: remove `CacheOK` class, add `FSA_CACHE` and `FSA_CACHE_OPTS` to
+give more ability to control the type of cache and its behavior.
+Use a TTL cache set to 10 minutes by default.
+Rename `*_OPTIONS` to `_OPTS` for consistency and concision.
 
 #### 4.5.1 on 2021-12-12
 
