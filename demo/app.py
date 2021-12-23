@@ -3,7 +3,7 @@
 import logging
 logging.basicConfig()
 
-import FlaskSimpleAuth as fsa
+import FlaskSimpleAuth as fsa  # type: ignore
 json = fsa.jsonify
 app = fsa.Flask("demo")
 app.config.from_envvar("APP_CONFIG")
@@ -21,15 +21,18 @@ auth.init_app(app)
 # first, direct routes
 #
 
+
 # GET /version: show running FlaskSimpleAuth version
 @app.get("/version", authorize="ANY")
 def get_version():
     return json(fsa.__version__), 200
 
+
 # GET /now: give current time from database
 @app.get("/now", authorize="ANY")
 def get_now():
     return json(db.now()[0]), 200
+
 
 # GET /who: given authenticated user if available
 @app.get("/who", authorize="ANY")
@@ -39,6 +42,7 @@ def get_who():
 #
 # then register 3 blueprints
 #
+
 
 # stuff management by users
 from stuff import stuff

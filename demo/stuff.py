@@ -7,11 +7,13 @@ from database import db
 
 stuff = Blueprint("stuff", __name__)
 
+
 # GET /stuff: get all stuff
 @stuff.get("/stuff", authorize="ALL")
 def get_stuff(pattern: str = None):
     res = db.get_stuff_like(pattern=pattern) if pattern else db.get_stuff_all()
     return json(res), 200
+
 
 # POST /stuff: add new stuff
 @stuff.post("/stuff", authorize="ALL")
@@ -19,17 +21,20 @@ def post_stuff(sname: str):
     db.add_stuff(sname=sname)
     return "", 201
 
+
 # GET /stuff/<sid>: get this stuff
 @stuff.get("/stuff/<sid>", authorize="ALL")
 def get_stuff_sid(sid: int):
     res = db.get_stuff_sid(sid=sid)
     return (json(res), 200) if res else ("", 404)
 
+
 # DELETE /stuff/<sid>: delete this stuff
 @stuff.delete("/stuff/<sid>", authorize="ALL")
 def delete_stuff_sid(sid: int):
     db.del_stuff_sid(sid=sid)
     return "", 204
+
 
 # PATCH /stuff/<sid>: update this stuff
 @stuff.patch("/stuff/<sid>", authorize="ALL")

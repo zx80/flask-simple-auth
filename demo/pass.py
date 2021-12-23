@@ -1,6 +1,7 @@
 #! /usr/bin/env python3
 
 import sys
+from passlib.context import CryptContext
 
 if len(sys.argv) <= 1:
     print(f"Usage: {sys.argv[0]} bcrypt|plaintext|… [login1:pass1] …")
@@ -8,7 +9,6 @@ if len(sys.argv) <= 1:
 
 scheme = sys.argv[1]
 
-from passlib.context import CryptContext
 pm = CryptContext(schemes=[scheme],
                   bcrypt__default_rounds=4,    # about 2 ms
                   bcrypt__default_ident='2y')  # apache compatible
