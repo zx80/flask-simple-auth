@@ -3,7 +3,7 @@
 #
 
 from anodb import DB  # type: ignore
-from FlaskSimpleAuth import Reference, Flask, Response
+from FlaskSimpleAuth import Reference, Flask, Response  # type: ignore
 
 # this reference will behave as a DB
 db = Reference()
