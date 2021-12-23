@@ -55,8 +55,14 @@ check: stuff.$(DB)
 	export FLASK_APP=app.py FLASK_ENV=development APP_CONFIG=app-$(DB).conf
 	$(PYTEST) $(PTOPT) test_demo.py
 
+# source files
+F.py	= app.py auth.py database.py users.py scare.py stuff.py
+
 check-mypy:
-	mypy app.py auth.py database.py users.py scare.py stuff.py
+	mypy $(F.py)
+
+check-flake8:
+	flake8 $(F.py)
 
 check-pg:
 	$(MAKE) DB=pg check
