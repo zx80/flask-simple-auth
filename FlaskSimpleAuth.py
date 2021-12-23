@@ -1291,7 +1291,7 @@ class FlaskSimpleAuth:
             log.warning(f"missing authorize on route \"{rule}\" makes it 403 Forbidden")
 
         def decorate(fun):
-            self.add_url_rule(rule, view_func=fun, **options)
+            return self.add_url_rule(rule, view_func=fun, **options)
         return decorate
 
     # support Flask 2.0 per-method decorator shortcuts
