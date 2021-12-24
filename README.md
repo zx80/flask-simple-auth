@@ -680,6 +680,10 @@ Sources are available on [GitHub](https://github.com/zx80/flask-simple-auth)
 and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 Software license is *public domain*.
 
+#### 4.6.1 on 2021-12-24
+
+Minor cleanup.
+
 #### 4.6.0 on 2021-12-19
 
 Fix timezone issues by putting everything explicitely in UTC.
