@@ -680,6 +680,10 @@ Sources are available on [GitHub](https://github.com/zx80/flask-simple-auth)
 and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 Software license is *public domain*.
 
+#### 4.6.2 on 2021-12-26
+
+Put back version auto extraction after `aiosql` update to *3.4.0*.
+
 #### 4.6.1 on 2021-12-24
 
 Minor cleanup.

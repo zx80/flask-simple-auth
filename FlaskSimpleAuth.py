@@ -32,10 +32,8 @@ import logging
 log = logging.getLogger("fsa")
 
 # get module version
-__version__ = "4.6.1"
-# FIXME currently broken because of dependency issues with typing_extensions
-# import pkg_resources as pkg  # type: ignore
-# __version__ = pkg.require("FlaskSimpleAuth")[0].version
+import pkg_resources as pkg  # type: ignore
+__version__ = pkg.require("FlaskSimpleAuth")[0].version
 
 
 class FSAException(BaseException):
