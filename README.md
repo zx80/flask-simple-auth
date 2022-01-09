@@ -930,3 +930,4 @@ Initial release in beta.
 - test `FSA_HTTP_AUTH_OPTS`?
 - add `any` token scheme?
 - automate URL-parameter redirect?
+- check `HTTPS`?
