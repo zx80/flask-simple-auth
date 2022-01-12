@@ -880,3 +880,42 @@ def test_no_cors(client4):
     res = check(200, client4.get("/add", data={"i": "7", "j": "2", "LOGIN": "dad"}))
     assert res.data == b"9"
     res = check(200, client4.options("/add", data={"LOGIN": "dad"}))
+
+# test a bad get_user_pass implementation
+@pytest.fixture
+def bad2():
+    import AppBad as ab
+    with ab.create_badapp_2().test_client() as c:
+        yield c
+
+def test_bad_2(bad2):
+    check(200, bad2.get("/any"))
+    check(401, bad2.get("/all"))
+    res = check(500, bad2.get("/all", data={"USER": "calvin", "PASS": "hobbes"}))
+    assert b"internal error in get_user_pass" == res.data
+
+# test a bad user_in_group implementation
+@pytest.fixture
+def bad3():
+    import AppBad as ab
+    with ab.create_badapp_3().test_client() as c:
+        yield c
+
+def test_bad_3(bad3):
+    check(200, bad3.get("/any"))
+    check(200, bad3.get("/all", data={"LOGIN": "calvin"}))
+    res = check(500, bad3.get("/fail", data={"LOGIN": "calvin"}))
+    assert b"internal error in user_in_group" == res.data
+
+# test a bad route function
+@pytest.fixture
+def bad4():
+    import AppBad as ab
+    with ab.create_badapp_4().test_client() as c:
+        yield c
+
+def test_bad_4(bad4):
+    check(200, bad4.get("/ok"))
+    res = check(500, bad4.get("/any"))
+    assert b"internal error on GET /any" == res.data
+    check(404, bad4.get("/no-such-route"))

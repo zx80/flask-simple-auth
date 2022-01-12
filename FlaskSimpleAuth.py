@@ -287,6 +287,7 @@ _DIRECTIVES = {
 
 _DEFAULT_CACHE_SIZE = 16384
 
+
 # actual extension
 class FlaskSimpleAuth:
     """Flask extension for authentication, authorization and parameters."""
@@ -754,12 +755,19 @@ class FlaskSimpleAuth:
         Raise an exception if not ok, otherwise simply proceeds."""
         if not request.is_secure:
             log.warning("password authentication over an insecure request")
-        ref = self._get_user_pass(user)
+        try:
+            ref = self._get_user_pass(user)
+        except FSAException as fe:
+            raise fe
+        except Exception as e:
+            log.error(f"get_user_pass failed: {e}")
+            raise FSAException("internal error in get_user_pass", 500)
         if not ref:
             log.debug(f"AUTH (password): no such user ({user})")
             raise FSAException(f"no such user: {user}", 401)
         if not isinstance(ref, (str, bytes)):
-            raise FSAException("get_user_pass must return None or str or bytes", 500)
+            log.error(f"type error in get_user_pass: {type(ref)}, expecting None, str or bytes")
+            raise FSAException("internal error with get_user_pass", 500)
         if not self.check_password(pwd, ref):
             log.debug(f"AUTH (password): invalid password for {user}")
             raise FSAException(f"invalid password for {user}", 401)
@@ -804,10 +812,10 @@ class FlaskSimpleAuth:
             raise FSAException("unexpected authorization header", 401)
         try:
             user, pwd = b64.b64decode(auth[6:]).decode().split(":", 1)
-            self._check_password(user, pwd)
         except Exception as e:
             log.debug(f"AUTH (basic): error while decoding auth \"{auth}\" ({e})")
             raise FSAException("decoding error on authorization header", 401)
+        self._check_password(user, pwd)
         return user
 
     #
@@ -1134,9 +1142,16 @@ class FlaskSimpleAuth:
                         return self._Resp(e.message, e.status)
                 # check against all authorized groups/roles
                 for r in groups:
-                    uig = self._user_in_group(self._user, r)
+                    try:
+                        uig = self._user_in_group(self._user, r)
+                    except FSAException as fe:
+                        return self._Resp(fe.message, fe.status)
+                    except Exception as e:
+                        log.error(f"user_in_group failed: {e}")
+                        return self._Resp("internal error in user_in_group", 500)
                     if not isinstance(uig, bool):
-                        return self._Resp("user_in_group must return a boolean", 500)
+                        log.error(f"type error in user_in_group: {type(uig)}, must return a boolean")
+                        return self._Resp("internal error with user_in_group", 500)
                     if uig:
                         try:
                             return fun(*args, **kwargs)
@@ -1235,6 +1250,9 @@ class FlaskSimpleAuth:
                     return fun(*args, **kwargs)
                 except FSAException as e:
                     return self._Resp(e.message, e.status)
+                except Exception as e:
+                    log.error(f"internal error on {request.method} {request.path}: {e}")
+                    return self._Resp(f"internal error on {request.method} {request.path}", 500)
 
             return wrapper
 

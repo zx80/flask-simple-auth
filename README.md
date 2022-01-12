@@ -680,6 +680,11 @@ Sources are available on [GitHub](https://github.com/zx80/flask-simple-auth)
 and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 Software license is *public domain*.
 
+#### 4.6.3 on 2022-01-12
+
+Improve error messages on internal errors in user functions such as
+`get_user_pass`, `user_in_group` or path functions.
+
 #### 4.6.2 on 2021-12-26
 
 Put back version auto extraction after `aiosql` update to *3.4.0*.
@@ -930,4 +935,5 @@ Initial release in beta.
 - test `FSA_HTTP_AUTH_OPTS`?
 - add `any` token scheme?
 - automate URL-parameter redirect?
-- check `HTTPS`?
+- check `HTTPS` is\_secure?
+- add `FSA_SERVER_ERROR`
