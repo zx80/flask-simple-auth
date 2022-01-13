@@ -129,7 +129,7 @@ def get_type(f: float = None, i: int = None, b: bool = None, s: str = None):
         return "", 200
 
 # accept any parameters…
-@app.route("/params", methods=["GET"], authorize=[ANY], allparams=True)
+@app.route("/params", methods=["GET"], authorize=[ANY])
 def get_params(**kwargs):
     return ' '.join(sorted(kwargs)), 200
 

@@ -550,11 +550,11 @@ must be set (when *True*), or whether they are optional (*False*) in which
 case *None* values are passed if no defaults are given, or if this is
 guessed (when *None*, the default).
 
-The `allparams` parameter makes all request parameters be translated to
-named function parameters that can be manipulated as such, as shown below:
+If one parameter is a dict of keyword arguments, all request parameters are
+provided into it, as shown below:
 
 ```Python
-@app.route("/awesome", methods=["PUT"], authorize="ALL", allparams=True)
+@app.route("/awesome", methods=["PUT"], authorize="ALL")
 def put_awesome(**kwargs):
     …
 ```
@@ -688,6 +688,7 @@ Software license is *public domain*.
 
 Add `FSA_SERVER_ERROR` configuration directive to control the server internal
 error status code.
+Drop `allparams` route paramter, made implicit with a dict of keyword arguments.
 
 #### 4.6.3 on 2022-01-12
 
@@ -946,4 +947,4 @@ Initial release in beta.
 - automate URL-parameter redirect?
 - add forced secure check on non local hosts?
 - drop `FSA_MODE` and `FSA_SKIP_MODE`, implicitely on/empty?
-- drop `allparams`, implicit with `**kwargs`?
+- drop `required`?

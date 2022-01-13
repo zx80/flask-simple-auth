@@ -1176,11 +1176,7 @@ class FlaskSimpleAuth:
     # - False: all function parameters are optional,
     #   with default value None unless explicitely provided
     #
-    # allparams:
-    # - whether all request parameters are automatically translated to function
-    #   parameters with a str value.
-    #
-    def _parameters(self, required=None, allparams=False):
+    def _parameters(self, required=None):
         """Decorator to handle request parameters."""
 
         def decorate(fun: Callable):
@@ -1192,6 +1188,7 @@ class FlaskSimpleAuth:
 
             # parameters types/casts and defaults taken from signature
             sig = inspect.signature(fun)
+            keywords = False
 
             for n, p in sig.parameters.items():
                 if n not in types and \
@@ -1202,6 +1199,8 @@ class FlaskSimpleAuth:
                     typings[n] = _CASTS.get(t, t)
                 if p.default != inspect._empty:  # type: ignore
                     defaults[n] = p.default
+                if p.kind == p.VAR_KEYWORD:
+                    keywords = True
 
             @functools.wraps(fun)
             def wrapper(*args, **kwargs):
@@ -1244,7 +1243,7 @@ class FlaskSimpleAuth:
                                 return self._Resp(f"type error on path parameter \"{pn}\": ({e})", 404)
 
                 # possibly add others, without shadowing already provided ones
-                if allparams:
+                if keywords:
                     for p in params:
                         if p not in kwargs:
                             kwargs[p] = params[p]
@@ -1263,7 +1262,7 @@ class FlaskSimpleAuth:
         return decorate
 
     def add_url_rule(self, rule, endpoint=None, view_func=None, authorize=NONE,
-                     auth=None, required=None, allparams=False, **options):
+                     auth=None, required=None, **options):
         """Route decorator helper method."""
 
         log.debug(f"adding {rule}")
@@ -1301,7 +1300,7 @@ class FlaskSimpleAuth:
         newpath = "<".join(splits)
 
         assert self._app
-        par = self._parameters(required=required, allparams=allparams)(view_func)
+        par = self._parameters(required=required)(view_func)
         aut = self._authorize(*roles, auth=auth)(par)
         return flask.Flask.add_url_rule(self._app, newpath, endpoint=endpoint, view_func=aut, **options)
 
