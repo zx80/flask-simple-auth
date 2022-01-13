@@ -14,7 +14,7 @@ There is no clue in the source about what kind of authentication is used,
 which is the point: authentication is managed in the configuration,
 not in the application code.
 The authorization rule is declared explicitely on each function with the
-`authorize` parameter.
+mandatory `authorize` parameter.
 Path and HTTP/JSON parameters are type checked and converted automatically
 based on type annotations.
 Basically, you just have to implement a type-annotated Python function and
@@ -249,6 +249,10 @@ methods used by the `get_user` function, as described in the following sections.
 - `FSA_URL_NAME` name of parameter for the target URL after a successful login.
   Default is `URL` if redirect is activated, else *None*.
   Currently, the login page should use this parameter to redirect to when ok.
+
+- `FSA_SERVER_ERROR` controls the status code returned on the module internal
+  errors, to help distinguish thse from other internal errors which may occur.
+  Default is *500*.
 
 The authentication scheme attempted on a route can be altered with the
 `auth` parameter added to the `route` decorator.
@@ -680,6 +684,11 @@ Sources are available on [GitHub](https://github.com/zx80/flask-simple-auth)
 and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 Software license is *public domain*.
 
+#### dev
+
+Add `FSA_SERVER_ERROR` configuration directive to control the server internal
+error status code.
+
 #### 4.6.3 on 2022-01-12
 
 Improve error messages on internal errors in user functions such as
@@ -936,4 +945,3 @@ Initial release in beta.
 - add `any` token scheme?
 - automate URL-parameter redirect?
 - check `HTTPS` is\_secure?
-- add `FSA_SERVER_ERROR`

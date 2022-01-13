@@ -282,10 +282,11 @@ _DIRECTIVES = {
     "FSA_TOKEN_SECRET", "FSA_TOKEN_SIGN", "FSA_TOKEN_TYPE",
     "FSA_TOKEN_RENEWAL", "FSA_URL_NAME", "FSA_USER_IN_GROUP",
     "FSA_LOGGING_LEVEL", "FSA_CORS", "FSA_CORS_OPTS",
-    "FSA_PASSWORD_LEN", "FSA_PASSWORD_RE",
+    "FSA_PASSWORD_LEN", "FSA_PASSWORD_RE", "FSA_SERVER_ERROR",
 }
 
 _DEFAULT_CACHE_SIZE = 16384
+_DEFAULT_SERVER_ERROR = 500
 
 
 # actual extension
@@ -302,7 +303,8 @@ class FlaskSimpleAuth:
         self._http_auth = None
         self._pm = None
         self._cache: Optional[Callable[[Any], Callable]] = None
-        # actual main initialization is deferred
+        self._server_error: int = _DEFAULT_SERVER_ERROR
+        # actual main initialization is deferred to `init_app`
         self._initialized = False
 
     def _Resp(self, msg: str, code: int):
@@ -333,13 +335,12 @@ class FlaskSimpleAuth:
         authorization."""
         self._user_set = False
         self._user = None
-        # should it always return 500?
-        # NOTE this may be too late to prevent a commit
+        # NOTE this may be too late to prevent a commit?
         if res.status_code < 400 and self._need_authorization:
             method, path = request.method, request.path
-            log.warning(f"missing authorization on {method} {path}")
             if self._check and not (self._cors and method == "OPTIONS"):
-                return self._Resp("missing authorization check", 500)
+                log.error(f"missing authorization on {method} {path}")
+                return self._Resp("missing authorization check", self._server_error)
         return res
 
     def _possible_redirect(self, res: Response):
@@ -454,6 +455,8 @@ class FlaskSimpleAuth:
         conf = app.config
         if "FSA_LOGGING_LEVEL" in conf:
             log.setLevel(conf["FSA_LOGGING_LEVEL"])
+        # status code for this module internal errors
+        self._server_error = conf.get("FSA_SERVER_ERROR", _DEFAULT_SERVER_ERROR)
         # check directives
         for name in conf:
             if name[:4] == "FSA_" and name not in _DIRECTIVES:
@@ -761,13 +764,13 @@ class FlaskSimpleAuth:
             raise fe
         except Exception as e:
             log.error(f"get_user_pass failed: {e}")
-            raise FSAException("internal error in get_user_pass", 500)
+            raise FSAException("internal error in get_user_pass", self._server_error)
         if not ref:
             log.debug(f"AUTH (password): no such user ({user})")
             raise FSAException(f"no such user: {user}", 401)
         if not isinstance(ref, (str, bytes)):
             log.error(f"type error in get_user_pass: {type(ref)}, expecting None, str or bytes")
-            raise FSAException("internal error with get_user_pass", 500)
+            raise FSAException("internal error with get_user_pass", self._server_error)
         if not self.check_password(pwd, ref):
             log.debug(f"AUTH (password): invalid password for {user}")
             raise FSAException(f"invalid password for {user}", 401)
@@ -1148,10 +1151,10 @@ class FlaskSimpleAuth:
                         return self._Resp(fe.message, fe.status)
                     except Exception as e:
                         log.error(f"user_in_group failed: {e}")
-                        return self._Resp("internal error in user_in_group", 500)
+                        return self._Resp("internal error in user_in_group", self._server_error)
                     if not isinstance(uig, bool):
                         log.error(f"type error in user_in_group: {type(uig)}, must return a boolean")
-                        return self._Resp("internal error with user_in_group", 500)
+                        return self._Resp("internal error with user_in_group", self._server_error)
                     if uig:
                         try:
                             return fun(*args, **kwargs)
@@ -1206,7 +1209,8 @@ class FlaskSimpleAuth:
                 # this cannot happen under normal circumstances
                 if self._need_authorization and self._check and \
                         not (self._cors and request.method == 'OPTIONS'):  # pragma: no cover
-                    return self._Resp("missing authorization check", 500)
+                    log.error("missing authorization check in parameter wrapper")
+                    return self._Resp("missing authorization check", self._server_error)
 
                 # translate request parameters to named function parameters
                 params = self._params()
@@ -1252,7 +1256,7 @@ class FlaskSimpleAuth:
                     return self._Resp(e.message, e.status)
                 except Exception as e:
                     log.error(f"internal error on {request.method} {request.path}: {e}")
-                    return self._Resp(f"internal error on {request.method} {request.path}", 500)
+                    return self._Resp(f"internal error on {request.method} {request.path}", self._server_error)
 
             return wrapper
 
