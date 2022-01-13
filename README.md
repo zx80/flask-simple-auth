@@ -545,11 +545,6 @@ the value is *True*.
 Type `path` is a special `str` type which allow to trigger accepting
 any path on a route.
 
-The `required` parameter allows to declare whether all parameters
-must be set (when *True*), or whether they are optional (*False*) in which
-case *None* values are passed if no defaults are given, or if this is
-guessed (when *None*, the default).
-
 If one parameter is a dict of keyword arguments, all request parameters are
 provided into it, as shown below:
 
@@ -688,7 +683,8 @@ Software license is *public domain*.
 
 Add `FSA_SERVER_ERROR` configuration directive to control the server internal
 error status code.
-Drop `allparams` route paramter, made implicit with a dict of keyword arguments.
+Drop `allparams` and `required` route parameters: they are implicit with a dict
+of keyword arguments and default values.
 
 #### 4.6.3 on 2022-01-12
 
@@ -947,4 +943,3 @@ Initial release in beta.
 - automate URL-parameter redirect?
 - add forced secure check on non local hosts?
 - drop `FSA_MODE` and `FSA_SKIP_MODE`, implicitely on/empty?
-- drop `required`?

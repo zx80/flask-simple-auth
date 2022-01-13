@@ -1170,13 +1170,10 @@ class FlaskSimpleAuth:
     #
     # parameters internal decorator
     #
-    # required:
-    # - None: function parameters are required unless there is a default value
-    # - True: all function parameters are required
-    # - False: all function parameters are optional,
-    #   with default value None unless explicitely provided
+    # translate HTTP or JSON parameters to python parameters based on their
+    # declared names, types and default values.
     #
-    def _parameters(self, required=None):
+    def _parameters(self):
         """Decorator to handle request parameters."""
 
         def decorate(fun: Callable):
@@ -1204,6 +1201,7 @@ class FlaskSimpleAuth:
 
             @functools.wraps(fun)
             def wrapper(*args, **kwargs):
+                # NOTE *args and **kwargs are empty before being filled in from HTTP
 
                 # this cannot happen under normal circumstances
                 if self._need_authorization and self._check and \
@@ -1215,25 +1213,21 @@ class FlaskSimpleAuth:
                 params = self._params()
 
                 for p, typing in typings.items():
+                    # guess which function parameters are request parameters
                     # parameter HTTP name
                     pn = p[1:] if p[0] == '_' else p
-                    # guess which function parameters are request parameters
                     if p not in kwargs:
+                        # parameter p not yet encountered
                         if pn in params:
                             try:
                                 kwargs[p] = typing(params[pn])
                             except Exception as e:
                                 return self._Resp(f"type error on HTTP parameter \"{pn}\" ({e})", 400)
                         else:
-                            if not required:
-                                if p in defaults:
-                                    kwargs[p] = defaults[p]
-                                else:
-                                    return self._Resp(f"missing HTTP parameter \"{pn}\"", 400)
-                            elif required:
-                                return f"missing HTTP parameter \"{pn}\"", 400
+                            if p in defaults:
+                                kwargs[p] = defaults[p]
                             else:
-                                kwargs[p] = defaults.get(p, None)
+                                return self._Resp(f"missing HTTP parameter \"{pn}\"", 400)
                     else:
                         # possibly recast path parameters if needed
                         if not isinstance(kwargs[p], types[p]):
@@ -1262,7 +1256,7 @@ class FlaskSimpleAuth:
         return decorate
 
     def add_url_rule(self, rule, endpoint=None, view_func=None, authorize=NONE,
-                     auth=None, required=None, **options):
+                     auth=None, **options):
         """Route decorator helper method."""
 
         log.debug(f"adding {rule}")
@@ -1300,7 +1294,7 @@ class FlaskSimpleAuth:
         newpath = "<".join(splits)
 
         assert self._app
-        par = self._parameters(required=required)(view_func)
+        par = self._parameters()(view_func)
         aut = self._authorize(*roles, auth=auth)(par)
         return flask.Flask.add_url_rule(self._app, newpath, endpoint=endpoint, view_func=aut, **options)
 

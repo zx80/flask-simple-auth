@@ -279,11 +279,11 @@ def get_auth_ftp():
 def get_403():
     return "missing authorize", 200
 
-@app.route("/required/true", required=True, authorize=ANY)
+@app.route("/required/true", authorize=ANY)
 def get_required_true(s1, s2):
     return s1 + " " + s2, 200
 
-@app.route("/required/false", required=False, authorize=ANY)
+@app.route("/required/false", authorize=ANY)
 def get_required_false(s1 = "hello", s2 = "world"):
     return s1 + " " + s2, 200
 
