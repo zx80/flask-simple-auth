@@ -20,7 +20,7 @@ app = Flask("Test")
 app.config.update(
     FSA_AUTH = "fake",
     FSA_MODE = "always",
-    FSA_SKIP_PATH = (r"/(register|required)",
+    FSA_SKIP_PATH = (r"/(register|required|_)",
                      r"/(add|div|mul|sub|type|params|any|mis[12]|nogo|one)",
                      r"/(infer|superid|cplx|bool|mail|path|string|auth|f2|myint)"),
     FSA_GET_USER_PASS = get_user_pass,
@@ -308,3 +308,7 @@ def delete_f2():
 def patch_f2():
     return "patch ok", 200
 
+# test underscore params
+@app.get("/_/<_def>", authorize=ANY)
+def get___def(_def: str, _int: int, _pass: bool = True):
+    return f"{_def}/{_int}/{_pass}", 200

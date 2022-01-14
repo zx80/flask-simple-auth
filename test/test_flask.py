@@ -869,6 +869,11 @@ def test_f2(client):
     res = check(200, client.patch("/f2/patch"))
     assert res.data == b'patch ok'
 
+def test_underscore(client):
+    check(400, client.get("/_/foo"))
+    res = check(200, client.get("/_/foo", data={"int": 2}))
+    assert res.data == b"foo/2/True"
+
 def test_no_cors(client3):
     check(401, client3.get("/add", data={"i": "7", "j": "2"}))
     res = check(200, client3.get("/add", data={"i": "7", "j": "2", "LOGIN": "dad"}))
