@@ -599,6 +599,11 @@ which is ignored when translating HTTP parameters.
 This allows to use python keywords as parameter names, such
 as `pass` or `def`.
 
+```Python
+@app.put("/user/<pass>", authorize="ALL")
+def put_user_pass(_pass: str, _def: str, _import: str):
+    …
+```
 
 ### Utils
 
