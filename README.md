@@ -161,6 +161,8 @@ Once initialized `app` is a standard Flask object with some additions:
 
 - `route` decorator, an extended version of Flask's own with an `authorize`
   parameter and transparent management of request parameters.
+- per-method shortcut decorators `post`, `get`, `put`, `patch` and `delete` which
+  support the same extensions.
 - `user_in_group` and `get_user_pass` methods/decorator to register helper functions.
 - `get_user` to extract the authenticated user or raise an `FSAException`.
 - `current_user` to get the authenticated user if any, or `None`.
@@ -185,7 +187,7 @@ from DemoAdmin import abp
 fsa.register_blueprint(abp, url_path="/admin")
 
 # define a route with an optional paramater "flt"
-@fsa.route("/users", methods=["GET"], authorize="ALL")
+@fsa.get("/users", authorize="ALL")
 def get_what(flt: str = None):
     …
 ```
@@ -526,7 +528,7 @@ For those, careful per-operation authorization will still be needed.
 
 Request parameters (HTTP or JSON) are translated automatically to
 function parameters, by relying on function type annotations.
-By default, the decorator guesses whether parameters are mandatory based on
+The decorator guesses whether parameters are mandatory based on
 provided default values, i.e. they are optional when a default is provided.
 
 ```python
@@ -550,7 +552,7 @@ If one parameter is a dict of keyword arguments, all request parameters are
 provided into it, as shown below:
 
 ```Python
-@app.route("/awesome", methods=["PUT"], authorize="ALL")
+@app.put("/awesome", authorize="ALL")
 def put_awesome(**kwargs):
     …
 ```
@@ -569,7 +571,7 @@ class EmailAddr:
     def __init__(self, addr: str):
         self._addr = addr
 
-@app.route("/mail/<addr>", methods=["GET"], authorize="ALL")
+@app.get("/mail/<addr>", authorize="ALL")
 def get_mail_addr(addr: EmailAddr):
     …
 ```
@@ -579,13 +581,17 @@ with `register_cast` and will be called automatically to convert
 parameters:
 
 ```Python
-class SomeType:
+class House:
     …
 
-def str_to_SomeType(s: str) -> SomeType:
+def strToHouse(s: str) -> House:
     return …
 
-FlaskSimpleAuth.register_cast(SomeType, str_to_SomeType)
+FlaskSimpleAuth.register_cast(House, strToHouse)
+
+@app.get("/house/<h>", authorize="ANY")
+def get_house_h(h: House)
+    …
 ```
 
 Finally, python parameter names can be prepended with a `_`,
