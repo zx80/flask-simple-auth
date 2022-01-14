@@ -27,11 +27,12 @@ app.config.from_envvar("DEMO_CONFIG")
 
 # users belonging to the "patcher" group can patch "whatever/*"
 # the function gets 3 typed parameters: one integer coming from the path (id)
-# and the remaining two coming from request parameters (some, stuff).
-# "some" is mandatory, stuff is optional because it has a default.
+# and the remaining two ("some", "stuff") are coming from HTTP or JSON request
+# parameters. "some" is mandatory, "stuff" is optional because it has a default.
+# the declared parameter typing is inforced.
 @app.patch("/whatever/<id>", authorize="patcher")
 def patch_whatever(id: int, some: int, stuff: str = "wow"):
-    # ok to do it, with parameters id, some & stuff
+    # ok to do it, with parameters "id", "some" & "stuff"
     return "", 204
 ```
 
@@ -158,7 +159,8 @@ def user_in_group(user, group):
 
 Once initialized `app` is a standard Flask object with some additions:
 
-- `route` decorator, an extended version of Flask's own.
+- `route` decorator, an extended version of Flask's own with an `authorize`
+  parameter and transparent management of request parameters.
 - `user_in_group` and `get_user_pass` methods/decorator to register helper functions.
 - `get_user` to extract the authenticated user or raise an `AuthException`.
 - `current_user` to get the authenticated user if any, or `None`.
@@ -251,7 +253,7 @@ methods used by the `get_user` function, as described in the following sections.
   Currently, the login page should use this parameter to redirect to when ok.
 
 - `FSA_SERVER_ERROR` controls the status code returned on the module internal
-  errors, to help distinguish thse from other internal errors which may occur.
+  errors, to help distinguish these from other internal errors which may occur.
   Default is *500*.
 
 The authentication scheme attempted on a route can be altered with the
@@ -475,7 +477,6 @@ An opened route for user registration with mandatory parameters
 could look like that:
 
 ```Python
-# with FSA_SKIP_PATH = (r"/register", …)
 @app.route("/register", methods=["POST"], authorize="ANY")
 def post_register(user: str, password: str):
     if user_already_exists_somewhere(user):
@@ -512,7 +513,7 @@ are changed by calling `clear_caches`.
 There are three special values that can be passed to the `authorize` decorator:
 
  - `ANY` declares that no authentication is needed on that route.
- - `ALL` declares that all authenticated user can access this route.
+ - `ALL` declares that all authenticated user can access this route, without group checks.
  - `NONE` returns a *403* on all access. It can be used to close a route
    temporarily. This is the default.
 
