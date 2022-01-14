@@ -1215,7 +1215,7 @@ class FlaskSimpleAuth:
                 for p, typing in typings.items():
                     # guess which function parameters are request parameters
                     # parameter HTTP name
-                    pn = p[1:] if p[0] == '_' else p
+                    pn = p[1:] if p[0] == '_' and len(p) > 1 else p
                     if p not in kwargs:
                         # parameter p not yet encountered
                         if pn in params:
