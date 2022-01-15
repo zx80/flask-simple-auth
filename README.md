@@ -192,40 +192,6 @@ def get_what(flt: str = None):
     …
 ```
 
-### Overall Configuration
-
-Some directives govern various details for this extension internal working.
-
-- `FSA_SECURE` only allows secured requests on non-local connections.
-  Default is *True*
-
-- `FSA_CHECK` tells whether to generate a *500* internal error if a route
-  is missing an explicit authorization check.
-  Default is *True*.
-
-- `FSA_SERVER_ERROR` controls the status code returned on the module internal
-  errors, to help distinguish these from other internal errors which may occur.
-  Default is *500*.
-
-- `FSA_CACHE` controls the type of cache to use, set to None to disallow
-  caches. Values for `cachetools` cache classes are `ttl`, `lru`, `lfu`,
-  `fifo`, `rr`, and `fc-lru` for the `functools` cache class.
-  Default is `ttl` at 10 minutes.
-
-- `FSA_CACHE_OPTS` sets internal cache options with a dictionary.
-
-- `FSA_CACHE_SIZE` controls size of internal caches. Default is *16384*.
-  *None* means unbounded.
-
-- `FSA_401_REDIRECT` url to redirect to on *401*.
-  Default is *None*.
-  This can be used for the web application login page.
-
-- `FSA_URL_NAME` name of parameter for the target URL after a successful login.
-  Default is `URL` if redirect is activated, else *None*.
-  Currently, the login page should use this parameter to redirect to when ok.
-
-
 ### Authentication
 
 Three directives impact how and when authentication is performed.
@@ -667,22 +633,57 @@ Shared.init_app(…)
 …
 ```
 
-#### CORS -- Cross Origin Resource Sharing
+### Miscellaneous Configuration Directives
 
-[CORS](https://en.wikipedia.org/wiki/Cross-origin_resource_sharing) is a
-security feature implemented by web browsers, and does only make sense for
-web applications. It allows the browser to check whether a server
-accepts requests from a given origin (*i.e.* from JavaScript code
-provided by some domain).
+Some directives govern various details for this extension internal working.
 
-The module allows to enable CORS request handling on the application
-by setting the `FSA_CORS` directive to true, and to add additional
-options with `FSA_CORS_OPTS`.  The implementation is delegated to the
-[`flask_cors`](https://pypi.org/project/Flask-Cors/) Flask extension
-which must be available if the feature is enabled.
+- `FSA_SECURE` only allows secured requests on non-local connections.
+  Default is *True*
 
-Setting the directive to True allows requests from any origin.
-The default is not to enable CORS.
+- `FSA_CHECK` tells whether to generate a *500* internal error if a route
+  is missing an explicit authorization check.
+  Default is *True*.
+
+- `FSA_SERVER_ERROR` controls the status code returned on the module internal
+  errors, to help distinguish these from other internal errors which may occur.
+  Default is *500*.
+
+Some control is available about caching features used for user authentication
+and authorization:
+
+- `FSA_CACHE` controls the type of cache to use, set to None to disallow
+  caches. Values for `cachetools` cache classes are `ttl`, `lru`, `lfu`,
+  `fifo`, `rr`, and `fc-lru` for the `functools` cache class.
+  Default is `ttl` at 10 minutes.
+
+- `FSA_CACHE_OPTS` sets internal cache options with a dictionary.
+
+- `FSA_CACHE_SIZE` controls size of internal caches. Default is *16384*.
+  *None* means unbounded.
+
+Web-application oriented features:
+
+- `FSA_401_REDIRECT` url to redirect to on *401*.
+  Default is *None*.
+  This can be used for a web application login page.
+
+- `FSA_URL_NAME` name of parameter for the target URL after a successful login.
+  Default is `URL` if redirect is activated, else *None*.
+  Currently, the login page should use this parameter to redirect to when ok.
+
+- `FSA_CORS` and `FSA_CORS_OPTS` control CORS (Cross Origin Resource Sharing) settings.
+
+  [CORS](https://en.wikipedia.org/wiki/Cross-origin_resource_sharing) is a
+  security feature implemented by web browsers to check whether a server
+  accepts requests from a given origin (*i.e.* from JavaScript code
+  provided by some domain).
+
+  CORS request handling is enabled by setting `FSA_CORS` to *True* which
+  allows requests from any origin. Default is *False*.
+  Additional options are controled with `FSA_CORS_OPTS`.
+  The implementation is delegated to the
+  [`flask_cors`](https://pypi.org/project/Flask-Cors/) Flask extension
+  which must be available if the feature is enabled.
 
 
 ## License
