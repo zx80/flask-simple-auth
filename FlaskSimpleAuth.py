@@ -282,7 +282,7 @@ _DIRECTIVES = {
     "FSA_TOKEN_SECRET", "FSA_TOKEN_SIGN", "FSA_TOKEN_TYPE",
     "FSA_TOKEN_RENEWAL", "FSA_URL_NAME", "FSA_USER_IN_GROUP",
     "FSA_LOGGING_LEVEL", "FSA_CORS", "FSA_CORS_OPTS",
-    "FSA_PASSWORD_LEN", "FSA_PASSWORD_RE", "FSA_SERVER_ERROR",
+    "FSA_PASSWORD_LEN", "FSA_PASSWORD_RE", "FSA_SERVER_ERROR", "FSA_SECURE"
 }
 
 _DEFAULT_CACHE_SIZE = 16384
@@ -304,6 +304,7 @@ class FlaskSimpleAuth:
         self._pm = None
         self._cache: Optional[Callable[[Any], Callable]] = None
         self._server_error: int = _DEFAULT_SERVER_ERROR
+        self._secure: bool = True
         # actual main initialization is deferred to `init_app`
         self._initialized = False
 
@@ -314,6 +315,16 @@ class FlaskSimpleAuth:
     #
     # HOOKS
     #
+    def _check_secure(self):
+        if not request.is_secure and \
+           not (request.remote_addr.startswith("127.") or request.remote_addr == "::1"):
+            msg = f"insecure HTTP request on {request.remote_addr}, allow with FSA_SECURE=False"
+            if self._secure:
+                log.error(msg)
+                return self._Resp("insecure HTTP request denied", self._server_error)
+            else:
+                log.warning(msg)
+
     def _auth_set_user(self):
         """Before request hook to perform early authentication."""
         self._user_set = False
@@ -455,12 +466,14 @@ class FlaskSimpleAuth:
         conf = app.config
         if "FSA_LOGGING_LEVEL" in conf:
             log.setLevel(conf["FSA_LOGGING_LEVEL"])
-        # status code for this module internal errors
-        self._server_error = conf.get("FSA_SERVER_ERROR", _DEFAULT_SERVER_ERROR)
-        # check directives
+        # check directives for typos
         for name in conf:
             if name[:4] == "FSA_" and name not in _DIRECTIVES:
                 log.warning(f"unexpected directive: {name}")
+        # whether to only allow secure requests
+        self._secure = conf.get("FSA_SECURE", True)
+        # status code for this module internal errors
+        self._server_error = conf.get("FSA_SERVER_ERROR", _DEFAULT_SERVER_ERROR)
         #
         # overall auth setup
         #
@@ -644,6 +657,7 @@ class FlaskSimpleAuth:
         #
         # register auth request hooks
         #
+        app.before_request(self._check_secure)
         app.before_request(self._auth_set_user)
         app.after_request(self._auth_after_cleanup)
         app.after_request(self._possible_redirect)
@@ -756,8 +770,6 @@ class FlaskSimpleAuth:
         """Check user password against internal credentials.
 
         Raise an exception if not ok, otherwise simply proceeds."""
-        if not request.is_secure:
-            log.warning("password authentication over an insecure request")
         try:
             ref = self._get_user_pass(user)
         except FSAException as fe:

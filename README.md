@@ -192,6 +192,40 @@ def get_what(flt: str = None):
     …
 ```
 
+### Overall Configuration
+
+Some directives govern various details for this extension internal working.
+
+- `FSA_SECURE` only allows secured requests on non-local connections.
+  Default is *True*
+
+- `FSA_CHECK` tells whether to generate a *500* internal error if a route
+  is missing an explicit authorization check.
+  Default is *True*.
+
+- `FSA_SERVER_ERROR` controls the status code returned on the module internal
+  errors, to help distinguish these from other internal errors which may occur.
+  Default is *500*.
+
+- `FSA_CACHE` controls the type of cache to use, set to None to disallow
+  caches. Values for `cachetools` cache classes are `ttl`, `lru`, `lfu`,
+  `fifo`, `rr`, and `fc-lru` for the `functools` cache class.
+  Default is `ttl` at 10 minutes.
+
+- `FSA_CACHE_OPTS` sets internal cache options with a dictionary.
+
+- `FSA_CACHE_SIZE` controls size of internal caches. Default is *16384*.
+  *None* means unbounded.
+
+- `FSA_401_REDIRECT` url to redirect to on *401*.
+  Default is *None*.
+  This can be used for the web application login page.
+
+- `FSA_URL_NAME` name of parameter for the target URL after a successful login.
+  Default is `URL` if redirect is activated, else *None*.
+  Currently, the login page should use this parameter to redirect to when ok.
+
+
 ### Authentication
 
 Three directives impact how and when authentication is performed.
@@ -231,32 +265,6 @@ methods used by the `get_user` function, as described in the following sections.
   against the request path for skipping systematic authentication when in
   `always` mode.
   Default is empty, i.e. authentication is applied for all paths.
-
-- `FSA_CHECK` tells whether to generate a *500* internal error if a route
-  is missing an explicit authorization check.
-  Default is *True*.
-
-- `FSA_CACHE` controls the type of cache to use, set to None to disallow
-  caches. Values for `cachetools` cache classes are `ttl`, `lru`, `lfu`,
-  `fifo`, `rr`, and `fc-lru` for the `functools` cache class.
-  Default is `ttl` at 10 minutes.
-
-- `FSA_CACHE_OPTS` sets internal cache options with a dictionary.
-
-- `FSA_CACHE_SIZE` controls size of internal caches. Default is *16384*.
-  *None* means unbounded.
-
-- `FSA_401_REDIRECT` url to redirect to on *401*.
-  Default is *None*.
-  This can be used for the web application login page.
-
-- `FSA_URL_NAME` name of parameter for the target URL after a successful login.
-  Default is `URL` if redirect is activated, else *None*.
-  Currently, the login page should use this parameter to redirect to when ok.
-
-- `FSA_SERVER_ERROR` controls the status code returned on the module internal
-  errors, to help distinguish these from other internal errors which may occur.
-  Default is *500*.
 
 The authentication scheme attempted on a route can be altered with the
 `auth` parameter added to the `route` decorator.
@@ -695,6 +703,7 @@ Software license is *public domain*.
 
 Add `FSA_SERVER_ERROR` configuration directive to control the server internal
 error status code.
+Add `FSA_SECURE` to check for secure requests, on by default (sorry!).
 Drop `allparams` and `required` route parameters: they are implicit with a dict
 of keyword arguments and default values.
 
