@@ -1,4 +1,4 @@
--- name: now^
+-- name: now$
 SELECT CURRENT_TIMESTAMP;
 
 -- name: get_stuff_all

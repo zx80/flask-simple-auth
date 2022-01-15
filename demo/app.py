@@ -28,13 +28,13 @@ def get_version():
     return json(fsa.__version__), 200
 
 
-# GET /now: give current time from database
+# GET /now: show current time from database
 @app.get("/now", authorize="ANY")
 def get_now():
-    return json(db.now()[0]), 200
+    return json(db.now()), 200
 
 
-# GET /who: given authenticated user if available
+# GET /who: show authenticated user if available
 @app.get("/who", authorize="ANY")
 def get_who():
     return json(app.current_user()), 200
