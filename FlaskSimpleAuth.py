@@ -623,7 +623,7 @@ class FlaskSimpleAuth:
         self._userp = conf.get("FSA_PARAM_USER", "USER")
         self._passp = conf.get("FSA_PARAM_PASS", "PASS")
         #
-        # hooks
+        # password authentication and authorization hooks
         #
         if "FSA_GET_USER_PASS" in conf:
             self.get_user_pass(conf["FSA_GET_USER_PASS"])
