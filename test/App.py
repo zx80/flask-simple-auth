@@ -309,6 +309,6 @@ def patch_f2():
     return "patch ok", 200
 
 # test underscore params
-@app.get("/_/<_def>", authorize=ANY)
-def get___def(_def: str, _int: int, _pass: bool = True):
-    return f"{_def}/{_int}/{_pass}", 200
+@app.get("/_/<_>", authorize=ANY)
+def get___def(_: str, _int: int, _pass: bool = True):
+    return f"{_}/{_int}/{_pass}", 200
