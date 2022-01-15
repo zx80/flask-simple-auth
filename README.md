@@ -968,3 +968,4 @@ Initial release in beta.
 - drop `FSA_MODE` and `FSA_SKIP_MODE`, implicitely on/empty?
 - test `FSA_HTTP_AUTH_OPTS`?
 - add `any` token scheme?
+- a local cache makes little sense: try with memcached?
