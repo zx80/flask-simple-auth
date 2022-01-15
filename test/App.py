@@ -308,7 +308,13 @@ def delete_f2():
 def patch_f2():
     return "patch ok", 200
 
+class Len:
+    def __init__(self, s):
+        self._len = len(s)
+    def __str__(self):
+        return str(self._len)
+
 # test underscore params
-@app.get("/_/<_>", authorize=ANY)
-def get___def(_: str, _int: int, _pass: bool = True):
-    return f"{_}/{_int}/{_pass}", 200
+@app.get("/_/<_def>", authorize=ANY)
+def get___def(_def: str, _int: int, _: Len, _pass: bool = True):
+    return f"{_def}/{_int}/{_}/{_pass}", 200

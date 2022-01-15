@@ -871,10 +871,10 @@ def test_f2(client):
 
 def test_underscore(client):
     check(400, client.get("/_/foo"))
-    res = check(200, client.get("/_/foo", data={"int": 2}))
-    assert res.data == b"foo/2/True"
-    res = check(200, client.get("/_/bla", data={"int": 4, "pass": False}))
-    assert res.data == b"bla/4/False"
+    res = check(200, client.get("/_/foo", data={"int": 2, "_": "hello"}))
+    assert res.data == b"foo/2/5/True"
+    res = check(200, client.get("/_/bla", data={"int": 4, "_": "world!", "pass": False}))
+    assert res.data == b"bla/4/6/False"
 
 def test_no_cors(client3):
     check(401, client3.get("/add", data={"i": "7", "j": "2"}))
