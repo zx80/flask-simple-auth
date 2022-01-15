@@ -717,8 +717,8 @@ class FlaskSimpleAuth:
     def _get_fake_auth(self):
         """Return fake user. Only for local tests."""
         assert request.remote_user is None, "do not shadow web server auth"
-        assert request.environ["REMOTE_ADDR"][:4] == "127.", \
-            "fake auth only on localhost"
+        assert request.remote_addr.startswith("127.") or \
+               request.remote_addr == "::1", "fake auth only on localhost"
         params = self._params()
         user = params.get(self._login, None)
         # it could check that the user exists in db
