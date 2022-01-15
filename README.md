@@ -960,8 +960,6 @@ Initial release in beta.
 
 ### TODO
 
+- drop `FSA_MODE` and `FSA_SKIP_MODE`, implicitely on/empty?
 - test `FSA_HTTP_AUTH_OPTS`?
 - add `any` token scheme?
-- automate URL-parameter redirect?
-- add forced secure check on non local hosts?
-- drop `FSA_MODE` and `FSA_SKIP_MODE`, implicitely on/empty?
