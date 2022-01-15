@@ -241,171 +241,176 @@ This feature is best avoided but in very particular cases because
 it counters a goal of this module which is to remove authentication
 considerations from the code and put them in the configuration only.
 
-#### `none` Authentication
+#### Authentication Schemes
 
-Use to disactivate authentication.
+The available authentication schemes are:
 
-#### `httpd` Authentication
+- `none`
 
-Inherit web server supplied authentication through `request.remote_user`.
-This is the default.
+  Use to disactivate authentication.
 
-There are plenty authentication schemes available in a web server such as
-[Apache](https://httpd.apache.org/) or [Nginx](https://nginx.org/), all of
-which probably more efficiently implemented than python code, so this
-should be the preferred option.
-However, it could require significant configuration effort compared to
-the application-side approach.
+- `httpd`
 
-#### `basic` Authentication
+  Inherit web server supplied authentication through `request.remote_user`.
+  This is the default.
 
-HTTP Basic password authentication, which rely on the `Authorization`
-HTTP header in the request.
-Directive `FSA_REALM` provides the authentication realm.
+  There are plenty authentication schemes available in a web server such as
+  [Apache](https://httpd.apache.org/) or [Nginx](https://nginx.org/), all of
+  which probably more efficiently implemented than python code, so this
+  should be the preferred option.
+  However, it could require significant configuration effort compared to
+  the application-side approach.
 
-See also [Password Management](#password-management) below for
-how the password is retrieved and checked.
+- `basic`
 
-#### `http-basic` Authentication
+  HTTP Basic password authentication, which rely on the `Authorization`
+  HTTP header in the request.
+  Directive `FSA_REALM` provides the authentication realm.
 
-Same as previous based on [flask-HTTPAuth](https://pypi.org/project/Flask-HTTPAuth/).
+  See also [Password Management](#password-management) below for
+  how the password is retrieved and checked.
 
-Directive `FSA_REALM` provides the authentication realm.
-Directive `FSA_HTTP_AUTH_OPTS` allow to pass additional options to the
-HTTPAuth authentication class.
+- `http-basic`
 
-#### `param` Authentication
+  Same as previous based on [flask-HTTPAuth](https://pypi.org/project/Flask-HTTPAuth/).
 
-HTTP parameter or JSON password authentication.
-User name and password are passed as request parameters.
+  Directive `FSA_REALM` provides the authentication realm.
+  Directive `FSA_HTTP_AUTH_OPTS` allow to pass additional options to the
+  HTTPAuth authentication class.
 
-The following configuration directives are available:
+- `param`
 
- - `FSA_PARAM_USER` parameter name for the user name.
-   Default is `USER`.
- - `FSA_PARAM_PASS` parameter name for the password.
-   Default is `PASS`.
+  HTTP or JSON parameter or password authentication.
+  User name and password are passed as request parameters.
 
-See also [Password Management](#password-management) below for
-how the password is retrieved and checked.
+  The following configuration directives are available:
 
-#### `password` Authentication
+  - `FSA_PARAM_USER` parameter name for the user name.
+    Default is `USER`.
+  - `FSA_PARAM_PASS` parameter name for the password.
+    Default is `PASS`.
 
-Tries `basic` then `param` authentication.
+  See also [Password Management](#password-management) below for
+  the password is retrieved and checked.
 
-#### `http-digest` or `digest` Authentication
+- `password`
 
-HTTP Digest authentication based on [flask-HTTPAuth](https://pypi.org/project/Flask-HTTPAuth/).
+  Tries `basic` then `param` authentication.
 
-Note that the implementation relies on *sessions*, which may require
-the `SECRET_KEY` option to be set to something.
-The documentation states that server-side sessions are needed because
-otherwise the *nonce* and *opaque* parameters could be reused, which
-may be a security issue under some conditions. I'm unsure about that,
-but I agree that client-side cookie sessions are strange things best
-avoided if possible.
+- `http-digest` or `digest`
 
-Directive `FSA_REALM` provides the authentication realm.
-Directive `FSA_HTTP_AUTH_OPTS` allow to pass additional options to the
-HTTPAuth authentication class, such as `use_ha1_pw`, as a dictionary.
+  HTTP Digest authentication based on [flask-HTTPAuth](https://pypi.org/project/Flask-HTTPAuth/).
 
-See also [Password Management](#password-management) below for
-how the password is retrieved and checked. Note that password management
-is different for digest authentication because the simple hash of the
-password or the password itself is needed for the verification.
+  Note that the implementation relies on *sessions*, which may require
+  the `SECRET_KEY` option to be set to something.
+  The documentation states that server-side sessions are needed because
+  otherwise the *nonce* and *opaque* parameters could be reused, which
+  may be a security issue under some conditions. I'm unsure about that,
+  but I agree that client-side cookie sessions are strange things best
+  avoided if possible.
 
-#### `token` Authentication
+  Directive `FSA_REALM` provides the authentication realm.
+  Directive `FSA_HTTP_AUTH_OPTS` allow to pass additional options to the
+  HTTPAuth authentication class, such as `use_ha1_pw`, as a dictionary.
 
-Only rely on signed tokens for authentication.
-A token certifies that a *user* is authenticated in a *realm* up to some
-time *limit*.
-The token is authenticated by a signature which is the hash of the payload
-(*realm*, *user* and *limit*) and a secret hold by the server.
+  See also [Password Management](#password-management) below for
+  how the password is retrieved and checked. Note that password management
+  is different for digest authentication because the simple hash of the
+  password or the password itself is needed for the verification.
 
-There are two token types chosen with the `FSA_TOKEN_TYPE` configuration
-directive: `fsa` is a compact custom format, and `jwt`
-[RFC 7519](https://tools.ietf.org/html/rfc7519) standard based
-on [PyJWT](https://pypi.org/project/PyJWT/) implementation.
+- `token`
 
-The `fsa` token syntax is: `<realm>:<user>:<limit>:<signature>`,
-for instance: `kiva:calvin:20380119031407:4ee89cd4cc7afe0a86b26bdce6d11126`.
-The time limit is a simple UTC timestamp *YYYYMMDDHHmmSS* that
-can be checked easily by the application client.
-Compared to `jwt` tokens, they are easy to interpret and compare manually,
-no decoding is involved.
+  Only rely on signed tokens for authentication.
+  A token certifies that a *user* is authenticated in a *realm* up to some
+  time *limit*.
+  The token is authenticated by a signature which is the hash of the payload
+  (*realm*, *user* and *limit*) and a secret hold by the server.
 
-The following configuration directives are available:
+  There are two token types chosen with the `FSA_TOKEN_TYPE` configuration
+  directive: `fsa` is a compact custom format, and `jwt`
+  [RFC 7519](https://tools.ietf.org/html/rfc7519) standard based
+  on [PyJWT](https://pypi.org/project/PyJWT/) implementation.
 
- - `FSA_TOKEN_TYPE` type of token, either *fsa*, *jwt* or `None` to disable.
-   Default is *fsa*.
- - `FSA_TOKEN_CARRIER` how to transport the token: *bearer* (`Authentication`
-   HTTP header), *param*, *cookie* or *header*.
-   Default is *bearer*.
- - `FKA_TOKEN_NAME` name of parameter or cookie holding the token, or
-   bearer scheme, or header name.
-   Default is *auth* for *param* and *cookie* carrier,
-   *Bearer* for HTTP Authentication header (*bearer* carrier),
-   *Auth* for *header* carrier.
- - `FSA_REALM` realm of authentication for token, basic or digest.
-   Default is the simplified lower case application name.
-   For *jwt*, this is translated as the audience.
- - `FSA_TOKEN_SECRET` secret string used for validating tokens.
-   Default is a system-generated random string containing 256 bits.
-   This default will only work with itself, as it is not shared
-   across server instances or processes.
- - `FSA_TOKEN_SIGN` secret string used for signing tokens, if
-   different from previous secret. This is only relevant for public-key
-   *jwt* schemes (`R…`, `E…`, `P…`).
-   Default is to use the previous secret.
- - `FSA_TOKEN_DELAY` number of minutes of token validity.
-   Default is *60* minutes.
- - `FSA_TOKEN_GRACE` number of minutes of grace time for token validity.
-   Default is *0* minutes.
- - `FSA_TOKEN_ALGO` algorithm used to sign the token.
-   Default is `blake2s` for `fsa` and `HS256` for *jwt*.
- - `FSA_TOKEN_LENGTH` number of hash bytes kept for token signature.
-   Default is *16* for `fsa`. The directive is ignored for `jwt`.
+  The `fsa` token syntax is: `<realm>:<user>:<limit>:<signature>`,
+  for instance: `kiva:calvin:20380119031407:4ee89cd4cc7afe0a86b26bdce6d11126`.
+  The time limit is a simple UTC timestamp *YYYYMMDDHHmmSS* that
+  can be checked easily by the application client.
+  Compared to `jwt` tokens, they are easy to interpret and compare manually,
+  no decoding is involved.
 
-Function `create_token(user)` creates a token for the user depending
-on the current scheme. If `user` is not given, the current user is taken.
+  The following configuration directives are available:
 
-Token authentication is always attempted unless the secret is empty.
-Setting `FSA_AUTH` to `token` results in *only* token authentication to be used.
+  - `FSA_TOKEN_TYPE` type of token, either *fsa*, *jwt* or `None` to disable.
+    Default is *fsa*.
+  - `FSA_TOKEN_CARRIER` how to transport the token: *bearer* (`Authentication`
+    HTTP header), *param*, *cookie* or *header*.
+    Default is *bearer*.
+  - `FKA_TOKEN_NAME` name of parameter or cookie holding the token, or
+    bearer scheme, or header name.
+    Default is *auth* for *param* and *cookie* carrier,
+    *Bearer* for HTTP Authentication header (*bearer* carrier),
+    *Auth* for *header* carrier.
+  - `FSA_REALM` realm of authentication for token, basic or digest.
+    Default is the simplified lower case application name.
+    For *jwt*, this is translated as the audience.
+  - `FSA_TOKEN_SECRET` secret string used for validating tokens.
+    Default is a system-generated random string containing 256 bits.
+    This default will only work with itself, as it is not shared
+    across server instances or processes.
+  - `FSA_TOKEN_SIGN` secret string used for signing tokens, if
+    different from previous secret. This is only relevant for public-key
+    *jwt* schemes (`R…`, `E…`, `P…`).
+    Default is to use the previous secret.
+  - `FSA_TOKEN_DELAY` number of minutes of token validity.
+    Default is *60* minutes.
+  - `FSA_TOKEN_GRACE` number of minutes of grace time for token validity.
+    Default is *0* minutes.
+  - `FSA_TOKEN_ALGO` algorithm used to sign the token.
+    Default is `blake2s` for `fsa` and `HS256` for *jwt*.
+  - `FSA_TOKEN_LENGTH` number of hash bytes kept for token signature.
+    Default is *16* for `fsa`. The directive is ignored for `jwt`.
 
-Token authentication is usually much faster than password verification because
-password checks are designed to be slow so as to hinder password cracking,
-whereas token authentication relies on simple hashing for its security.
-Another benefit of token is that it avoids sending passwords over and over.
-The rational option is to use a password scheme to retrieve a token and then to
-use it till it expires.
+  Function `create_token(user)` creates a token for the user depending
+  on the current scheme. If `user` is not given, the current user is taken.
 
-Token expiration can be understood as a kind of automatic logout, which suggests
-to choose the delay with some care depending on the use case.
+  Token authentication is always attempted unless the secret is empty.
+  Setting `FSA_AUTH` to `token` results in *only* token authentication to be used.
 
-When the token is carried as a *cookie*, it is automatically updated when 25% of
-the delay remains, if possible.
+  Token authentication is usually much faster than password verification because
+  password checks are designed to be slow so as to hinder password cracking,
+  whereas token authentication relies on simple hashing for its security.
+  Another benefit of token is that it avoids sending passwords over and over.
+  The rational option is to use a password scheme to retrieve a token and then to
+  use it till it expires.
 
-Internally *jwt* token checks are cached so that even with slow public-key schemes
-the performance impact should be low.
+  Token expiration can be understood as a kind of automatic logout, which suggests
+  to choose the delay with some care depending on the use case.
 
-#### `http-token` Authentication
+  When the token is carried as a *cookie*, it is automatically updated when 25% of
+  the delay remains, if possible.
 
-Token scheme based on [flask-HTTPAuth](https://pypi.org/project/Flask-HTTPAuth/).
-Carrier is *bearer* or *header*.
+  Internally *jwt* token checks are cached so that even with slow public-key schemes
+  the performance impact should be low.
 
-Directive `FSA_HTTP_AUTH_OPTS` allow to pass additional options to the
-HTTPAuth authentication class, such as `header`, as a dictionary.
+- `http-token`
 
-#### `fake` Authentication
+  Token scheme based on [flask-HTTPAuth](https://pypi.org/project/Flask-HTTPAuth/).
+  Carrier is *bearer* or *header*.
 
-Trust a parameter for authentication claims.
-Only for local tests, obviously.
-This is enforced.
+  Directive `FSA_HTTP_AUTH_OPTS` allow to pass additional options to the
+  HTTPAuth authentication class, such as `header`, as a dictionary.
 
-The following configuration directive is available:
+- `fake`
 
- - `FSA_FAKE_LOGIN` name of parameter holding the user name.
-   Default is `LOGIN`.
+  Trust a parameter for authentication claims.
+  Only for local tests, obviously.
+  This is enforced.
+
+  The following configuration directive is available:
+
+  - `FSA_FAKE_LOGIN` name of parameter holding the user name.
+    Default is `LOGIN`.
+
 
 #### Password Management
 
