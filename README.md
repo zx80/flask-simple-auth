@@ -211,7 +211,7 @@ methods used by the `get_user` function, as described in the following sections.
   not be merged.
   Also, only one HTTPAuth-based scheme can be active at a time.
 
-- `FSA_MODE` tells when to attempt authentication.
+- `FSA_MODE` tells *when* to attempt authentication.
 
   - With `always`, authentication is performed in a before request hook.
     Once in a route function, `get_user` will always return the authenticated
@@ -712,6 +712,7 @@ error status code.
 Add `FSA_SECURE` to check for secure requests, on by default (sorry!).
 Drop `allparams` and `required` route parameters: they are implicit with a dict
 of keyword arguments and default values.
+Improve documentation.
 
 #### 4.6.3 on 2022-01-12
 
@@ -965,7 +966,8 @@ Initial release in beta.
 
 ### TODO
 
+- a local cache makes little sense for a python single process model:
+  try with memcached? redis?
 - drop `FSA_MODE` and `FSA_SKIP_MODE`, implicitely on/empty?
 - test `FSA_HTTP_AUTH_OPTS`?
 - add `any` token scheme?
-- a local cache makes little sense: try with memcached? redis?
