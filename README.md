@@ -694,6 +694,10 @@ Sources are available on [GitHub](https://github.com/zx80/flask-simple-auth)
 and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 Software license is *public domain*.
 
+#### 4.7.1 on 2022-01-16
+
+Bump version in doc.
+
 #### 4.7.0 on 2022-01-16
 
 Add `FSA_SERVER_ERROR` configuration directive to control the server internal
