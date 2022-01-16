@@ -137,24 +137,20 @@ by calling some methods to register helper functions.
 
 ```Python
 from FlaskSimpleAuth import Flask
-app = Flask("test")
-app.config.from_envvar("TEST_CONFIG")
+app = Flask("acme")
+app.config.from_envvar("ACME_CONFIG")
 
 # register hooks
 
-# return password hash if any, or None
+# return password hash if any (see with FSA_GET_USER_PASS)
 @app.get_user_pass
 def get_user_pass(user):
     return …
 
-# return whether user is in group
+# return whether user is in group (see with FSA_USER_IN_GROUP)
 @app.user_in_group
 def user_in_group(user, group):
     return …
-
-# they can also be provided in the Flask configuration with
-# - FSA_GET_USER_PASS
-# - FSA_USER_IN_GROUP
 ```
 
 Once initialized `app` is a standard Flask object with some additions:
@@ -163,16 +159,16 @@ Once initialized `app` is a standard Flask object with some additions:
   parameter and transparent management of request parameters.
 - per-method shortcut decorators `post`, `get`, `put`, `patch` and `delete` which
   support the same extensions.
-- `user_in_group` and `get_user_pass` methods/decorator to register helper functions.
+- `user_in_group` and `get_user_pass` methods/decorators to register helper functions.
 - `get_user` to extract the authenticated user or raise an `FSAException`.
 - `current_user` to get the authenticated user if any, or `None`.
 - `hash_password` and `check_password` to hash or check a password.
 - `create_token` to compute a new authentication token for the current user.
-- `clear_caches` to clear internal caches.
+- `clear_caches` to clear internal process caches.
 
-Alternatively, it is possible to use the flask extension model, in which case
-the `FlaskSimpleAuth` object must be instanciated and routes must be created
-using this object:
+Alternatively, it is possible but not recommended to use the flask extensions
+model, in which case the `FlaskSimpleAuth` object must be instanciated and
+routes *must* be created using this object:
 
 ```Python
 from flask import Flask
@@ -187,7 +183,7 @@ from DemoAdmin import abp
 fsa.register_blueprint(abp, url_path="/admin")
 
 # define a route with an optional paramater "flt"
-@fsa.get("/users", authorize="ALL")
+@fsa.get("/what", authorize="ALL")
 def get_what(flt: str = None):
     …
 ```
@@ -327,7 +323,7 @@ The available authentication schemes are:
   (*realm*, *user* and *limit*) and a secret hold by the server.
 
   There are two token types chosen with the `FSA_TOKEN_TYPE` configuration
-  directive: `fsa` is a compact custom format, and `jwt`
+  directive: `fsa` is a simple compact custom format, and `jwt`
   [RFC 7519](https://tools.ietf.org/html/rfc7519) standard based
   on [PyJWT](https://pypi.org/project/PyJWT/) implementation.
 
@@ -342,14 +338,14 @@ The available authentication schemes are:
 
   - `FSA_TOKEN_TYPE` type of token, either *fsa*, *jwt* or `None` to disable.
     Default is *fsa*.
-  - `FSA_TOKEN_CARRIER` how to transport the token: *bearer* (`Authentication`
+  - `FSA_TOKEN_CARRIER` how to transport the token: *bearer* (`Authorization`
     HTTP header), *param*, *cookie* or *header*.
     Default is *bearer*.
   - `FKA_TOKEN_NAME` name of parameter or cookie holding the token, or
     bearer scheme, or header name.
-    Default is *auth* for *param* and *cookie* carrier,
-    *Bearer* for HTTP Authentication header (*bearer* carrier),
-    *Auth* for *header* carrier.
+    Default is `auth` for *param* and *cookie* carrier,
+    `Bearer` for HTTP Authentication header (*bearer* carrier),
+    `Auth` for *header* carrier.
   - `FSA_REALM` realm of authentication for token, basic or digest.
     Default is the simplified lower case application name.
     For *jwt*, this is translated as the audience.
@@ -406,8 +402,6 @@ The available authentication schemes are:
   Only for local tests, obviously.
   This is enforced.
 
-  The following configuration directive is available:
-
   - `FSA_FAKE_LOGIN` name of parameter holding the user name.
     Default is `LOGIN`.
 
@@ -436,31 +430,30 @@ The following configuration directives are available to configure
 
 Beware that modern password checking is often pretty expensive in order to
 thwart password cracking if the hashed passwords are leaked, so that you
-do not want to have to use that on every request in real life (eg hundreds
+do not want to have to use that on every request in real life (eg *hundreds*
 milliseconds for passlib bcrypt *12* rounds).
 The above defaults result in manageable password checks of a few milliseconds.
 Consider using tokens to reduce the authentication load on each request.
 
 For `digest` authentication, the password must be either in *plaintext* or a
-simple MD5 hash ([RFC 2617](https://www.rfc-editor.org/rfc/rfc2617.txt)), and
-the authentication setup must be consistent (set `use_ha1_pw` as *True* for the
+simple MD5 hash ([RFC 2617](https://www.rfc-editor.org/rfc/rfc2617.txt)).
+The authentication setup must be consistent (set `use_ha1_pw` as *True* for the
 later).
 As retrieving the stored information is enough to steal the password (plaintext)
-or at least impersonate a user, consider avoiding `digest` altogether.
+or at least impersonate a user (hash), consider avoiding `digest` altogether.
 HTTP Digest Authentication only makes sense for unencrypted connexions, which
 are a bad practice anyway.
 It is just provided here for completeness.
 
 Function `hash_password(pass)` computes the password salted digest compatible
-with the current configuration.
-
-An opened route for user registration with mandatory parameters
+with the current configuration, and may be used for setting or resetting
+passwords. An opened route for user registration with mandatory parameters
 could look like that:
 
 ```Python
-@app.route("/register", methods=["POST"], authorize="ANY")
+@app.post("/register", authorize="ANY")
 def post_register(user: str, password: str):
-    if user_already_exists_somewhere(user):
+    if user_already_exists(user):
         return f"cannot create {user}", 409
     add_new_user_with_hashed_pass(user, app.hash_password(password))
     return "", 201
@@ -472,7 +465,7 @@ by a password method:
 
 ```Python
 # token creation route for all registered users
-@app.route("/login", methods=["GET"], authorize="ALL")
+@app.get("/login", authorize="ALL")
 def get_login():
     return jsonify(app.create_token()), 200
 ```
@@ -486,9 +479,9 @@ headers for authenticating later requests, till it expires.
 Role-oriented authorizations are managed through the `authorize` parameter to
 the `route` decorator, which provides just one or possibly a list of roles
 authorized to call a route. A role is identified as an integer or a string.
-The check calls `user_in_group(user, group)` function to check whether the
+The `user_in_group(user, group)` function is called to check whether the
 authenticated user belongs to any of the authorized roles.
-Because this function is cached by default, caches must be reset when roles
+Because this function is cached by default, caches should be reset when roles
 are changed by calling `clear_caches`.
 
 There are three special values that can be passed to the `authorize` decorator:
@@ -506,13 +499,13 @@ For those, careful per-operation authorization will still be needed.
 ### Parameters
 
 Request parameters (HTTP or JSON) are translated automatically to
-function parameters, by relying on function type annotations.
+named function parameters, by relying on function type annotations.
 The decorator guesses whether parameters are mandatory based on
 provided default values, i.e. they are optional when a default is provided.
 
 ```python
-@app.route("/something/<id>", methods=…, authorize=…)
-def do_some_id(id: int, when: date, what: str = "nothing"):
+@app.get("/something/<id>", authorize=…)
+def get_something_id(id: int, when: date, what: str = "nothing"):
     # `id` is an integer path-parameter
     # `when` is a mandatory date HTTP or JSON parameter
     # `what` is an optional string HTTP or JSON parameter
@@ -535,11 +528,6 @@ provided into it, as shown below:
 def put_awesome(**kwargs):
     …
 ```
-
-A side-effect of passing of request parameters as named function parameters
-is that request parameter names must be valid python identifiers,
-which excludes keywords such as `pass`, `def` or `for`, unless passed
-as keyword arguments.
 
 Custom classes can be used as path and HTTP parameter types, provided that
 the constructor accepts a string to convert the parameter value to the
@@ -587,7 +575,8 @@ def put_user_pass(_pass: str, _def: str, _import: str):
 ### Utils
 
 Utilities include the `Reference` generic object wrapper class and
-CORS handling.
+miscellaneous configuration directives which cover security,
+caching and CORS.
 
 #### `Reference` Object Wrapper
 
