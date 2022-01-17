@@ -966,4 +966,14 @@ Initial release in beta.
 - test `FSA_HTTP_AUTH_OPTS`?
 - add `any` token scheme?
 - authorize model on objects and a another support function?
-  `authorize=("kind-of-object", id_of_object)` would call `get_authorization`?
+  `authorize=("kind-of-object", id_of_object)` would call `check_authorization`?
+  where is the id?
+  per-object authorization helpers could be recorded with
+  `fsa.authorization("kind-of-object", fun: Callable[[oid,uid],bool])`
+  ```Python
+  @app.get("/foo/<fid>", authorize="ALL")
+  def get_foo_id(fid: int):
+      app.check_authorization("foo", fid)  # raise Exception if access is not ok
+      return json(db.get_foo_id(fid)), 200
+  ``` 
+  how to ensure that there is such a call?
