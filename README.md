@@ -977,3 +977,4 @@ Initial release in beta.
       return json(db.get_foo_id(fid)), 200
   ``` 
   how to ensure that there is such a call?
+  how to move the constraint to the decorator?
