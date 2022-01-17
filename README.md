@@ -965,3 +965,5 @@ Initial release in beta.
 - drop `FSA_MODE` and `FSA_SKIP_MODE`, implicitely on/empty?
 - test `FSA_HTTP_AUTH_OPTS`?
 - add `any` token scheme?
+- authorize model on objects and a another support function?
+  `authorize=("kind-of-object", id_of_object)` would call `get_authorization`?
