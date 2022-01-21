@@ -24,7 +24,8 @@ app.config.update(
                      r"/(add|div|mul|sub|type|params|any|mis[12]|nogo|one)",
                      r"/(infer|superid|cplx|bool|mail|path|string|auth|f2|myint)"),
     FSA_GET_USER_PASS = get_user_pass,
-    FSA_USER_IN_GROUP = user_in_group
+    FSA_USER_IN_GROUP = user_in_group,
+    FSA_LOGGING_LEVEL = logging.DEBUG,
 )
 
 from SubApp import subapp
@@ -142,7 +143,7 @@ import flask
 
 # missing authorization check with parameters
 @flask.Flask.route(app, "/mis1", methods=["GET"])
-@app._fsa._parameters()
+@app._fsa._parameters("/mis1")
 def get_mis1(i: int = 0):
     return "", 200
 

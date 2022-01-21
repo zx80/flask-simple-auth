@@ -101,6 +101,8 @@ ANY = "ANY"    # anyone can come in, no authentication required
 ALL = "ALL"    # all authenticated users are allowed
 NONE = "NONE"  # none can come in, the path is forbidden
 
+_PREDEFS = (ANY, ALL, NONE)
+
 
 def typeof(p: inspect.Parameter):
     """Guess parameter type, possibly with some type inference."""
@@ -227,8 +229,15 @@ class Flask(flask.Flask):
         return self._fsa.user_in_group(uig)
 
     def register_cast(self, t, c):
-        """Register a cast function for a type."""
+        """Add a cast function for a type."""
         self._fsa.register_cast(t, c)
+
+    def register_object_perms(self, d, f):
+        """Add an object permission checker for a domain."""
+        self._fsa.register_object_perms(d, f)
+
+    def check_object_perms(self, login, domain, oid, mode):
+        return self._fsa.check_object_perms(login, domain, oid, mode)
 
     # password management
     def check_password(self, pwd, ref):
@@ -298,6 +307,7 @@ class FlaskSimpleAuth:
         self._app = app
         self._get_user_pass = None
         self._user_in_group = None
+        self._object_perms: Dict[Any, Callable[[str, Any, Optional[str]], bool]] = dict()
         self._auth: List[str] = []
         self._saved_auth: Optional[List[str]] = None
         self._http_auth = None
@@ -363,6 +373,8 @@ class FlaskSimpleAuth:
                 sep = "&" if "?" in self._url_name else "?"
                 import urllib
                 location += sep + urllib.parse.urlencode({self._url_name: request.url})
+            # must not trigger "missing authorization" if 401 is turned into 307
+            self._need_authorization = False
             return redirect(location, 307)
         return res
 
@@ -443,8 +455,17 @@ class FlaskSimpleAuth:
         return uig
 
     def register_cast(self, t, c):
-        """Register a cast function for a type."""
+        """Add a cast function for a type."""
         register_cast(t, c)
+
+    def register_object_perms(self, domain, checker: Callable):
+        """Add an object permission helper for a domain."""
+        self._object_perms[domain] = checker
+
+    def check_object_perms(self, user, domain, oid, mode):
+        """Tell whether user can access object oid in domain for mode."""
+        assert domain in self._object_perms
+        return self._object_perms[domain](user, oid, mode)
 
     #
     # DEFERRED INITIALIZATIONS
@@ -935,11 +956,10 @@ class FlaskSimpleAuth:
         """Create a new token for user depending on the configuration."""
         assert self._token
         user = user or self.get_user()
-        realm, delay = self._realm, self._delay
         if self._token == "fsa":
-            return self._get_fsa_token(realm, user, delay, self._secret)
+            return self._get_fsa_token(self._realm, user, self._delay, self._secret)
         else:
-            return self._get_jwt_token(realm, user, delay, self._sign)
+            return self._get_jwt_token(self._realm, user, self._delay, self._sign)
 
     def _get_fsa_token_auth(self, token):
         """Tell whether FSA token is ok: return validated user or None.
@@ -1095,97 +1115,108 @@ class FlaskSimpleAuth:
             if fun and hasattr(fun, "cache_clear"):
                 fun.cache_clear()
 
+    def _safe_call(self, path, level, fun, *args, **kwargs):
+        """Call a route function ensuring a response."""
+
+        try:  # the actual call
+            res = fun(*args, **kwargs)
+        except FSAException as e:  # something went wrong
+            res = self._Resp(e.message, e.status)
+        except Exception as e:  # something went really wrong
+            log.error(f"internal error on {request.method} {request.path}: {e}")
+            res = self._Resp(f"internal error caught at {level} on {path}", self._server_error)
+
+        return res
+
     #
-    # authorize internal decorator
+    # INTERNAL DECORATORS
     #
-    def _authorize(self, *groups, auth=None):
-        """Decorator to authorize groups."""
+    # _authenticate: set self._user
+    #   _group_auth: check group authorization
+    #   _parameters: handle HTTP/JSON to python parameter translation
+    #    _perm_auth: check per-object permissions
+    #   _any_noauth: validate that no authorization was needed
+    #
+    def _authenticate(self, path, auth=None):
+        """Decorator to authenticate current user."""
 
-        if len(groups) > 1 and \
-           (ANY in groups or ALL in groups or NONE in groups or None in groups):
-            raise Exception("must not mix ANY/ALL/NONE and other groups")
-
-        if ANY not in groups and ALL not in groups and \
-           NONE not in groups and None not in groups:
-            assert self._user_in_group, \
-                "user_in_group callback needed for authorize"
-
+        # check auth parameter
         if auth:
+            # log.error(f"auth = {auth}") FIXME
             if isinstance(auth, str):
                 auth = [auth]
             for a in auth:
                 if a not in self._FSA_AUTH:
-                    raise Exception(f"unexpected authentication scheme {auth}")
+                    raise Exception(f"unexpected authentication scheme {auth} on {path}")
 
         def decorate(fun: Callable):
 
             @functools.wraps(fun)
             def wrapper(*args, **kwargs):
-                # track that some autorization check was performed
-                self._need_authorization = False
-                # shortcuts
-                if NONE in groups or None in groups:
-                    return self._Resp("", 403)
-                if ANY in groups:
-                    try:
-                        return fun(*args, **kwargs)
-                    except FSAException as e:
-                        return self._Resp(e.message, e.status)
+
                 # get user if needed
-                if not self._user:
-                    # no current user, try to get one?
-                    if self._mode != "always":
-                        # possibly overwrite the authentication scheme
-                        # it will be restored in an after request hook
-                        # NOTE this may or may not work because other settings may
-                        #   not be compatible with the provided scheme…
-                        if auth:
-                            self._saved_auth, self._auth = self._auth, auth
-                        try:
-                            self._user = self.get_user()
-                        except FSAException as e:
-                            return self._Resp(e.message, e.status)
-                    else:
-                        return self._Resp("", 401)
-                if not self._user:  # pragma: no cover
-                    return self._Resp("", 401)  # should be unreachable
-                # shortcut for authenticated users
-                if ALL in groups:
+                if not self._user_set:
+                    # possibly overwrite the authentication scheme
+                    # it will be restored in an after request hook
+                    # NOTE this may or may not work because other settings may
+                    #   not be compatible with the provided scheme…
+                    if auth:
+                        self._saved_auth, self._auth = self._auth, auth
                     try:
-                        return fun(*args, **kwargs)
+                        # log.warning(f"auth = {self._auth}")
+                        self._user = self.get_user()
                     except FSAException as e:
                         return self._Resp(e.message, e.status)
-                # check against all authorized groups/roles
-                for r in groups:
-                    try:
-                        uig = self._user_in_group(self._user, r)
-                    except FSAException as fe:
-                        return self._Resp(fe.message, fe.status)
-                    except Exception as e:
-                        log.error(f"user_in_group failed: {e}")
-                        return self._Resp("internal error in user_in_group", self._server_error)
-                    if not isinstance(uig, bool):
-                        log.error(f"type error in user_in_group: {type(uig)}, must return a boolean")
-                        return self._Resp("internal error with user_in_group", self._server_error)
-                    if uig:
-                        try:
-                            return fun(*args, **kwargs)
-                        except FSAException as e:
-                            return self._Resp(e.message, e.status)
-                # else no matching group
-                return self._Resp("", 403)
+
+                if not self._user:
+                    return self._Resp("", 401)
+
+                return self._safe_call(path, "authenticate", fun, *args, **kwargs)
 
             return wrapper
 
         return decorate
 
-    #
-    # parameters internal decorator
-    #
-    # translate HTTP or JSON parameters to python parameters based on their
-    # declared names, types and default values.
-    #
-    def _parameters(self):
+    def _group_auth(self, path, *groups):
+        """Decorator to authorize user groups."""
+
+        for group in _PREDEFS:
+            assert group not in groups, f"unexpected predefined {group}"
+
+        assert self._user_in_group, \
+            "user_in_group callback needed for group authorization on {path}"
+
+        def decorate(fun: Callable):
+
+            @functools.wraps(fun)
+            def wrapper(*args, **kwargs):
+
+                # track that some autorization check was performed
+                self._need_authorization = False
+
+                # check against all authorized groups/roles
+                for group in groups:
+                    try:
+                        ok = self._user_in_group(self._user, group)
+                    except FSAException as fe:
+                        return self._Resp(fe.message, fe.status)
+                    except Exception as e:
+                        log.error(f"user_in_group failed: {e}")
+                        return self._Resp("internal error in user_in_group", self._server_error)
+                    if not isinstance(ok, bool):
+                        log.error(f"type error in user_in_group: {type(ok)}, must return a boolean")
+                        return self._Resp("internal error with user_in_group", self._server_error)
+                    if not ok:
+                        return self._Resp("", 403)
+
+                # all groups are ok, proceed to call underlying function
+                return self._safe_call(path, "group authorization", fun, *args, **kwargs)
+
+            return wrapper
+
+        return decorate
+
+    def _parameters(self, path):
         """Decorator to handle request parameters."""
 
         def decorate(fun: Callable):
@@ -1215,12 +1246,6 @@ class FlaskSimpleAuth:
             def wrapper(*args, **kwargs):
                 # NOTE *args and **kwargs are empty before being filled in from HTTP
 
-                # this cannot happen under normal circumstances
-                if self._need_authorization and self._check and \
-                        not (self._cors and request.method == 'OPTIONS'):  # pragma: no cover
-                    log.error("missing authorization check in parameter wrapper")
-                    return self._Resp("missing authorization check", self._server_error)
-
                 # translate request parameters to named function parameters
                 params = self._params()
 
@@ -1246,7 +1271,7 @@ class FlaskSimpleAuth:
                             try:
                                 kwargs[p] = typing(kwargs[p])
                             except Exception as e:
-                                return self._Resp(f"type error on path parameter \"{pn}\": ({e})", 404)
+                                return self._Resp(f"type error on path parameter \"{pn}\": ({e})", 400)
 
                 # possibly add others, without shadowing already provided ones
                 if keywords:
@@ -1254,38 +1279,125 @@ class FlaskSimpleAuth:
                         if p not in kwargs:
                             kwargs[p] = params[p]
 
-                # then call the initial function
-                try:
-                    return fun(*args, **kwargs)
-                except FSAException as e:
-                    return self._Resp(e.message, e.status)
-                except Exception as e:
-                    log.error(f"internal error on {request.method} {request.path}: {e}")
-                    return self._Resp(f"internal error on {request.method} {request.path}", self._server_error)
+                return self._safe_call(path, "parameters", fun, *args, **kwargs)
 
             return wrapper
 
         return decorate
 
+    def _perm_auth(self, path, *perms):
+        """Decorator for per-object permissions."""
+        # check perms wrt to recorded per-object checks
+
+        # normalize tuples length to 3
+        perms = list(map(lambda a: (a + (None,)) if len(a) == 2 else a, perms))
+
+        # perm checks
+        for perm in perms:
+            if not len(perm) == 3:
+                raise Exception(f"per-object permission tuples must have 3 data {perm} on {path}")
+            domain, name, mode = perm
+            if domain not in self._object_perms:
+                raise Exception(f"missing object permission checker for {perm} on {path}")
+            if not isinstance(name, str):
+                raise Exception(f"unexpected identifier name type ({type(name)}) for {perm} on {path}")
+            if mode is not None and type(mode) not in (int, str):
+                raise Exception(f"unexpected mode type ({type(mode)}) for {perm} on {path}")
+
+        def decorate(fun: Callable):
+
+            # check perms wrt fun signature
+            for p in perms:
+                domaine, name, mode = p
+                if name != "current_user" and name not in fun.__code__.co_varnames:
+                    raise Exception(f"missing function parameter {name} for {perm} on {path}")
+                # FIXME should parameter type be restricted to int or str?
+
+            @functools.wraps(fun)
+            def wrapper(*args, **kwargs):
+
+                # track that some autorization check was performed
+                self._need_authorization = False
+
+                for perm in perms:
+                    domain, name, mode = perm
+                    val = self._user if name == "current_user" else kwargs[name]
+                    try:
+                        ok = self.check_object_perms(self._user, domain, val, mode)
+                    except FSAException as e:
+                        return self._Resp(e.message, e.status)
+                    except Exception as e:
+                        log.error(f"internal error on {request.method} {request.path} permission {perm} check: {e}")
+                        return self._Resp("internal error in permission check", self._server_error)
+                    if not isinstance(ok, bool):  # paranoid?
+                        log.error(f"type error on on {request.method} {request.path} permission {perm} check: {type(ok)}")
+                        return self._Resp("internal error with permission check", self._server_error)
+                    if not ok:
+                        return self._Resp("", 403)
+
+                # then call the initial function
+                return self._safe_call(path, "perm authorization", fun, *args, **kwargs)
+
+            return wrapper
+
+        return decorate
+
+    # just to record that no authorization check was needed
+    def _any_noauth(self, path, *groups):
+
+        # FIXME
+        # assert len(groups) == 1 and ANY in groups or ALL in groups
+
+        def decorate(fun: Callable):
+
+            @functools.wraps(fun)
+            def wrapper(*args, **kwargs):
+                self._need_authorization = False
+                return self._safe_call(path, "no authorization", fun, *args, **kwargs)
+
+            return wrapper
+
+        return decorate
+
+    # FIXME endpoint?
     def add_url_rule(self, rule, endpoint=None, view_func=None, authorize=NONE,
                      auth=None, **options):
         """Route decorator helper method."""
-
-        log.debug(f"adding {rule}")
 
         # lazy initialization
         if not self._initialized:
             self.initialize()
 
-        # make authorize parameter it a list/tuple
-        roles = authorize
-        if isinstance(roles, str):
-            roles = (roles,)
-        elif isinstance(roles, int):
-            roles = (roles,)
+        # ensure that authorize is a list
+        if type(authorize) in (int, str, tuple):
+            authorize = [authorize]
 
-        from collections.abc import Iterable
-        assert isinstance(roles, Iterable)
+        # normalize None to NONE
+        authorize = list(map(lambda a: NONE if a is None else a, authorize))
+
+        # ensure non emptyness
+        if len(authorize) == 0:
+            authorize = [NONE]
+
+        # separate groups and perms
+        predefs = list(filter(lambda a: a in _PREDEFS, authorize))
+        groups = list(filter(lambda a: type(a) in (int, str) and a not in _PREDEFS, authorize))
+        perms = list(filter(lambda a: isinstance(a, tuple), authorize))
+
+        # authorize are either in groups or in perms
+        if len(authorize) != len(groups) + len(perms) + len(predefs):
+            bads = list(filter(lambda a: a not in groups and a not in perms and a not in predefs, authorize))
+            raise Exception(f"Unexpected authorizations on {rule}: {bads}")
+
+        if NONE in predefs:
+            groups, perms = [], []
+        elif ANY in predefs:
+            if len(predefs) > 1:
+                raise Exception(f"cannot mix ANY/ALL predefined groups on {path}")
+            if groups:
+                raise Exception(f"cannot mix ANY and other groups on {path}")
+            if perms:
+                raise Exception(f"cannot mix ANY with per-object permissions on {path}")
 
         from uuid import UUID
         # add the expected type to path sections, if available
@@ -1305,18 +1417,55 @@ class FlaskSimpleAuth:
                         splits[i] = f"string:{spec}>{remainder}"
         newpath = "<".join(splits)
 
-        assert self._app
-        par = self._parameters()(view_func)
-        aut = self._authorize(*roles, auth=auth)(par)
-        return flask.Flask.add_url_rule(self._app, newpath, endpoint=endpoint, view_func=aut, **options)
+        # special shortcut for NONE
+        if NONE in predefs:
+
+            @functools.wraps(view_func)
+            def r403():
+                return "currently closed route", 403
+
+            return flask.Flask.add_url_rule(self._app, newpath, endpoint=endpoint,
+                                            view_func=r403, **options)
+
+        fun = view_func
+
+        # else only add needed filters on top of "fun"
+        need_authenticate = ALL in predefs or groups or perms
+        need_parameters = len(fun.__code__.co_varnames) > 0
+
+        if perms:
+            assert need_authenticate
+            fun = self._perm_auth(newpath, *perms)(fun)
+        if need_parameters:
+            fun = self._parameters(newpath)(fun)
+        if groups:
+            assert need_authenticate
+            fun = self._group_auth(newpath, *groups)(fun)
+        if ANY in predefs:
+            assert not groups and not perms
+            fun = self._any_noauth(newpath, *groups)(fun)
+        if ALL in predefs:
+            assert need_authenticate
+            fun = self._any_noauth(newpath, *groups)(fun)
+        if need_authenticate:
+            assert perms or groups or ALL in predefs
+            log.warning(f"authenticate on {newpath}")
+            fun = self._authenticate(newpath, auth=auth)(fun)
+        else:
+            log.warning(f"no authenticate on {newpath}")
+
+        assert fun != view_func, "some wrapping added"
+
+        return flask.Flask.add_url_rule(self._app, newpath, endpoint=endpoint, view_func=fun, **options)
 
     def route(self, rule, **options):
         """Extended `route` decorator provided by the extension."""
         if "authorize" not in options:
             log.warning(f"missing authorize on route \"{rule}\" makes it 403 Forbidden")
 
-        def decorate(fun):
+        def decorate(fun: Callable):
             return self.add_url_rule(rule, view_func=fun, **options)
+
         return decorate
 
     # support Flask 2.0 per-method decorator shortcuts

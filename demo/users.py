@@ -15,6 +15,7 @@ def get_users():
 
 
 # GET /users/<login>: get this user data
+# @users.get("/users/<login>", authorize=("user", "login"))
 @users.get("/users/<login>", authorize="ADMIN")
 def get_users_login(login: str):
     res = db.get_user_data(login=login)
