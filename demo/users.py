@@ -15,8 +15,7 @@ def get_users():
 
 
 # GET /users/<login>: get this user data
-# @users.get("/users/<login>", authorize=("user", "login"))
-@users.get("/users/<login>", authorize="ADMIN")
+@users.get("/users/<login>", authorize=("users", "login"))
 def get_users_login(login: str):
     res = db.get_user_data(login=login)
     return (json(res), 200) if res else ("", 404)
@@ -42,7 +41,7 @@ def patch_users_login(login: str, _pass: str = None, admin: bool = None):
 
 
 # DELETE /users/<login>: delete this user
-@users.delete("/users/<login>", authorize="ADMIN")
+@users.delete("/users/<login>", authorize=("users", "login"))
 def delete_users_login(login: str):
     res = db.get_user_data(login=login)
     if not res:

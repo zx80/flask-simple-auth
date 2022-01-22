@@ -140,7 +140,8 @@ def test_users(client):
     check(201, client.post("/users", data={"login": "tmp", "pass": "tmp", "admin": False}, headers=FOO_BASIC))
     check(200, client.get("/stuff/1", headers=TMP_BASIC))
     check(403, client.get("/users", headers=TMP_BASIC))
-    # check(200, client.get("/users/tmp", headers=TMP_BASIC))  # self!
+    check(403, client.get("/users/foo", headers=TMP_BASIC))  # not self!
+    check(200, client.get("/users/tmp", headers=TMP_BASIC))  # self!
     check(204, client.patch("/users/tmp", data={"admin": True}, headers=FOO_BASIC))
     check(200, client.get("/users", headers=TMP_BASIC))
     check(204, client.patch("/users/tmp", data={"pass": "TMP"}, headers=FOO_BASIC))

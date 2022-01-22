@@ -237,6 +237,7 @@ class Flask(flask.Flask):
         self._fsa.register_object_perms(d, f)
 
     def check_object_perms(self, login, domain, oid, mode):
+        """Tell whether login can access domain(oid) in mode."""
         return self._fsa.check_object_perms(login, domain, oid, mode)
 
     # password management
