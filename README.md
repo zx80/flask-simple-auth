@@ -94,11 +94,8 @@ For registration, support functions allow to hash new passwords consistently
 with password checks.
 
 [**Authorizations**](#authorization) are managed by declaring permissions
-on a route (eg a role name), and relies on a supplied function to check
-whether a user has this role.
-This approach is enough for simple authorization management, but would be
-insufficient for realistic applications where users can edit their own data
-but not those of others.
+on a route (eg a role name, or an object access), and relies on a supplied
+functions to check whether a user has this role or can access an object.
 An additional feature is that the application aborts requests on routes
 for which there is no explicit authorization declarations, allowing to
 catch forgotten requirements (see `FSA_CHECK` below).
@@ -140,7 +137,7 @@ from FlaskSimpleAuth import Flask
 app = Flask("acme")
 app.config.from_envvar("ACME_CONFIG")
 
-# register hooks
+# register some hooks
 
 # return password hash if any (see with FSA_GET_USER_PASS)
 @app.get_user_pass
@@ -165,6 +162,7 @@ Once initialized `app` is a standard Flask object with some additions:
 - `hash_password` and `check_password` to hash or check a password.
 - `create_token` to compute a new authentication token for the current user.
 - `clear_caches` to clear internal process caches.
+- `register_object_perms` function to register a per-object permission helper function.
 
 Alternatively, it is possible but not recommended to use the flask extensions
 model, in which case the `FlaskSimpleAuth` object must be instanciated and
@@ -476,13 +474,27 @@ headers for authenticating later requests, till it expires.
 
 ### Authorization
 
+The modules supports two permission model:
+
+ - a group-oriented model
+ - an object-oriented model
+
+#### Group Authorizations
+
 Role-oriented authorizations are managed through the `authorize` parameter to
 the `route` decorator, which provides just one or possibly a list of roles
-authorized to call a route. A role is identified as an integer or a string.
+necessary to call a route. A role is identified as an integer or a string.
 The `user_in_group(user, group)` function is called to check whether the
-authenticated user belongs to any of the authorized roles.
+authenticated user belongs to a given group.
 Because this function is cached by default, caches should be reset when roles
 are changed by calling `clear_caches`.
+
+```Python
+@app.get("/admin-only", authorize="ADMIN")
+def get_admin_only():
+    # only authenticated "ADMIN" users can get here!
+    …
+```
 
 There are three special values that can be passed to the `authorize` decorator:
 
@@ -491,10 +503,27 @@ There are three special values that can be passed to the `authorize` decorator:
  - `NONE` returns a *403* on all access. It can be used to close a route
    temporarily. This is the default.
 
+```Python
+@app.get("/closed", authorize=NONE)
+def get_closed():
+    # nobody can get here
+
+@app.get("/authenticated", authorize=ALL)
+def get_authenticated():
+    # ALL authenticated users can get here
+
+@app.get("/opened", authorize=ANY)
+def get_opened():
+    # ANYone can get here, no authentication is required
+```
+
 Note that this simplistic model does is not enough for non-trivial applications,
 where permissions on objects often depend on the object owner.
-For those, careful per-operation authorization will still be needed.
+For those, careful per-object and pre-operation authorization will still be needed.
 
+#### Object Authorizations
+
+TODO
 
 ### Parameters
 
