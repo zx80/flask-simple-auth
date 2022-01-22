@@ -236,10 +236,6 @@ class Flask(flask.Flask):
         """Add an object permission checker for a domain."""
         self._fsa.register_object_perms(d, f)
 
-    def check_object_perms(self, login, domain, oid, mode):
-        """Tell whether login can access domain(oid) in mode."""
-        return self._fsa.check_object_perms(login, domain, oid, mode)
-
     # password management
     def check_password(self, pwd, ref):
         """Check whether password is ok wrt to current password manager."""
@@ -463,7 +459,7 @@ class FlaskSimpleAuth:
         """Add an object permission helper for a domain."""
         self._object_perms[domain] = checker
 
-    def check_object_perms(self, user, domain, oid, mode):
+    def _check_object_perms(self, user, domain, oid, mode):
         """Tell whether user can access object oid in domain for mode."""
         assert domain in self._object_perms
         return self._object_perms[domain](user, oid, mode)
@@ -1101,7 +1097,7 @@ class FlaskSimpleAuth:
         return self.get_user(required=False)
 
     # methods that may be cached
-    _CACHABLE = ("_get_jwt_token_auth", "_get_fsa_token_auth", "_get_user_pass", "_user_in_group")
+    _CACHABLE = ("_get_jwt_token_auth", "_get_fsa_token_auth", "_get_user_pass", "_user_in_group", "_check_object_perms")
 
     def _set_caches(self):
         """Create caches around some functions."""
@@ -1310,7 +1306,7 @@ class FlaskSimpleAuth:
             # check perms wrt fun signature
             for p in perms:
                 domaine, name, mode = p
-                if name != "current_user" and name not in fun.__code__.co_varnames:
+                if name not in fun.__code__.co_varnames:
                     raise Exception(f"missing function parameter {name} for {perm} on {path}")
                 # FIXME should parameter type be restricted to int or str?
 
@@ -1322,9 +1318,9 @@ class FlaskSimpleAuth:
 
                 for perm in perms:
                     domain, name, mode = perm
-                    val = self._user if name == "current_user" else kwargs[name]
+                    val = kwargs[name]
                     try:
-                        ok = self.check_object_perms(self._user, domain, val, mode)
+                        ok = self._check_object_perms(self._user, domain, val, mode)
                     except FSAException as e:
                         return self._Resp(e.message, e.status)
                     except Exception as e:
