@@ -962,6 +962,7 @@ Initial release in beta.
 - doc advise token + one route basic ; generate 401 Bearer?
 - a local cache makes little sense for a python single process model:
   try with memcached? redis?
+- report cache hits?
 - drop `FSA_MODE` and `FSA_SKIP_MODE`, implicitely on/empty?
 - test `FSA_HTTP_AUTH_OPTS`?
 - add `any` token scheme?
