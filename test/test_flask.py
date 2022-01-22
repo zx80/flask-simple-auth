@@ -929,3 +929,17 @@ def test_bad_4(bad4):
     res = check(500, bad4.get("/any"))
     assert b"internal error caught at no authorization on /any" == res.data
     check(404, bad4.get("/no-such-route"))
+
+# per-object perms
+def test_object_perms(client):
+    check(401, client.get("/my/calvin", data={"LOGIN": None}))
+    # dad is an admin, can access all users
+    check(200, client.get("/my/calvin", data={"LOGIN": "dad"}))
+    check(200, client.get("/my/hobbes", data={"LOGIN": "dad"}))
+    check(200, client.get("/my/dad", data={"LOGIN": "dad"}))
+    # other users can only access themselves
+    check(403, client.get("/my/calvin", data={"LOGIN": "hobbes"}))
+    check(403, client.get("/my/hobbes", data={"LOGIN": "calvin"}))
+    check(403, client.get("/my/dad", data={"LOGIN": "calvin"}))
+    check(200, client.get("/my/calvin", data={"LOGIN": "calvin"}))
+    check(200, client.get("/my/hobbes", data={"LOGIN": "hobbes"}))

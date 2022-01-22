@@ -20,13 +20,20 @@ app = Flask("Test")
 app.config.update(
     FSA_AUTH = "fake",
     FSA_MODE = "always",
-    FSA_SKIP_PATH = (r"/(register|required|_)",
+    FSA_SKIP_PATH = (r"/(register|required|_|my)",
                      r"/(add|div|mul|sub|type|params|any|mis[12]|nogo|one)",
                      r"/(infer|superid|cplx|bool|mail|path|string|auth|f2|myint)"),
     FSA_GET_USER_PASS = get_user_pass,
     FSA_USER_IN_GROUP = user_in_group,
     FSA_LOGGING_LEVEL = logging.DEBUG,
 )
+
+
+# object permissions: dad (admin) or self
+def check_users_perms(login: str, val: str, mode):
+    return login in (val, "dad")
+
+app.register_object_perms("users", check_users_perms)
 
 from SubApp import subapp
 app.register_blueprint(subapp, url_prefix="/b1")
@@ -319,3 +326,8 @@ class Len:
 @app.get("/_/<_def>", authorize=ANY)
 def get___def(_def: str, _int: int, _: Len, _pass: bool = True):
     return f"{_def}/{_int}/{_}/{_pass}", 200
+
+# per-object permissions
+@app.get("/my/<login>", authorize=("users", "login"))
+def get_my_login(login: str):
+    return f"login is {login} for {app.get_user()}", 200
