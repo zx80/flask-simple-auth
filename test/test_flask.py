@@ -32,6 +32,19 @@ def check_200(res):
 def check_403(res):
     return check(403, res)
 
+def has_service(host="localhost", port=22):
+    import socket
+    try:
+        tcp_ip = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        tcp_ip.settimeout(1)
+        res = tcp_ip.connect_ex((host, port))
+        return res == 0
+    except Exception as e:
+        log.info(f"connection to {(host, port)} failed: {e}")
+        return False
+    finally:
+        tcp_ip.close()
+
 def test_sanity():
     assert App.app is not None and fsa is not None
     assert App.app.name == "Test"
@@ -943,3 +956,47 @@ def test_object_perms(client):
     check(403, client.get("/my/dad", data={"LOGIN": "calvin"}))
     check(200, client.get("/my/calvin", data={"LOGIN": "calvin"}))
     check(200, client.get("/my/hobbes", data={"LOGIN": "hobbes"}))
+
+def test_object_perms_errors(client):
+    # TODO
+    assert True
+
+# run some checks on AppFact, repeat to exercise caching
+def run_some_checks(c, n=10):
+    assert n >= 1
+    for i in range(n):
+        check(401, c.get("/add"))
+        check(400, c.get("/add", data={"LOGIN": "calvin"}))
+        check(403, c.get("/admin", data={"LOGIN": "calvin"}))
+        check(200, c.get("/admin", data={"LOGIN": "dad"}))
+        res = check(200, c.get("/add", data={"LOGIN": "calvin", "i": 1234, "j": 4321}))
+        assert b"5555" in res.data
+        res = check(200, c.get("/add", data={"LOGIN": "dad", "i": 123, "j": 321}))
+        assert b"444" in res.data
+        res = check(200, c.get("/self/dad", data={"LOGIN": "dad"}))
+        assert b"hello: dad" in res.data
+        res = check(200, c.get("/self/calvin", data={"LOGIN": "calvin"}))
+        assert b"hello: calvin" in res.data
+        check(403, c.get("/self/calvin", data={"LOGIN": "dad"}))
+        check(403, c.get("/self/dad", data={"LOGIN": "calvin"}))
+    res = check(200, c.get("/hits", data={"LOGIN": "dad"}))
+    hits = json.loads(res.data)
+    if n >= 2:
+        assert hits["user_in_group"] > (n-2) / n
+        assert hits["_check_object_perms"] > (n-2) / n
+
+@pytest.mark.skipif(not has_service(port=11211), reason="no local memcached service available for testing")
+def test_memcached(client):
+    import AppFact as af
+    with af.create_app(
+        FSA_CACHE="memcached",
+        FSA_CACHE_OPTS={"server": "localhost:11211"}).test_client() as c:
+        run_some_checks(c)
+
+@pytest.mark.skipif(not has_service(port=6379), reason="no local redis service available for testing")
+def test_redis():
+    import AppFact as af
+    with af.create_app(
+        FSA_CACHE="redis",
+        FSA_CACHE_OPTS={"host": "localhost", "port": 6379}).test_client() as c:
+        run_some_checks(c)

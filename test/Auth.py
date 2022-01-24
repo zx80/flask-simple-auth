@@ -9,7 +9,11 @@ from passlib.context import CryptContext  # type: ignore
 # GROUPS
 #
 ADMIN, WRITE, READ = 0, 1, 2
-GROUPS = { 0: {"dad"}, 1: {"dad", "calvin"}, 2: {"calvin", "hobbes"} }
+GROUPS = {
+    ADMIN: {"dad"},
+    WRITE: {"dad", "calvin"},
+    READ: {"calvin", "hobbes"},
+}
 
 def user_in_group(user, group):
     return user in GROUPS.get(group, [])

@@ -2,7 +2,7 @@
 
 from FlaskSimpleAuth import Flask, ALL
 
-from Auth import get_user_pass, user_in_group
+from Auth import get_user_pass, user_in_group, ADMIN
 from SubApp import subapp
 
 import Shared
@@ -14,6 +14,13 @@ def create_app(**config):
     app.config.update(**config)
     app.register_blueprint(subapp, url_prefix="/b")
 
+    # self permission
+    def check_users_access(user, val, mode):
+        return user == val
+
+    app.register_object_perms("users", check_users_access)
+
+    # shared stuff
     Shared.init_app(something="AppFact")
 
     @app.get("/mul", authorize=ALL)
@@ -35,5 +42,17 @@ def create_app(**config):
     @app.get("/something", authorize=ALL)
     def get_something():
         return str(something), 200
+
+    @app.get("/admin", authorize=ADMIN)
+    def get_admin():
+        return "admin!", 200
+
+    @app.get("/self/<login>", authorize=("users", "login"))
+    def get_self_login(login: str):
+        return f"hello: {login}", 200
+
+    @app.get("/hits", authorize=ADMIN)
+    def get_hits():
+        return { name: cache._hits() for name, cache in app._fsa._actual_cache.items() }, 200
 
     return app

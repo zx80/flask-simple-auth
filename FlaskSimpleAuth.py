@@ -13,9 +13,11 @@ This code is public domain.
 from typing import Optional, Callable, Dict, List, Set, Any, Union
 
 import functools
+import cachetools
 import inspect
 import datetime as dt
 import re
+import json
 
 import flask
 
@@ -194,6 +196,98 @@ class Reference:
         return self._obj.__gt__(o)
 
 
+class JsonSerde:
+    """JSON serialize/deserialize for MemCached."""
+
+    def serialize(self, key, value):
+        import json
+        if isinstance(value, str):
+            return value.encode('utf-8'), 1
+        return json.dumps(value).encode('utf-8'), 2
+
+    def deserialize(self, key, value, flags):
+        import json
+        if flags == 1:
+            return value.decode('utf-8')
+        if flags == 2:
+            return json.loads(value.decode('utf-8'))
+        raise Exception("Unknown serialization format")
+
+
+class MemCached(cachetools.Cache):
+    """MemCached wrapper class for cachetools."""
+
+    def __init__(self, maxsize=1048576, getsizeof=None, *args, **kwargs):
+        import pymemcache as pmc
+        super().__init__(maxsize, getsizeof)
+        if "serde" not in kwargs:
+            kwargs["serde"] = JsonSerde()
+        self._memcached = pmc.Client(*args, **kwargs)
+
+    # memcached needs short (250 bytes) ASCII without control chars nor spaces
+    def _key(self, key):
+        import base64
+        return base64.b64encode(str(key).encode('utf-8'))
+
+    def __getitem__(self, index):
+        return self._memcached.__getitem__(self._key(index))
+
+    def __setitem__(self, index, value):
+        return self._memcached.__setitem__(self._key(index), value)
+
+    def __delitem__(self, index):
+        return self._memcached.__delitem__(self._key(index))
+
+    def __len__(self):
+        return self._memcached.stats()['curr_items']
+
+    def _hits(self):
+        """Return overall cache hit rate."""
+        stats = self._memcached.stats()
+        return float(stats[b"get_hits"]) / max(stats[b"cmd_get"], 1)
+
+
+class RedisCache(cachetools.Cache):
+    """Redis wrapper class for cachetools."""
+
+    def __init__(self, maxsize=1048576, getsizeof=None, key_prefix='', ttl=600, *args, **kwargs):
+        import redis
+        super().__init__(maxsize, getsizeof)
+        self._key_prefix = key_prefix
+        # this features seems to have been rejected, too bad
+        self._ttl = ttl
+        self._redis = redis.Redis(*args, **kwargs)
+
+    def _key(self, key):
+        return self._key_prefix + json.dumps(key)
+
+    def _serialize(self, s):
+        return json.dumps(s)
+
+    def _deserialize(self, s):
+        return json.loads(s)
+
+    def __getitem__(self, index):
+        val = self._redis.get(self._key(index))
+        if val:
+            return self._deserialize(val)
+        else:
+            raise KeyError()
+
+    def __setitem__(self, index, value):
+        return self._redis.set(self._key(index), self._serialize(value), ex=self._ttl)
+
+    def __delitem__(self, index):
+        return self._redis.delete(self._key(index))
+
+    def __len__(self):
+        return self._redis.dbsize()
+
+    def _hits(self):
+        stats = self._redis.info(section="stats")
+        return float(stats["keyspace_hits"]) / (stats["keyspace_hits"] + stats["keyspace_misses"])
+
+
 class Flask(flask.Flask):
     """Flask class wrapper.
 
@@ -291,7 +385,7 @@ _DIRECTIVES = {
     "FSA_PASSWORD_LEN", "FSA_PASSWORD_RE", "FSA_SERVER_ERROR", "FSA_SECURE"
 }
 
-_DEFAULT_CACHE_SIZE = 16384
+_DEFAULT_CACHE_SIZE = 262144  # a few MB
 _DEFAULT_SERVER_ERROR = 500
 
 
@@ -310,6 +404,7 @@ class FlaskSimpleAuth:
         self._http_auth = None
         self._pm = None
         self._cache: Optional[Callable[[Any], Callable]] = None
+        self._actual_cache: Dict[str, Any] = dict()
         self._server_error: int = _DEFAULT_SERVER_ERROR
         self._secure: bool = True
         # actual main initialization is deferred to `init_app`
@@ -420,13 +515,27 @@ class FlaskSimpleAuth:
 
     # NOTE for multiprocess setups:
     # clearing a cache in a process does not tell others to do it as well…
-    def _cache_function(self, fun):
+    def _cache_function(self, fun, prefix=None):
         """Generate or regenerate cache for function."""
         # get the actual function when regenerating caches
         while hasattr(fun, "__wrapped__"):
             fun = fun.__wrapped__
-        return fun if not fun or self._cache is None else \
-            self._cache(**self._cache_opts)(fun)
+        if not fun or self._cache is None:
+            return fun
+        # else
+        if isinstance(self._cache, str):
+            # delayed because of key_prefix
+            if self._cache == "memcached":
+                cache = MemCached(**self._cache_opts, key_prefix=bytes(prefix, 'utf-8'))
+            elif self._cache == "redis":
+                cache = RedisCache(**self._cache_opts, key_prefix=str(prefix))
+            else:
+                raise Exception(f"unexpected cache spec {self._cache}")
+            # log.debug(f"caching: {fun.__name__}")
+            self._actual_cache[fun.__name__] = cache
+            return cachetools.cached(cache=cache)(fun)
+        else:
+            return self._cache(**self._cache_opts)(fun)
 
     def _params(self):
         """Get request parameters wherever they are."""
@@ -442,13 +551,13 @@ class FlaskSimpleAuth:
 
     def get_user_pass(self, gup):
         """Set `get_user_pass` helper, can be used as a decorator."""
-        self._get_user_pass = self._cache_function(gup)
+        self._get_user_pass = self._cache_function(gup, "g.")
         self._init_password_manager()
         return gup
 
     def user_in_group(self, uig):
         """Set `user_in_group` helper, can be used as a decorator."""
-        self._user_in_group = self._cache_function(uig)
+        self._user_in_group = self._cache_function(uig, "u.")
         return uig
 
     def register_cast(self, t, c):
@@ -458,6 +567,7 @@ class FlaskSimpleAuth:
     def register_object_perms(self, domain, checker: Callable):
         """Add an object permission helper for a domain."""
         self._object_perms[domain] = checker
+        # FIXME caching?
 
     def _check_object_perms(self, user, domain, oid, mode):
         """Tell whether user can access object oid in domain for mode."""
@@ -530,24 +640,21 @@ class FlaskSimpleAuth:
         cache: Union[str, Callable[[Any], Callable]] = conf.get("FSA_CACHE", "fc-lru")
         if isinstance(cache, str):
             if cache == "ttl":
-                import cachetools.func
                 self._cache = cachetools.func.ttl_cache
                 if "ttl" not in self._cache_opts:
                     self._cache_opts.update(ttl=60 * 10)  # 10 minutes default
             elif cache == "lru":
-                import cachetools.func
                 self._cache = cachetools.func.lru_cache
             elif cache == "lfu":
-                import cachetools.func
                 self._cache = cachetools.func.lfu_cache
             elif cache == "fifo":
-                import cachetools.func
                 self._cache = cachetools.func.fifo_cache
             elif cache == "rr":
-                import cachetools.func
                 self._cache = cachetools.func.rr_cache
             elif cache == "fc-lru":
                 self._cache = functools.lru_cache
+            elif cache in ("memcached", "redis"):
+                self._cache = cache  # need to be managed later for key_prefix
             else:
                 raise Exception(f"Unexpected FSA_CACHE: {cache}")
         else:  # hopefully a callable
@@ -1097,13 +1204,20 @@ class FlaskSimpleAuth:
         return self.get_user(required=False)
 
     # methods that may be cached
-    _CACHABLE = ("_get_jwt_token_auth", "_get_fsa_token_auth", "_get_user_pass", "_user_in_group", "_check_object_perms")
+    _CACHABLE = {
+        "_get_jwt_token_auth": "j.",
+        "_get_fsa_token_auth": "f.",
+        "_get_user_pass": "u.",
+        "_user_in_group": "g.",
+        "_check_object_perms": "p.",
+    }
 
     def _set_caches(self):
         """Create caches around some functions."""
-        for name in self._CACHABLE:
+        self._actual_cache.clear()
+        for name, prefix in self._CACHABLE.items():
             fun = getattr(self, name)
-            setattr(self, name, self._cache_function(fun))
+            setattr(self, name, self._cache_function(fun, prefix))
 
     def clear_caches(self):
         """Clear internal caches."""
@@ -1113,7 +1227,7 @@ class FlaskSimpleAuth:
                 fun.cache_clear()
 
     def _safe_call(self, path, level, fun, *args, **kwargs):
-        """Call a route function ensuring a response."""
+        """Call a route function ensuring a response whatever."""
 
         try:  # the actual call
             res = fun(*args, **kwargs)

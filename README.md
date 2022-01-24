@@ -672,17 +672,22 @@ Some directives govern various details for this extension internal working.
   Default is *500*.
 
 Some control is available about caching features used for user authentication
-and authorization:
+(user password access and token validations) and authorization (group and
+per-object permissions):
 
 - `FSA_CACHE` controls the type of cache to use, set to None to disallow
-  caches. Values for `cachetools` cache classes are `ttl`, `lru`, `lfu`,
-  `fifo`, `rr`, and `fc-lru` for the `functools` cache class.
+  caches. Values for standard `cachetools` cache classes are `ttl`, `lru`,
+  `lfu`, `fifo`, `rr`, and `fc-lru` for the `functools` cache class.
+  MemCached is supported by setting it `memcached`, and Redis with `redis`.
   Default is `ttl` at 10 minutes.
 
 - `FSA_CACHE_OPTS` sets internal cache options with a dictionary.
+  This must contain the expected connection parameters for `pymemcache.Client`
+  and for `redis.Redis`redis.
+  For redis, an expiration ttl of 10 minutes is used.
 
-- `FSA_CACHE_SIZE` controls size of internal caches. Default is *16384*.
-  *None* means unbounded.
+- `FSA_CACHE_SIZE` controls size of internal caches. Default is *262144*.
+  *None* means unbounded, more or less.
 
 Web-application oriented features:
 
@@ -722,6 +727,12 @@ If you like it, feel free to send a postcard to the author.
 Sources are available on [GitHub](https://github.com/zx80/flask-simple-auth)
 and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 Software license is *public domain*.
+
+#### 5.0.0 in future
+
+Add a per-object permission scheme to the `authorize` decorator parameter.
+Add support for [Redis](https://redis.io/) and [MemCached](https://memcached.org/)
+distributed caches.
 
 #### 4.7.1 on 2022-01-16
 
@@ -989,23 +1000,8 @@ Initial release in beta.
 ### TODO
 
 - doc advise token + one route basic ; generate 401 Bearer?
-- a local cache makes little sense for a python single process model:
-  try with memcached? redis?
 - report cache hits?
 - drop `FSA_MODE` and `FSA_SKIP_MODE`, implicitely on/empty?
 - test `FSA_HTTP_AUTH_OPTS`?
 - add `any` token scheme?
-- authorize model on objects and a another support function?
-  `authorize=("kind-of-object", id_of_object)` would call `check_authorization`?
-  where is the id?
-  per-object authorization helpers could be recorded with
-  `fsa.authorization("kind-of-object", fun: Callable[[oid,uid],bool])`
-  ```Python
-  @app.get("/foo/<fid>", authorize="ALL")
-  def get_foo_id(fid: int):
-      app.check_authorization("foo", fid)  # raise Exception if access is not ok
-      return json(db.get_foo_id(fid)), 200
-  ``` 
-  how to ensure that there is such a call?
-  how to move the constraint to the decorator?
 - add app.log?
