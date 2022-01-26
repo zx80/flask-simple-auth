@@ -1,6 +1,6 @@
 # test factory pattern
 
-from FlaskSimpleAuth import Flask, ALL
+from FlaskSimpleAuth import Flask, ALL, jsonify as json
 
 from Auth import get_user_pass, user_in_group, ADMIN
 from SubApp import subapp
@@ -53,6 +53,6 @@ def create_app(**config):
 
     @app.get("/hits", authorize=ADMIN)
     def get_hits():
-        return { name: cache._hits() for name, cache in app._fsa._actual_cache.items() }, 200
+        return json((len(app._fsa._cache), app._fsa._cache.hits())), 200
 
     return app

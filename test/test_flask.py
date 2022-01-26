@@ -169,10 +169,7 @@ def test_perms(client):
     all_auth(client, "calvin", App.UP["calvin"], check_403, "/admin")
     assert not App.user_in_group("hobbes", App.ADMIN)
     all_auth(client, "hobbes", App.UP["hobbes"], check_403, "/admin")
-    assert hasattr(app._fsa._get_jwt_token_auth, "cache_clear")
-    assert hasattr(app._fsa._get_fsa_token_auth, "cache_clear")
-    assert hasattr(app._fsa._user_in_group, "cache_clear")
-    assert hasattr(app._fsa._get_user_pass, "cache_clear")
+    assert hasattr(app._fsa._cache, "clear")
     app.clear_caches()
     # write only
     check(401, client.get("/write"))
@@ -980,13 +977,13 @@ def run_some_checks(c, n=10):
         check(403, c.get("/self/calvin", data={"LOGIN": "dad"}))
         check(403, c.get("/self/dad", data={"LOGIN": "calvin"}))
     res = check(200, c.get("/hits", data={"LOGIN": "dad"}))
-    hits = json.loads(res.data)
-    if n >= 2:
-        assert hits["user_in_group"] > (n-2) / n
-        assert hits["_check_object_perms"] > (n-2) / n
+    size, hits = json.loads(res.data)
+    log.info(f"cache: {size} {hits}")
+    if n > 5:  # hmmm…
+        assert hits > (n-4) / n
 
 @pytest.mark.skipif(not has_service(port=11211), reason="no local memcached service available for testing")
-def test_memcached(client):
+def test_memcached_cache(client):
     import AppFact as af
     with af.create_app(
         FSA_CACHE="memcached",
@@ -994,9 +991,19 @@ def test_memcached(client):
         run_some_checks(c)
 
 @pytest.mark.skipif(not has_service(port=6379), reason="no local redis service available for testing")
-def test_redis():
+def test_redis_cache():
     import AppFact as af
     with af.create_app(
         FSA_CACHE="redis",
         FSA_CACHE_OPTS={"host": "localhost", "port": 6379}).test_client() as c:
+        run_some_checks(c)
+
+def test_lru_cache():
+    import AppFact as af
+    with af.create_app(FSA_CACHE="lru").test_client() as c:
+        run_some_checks(c)
+
+def test_dict_cache():
+    import AppFact as af
+    with af.create_app(FSA_CACHE="dict").test_client() as c:
         run_some_checks(c)

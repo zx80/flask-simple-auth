@@ -10,7 +10,7 @@ This extension helps manage:
 This code is public domain.
 """
 
-from typing import Optional, Callable, Dict, List, Set, Any, Union
+from typing import Optional, Callable, Dict, List, Set, Any, Union, MutableMapping
 
 import functools
 import cachetools
@@ -196,6 +196,81 @@ class Reference:
         return self._obj.__gt__(o)
 
 
+class MutMapMix:
+    # assume _cache
+
+    def __getitem__(self, key):
+        return self._cache.__getitem__(key)
+
+    def __setitem__(self, key, val):
+        return self._cache.__setitem__(key, val)
+
+    def __delitem__(self, key):
+        return self._cache.__delitem__(key)
+
+    def __len__(self):
+        return self._cache.__len__()
+
+    def __iter__(self):
+        return self._cache.__iter__()
+
+
+class KeyMutMapMix(MutMapMix):
+    # assume _cache
+
+    def _key(self, key):
+        return key
+
+    def __getitem__(self, key):
+        return self._cache.__getitem__(self._key(key))
+
+    def __setitem__(self, key, val):
+        return self._cache.__setitem__(self._key(key), val)
+
+    def __delitem__(self, key):
+        return self._cache.__delitem__(self._key(key))
+
+
+class StatsCache(MutMapMix, MutableMapping):
+    """Cache class to keep stats."""
+
+    def __init__(self, cache: MutableMapping):
+        self._reads, self._writes, self._dels, self._hits = 0, 0, 0, 0
+        self._cache = cache
+
+    def hits(self):
+        return float(self._hits) / float(max(self._reads, 1))
+
+    def __getitem__(self, key):
+        # log.debug(f"get: {key} {key in self._cache}")
+        self._reads += 1
+        res = self._cache.__getitem__(key)
+        self._hits += 1
+        return res
+
+    def __setitem__(self, key, val):
+        self._writes += 1
+        return self._cache.__setitem__(key, val)
+
+    def __delitem__(self, key):
+        self._dels += 1
+        return self._cache.__delitem__(key)
+
+    def clear(self):
+        return self._cache.clear()
+
+
+class PrefixedCache(KeyMutMapMix, MutableMapping):
+    """Cache class to keep stats and add a prefix."""
+
+    def __init__(self, cache: MutableMapping, prefix: Union[str, bytes] = ''):
+        self._prefix = prefix
+        self._cache = cache
+
+    def _key(self, key):
+        return self._prefix + str(key)
+
+
 class JsonSerde:
     """JSON serialize/deserialize for MemCached."""
 
@@ -214,52 +289,59 @@ class JsonSerde:
         raise Exception("Unknown serialization format")
 
 
-class MemCached(cachetools.Cache):
+class PrefixedMemCached(PrefixedCache):
     """MemCached wrapper class for cachetools."""
 
-    def __init__(self, maxsize=1048576, getsizeof=None, *args, **kwargs):
-        import pymemcache as pmc
-        super().__init__(maxsize, getsizeof)
-        if "serde" not in kwargs:
-            kwargs["serde"] = JsonSerde()
-        self._memcached = pmc.Client(*args, **kwargs)
+    def __init__(self, cache, prefix: str = ''):
+        super().__init__(prefix=bytes(prefix, 'utf-8'), cache=cache)
+        # should check that cache is really a pymemcache client?
 
     # memcached needs short (250 bytes) ASCII without control chars nor spaces
     def _key(self, key):
         import base64
-        return base64.b64encode(str(key).encode('utf-8'))
+        return self._prefix + base64.b64encode(str(key).encode('utf-8'))
 
-    def __getitem__(self, index):
-        return self._memcached.__getitem__(self._key(index))
 
-    def __setitem__(self, index, value):
-        return self._memcached.__setitem__(self._key(index), value)
+class StatsMemCached(MutMapMix, MutableMapping):
 
-    def __delitem__(self, index):
-        return self._memcached.__delitem__(self._key(index))
+    def __init__(self, cache):
+        self._cache = cache
 
-    def __len__(self):
-        return self._memcached.stats()['curr_items']
-
-    def _hits(self):
+    def hits(self):
         """Return overall cache hit rate."""
-        stats = self._memcached.stats()
+        stats = self._cache.stats()
         return float(stats[b"get_hits"]) / max(stats[b"cmd_get"], 1)
 
+    def __len__(self):
+        return self._cache.stats()[b'curr_items']
 
-class RedisCache(cachetools.Cache):
-    """Redis wrapper class for cachetools."""
+    def clear(self):
+        return self._cache.flush_all()
 
-    def __init__(self, maxsize=1048576, getsizeof=None, key_prefix='', ttl=600, *args, **kwargs):
-        import redis
-        super().__init__(maxsize, getsizeof)
-        self._key_prefix = key_prefix
-        # this features seems to have been rejected, too bad
-        self._ttl = ttl
-        self._redis = redis.Redis(*args, **kwargs)
+
+class PrefixedRedisCache(PrefixedCache):
+    """Prefixed Redis wrapper class for cachetools."""
+
+    def __init__(self, cache, prefix: str = ''):
+        super().__init__(cache, prefix)
 
     def _key(self, key):
-        return self._key_prefix + json.dumps(key)
+        return self._prefix + json.dumps(key)
+
+
+class StatsRedisCache(MutableMapping):
+    """TTL-ed Redis wrapper class for cachetools."""
+
+    def __init__(self, cache, ttl=600):
+        self._ttl = ttl
+        # must be redis.Redis
+        # NOTE we do not want to import redis at this point
+        assert cache.__class__.__name__ == "Redis"
+        self._cache = cache
+
+    def hits(self):
+        stats = self._cache.info(section="stats")
+        return float(stats["keyspace_hits"]) / (stats["keyspace_hits"] + stats["keyspace_misses"])
 
     def _serialize(self, s):
         return json.dumps(s)
@@ -268,24 +350,27 @@ class RedisCache(cachetools.Cache):
         return json.loads(s)
 
     def __getitem__(self, index):
-        val = self._redis.get(self._key(index))
+        val = self._cache.get(index)
         if val:
             return self._deserialize(val)
         else:
             raise KeyError()
 
     def __setitem__(self, index, value):
-        return self._redis.set(self._key(index), self._serialize(value), ex=self._ttl)
+        return self._cache.set(index, self._serialize(value), ex=self._ttl)
 
     def __delitem__(self, index):
-        return self._redis.delete(self._key(index))
+        return self._cache.delete(index)
 
     def __len__(self):
-        return self._redis.dbsize()
+        return self._cache.dbsize()
 
-    def _hits(self):
-        stats = self._redis.info(section="stats")
-        return float(stats["keyspace_hits"]) / (stats["keyspace_hits"] + stats["keyspace_misses"])
+    def __iter__(self):
+        raise Exception("not implemented yet")
+
+    def clear(self):
+        return self._cache.flushdb()
+
 
 
 class Flask(flask.Flask):
@@ -386,6 +471,7 @@ _DIRECTIVES = {
 }
 
 _DEFAULT_CACHE_SIZE = 262144  # a few MB
+_DEFAULT_CACHE_TTL = 600  # seconds, 10 minutes
 _DEFAULT_SERVER_ERROR = 500
 
 
@@ -403,8 +489,8 @@ class FlaskSimpleAuth:
         self._saved_auth: Optional[List[str]] = None
         self._http_auth = None
         self._pm = None
-        self._cache: Optional[Callable[[Any], Callable]] = None
-        self._actual_cache: Dict[str, Any] = dict()
+        self._cache: Optional[MutableMapping[str, str]] = None
+        self._gen_cache: Optional[Callable] = None
         self._server_error: int = _DEFAULT_SERVER_ERROR
         self._secure: bool = True
         # actual main initialization is deferred to `init_app`
@@ -520,22 +606,11 @@ class FlaskSimpleAuth:
         # get the actual function when regenerating caches
         while hasattr(fun, "__wrapped__"):
             fun = fun.__wrapped__
-        if not fun or self._cache is None:
+        if not fun or self._gen_cache is None:
             return fun
-        # else
-        if isinstance(self._cache, str):
-            # delayed because of key_prefix
-            if self._cache == "memcached":
-                cache = MemCached(**self._cache_opts, key_prefix=bytes(prefix, 'utf-8'))
-            elif self._cache == "redis":
-                cache = RedisCache(**self._cache_opts, key_prefix=str(prefix))
-            else:
-                raise Exception(f"unexpected cache spec {self._cache}")
-            # log.debug(f"caching: {fun.__name__}")
-            self._actual_cache[fun.__name__] = cache
-            return cachetools.cached(cache=cache)(fun)
         else:
-            return self._cache(**self._cache_opts)(fun)
+            fun_cache = self._gen_cache(prefix=prefix, cache=self._cache)
+            return cachetools.cached(cache=fun_cache)(fun)
 
     def _params(self):
         """Get request parameters wherever they are."""
@@ -632,33 +707,45 @@ class FlaskSimpleAuth:
         self._401_redirect = conf.get("FSA_401_REDIRECT", None)
         self._url_name = conf.get("FSA_URL_NAME", "URL" if self._401_redirect else None)
         #
-        # internal cache management for passwords, permissions, tokens…
+        # cache management for passwords, permissions, tokens…
         #
         self._cache_opts: Dict[str, Any] = conf.get("FSA_CACHE_OPTS", {})
-        if "FSA_CACHE_SIZE" in conf or "maxsize" not in self._cache_opts:
-            self._cache_opts.update(maxsize=conf.get("FSA_CACHE_SIZE", _DEFAULT_CACHE_SIZE))
-        cache: Union[str, Callable[[Any], Callable]] = conf.get("FSA_CACHE", "fc-lru")
-        if isinstance(cache, str):
+        cache = conf.get("FSA_CACHE", "lru")
+        if cache in ("ttl", "lru", "lfu", "mru", "fifo", "rr"):
+            maxsize = conf.get("FSA_CACHE_SIZE", _DEFAULT_CACHE_SIZE)
+            self._gen_cache = PrefixedCache
             if cache == "ttl":
-                self._cache = cachetools.func.ttl_cache
-                if "ttl" not in self._cache_opts:
-                    self._cache_opts.update(ttl=60 * 10)  # 10 minutes default
+                ttl = self._cache_opts.pop("ttl", _DEFAULT_CACHE_TTL)
+                rcache: MutableMapping = cachetools.TTLCache(maxsize, **self._cache_opts, ttl=ttl)
             elif cache == "lru":
-                self._cache = cachetools.func.lru_cache
+                rcache = cachetools.LRUCache(maxsize, **self._cache_opts)
             elif cache == "lfu":
-                self._cache = cachetools.func.lfu_cache
+                rcache = cachetools.LFUCache(maxsize, **self._cache_opts)
+            elif cache == "mru":
+                rcache = cachetools.MRUCache(maxsize, **self._cache_opts)
             elif cache == "fifo":
-                self._cache = cachetools.func.fifo_cache
+                rcache = cachetools.FIFOCache(maxsize, **self._cache_opts)
             elif cache == "rr":
-                self._cache = cachetools.func.rr_cache
-            elif cache == "fc-lru":
-                self._cache = functools.lru_cache
-            elif cache in ("memcached", "redis"):
-                self._cache = cache  # need to be managed later for key_prefix
-            else:
-                raise Exception(f"Unexpected FSA_CACHE: {cache}")
-        else:  # hopefully a callable
-            self._cache = cache
+                rcache = cachetools.RRCache(maxsize, **self._cache_opts)
+            else:  # pragma: no cover
+                raise Exception(f"unexpected simple cache type: {cache}")
+            self._cache = StatsCache(rcache)
+        elif cache in ("memcached", "pymemcache"):
+            import pymemcache as pmc  # type: ignore
+            if "serde" not in self._cache_opts:
+                self._cache_opts.update(serde=JsonSerde())
+            self._cache = StatsMemCached(pmc.Client(**self._cache_opts))
+            self._gen_cache = PrefixedMemCached
+        elif cache == "redis":
+            import redis
+            ttl = self._cache_opts.pop("ttl", _DEFAULT_CACHE_TTL)
+            self._cache = StatsRedisCache(redis.Redis(**self._cache_opts), ttl=ttl)
+            self._gen_cache = PrefixedRedisCache
+        elif cache == "dict":
+            self._cache = StatsCache(dict())
+            self._gen_cache = PrefixedCache
+        else:
+            raise Exception(f"Unexpected FSA_CACHE: {cache}")
         #
         # token setup
         #
@@ -1112,14 +1199,14 @@ class FlaskSimpleAuth:
 
     def _get_any_token_auth_exp(self, token):
         """return validated user and expiration."""
-        if not token:
-            raise FSAException("missing token", 401)
         return \
             self._get_fsa_token_auth(token) if self._token == "fsa" else \
             self._get_jwt_token_auth(token)
 
     def _get_any_token_auth(self, token):
         """Tell whether token is ok: return validated user or None."""
+        if not token:
+            raise FSAException("missing token", 401)
         user, exp = self._get_any_token_auth_exp(token)
         # recheck token expiration
         now = dt.datetime.now(dt.timezone.utc) - dt.timedelta(minutes=self._grace)
@@ -1169,7 +1256,7 @@ class FlaskSimpleAuth:
 
     def get_user(self, required=True) -> Optional[str]:
         """Authenticate user or throw exception."""
-        log.debug(f"get_user for {self._auth}")
+        # log.debug(f"get_user for {self._auth}")
 
         # _user is reset before/after requests
         # so relying on in-request persistance is safe
@@ -1196,17 +1283,16 @@ class FlaskSimpleAuth:
         if required and not self._user:
             raise lae or FSAException("missing authentication", 401)
 
-        log.debug(f"get_user({self._auth}): {self._user}")
+        # log.debug(f"get_user({self._auth}): {self._user}")
         return self._user
 
     def current_user(self):
         """Return current authenticated user, if any."""
         return self.get_user(required=False)
 
-    # methods that may be cached
+    # authentication and authorization methods that can be cached
     _CACHABLE = {
-        "_get_jwt_token_auth": "j.",
-        "_get_fsa_token_auth": "f.",
+        "_get_any_token_auth_exp": "t.",
         "_get_user_pass": "u.",
         "_user_in_group": "g.",
         "_check_object_perms": "p.",
@@ -1214,17 +1300,14 @@ class FlaskSimpleAuth:
 
     def _set_caches(self):
         """Create caches around some functions."""
-        self._actual_cache.clear()
+        self._cache.clear()
         for name, prefix in self._CACHABLE.items():
             fun = getattr(self, name)
             setattr(self, name, self._cache_function(fun, prefix))
 
     def clear_caches(self):
         """Clear internal caches."""
-        for name in self._CACHABLE:
-            fun = getattr(self, name)
-            if fun and hasattr(fun, "cache_clear"):
-                fun.cache_clear()
+        self._cache.clear()
 
     def _safe_call(self, path, level, fun, *args, **kwargs):
         """Call a route function ensuring a response whatever."""
@@ -1315,7 +1398,7 @@ class FlaskSimpleAuth:
                         log.error(f"user_in_group failed: {e}")
                         return self._Resp("internal error in user_in_group", self._server_error)
                     if not isinstance(ok, bool):
-                        log.error(f"type error in user_in_group: {type(ok)}, must return a boolean")
+                        log.error(f"type error in user_in_group: {ok}: {type(ok)}, must return a boolean")
                         return self._Resp("internal error with user_in_group", self._server_error)
                     if not ok:
                         return self._Resp("", 403)

@@ -677,16 +677,17 @@ per-object permissions):
 
 - `FSA_CACHE` controls the type of cache to use, set to None to disallow
   caches. Values for standard `cachetools` cache classes are `ttl`, `lru`,
-  `lfu`, `fifo`, `rr`, and `fc-lru` for the `functools` cache class.
-  MemCached is supported by setting it `memcached`, and Redis with `redis`.
-  Default is `ttl` at 10 minutes.
+  `lfu`, `mru`, `fifo`, `rr` plus `dict`.
+  MemCached is supported by setting it to `memcached`, and Redis with `redis`.
 
 - `FSA_CACHE_OPTS` sets internal cache options with a dictionary.
   This must contain the expected connection parameters for `pymemcache.Client`
-  and for `redis.Redis`redis.
-  For redis, an expiration ttl of 10 minutes is used.
+  and for `redis.Redis` redis, for instance.
+  For `redis` and `ttl`, an expiration ttl of 10 minutes is used and can be
+  overwritten by providing a `ttl` parameter.
 
-- `FSA_CACHE_SIZE` controls size of internal caches. Default is *262144*.
+- `FSA_CACHE_SIZE` controls size of internal `cachetools` caches.
+  Default is *262144*.
   *None* means unbounded, more or less.
 
 Web-application oriented features:
@@ -999,9 +1000,9 @@ Initial release in beta.
 
 ### TODO
 
-- doc advise token + one route basic ; generate 401 Bearer?
-- report cache hits?
+- doc advise token + one route basic ; generate 401 Bearer? ok?
 - drop `FSA_MODE` and `FSA_SKIP_MODE`, implicitely on/empty?
 - test `FSA_HTTP_AUTH_OPTS`?
 - add `any` token scheme?
 - add app.log?
+- move cache classes into another module
