@@ -745,18 +745,18 @@ class FlaskSimpleAuth:
             self._cache = StatsCache(dict())
             self._gen_cache = PrefixedCache
         else:
-            raise Exception(f"Unexpected FSA_CACHE: {cache}")
+            raise Exception(f"unexpected FSA_CACHE: {cache}")
         #
         # token setup
         #
         self._token = conf.get("FSA_TOKEN_TYPE", "fsa")
         if self._token not in (None, "fsa", "jwt"):
-            raise Exception(f"Unexpected FSA_TOKEN_TYPE: {self._token}")
+            raise Exception(f"unexpected FSA_TOKEN_TYPE: {self._token}")
         # token carrier
         need_carrier = self._token is not None
         self._carrier = conf.get("FSA_TOKEN_CARRIER", "bearer" if need_carrier else None)
         if self._carrier not in (None, "bearer", "param", "cookie", "header"):
-            raise Exception(f"Unexpected FSA_TOKEN_CARRIER: {self._carrier}")
+            raise Exception(f"unexpected FSA_TOKEN_CARRIER: {self._carrier}")
         # sanity checks
         if need_carrier and not self._carrier:
             raise Exception(f"Token type {self._token} requires a carrier")
@@ -1581,7 +1581,7 @@ class FlaskSimpleAuth:
         # authorize are either in groups or in perms
         if len(authorize) != len(groups) + len(perms) + len(predefs):
             bads = list(filter(lambda a: a not in groups and a not in perms and a not in predefs, authorize))
-            raise Exception(f"Unexpected authorizations on {rule}: {bads}")
+            raise Exception(f"unexpected authorizations on {rule}: {bads}")
 
         if NONE in predefs:
             groups, perms = [], []

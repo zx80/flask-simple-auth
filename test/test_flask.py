@@ -1007,3 +1007,11 @@ def test_dict_cache():
     import AppFact as af
     with af.create_app(FSA_CACHE="dict").test_client() as c:
         run_some_checks(c)
+
+def test_nosuch_cache():
+    import AppFact as af
+    try:
+        af.create_app(FSA_CACHE="no-such-cache")
+        assert False, "create app should fail"
+    except Exception as e:
+        assert "unexpected FSA_CACHE" in e.args[0]

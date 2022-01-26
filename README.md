@@ -1006,3 +1006,5 @@ Initial release in beta.
 - add `any` token scheme?
 - add app.log?
 - move cache classes into another module
+- test object perms errors
+- test more cache errors
