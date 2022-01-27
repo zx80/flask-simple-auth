@@ -197,7 +197,7 @@ class Reference:
 
 
 class MutMapMix:
-    # assume _cache
+    """Convenient MutableMapping Mixin, forward to _cache."""
 
     def __getitem__(self, key):
         return self._cache.__getitem__(key)
@@ -216,7 +216,7 @@ class MutMapMix:
 
 
 class KeyMutMapMix(MutMapMix):
-    # assume _cache
+    """Convenient MutableMapping Mixin with a key filter, forward to _cache."""
 
     def _key(self, key):
         return key
@@ -261,7 +261,7 @@ class StatsCache(MutMapMix, MutableMapping):
 
 
 class PrefixedCache(KeyMutMapMix, MutableMapping):
-    """Cache class to keep stats and add a prefix."""
+    """Cache class to add a key prefix."""
 
     def __init__(self, cache: MutableMapping, prefix: Union[str, bytes] = ''):
         self._prefix = prefix
@@ -290,7 +290,7 @@ class JsonSerde:
 
 
 class PrefixedMemCached(PrefixedCache):
-    """MemCached wrapper class for cachetools."""
+    """MemCached-compatible wrapper class for cachetools with a key prefix."""
 
     def __init__(self, cache, prefix: str = ''):
         super().__init__(prefix=bytes(prefix, 'utf-8'), cache=cache)
@@ -303,6 +303,7 @@ class PrefixedMemCached(PrefixedCache):
 
 
 class StatsMemCached(MutMapMix, MutableMapping):
+    """Cache MemCached-compatible class with key prefix."""
 
     def __init__(self, cache):
         self._cache = cache
@@ -370,7 +371,6 @@ class StatsRedisCache(MutableMapping):
 
     def clear(self):
         return self._cache.flushdb()
-
 
 
 class Flask(flask.Flask):
@@ -883,7 +883,7 @@ class FlaskSimpleAuth:
         # portability tricks which generates mypy errors…
         if hasattr(self._app, '_blueprint_order'):
             # Flask 1.x
-            self._blueprint_order = self._app._blueprint_order
+            self._blueprint_order = self._app._blueprint_order  # type: ignore
         elif hasattr(self._app, '_is_setup_finished'):
             # Flask 2.0
             self._is_setup_finished = self._app._is_setup_finished
