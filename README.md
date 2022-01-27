@@ -188,7 +188,7 @@ def get_what(flt: str = None):
 
 ### Authentication
 
-Three directives impact how and when authentication is performed.
+Three directives impact *how* and *when* authentication is performed.
 The main configuration directive is `FSA_AUTH` which governs authentication
 methods used by the `get_user` function, as described in the following sections.
 
@@ -250,7 +250,7 @@ The available authentication schemes are:
 
   There are plenty authentication schemes available in a web server such as
   [Apache](https://httpd.apache.org/) or [Nginx](https://nginx.org/), all of
-  which probably more efficiently implemented than python code, so this
+  which probably more efficiently implemented than this python code, so it
   should be the preferred option.
   However, it could require significant configuration effort compared to
   the application-side approach.
@@ -274,7 +274,7 @@ The available authentication schemes are:
 
 - `param`
 
-  HTTP or JSON parameter or password authentication.
+  HTTP or JSON parameter for password authentication.
   User name and password are passed as request parameters.
 
   The following configuration directives are available:
@@ -317,11 +317,11 @@ The available authentication schemes are:
   Only rely on signed tokens for authentication.
   A token certifies that a *user* is authenticated in a *realm* up to some
   time *limit*.
-  The token is authenticated by a signature which is the hash of the payload
-  (*realm*, *user* and *limit*) and a secret hold by the server.
+  The token is authenticated by a signature which is usually the hash of the
+  payload (*realm*, *user* and *limit*) and a secret hold by the server.
 
   There are two token types chosen with the `FSA_TOKEN_TYPE` configuration
-  directive: `fsa` is a simple compact custom format, and `jwt`
+  directive: `fsa` is a simple compact readable custom format, and `jwt`
   [RFC 7519](https://tools.ietf.org/html/rfc7519) standard based
   on [PyJWT](https://pypi.org/project/PyJWT/) implementation.
 
@@ -474,16 +474,22 @@ headers for authenticating later requests, till it expires.
 
 ### Authorization
 
+Authorizations are declared with the `authorize` parameter to
+the `route` decorator (and its per-method shortcuts).
 The modules supports two permission model:
 
  - a group-oriented model
  - an object-oriented model
 
+The parameter accepts a list of `str` and `int` for groups, and of
+`tuple` for object permissions.  If a scalar is provided, it is assumed
+to be equivalent to a list of one element.
+
+When multiple authorizations are provided they are cumulative.
+
 #### Group Authorizations
 
-Role-oriented authorizations are managed through the `authorize` parameter to
-the `route` decorator, which provides just one or possibly a list of roles
-necessary to call a route. A role is identified as an integer or a string.
+A group or role is identified as an integer or a string.
 The `user_in_group(user, group)` function is called to check whether the
 authenticated user belongs to a given group.
 Because this function is cached by default, caches should be reset when roles
@@ -523,7 +529,36 @@ For those, careful per-object and pre-operation authorization will still be need
 
 #### Object Authorizations
 
-TODO
+Non trivial application have access permissions which depend on the data
+stored by the application. For instance, a user may alter a data because
+they *own* it, or access a data because they are *friends* of the owner.
+
+In order to implement this model, the `authorize` decorator parameter can
+hold a tuple `(domain, variable, mode)` which designates a permission domain
+(eg a table or object or concept name in the application), the name
+a variable in the request (path or HTTP or JSON parameters), and the
+operation or level of access necessary to access this route.
+
+```Python
+@app.get("/message/<mid>", authorize=("msg", "mid", "read"))
+def get_message_mid(mid: int):
+    return …
+```
+
+The system will check whether the current user can access the *mid*
+message in *read* mode by calling a per-domain user-supplied function:
+
+```Python
+# does user can access message mid for operation mode?
+def can_access_message(user: str, mid: int, mode: str) -> bool:
+    return …
+
+# define the msg-domain access checker
+app.register_object_perms("msg", can_access_message)
+```
+
+If `mode` is not supplied, *None* is passed to the check function.
+
 
 ### Parameters
 
