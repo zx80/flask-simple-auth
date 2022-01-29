@@ -1045,3 +1045,4 @@ Initial release in beta.
 - test object perms errors
 - test more cache errors
 - should cachetools and cachetoolsutils be required?
+- multi login? access to other login data (uid, email)?
