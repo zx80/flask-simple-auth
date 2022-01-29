@@ -1016,17 +1016,22 @@ def test_no_such_cache():
         assert "unexpected FSA_CACHE" in e.args[0]
 
 def test_warnings():
+    def bad_gup_1(user: str):
+        raise fsa.FSAException("bad_gup_1", 518)
+    def bad_gup_2(user: str):
+        return 3.14159
     import AppFact as af
     app = af.create_app(
         FSA_SUCH_DIRECTIVE="no-such-directive",
         FSA_AUTH=["basic", "token"],
-        FSA_TOKEN="fsa",
+        FSA_TOKEN_TYPE="fsa",
         FSA_TOKEN_SIGN="signature-not-used-for-fsa-tokens",
         FSA_FAKE_LOGIN="not-used-if-no-fake",
         FSA_PARAM_USER="not-used-if-no-param",
         FSA_PARAM_PASS="not-used-if-no-param",
         FSA_PASSWORD_LEN=10,
         FSA_PASSWORD_RE=[r"[0-9]"],
+        FSA_GET_USER_PASS=bad_gup_1,
     )
     app._fsa.initialize()
     # password exceptions
@@ -1040,9 +1045,23 @@ def test_warnings():
         assert False, "should not match re"
     except fsa.FSAException as e:
         assert e.status == 400 and "must match" in e.message
-    # other warnings
+    try:
+        app._fsa._check_password("calvin", "hobbes")
+        assert False, "should not get through"
+    except fsa.FSAException as e:
+        assert e.status == 518 and "bad" in e.message
+    # unused length warning
     app = af.create_app(
-        FSA_TOKEN="jwt",
+        FSA_TOKEN_TYPE="jwt",
         FSA_TOKEN_LENGTH=8,  # no used if jwt
+        FSA_GET_USER_PASS=bad_gup_2,
     )
     app._fsa.initialize()
+    try:
+        app._fsa._check_password("calvin", "hobbes")
+        assert False, "should not get through"
+    except fsa.FSAException as e:
+        assert e.status == 500 and "internal error with get_user_pass" in e.message
+    # overwrite warning
+    fsa.register_cast("foo", lambda s: s)
+    fsa.register_cast("foo", lambda s: s)
