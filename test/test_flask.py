@@ -503,6 +503,7 @@ def test_route(client):
     check(400, client.get("/one/42"))   # missing "msg"
     check(404, client.get("/one/bad", data={"msg":"hi"}))  # bad "i" type
     check(403, client.get("/two", data={"LOGIN":"calvin"}))
+    check(518, client.get("/oops", data={"LOGIN":"calvin"}))
 
 def test_infer(client):
     res = check(200, client.get("/infer/1.000"))
@@ -956,9 +957,78 @@ def test_object_perms(client):
     # no-such-user
     check(404, client.get("/my/no-such-user", data={"LOGIN": "calvin"}))
 
-def test_object_perms_errors(client):
-    # TODO
-    assert True
+def test_object_perms_errors():
+    import AppFact as af
+    app = af.create_app()
+    def is_okay(u, v, m): return True
+    app.register_object_perms("known", is_okay)
+    try:
+        @app.get("/bad-perm-1", authorize=("short",))
+        def get_bad_perm_1():
+            return "should not get there", 200
+        assert False, "should detect too short tuple"
+    except Exception as e:
+        assert "3 data" in str(e)
+    try:
+        @app.get("/bad-perm-2/<uid>", authorize=("unknown", "uid"))
+        def get_bad_perm_2_uid(uid: int):
+            return "should not get there", 200
+        assert False, "should detect unregistered permission domain"
+    except Exception as e:
+        assert "missing object permission" in str(e)
+    try:
+        @app.get("/bad-perm-3", authorize=("known", 3))
+        def get_bad_perm_3():
+            return "should not get there", 200
+        assert False, "should detect bad variable name"
+    except Exception as e:
+        assert "unexpected identifier name type" in str(e)
+    try:
+        @app.get("/bad-perm-4/<uid>", authorize=("known", "uid", 3.14159))
+        def get_bad_perm_4_uid(uid: int):
+            return "should not get there", 200
+        assert False, "should detect bad mode type"
+    except Exception as e:
+        assert "unexpected mode type" in str(e)
+    try:
+        @app.get("/bad-perm-5", authorize=("known", "uid"))
+        def get_bad_perm_3():
+            return "should not get there", 200
+        assert False, "should detect missing variable"
+    except Exception as e:
+        assert "missing function parameter uid" in str(e)
+
+def test_authorize_errors():
+    import AppFact as af
+    app = af.create_app()
+    try:
+        @app.get("/bad-authorize", authorize=[3.14159])
+        def get_bad_authorize():
+            return "should not get there", 200
+        assert False, "should detect bad authorize type"
+    except Exception as e:
+        assert "unexpected authorization" in str(e)
+    try:
+        @app.get("/bad-mix-1", authorize=["ANY", "ALL"])
+        def get_bad_mix_1():
+            return "should not get there", 200
+        assert False, "should detect ANY/ALL mix"
+    except Exception as e:
+        assert "ANY/ALL" in str(e)
+    try:
+        @app.get("/bad-mix-2", authorize=["ANY", "OTHER"])
+        def get_bad_mix_2():
+            return "should not get there", 200
+        assert False, "should detect ANY/other mix"
+    except Exception as e:
+        assert "other" in str(e)
+    try:
+        @app.get("/bad-mix-3", authorize=["ANY", ("foo", "id")])
+        def get_bad_mix_2():
+            return "should not get there", 200
+        assert False, "should detect ANY/other mix"
+    except Exception as e:
+        assert "object" in str(e)
 
 # run some checks on AppFact, repeat to exercise caching
 def run_some_checks(c, n=10):
@@ -1015,7 +1085,7 @@ def test_no_such_cache():
     except Exception as e:
         assert "unexpected FSA_CACHE" in e.args[0]
 
-def test_warnings():
+def test_warnings_and_errors():
     def bad_gup_1(user: str):
         raise fsa.FSAException("bad_gup_1", 518)
     def bad_gup_2(user: str):

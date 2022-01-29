@@ -11,6 +11,7 @@ log = logging.getLogger("app")
 #
 # APP
 #
+import FlaskSimpleAuth as fsa
 from FlaskSimpleAuth import Flask, jsonify, ANY, ALL, NONE, path, string
 app = Flask("Test")
 
@@ -331,3 +332,8 @@ def get___def(_def: str, _int: int, _: Len, _pass: bool = True):
 @app.get("/my/<login>", authorize=("users", "login"))
 def get_my_login(login: str):
     return f"login is {login} for {app.get_user()}", 200
+
+# raise instead of return
+@app.get("/oops", authorize=ANY)
+def get_oops():
+    raise fsa.FSAException("Ooops!", 518)
