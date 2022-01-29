@@ -769,6 +769,7 @@ Software license is *public domain*.
 Add a per-object permission scheme to the `authorize` decorator parameter.
 Add support for [Redis](https://redis.io/) and [MemCached](https://memcached.org/)
 distributed caches.
+Move cache support to [CacheToolsUtils](https://pypi.org/project/CacheToolsUtils/).
 
 #### 4.7.1 on 2022-01-16
 
@@ -1040,6 +1041,5 @@ Initial release in beta.
 - test `FSA_HTTP_AUTH_OPTS`?
 - add `any` token scheme?
 - add app.log?
-- move cache classes into another module
 - test object perms errors
 - test more cache errors
