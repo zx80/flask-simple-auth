@@ -1030,6 +1030,28 @@ def test_authorize_errors():
     except Exception as e:
         assert "object" in str(e)
 
+def test_group_errors():
+    import AppFact as af
+    def bad_uig(login, group):
+       if group == "ex":
+           raise fsa.FSAException("exception in user_in_group", 518)
+       elif group == "float":
+           return 3.14159
+       else:
+           return True
+    app = af.create_app(FSA_AUTH="fake", FSA_USER_IN_GROUP=bad_uig)
+    @app.get("/ex", authorize="ex")
+    def get_ex():
+        return "should not get here", 200
+    @app.get("/float", authorize="float")
+    def get_float():
+        return "should not get here", 200
+    c = app.test_client()
+    res = c.get("/ex", data={"LOGIN": "calvin"})
+    assert res.status_code == 518 and b"exception in user_in_group" in res.data
+    res = c.get("/float", data={"LOGIN": "calvin"})
+    assert res.status_code == 500 and b"internal error with user_in_group" in res.data
+
 # run some checks on AppFact, repeat to exercise caching
 def run_some_checks(c, n=10):
     assert n >= 1
