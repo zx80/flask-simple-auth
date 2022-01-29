@@ -1046,3 +1046,4 @@ Initial release in beta.
 - test more cache errors
 - should cachetools and cachetoolsutils be required?
 - multi login? access to other login data (uid, email)?
+- auto 404 from `check_object_perms` if empty result?
