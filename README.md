@@ -1048,7 +1048,5 @@ Initial release in beta.
 - test `FSA_HTTP_AUTH_OPTS`?
 - add `any` token scheme?
 - add app.log?
-- test object perms errors
-- test more cache errors
 - should cachetools and cachetoolsutils be required?
 - multi login? access to other login data (uid, email)?

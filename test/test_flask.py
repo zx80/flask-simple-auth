@@ -959,9 +959,19 @@ def test_object_perms(client):
 
 def test_object_perms_errors():
     import AppFact as af
-    app = af.create_app()
-    def is_okay(u, v, m): return True
+    app = af.create_app(FSA_AUTH="fake")
+    def is_okay(u: str, v: str, m: str):
+        log.debug(f"is_okay({u}, {v}, {m})")
+        if v == "fsa":
+            raise fsa.FSAException("oops-1", 518)
+        elif v == "ex":
+            raise Exception("oops-2")
+        elif v == "float":
+            return 3.15159
+        else:
+            return True
     app.register_object_perms("known", is_okay)
+    # declaration time errors
     try:
         @app.get("/bad-perm-1", authorize=("short",))
         def get_bad_perm_1():
@@ -997,6 +1007,17 @@ def test_object_perms_errors():
         assert False, "should detect missing variable"
     except Exception as e:
         assert "missing function parameter uid" in str(e)
+    # run time errors
+    @app.get("/oops/<err>", authorize=("known", "err"))
+    def get_oops_err(err: str):
+        return "should not get there", 500
+    c = app.test_client()
+    res = c.get("/oops/fsa", data={"LOGIN": "calvin"})
+    assert res.status_code == 518 and b"oops-1" in res.data
+    res = c.get("/oops/ex", data={"LOGIN": "calvin"})
+    assert res.status_code == 500 and b"internal error in permission check" in res.data
+    res = c.get("/oops/float", data={"LOGIN": "calvin"})
+    assert res.status_code == 500 and b"internal error with permission check" in res.data
 
 def test_authorize_errors():
     import AppFact as af
