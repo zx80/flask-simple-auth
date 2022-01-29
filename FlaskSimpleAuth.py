@@ -1347,10 +1347,12 @@ class FlaskSimpleAuth:
                     except Exception as e:
                         log.error(f"internal error on {request.method} {request.path} permission {perm} check: {e}")
                         return self._Resp("internal error in permission check", self._server_error)
-                    if not isinstance(ok, bool):  # paranoid?
+                    if ok is None:
+                        return self._Resp(f"no such {domain} {val}", 404)
+                    elif not isinstance(ok, bool):  # paranoid?
                         log.error(f"type error on on {request.method} {request.path} permission {perm} check: {type(ok)}")
                         return self._Resp("internal error with permission check", self._server_error)
-                    if not ok:
+                    elif not ok:
                         return self._Resp("", 403)
 
                 # then call the initial function

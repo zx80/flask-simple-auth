@@ -765,6 +765,10 @@ Sources are available on [GitHub](https://github.com/zx80/flask-simple-auth)
 and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 Software license is *public domain*.
 
+#### dev
+
+Return *404* when checking perm on an unknown object.
+
 #### 5.0.0 on 2022-01-29
 
 Add a per-object permission scheme to the `authorize` decorator parameter.
@@ -1046,4 +1050,4 @@ Initial release in beta.
 - test more cache errors
 - should cachetools and cachetoolsutils be required?
 - multi login? access to other login data (uid, email)?
-- auto 404 from `check_object_perms` if empty result?
+- test 404 on unkown object
