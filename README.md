@@ -769,6 +769,7 @@ Software license is *public domain*.
 #### dev
 
 Return *404* when checking perm on an unknown object.
+Improve tests.
 
 #### 5.0.0 on 2022-01-29
 
