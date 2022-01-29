@@ -1028,6 +1028,7 @@ def test_warnings():
         FSA_PASSWORD_LEN=10,
         FSA_PASSWORD_RE=[r"[0-9]"],
     )
+    app._fsa.initialize()
     # password exceptions
     try:
         app.hash_password("short1")
@@ -1040,7 +1041,8 @@ def test_warnings():
     except fsa.FSAException as e:
         assert e.status == 400 and "must match" in e.message
     # other warnings
-    af.create_app(
+    app = af.create_app(
         FSA_TOKEN="jwt",
         FSA_TOKEN_LENGTH=8,  # no used if jwt
     )
+    app._fsa.initialize()
