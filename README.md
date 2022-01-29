@@ -551,6 +551,7 @@ message in *read* mode by calling a per-domain user-supplied function:
 
 ```Python
 # does user can access message mid for operation mode?
+# None: 404, False: 403, True: access is granted
 def can_access_message(user: str, mid: int, mode: str) -> bool:
     return …
 
@@ -1050,4 +1051,3 @@ Initial release in beta.
 - test more cache errors
 - should cachetools and cachetoolsutils be required?
 - multi login? access to other login data (uid, email)?
-- test 404 on unkown object

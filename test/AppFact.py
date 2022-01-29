@@ -2,7 +2,7 @@
 
 from FlaskSimpleAuth import Flask, ALL, jsonify as json
 
-from Auth import get_user_pass, user_in_group, ADMIN
+from Auth import get_user_pass, user_in_group, ADMIN, UP
 from SubApp import subapp
 
 import Shared
@@ -16,7 +16,7 @@ def create_app(**config):
 
     # self permission
     def check_users_access(user, val, mode):
-        return user == val
+        return user == val if val in UP else None
 
     app.register_object_perms("users", check_users_access)
 

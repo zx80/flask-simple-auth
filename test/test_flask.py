@@ -953,6 +953,8 @@ def test_object_perms(client):
     check(403, client.get("/my/dad", data={"LOGIN": "calvin"}))
     check(200, client.get("/my/calvin", data={"LOGIN": "calvin"}))
     check(200, client.get("/my/hobbes", data={"LOGIN": "hobbes"}))
+    # no-such-user
+    check(404, client.get("/my/no-such-user", data={"LOGIN": "calvin"}))
 
 def test_object_perms_errors(client):
     # TODO
