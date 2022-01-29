@@ -329,7 +329,7 @@ class FlaskSimpleAuth:
     #
     def _check_secure(self):
         if not request.is_secure and \
-           not (request.remote_addr.startswith("127.") or request.remote_addr == "::1"):
+           not (request.remote_addr.startswith("127.") or request.remote_addr == "::1"):  # pragma: no cover
             msg = f"insecure HTTP request on {request.remote_addr}, allow with FSA_SECURE=False"
             if self._secure:
                 log.error(msg)
@@ -1096,7 +1096,8 @@ class FlaskSimpleAuth:
                     break
             except FSAException as e:
                 lae = e
-            # FIXME other exceptions?
+            except Exception as e:  # pragma: no cover
+                log.error(f"internal error in {a} authentication: {e}")
 
         # even if not set, we say that the answer is the right one.
         self._user_set = True
@@ -1105,7 +1106,6 @@ class FlaskSimpleAuth:
         if required and not self._user:
             raise lae or FSAException("missing authentication", 401)
 
-        # log.debug(f"get_user({self._auth}): {self._user}")
         return self._user
 
     def current_user(self):
@@ -1184,7 +1184,7 @@ class FlaskSimpleAuth:
                     except FSAException as e:
                         return self._Resp(e.message, e.status)
 
-                if not self._user:
+                if not self._user:  # pragma no cover
                     return self._Resp("", 401)
 
                 return self._safe_call(path, "authenticate", fun, *args, **kwargs)
@@ -1513,7 +1513,7 @@ class FlaskSimpleAuth:
         """Register a blueprint."""
 
         # lazy initialization
-        if not self._initialized:
+        if not self._initialized:  # pragma: no cover
             self.initialize()
 
         flask.Flask.register_blueprint(self, blueprint, **options)
