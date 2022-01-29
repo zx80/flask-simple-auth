@@ -764,7 +764,7 @@ Sources are available on [GitHub](https://github.com/zx80/flask-simple-auth)
 and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 Software license is *public domain*.
 
-#### 5.0.0 in future
+#### 5.0.0 on 2022-01-29
 
 Add a per-object permission scheme to the `authorize` decorator parameter.
 Add support for [Redis](https://redis.io/) and [MemCached](https://memcached.org/)
