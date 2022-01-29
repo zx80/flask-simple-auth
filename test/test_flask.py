@@ -1000,20 +1000,47 @@ def test_redis_cache():
         FSA_CACHE_OPTS={"host": "localhost", "port": 6379}).test_client() as c:
         run_some_checks(c)
 
-def test_lru_cache():
+def test_caches():
     import AppFact as af
-    with af.create_app(FSA_CACHE="lru").test_client() as c:
-        run_some_checks(c)
+    for cache in ["ttl", "lru", "lfu", "mru", "fifo", "rr", "dict"]:
+        log.debug(f"testing cache type {cache}")
+        with af.create_app(FSA_CACHE=cache).test_client() as c:
+            run_some_checks(c)
 
-def test_dict_cache():
-    import AppFact as af
-    with af.create_app(FSA_CACHE="dict").test_client() as c:
-        run_some_checks(c)
-
-def test_nosuch_cache():
+def test_no_such_cache():
     import AppFact as af
     try:
         af.create_app(FSA_CACHE="no-such-cache")
         assert False, "create app should fail"
     except Exception as e:
         assert "unexpected FSA_CACHE" in e.args[0]
+
+def test_warnings():
+    import AppFact as af
+    app = af.create_app(
+        FSA_SUCH_DIRECTIVE="no-such-directive",
+        FSA_AUTH=["basic", "token"],
+        FSA_TOKEN="fsa",
+        FSA_TOKEN_SIGN="signature-not-used-for-fsa-tokens",
+        FSA_FAKE_LOGIN="not-used-if-no-fake",
+        FSA_PARAM_USER="not-used-if-no-param",
+        FSA_PARAM_PASS="not-used-if-no-param",
+        FSA_PASSWORD_LEN=10,
+        FSA_PASSWORD_RE=[r"[0-9]"],
+    )
+    # password exceptions
+    try:
+        app.hash_password("short1")
+        assert False, "should be too short"
+    except fsa.FSAException as e:
+        assert e.status == 400 and "too short" in e.message
+    try:
+        app.hash_password("long-enough-but-missing-a-number")
+        assert False, "should not match re"
+    except fsa.FSAException as e:
+        assert e.status == 400 and "must match" in e.message
+    # other warnings
+    af.create_app(
+        FSA_TOKEN="jwt",
+        FSA_TOKEN_LENGTH=8,  # no used if jwt
+    )
