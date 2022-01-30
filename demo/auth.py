@@ -14,6 +14,7 @@ def get_user_pass(login: str) -> Optional[str]:
 
 def user_in_group(login: str, group: str) -> bool:
     res = db.get_user_data(login=login)
+    # bool cast needed for SQLite…
     return bool(res[2]) if res and group == "ADMIN" else res is not None
 
 
