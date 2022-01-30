@@ -164,6 +164,7 @@ Once initialized `app` is a standard Flask object with some additions:
 - `create_token` to compute a new authentication token for the current user.
 - `clear_caches` to clear internal process caches.
 - `register_object_perms` function to register a per-object permission helper function.
+  or the `object_perms` decorator.
 
 Alternatively, it is possible but not recommended to use the flask extensions
 model, in which case the `FlaskSimpleAuth` object must be instanciated and
@@ -550,13 +551,13 @@ The system will check whether the current user can access the *mid*
 message in *read* mode by calling a per-domain user-supplied function:
 
 ```Python
-# does user can access message mid for operation mode?
-# None: 404, False: 403, True: access is granted
+@app.object_perms("msg")
 def can_access_message(user: str, mid: int, mode: str) -> bool:
+    # does user can access message mid for operation mode?
+    # None: 404, False: 403, True: access is granted
     return …
 
-# define the msg-domain access checker
-app.register_object_perms("msg", can_access_message)
+# also: app.register_object_perms("msg", can_access_message)
 ```
 
 If `variable` is not supplied, the *first* parameter of the route function
