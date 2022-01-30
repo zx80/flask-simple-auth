@@ -712,6 +712,10 @@ Some directives govern various details for this extension internal working.
   errors, to help distinguish these from other internal errors which may occur.
   Default is *500*.
 
+- `FSA_NOT_FOUND_ERROR` controls the status code returned when a permission
+  checks returns *None*.
+  Default is *404*.
+
 Some control is available about caching features used for user authentication
 (user password access and token validations) and authorization (group and
 per-object permissions):
@@ -1061,4 +1065,3 @@ Initial release in beta.
 - add app.log?
 - should cachetools and cachetoolsutils be required?
 - multi login? access to other login data (uid, email)?
-- allow to change 404 on permission checks?

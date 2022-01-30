@@ -302,12 +302,14 @@ _DIRECTIVES = {
     "FSA_TOKEN_SECRET", "FSA_TOKEN_SIGN", "FSA_TOKEN_TYPE",
     "FSA_TOKEN_RENEWAL", "FSA_URL_NAME", "FSA_USER_IN_GROUP",
     "FSA_LOGGING_LEVEL", "FSA_CORS", "FSA_CORS_OPTS",
-    "FSA_PASSWORD_LEN", "FSA_PASSWORD_RE", "FSA_SERVER_ERROR", "FSA_SECURE"
+    "FSA_PASSWORD_LEN", "FSA_PASSWORD_RE", "FSA_SERVER_ERROR", "FSA_SECURE",
+    "FSA_NOT_FOUND_ERROR",
 }
 
 _DEFAULT_CACHE_SIZE = 262144  # a few MB
 _DEFAULT_CACHE_TTL = 600  # seconds, 10 minutes
 _DEFAULT_SERVER_ERROR = 500
+_DEFAULT_NOT_FOUND_ERROR = 404
 
 
 # actual extension
@@ -327,6 +329,7 @@ class FlaskSimpleAuth:
         self._cache: Optional[MutableMapping[str, str]] = None
         self._gen_cache: Optional[Callable] = None
         self._server_error: int = _DEFAULT_SERVER_ERROR
+        self._not_found_error: int = _DEFAULT_NOT_FOUND_ERROR
         self._secure: bool = True
         # actual main initialization is deferred to `init_app`
         self._initialized = False
@@ -529,8 +532,9 @@ class FlaskSimpleAuth:
                 log.warning(f"unexpected directive: {name}")
         # whether to only allow secure requests
         self._secure = conf.get("FSA_SECURE", True)
-        # status code for this module internal errors
+        # status code for some errors errors
         self._server_error = conf.get("FSA_SERVER_ERROR", _DEFAULT_SERVER_ERROR)
+        self._not_found_error = conf.get("FSA_NOT_FOUND_ERROR", _DEFAULT_NOT_FOUND_ERROR)
         #
         # overall auth setup
         #
@@ -1377,7 +1381,8 @@ class FlaskSimpleAuth:
                         log.error(f"internal error on {request.method} {request.path} permission {perm} check: {e}")
                         return self._Resp("internal error in permission check", self._server_error)
                     if ok is None:
-                        return self._Resp(f"no such {domain} {val}", 404)
+                        log.warning(f"none object permission on {domain} {val} {mode}")
+                        return self._Resp("object not found", self._not_found_error)
                     elif not isinstance(ok, bool):  # paranoid?
                         log.error(f"type error on on {request.method} {request.path} permission {perm} check: {type(ok)}")
                         return self._Resp("internal error with permission check", self._server_error)
