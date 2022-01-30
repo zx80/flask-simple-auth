@@ -769,12 +769,12 @@ Sources are available on [GitHub](https://github.com/zx80/flask-simple-auth)
 and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 Software license is *public domain*.
 
-#### 5.1.0 in Future
+#### 5.1.0 on 2022-01-30
 
 Add default variable name to object permission checks.
 Add convenient `object_perms` decorator.
 Return *404* when checking perm on an unknown object.
-Warn on overrident hooks.
+Warn on overriden hooks.
 Improve tests.
 
 #### 5.0.0 on 2022-01-29
