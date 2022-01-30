@@ -777,6 +777,7 @@ Software license is *public domain*.
 #### dev in Future
 
 Add convenient `cast` decorator to register a cast directly.
+Add `FSA_NOT_FOUND_ERROR` configuration directive.
 
 #### 5.1.0 on 2022-01-30
 
