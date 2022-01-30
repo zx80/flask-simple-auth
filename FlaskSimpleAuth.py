@@ -208,7 +208,8 @@ class Flask(flask.Flask):
       method: `get`, `post`, `put`, `patch`, `delete`.
     - several additional methods are provided: `get_user_pass`,
       `user_in_group`, `check_password`, `hash_password`, `create_token`,
-      `get_user`, `current_user`, `clear_caches`, `register_cast`.
+      `get_user`, `current_user`, `clear_caches`, `register_cast`,
+      `register_object_perms`.
     """
 
     def __init__(self, *args, **kwargs):
@@ -238,6 +239,11 @@ class Flask(flask.Flask):
     def register_object_perms(self, d, f):
         """Add an object permission checker for a domain."""
         self._fsa.register_object_perms(d, f)
+
+    # decorator version
+    def object_perms(self, d):
+        """Decorator to add an object permission checker for a domain."""
+        return self._fsa.object_perms(d)
 
     # password management
     def check_password(self, pwd, ref):
@@ -450,12 +456,16 @@ class FlaskSimpleAuth:
 
     def get_user_pass(self, gup):
         """Set `get_user_pass` helper, can be used as a decorator."""
+        if self._get_user_pass:
+            log.warning("overriding already defined get_user_pass hook")
         self._get_user_pass = self._cache_function(gup, "g.")
         self._init_password_manager()
         return gup
 
     def user_in_group(self, uig):
         """Set `user_in_group` helper, can be used as a decorator."""
+        if self._user_in_group:
+            log.warning("overriding already defined user_in_group hook")
         self._user_in_group = self._cache_function(uig, "u.")
         return uig
 
@@ -465,8 +475,16 @@ class FlaskSimpleAuth:
 
     def register_object_perms(self, domain, checker: Callable):
         """Add an object permission helper for a domain."""
+        if domain in self._object_perms:
+            log.warning(f"overriding object permission checker for domain {domain}")
         self._object_perms[domain] = checker
-        # FIXME caching?
+
+    def object_perms(self, domain):
+        """Decorator to add an object permission hook for a domain."""
+        def annotate(fun):
+            self.register_object_perms(domain, fun)
+            return fun
+        return annotate
 
     def _check_object_perms(self, user, domain, oid, mode):
         """Tell whether user can access object oid in domain for mode."""
@@ -716,7 +734,7 @@ class FlaskSimpleAuth:
             self.url_value_preprocessors = self._app.url_value_preprocessors
             self.template_context_processors = self._app.template_context_processors
         else:
-            log.warning("unexpected Flask version while dealing with blueprints?") # pragma: no cover
+            log.warning("unexpected Flask version while dealing with blueprints?")  # pragma: no cover
         #
         # caches
         #
@@ -1301,12 +1319,13 @@ class FlaskSimpleAuth:
 
         return decorate
 
-    def _perm_auth(self, path, *perms):
+    def _perm_auth(self, path, first, *perms):
         """Decorator for per-object permissions."""
         # check perms wrt to recorded per-object checks
 
         # normalize tuples length to 3
-        perms = list(map(lambda a: (a + (None,)) if len(a) == 2 else a, perms))
+        perms = list(map(lambda a: (a + (first, None)) if len(a) == 1 else
+                                   (a + (None,)) if len(a) == 2 else a, perms))
 
         # perm checks
         for perm in perms:
@@ -1447,13 +1466,16 @@ class FlaskSimpleAuth:
 
         fun = view_func
 
-        # else only add needed filters on top of "fun"
+        # else only add needed filters on top of "fun", in reverse order
         need_authenticate = ALL in predefs or groups or perms
         need_parameters = len(fun.__code__.co_varnames) > 0
 
         if perms:
-            assert need_authenticate
-            fun = self._perm_auth(newpath, *perms)(fun)
+            if not need_parameters:
+                raise Exception("permissions require some parameters")
+            assert need_authenticate and need_parameters
+            first = fun.__code__.co_varnames[0]
+            fun = self._perm_auth(newpath, first, *perms)(fun)
         if need_parameters:
             fun = self._parameters(newpath)(fun)
         if groups:

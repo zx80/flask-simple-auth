@@ -559,6 +559,8 @@ def can_access_message(user: str, mid: int, mode: str) -> bool:
 app.register_object_perms("msg", can_access_message)
 ```
 
+If `variable` is not supplied, the *first* parameter of the route function
+is taken.
 If `mode` is not supplied, *None* is passed to the check function.
 
 
@@ -766,9 +768,12 @@ Sources are available on [GitHub](https://github.com/zx80/flask-simple-auth)
 and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 Software license is *public domain*.
 
-#### dev
+#### 5.1.0 in Future
 
+Add default variable name to object permission checks.
+Add convenient `object_perms` decorator.
 Return *404* when checking perm on an unknown object.
+Warn on overrident hooks.
 Improve tests.
 
 #### 5.0.0 on 2022-01-29

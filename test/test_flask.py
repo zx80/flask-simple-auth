@@ -960,6 +960,7 @@ def test_object_perms(client):
 def test_object_perms_errors():
     import AppFact as af
     app = af.create_app(FSA_AUTH="fake")
+    @app.object_perms("known")
     def is_okay(u: str, v: str, m: str):
         log.debug(f"is_okay({u}, {v}, {m})")
         if v == "fsa":
@@ -970,17 +971,18 @@ def test_object_perms_errors():
             return 3.15159
         else:
             return True
+    # triggers an overwrite warning
     app.register_object_perms("known", is_okay)
     # declaration time errors
     try:
-        @app.get("/bad-perm-1", authorize=("short",))
-        def get_bad_perm_1():
+        @app.get("/bad-perm-1", authorize=tuple())
+        def get_bad_perm_1(uid: int):
             return "should not get there", 200
         assert False, "should detect too short tuple"
     except Exception as e:
         assert "3 data" in str(e)
     try:
-        @app.get("/bad-perm-2/<uid>", authorize=("unknown", "uid"))
+        @app.get("/bad-perm-2/<uid>", authorize=("unknown",))
         def get_bad_perm_2_uid(uid: int):
             return "should not get there", 200
         assert False, "should detect unregistered permission domain"
@@ -988,7 +990,7 @@ def test_object_perms_errors():
         assert "missing object permission" in str(e)
     try:
         @app.get("/bad-perm-3", authorize=("known", 3))
-        def get_bad_perm_3():
+        def get_bad_perm_3(uid: int):
             return "should not get there", 200
         assert False, "should detect bad variable name"
     except Exception as e:
@@ -1002,11 +1004,18 @@ def test_object_perms_errors():
         assert "unexpected mode type" in str(e)
     try:
         @app.get("/bad-perm-5", authorize=("known", "uid"))
-        def get_bad_perm_3():
+        def get_bad_perm_3(oid: int):
             return "should not get there", 200
         assert False, "should detect missing variable"
     except Exception as e:
         assert "missing function parameter uid" in str(e)
+    try:
+        @app.get("/bad-perm-6", authorize=("known", "uid"))
+        def get_bad_perm_3():
+            return "should not get there", 200
+        assert False, "should detect missing variable"
+    except Exception as e:
+        assert "permissions require some parameters" in str(e)
     # run time errors
     @app.get("/oops/<err>", authorize=("known", "err"))
     def get_oops_err(err: str):
