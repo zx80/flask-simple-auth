@@ -1185,5 +1185,7 @@ def test_warnings_and_errors():
     except fsa.FSAException as e:
         assert e.status == 500 and "internal error with get_user_pass" in e.message
     # overwrite warning
-    fsa.register_cast("foo", lambda s: s)
-    fsa.register_cast("foo", lambda s: s)
+    @app.cast("foo")
+    def cast_foo(s: str):
+        return s
+    fsa.register_cast("foo", cast_foo)

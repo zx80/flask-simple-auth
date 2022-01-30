@@ -613,17 +613,18 @@ def get_mail_addr(addr: EmailAddr):
 ```
 
 If the constructor does not match, a custom function can be provided
-with `register_cast` and will be called automatically to convert
-parameters:
+with the `register_cast` function or the `cast` decorator  and will be
+called automatically to convert parameters:
 
 ```Python
 class House:
     …
 
+@app.cast(House)
 def strToHouse(s: str) -> House:
     return …
 
-FlaskSimpleAuth.register_cast(House, strToHouse)
+# or: app.register_cast(House, strToHouse)
 
 @app.get("/house/<h>", authorize="ANY")
 def get_house_h(h: House)
@@ -768,6 +769,10 @@ If you like it, feel free to send a postcard to the author.
 Sources are available on [GitHub](https://github.com/zx80/flask-simple-auth)
 and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 Software license is *public domain*.
+
+#### dev in Future
+
+Add convenient `cast` decorator to register a cast directly.
 
 #### 5.1.0 on 2022-01-30
 

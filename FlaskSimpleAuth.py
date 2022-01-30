@@ -77,6 +77,7 @@ class string(str):
     pass
 
 
+# should this be inside the app?
 _CASTS: Dict[type, Callable[[str], object]] = {
     bool: bool_cast,
     int: int_cast,
@@ -240,7 +241,11 @@ class Flask(flask.Flask):
         """Add an object permission checker for a domain."""
         self._fsa.register_object_perms(d, f)
 
-    # decorator version
+    # decorator versions
+    def cast(self, t):
+        """Decorator to add a type cast function."""
+        return self._fsa.cast(t)
+
     def object_perms(self, d):
         """Decorator to add an object permission checker for a domain."""
         return self._fsa.object_perms(d)
@@ -472,6 +477,13 @@ class FlaskSimpleAuth:
     def register_cast(self, t, c):
         """Add a cast function for a type."""
         register_cast(t, c)
+
+    def cast(self, t):
+        """Decorator to add a type function."""
+        def annotate(fun):
+            self.register_cast(t, fun)
+            return fun
+        return annotate
 
     def register_object_perms(self, domain, checker: Callable):
         """Add an object permission helper for a domain."""
