@@ -1050,3 +1050,4 @@ Initial release in beta.
 - add app.log?
 - should cachetools and cachetoolsutils be required?
 - multi login? access to other login data (uid, email)?
+- object perms default variable could be first parameter? url parameter?
