@@ -1,4 +1,7 @@
 #! /usr/bin/env python3
+#
+# generate password authenticated users
+#
 
 import sys
 from passlib.context import CryptContext

@@ -18,7 +18,7 @@ import auth
 auth.init_app(app)
 
 #
-# first, direct routes
+# first, opened direct routes
 #
 
 
