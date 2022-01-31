@@ -339,12 +339,13 @@ class FlaskSimpleAuth:
         self._initialized = False
 
     def _Resp(self, msg: str, code: int):
-        """Genenerate a text/plain Response."""
+        """Generate a text/plain Response."""
         if self._debug:
             log.debug(f"text response: {code} {msg}")
         return Response(msg, code, content_type="text/plain")
 
     def _Except(self, msg: str, code: int):
+        """Build and trace an FSAException."""
         if self._debug:
             log.debug(f"fsa exception: {code} {msg}")
         return FSAException(msg, code)
@@ -535,11 +536,16 @@ class FlaskSimpleAuth:
         assert app
         self._app = app
         conf = app.config
-        self._debug = conf.get("FSA_DEBUG", self._debug)
-        if self._debug:
+        # debugging mode
+        debug = conf.get("FSA_DEBUG", None)
+        if debug is False and self._debug:
+            log.warning("Resetting debug mode to False because of FSA_DEBUG")
+            self._debug = False
+        elif debug is True and not self._debug:
             logging.warning("FlaskSimpleAuth running in debug mode")
             log.setLevel(logging.DEBUG)
-        elif "FSA_LOGGING_LEVEL" in conf:
+            self._debug = True
+        if not self._debug and "FSA_LOGGING_LEVEL" in conf:
             log.setLevel(conf["FSA_LOGGING_LEVEL"])
         # check directives for typos
         for name in conf:

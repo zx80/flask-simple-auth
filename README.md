@@ -780,7 +780,11 @@ Sources are available on [GitHub](https://github.com/zx80/flask-simple-auth)
 and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 Software license is *public domain*.
 
-#### 5.2.0 in 2022-01-31
+#### 5.3.0 in Future
+
+Improve debug mode setting.
+
+#### 5.2.0 on 2022-01-31
 
 Add convenient `cast` decorator to register a cast directly.
 Add `FSA_DEBUG` and `FSA_NOT_FOUND_ERROR` configuration directives.
@@ -1065,7 +1069,7 @@ Initial release in beta.
 
 ### TODO
 
-- doc advise token + one route basic ; generate 401 Bearer? ok?
+- doc advise token + one route basic ;
 - drop `FSA_MODE` and `FSA_SKIP_MODE`, implicitely on/empty?
 - test `FSA_HTTP_AUTH_OPTS`?
 - add `any` token scheme?
