@@ -716,6 +716,12 @@ Some directives govern various details for this extension internal working.
   checks returns *None*.
   Default is *404*.
 
+- `FSA_DEBUG` set module in debug mode, generating excessive traces…
+  Default is *False*.
+
+- `FSA_LOGGING_LEVEL` adjust module internal logging level.
+  Default is *None*.
+
 Some control is available about caching features used for user authentication
 (user password access and token validations) and authorization (group and
 per-object permissions):
@@ -774,10 +780,10 @@ Sources are available on [GitHub](https://github.com/zx80/flask-simple-auth)
 and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 Software license is *public domain*.
 
-#### dev in Future
+#### 5.2.0 in 2022-01-31
 
 Add convenient `cast` decorator to register a cast directly.
-Add `FSA_NOT_FOUND_ERROR` configuration directive.
+Add `FSA_DEBUG` and `FSA_NOT_FOUND_ERROR` configuration directives.
 
 #### 5.1.0 on 2022-01-30
 
