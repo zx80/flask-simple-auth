@@ -377,7 +377,8 @@ The available authentication schemes are:
   whereas token authentication relies on simple hashing for its security.
   Another benefit of token is that it avoids sending passwords over and over.
   The rational option is to use a password scheme to retrieve a token and then to
-  use it till it expires.
+  use it till it expires. This can be enforced by setting `FSA_AUTH` to `token`
+  and to only add `auth="basic"` on the login route.
 
   Token expiration can be understood as a kind of automatic logout, which suggests
   to choose the delay with some care depending on the use case.
@@ -1069,7 +1070,6 @@ Initial release in beta.
 
 ### TODO
 
-- doc advise token + one route basic ;
 - drop `FSA_MODE` and `FSA_SKIP_MODE`, implicitely on/empty?
 - test `FSA_HTTP_AUTH_OPTS`?
 - add `any` token scheme?
