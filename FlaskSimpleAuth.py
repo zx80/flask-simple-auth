@@ -1327,15 +1327,19 @@ class FlaskSimpleAuth:
                     if p not in kwargs:
                         # parameter p not yet encountered
                         if pn in params:
-                            try:
-                                kwargs[p] = typing(params[pn])
-                            except Exception as e:
-                                return self._Resp(f"type error on HTTP parameter \"{pn}\" ({e})", 400)
+                            val = params[pn]
+                            if not isinstance(val, types[p]):
+                                try:
+                                    kwargs[p] = typing(val)
+                                except Exception as e:
+                                    return self._Resp(f"type error on parameter \"{pn}\" ({e})", 400)
+                            else:
+                                kwargs[p] = val
                         else:
                             if p in defaults:
                                 kwargs[p] = defaults[p]
                             else:
-                                return self._Resp(f"missing HTTP parameter \"{pn}\"", 400)
+                                return self._Resp(f"missing parameter \"{pn}\"", 400)
                     else:
                         # possibly recast path parameters if needed
                         if not isinstance(kwargs[p], types[p]):

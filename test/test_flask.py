@@ -407,7 +407,7 @@ def test_typed_params(client):
     assert float(res.data) == 12.0
     res = check(200, client.get("/mul/2", data={"j":"3", "k":"4"}))
     assert int(res.data) == 24
-    res = check(200, client.get("/mul/2", json={"j":"5", "k":"4"}))
+    res = check(200, client.get("/mul/2", json={"j":5, "k":"4"}))
     assert int(res.data) == 40
     check(400, client.get("/mul/1", data={"j":"3"}))
     check(400, client.get("/mul/1", data={"k":"4"}))
@@ -416,7 +416,7 @@ def test_typed_params(client):
     # optional
     res = check(200, client.get("/div", data={"i":"10", "j":"3"}))
     assert int(res.data) == 3
-    res = check(200, client.get("/div", json={"i":"100", "j":"4"}))
+    res = check(200, client.get("/div", json={"i":100, "j":"4"}))
     assert int(res.data) == 25
     res = check(200, client.get("/div", data={"i":"10"}))
     assert int(res.data) == 0
