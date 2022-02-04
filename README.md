@@ -781,7 +781,11 @@ Sources are available on [GitHub](https://github.com/zx80/flask-simple-auth)
 and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 Software license is *public domain*.
 
-#### 5.3.0 in 2022-02-04
+#### 5.4.0 in Future
+
+Improve json parameter type tests.
+
+#### 5.3.0 on 2022-02-04
 
 Improve debug mode setting.
 Attempt at fixing typing errors with json.

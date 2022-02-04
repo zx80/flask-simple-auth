@@ -429,11 +429,17 @@ def test_typed_params(client):
 def test_types(client):
     res = check(200, client.get("/type", data={"f": "1.0"}))
     assert res.data == b"float 1.0"
+    res = check(200, client.get("/type", json={"f": "2.0"}))
+    assert res.data == b"float 2.0"
+    res = check(200, client.get("/type", json={"f": 2.0}))
+    assert res.data == b"float 2.0"
     res = check(200, client.get("/type", data={"i": "0b11"}))
     assert res.data == b"int 3"
     res = check(200, client.get("/type", data={"i": "0x11"}))
     assert res.data == b"int 17"
     res = check(200, client.get("/type", json={"i": "0x11"}))
+    assert res.data == b"int 17"
+    res = check(200, client.get("/type", json={"i": 0x11}))
     assert res.data == b"int 17"
     # note: 011 is not accepted as octal
     res = check(200, client.get("/type", data={"i": "0o11"}))
@@ -441,6 +447,8 @@ def test_types(client):
     res = check(200, client.get("/type", data={"i": "11"}))
     assert res.data == b"int 11"
     res = check(200, client.get("/type", json={"i": "11"}))
+    assert res.data == b"int 11"
+    res = check(200, client.get("/type", json={"i": 11}))
     assert res.data == b"int 11"
     res = check(200, client.get("/type", data={"b": "0"}))
     assert res.data == b"bool False"
@@ -460,6 +468,10 @@ def test_types(client):
     assert res.data == b"bool True"
     res = check(200, client.get("/type", json={"b": "True"}))
     assert res.data == b"bool True"
+    res = check(200, client.get("/type", json={"b": True}))
+    assert res.data == b"bool True"
+    res = check(200, client.get("/type", json={"b": False}))
+    assert res.data == b"bool False"
     res = check(200, client.get("/type", data={"s": "Hello World!"}))
     assert res.data == b"str Hello World!"
     res = check(200, client.get("/type", json={"s": "Hello World?"}))
