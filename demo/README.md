@@ -26,14 +26,16 @@ There are two open routes: `GET /now` returns the current time from the database
 thus checking that all is running, and `GET /who` returns the authenticated user
 if there is any, else `null`.
 
-Other routes are splitted in three blueprints which all use the shared database
+Other routes are splitted in four blueprints which all use the shared database
 object:
- - [stuff.py](stuff.py) defines `/stuff` routes which simply stores string in the
+ - [`stuff.py`](stuff.py) defines `/stuff` routes which simply stores string in the
    `Stuff` table.
- - [users.py](users.py) defines `/users` routes for user management by admins.
- - [scare.py](scare.py) defines `/scare` routes for user self-care, that is
+ - [`users.py`](users.py) defines `/users` routes for user management by admins.
+ - [`scare.py`](scare.py) defines `/scare` routes for user self-care, that is
    self registration, obtaining authentication tokens, changing one's password
    and deleting oneself, all this in under *30* lines of code.
+ - [`types_path.py`](types_path.py) defines `/types` routes which demonstrates
+   parameter types management.
 
 The next sections describe the convenient features which distinguish this
 demo compared to what would be required if only Flask was being used.

@@ -149,3 +149,23 @@ def test_users(client):
     check(200, client.get("/users", headers=TMP_BASIC_2))
     check(204, client.delete("/users/tmp", headers=FOO_BASIC))
     check(404, client.get("/users/tmp", headers=FOO_BASIC))
+
+def test_types(client):
+    res = check(200, client.get("/types/scalars", data={"i": 1}))
+    assert b"i=1," in res.data
+    res = check(200, client.get("/types/scalars", json={"i": 1}))
+    assert b"i=1," in res.data
+    res = check(200, client.get("/types/scalars", data={"f": 2.0}))
+    assert b"f=2.0," in res.data
+    res = check(200, client.get("/types/scalars", json={"f": 2.0}))
+    assert b"f=2.0," in res.data
+    res = check(200, client.get("/types/scalars", data={"b": "True"}))
+    assert b"b=True," in res.data
+    res = check(200, client.get("/types/scalars", json={"b": True}))
+    assert b"b=True," in res.data
+    res = check(200, client.get("/types/json", data={"j": '[false, 1, 2.0, "Three"]'}))
+    assert b"list: [False, 1, 2.0, 'Three']" in res.data
+    res = check(200, client.get("/types/json", json={"j": [True, 0x2, 3.00, "Four"]}))
+    assert b"list: [True, 2, 3.0, 'Four']" in res.data
+    res = check(200, client.get("/types/json", json={"j": {"ff": 0xff}}))
+    assert b"dict: {'ff': 255}" in res.data

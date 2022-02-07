@@ -55,3 +55,6 @@ app.register_blueprint(users)
 # self-care for users (register, consult, get token, change password)
 from scare import scare
 app.register_blueprint(scare)
+
+from types_path import types
+app.register_blueprint(types, url_prefix="/types")
