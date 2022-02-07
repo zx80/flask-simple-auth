@@ -77,6 +77,11 @@ class string(str):
     pass
 
 
+class JsonData(object):
+    """Magic JSON Type."""
+    pass
+
+
 # should this be inside the app?
 _CASTS: Dict[type, Callable[[str], object]] = {
     bool: bool_cast,
@@ -87,7 +92,8 @@ _CASTS: Dict[type, Callable[[str], object]] = {
     string: str,
     dt.date: dt.date.fromisoformat,
     dt.time: dt.time.fromisoformat,
-    dt.datetime: dt.datetime.fromisoformat
+    dt.datetime: dt.datetime.fromisoformat,
+    JsonData: json.loads,
 }
 
 
@@ -1328,7 +1334,8 @@ class FlaskSimpleAuth:
                         # parameter p not yet encountered
                         if pn in params:
                             val = params[pn]
-                            if not isinstance(val, types[p]):
+                            is_json = types[p] == JsonData
+                            if is_json and isinstance(val, str) or not is_json and not isinstance(val, types[p]):
                                 try:
                                     kwargs[p] = typing(val)
                                 except Exception as e:

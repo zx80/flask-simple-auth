@@ -1201,3 +1201,50 @@ def test_warnings_and_errors():
     def cast_foo(s: str):
         return s
     fsa.register_cast("foo", cast_foo)
+
+def test_jsondata(client):
+    # simple types, anything but strings
+    res = client.get("/json", data={"j": "null"})
+    assert res.status_code == 200 and res.data == b"NoneType: null"
+    res = client.get("/json", json={"j": "null"})
+    assert res.status_code == 200 and res.data == b"NoneType: null"
+    res = client.get("/json", json={"j": None})
+    assert res.status_code == 200 and res.data == b"NoneType: null"
+    res = client.get("/json", data={"j": "5432"})
+    assert res.status_code == 200 and res.data == b"int: 5432"
+    res = client.get("/json", json={"j": "9876"})
+    assert res.status_code == 200 and res.data == b"int: 9876"
+    res = client.get("/json", json={"j": 1234})
+    assert res.status_code == 200 and res.data == b"int: 1234"
+    res = client.get("/json", data={"j": "false"})
+    assert res.status_code == 200 and res.data == b"bool: false"
+    res = client.get("/json", json={"j": "true"})
+    assert res.status_code == 200 and res.data == b"bool: true"
+    res = client.get("/json", json={"j": True})
+    assert res.status_code == 200 and res.data == b"bool: true"
+    res = client.get("/json", data={"j": "54.3200"})
+    assert res.status_code == 200 and res.data == b"float: 54.32"
+    res = client.get("/json", json={"j": "32.10"})
+    assert res.status_code == 200 and res.data == b"float: 32.1"
+    res = client.get("/json", json={"j": 1.0000})
+    assert res.status_code == 200 and res.data == b"float: 1.0"
+    # note: complex is not json serializable
+    # list
+    res = client.get("/json", data={"j": "[1, 2]"})
+    assert res.status_code == 200 and res.data == b"list: [1, 2]"
+    res = client.get("/json", json={"j": "[3, 4]"})
+    assert res.status_code == 200 and res.data == b"list: [3, 4]"
+    res = client.get("/json", json={"j": [4, 5]})
+    assert res.status_code == 200 and res.data == b"list: [4, 5]"
+    # dict
+    res = client.get("/json", data={"j": '{"n":1}'})
+    assert res.status_code == 200 and res.data == b'dict: {"n": 1}'
+    res = client.get("/json", json={"j": '{"m":2}'})
+    assert res.status_code == 200 and res.data == b'dict: {"m": 2}'
+    res = client.get("/json", json={"j": {"p": 3}})
+    assert res.status_code == 200 and res.data == b'dict: {"p": 3}'
+    # mixed types
+    res = client.get("/json", json={"j": [False, True, [0x3, 14.000], {"q": 4}]})
+    assert res.status_code == 200 and res.data == b'list: [false, true, [3, 14.0], {"q": 4}]'
+    res = client.get("/json", json={"j": {"a": {"b": {"c": 3}}}})
+    assert res.status_code == 200 and res.data == b'dict: {"a": {"b": {"c": 3}}}'

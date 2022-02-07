@@ -589,6 +589,8 @@ For `bool`, *False* is an empty string, `0`, `False` or `F`, otherwise
 the value is *True*.
 Type `path` is a special `str` type which allow to trigger accepting
 any path on a route.
+Type `JsonData` is a special type to convert a string value to *JSON*,
+expecting a list or a dictionary.
 
 If one parameter is a dict of keyword arguments, all request parameters are
 provided into it, as shown below:
@@ -783,6 +785,7 @@ Software license is *public domain*.
 
 #### 5.4.0 in Future
 
+Add `JsonData` special type to convert strings to JSON.
 Improve json parameter type tests.
 
 #### 5.3.0 on 2022-02-04

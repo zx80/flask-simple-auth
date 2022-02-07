@@ -21,7 +21,7 @@ app = Flask("Test")
 app.config.update(
     FSA_AUTH = "fake",
     FSA_MODE = "always",
-    FSA_SKIP_PATH = (r"/(register|required|_|my)",
+    FSA_SKIP_PATH = (r"/(register|required|_|my|json)",
                      r"/(add|div|mul|sub|type|params|any|mis[12]|nogo|one)",
                      r"/(infer|superid|cplx|bool|mail|path|string|auth|f2|myint)"),
     FSA_GET_USER_PASS = get_user_pass,
@@ -337,3 +337,10 @@ def get_my_login(login: str):
 @app.get("/oops", authorize=ANY)
 def get_oops():
     raise fsa.FSAException("Ooops!", 518)
+
+# magic Json handling
+import json as js
+from FlaskSimpleAuth import JsonData
+@app.get("/json", authorize=ANY)
+def get_json(j: JsonData):
+    return f"{type(j).__name__}: {js.dumps(j)}", 200
