@@ -77,7 +77,8 @@ class string(str):
     pass
 
 
-class JsonData(object):
+# "JsonData = json.loads" would do:-)
+class JsonData:
     """Magic JSON Type."""
     pass
 
