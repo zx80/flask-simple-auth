@@ -128,10 +128,11 @@ Depending on options, the following modules should be installed:
 
 The module is simply initialize by calling its `Flask` constructor
 and providing a configuration through `FSA_*` directives, or possibly
-by calling some methods to register helper functions.
+by calling some methods to register helper functions, such as:
 
  - a function to retrieve the password hash from the user name.
  - a function which tells whether a user is in a group or role.
+ - functions which define object ownership.
 
 ```Python
 from FlaskSimpleAuth import Flask
@@ -148,6 +149,11 @@ def get_user_pass(user):
 # return whether user is in group (see with FSA_USER_IN_GROUP)
 @app.user_in_group
 def user_in_group(user, group):
+    return …
+
+# return whether user can access the foo object for an operation
+@app.object_perms("foo")
+def allow_foo_access(user, fooid, mode):
     return …
 ```
 
