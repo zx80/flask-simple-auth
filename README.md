@@ -537,7 +537,7 @@ def get_opened():
 
 Note that this simplistic model does is not enough for non-trivial applications,
 where permissions on objects often depend on the object owner.
-For those, careful per-object and pre-operation authorization will still be needed.
+For those, careful per-object and per-operation authorization will still be needed.
 
 #### Object Authorizations
 
@@ -550,7 +550,7 @@ hold a tuple `(domain, variable, mode)` which designates a permission domain
 (eg a table or object or concept name in the application), the name
 a variable in the request (path or HTTP or JSON parameters) which identifies
 an object of the domain, and the operation or level of access necessary to
-access this route.
+access this route:
 
 ```Python
 @app.get("/message/<mid>", authorize=("msg", "mid", "read"))
@@ -558,8 +558,8 @@ def get_message_mid(mid: int):
     …
 ```
 
-The system will check whether the current user can access the *mid*
-message in *read* mode by calling a per-domain user-supplied function:
+The system will check whether the current user can access message *mid*
+in *read* mode by calling a per-domain user-supplied function:
 
 ```Python
 @app.object_perms("msg")
@@ -579,6 +579,7 @@ If `variable` is not supplied, the *first* parameter of the route function
 is taken:
 
 ```Python
+# same as authorize=("msg", "mid", None)
 @app.patch("/message/<mid>", authorize=("msg",))
 def patch_message_mid(mid: int):
     …
@@ -1106,4 +1107,5 @@ Initial release in beta.
 - add `any` token scheme?
 - add app.log?
 - should cachetools and cachetoolsutils be required?
-- multi login? access to other login data (uid, email)?
+- multi login? access to other login data (uid, email)? on-demand supplied user data?
+- remove the `register_` on register functions?
