@@ -562,15 +562,18 @@ message in *read* mode by calling a per-domain user-supplied function:
 @app.object_perms("msg")
 def can_access_message(user: str, mid: int, mode: str) -> bool:
     # does user can access message mid for operation mode?
-    # None: 404, False: 403, True: access is granted
     return …
 
 # also: app.register_object_perms("msg", can_access_message)
 ```
 
+If the check function returns *None*, a *404 Not Found* response is generated.
+If it returns *False*, a *403 Forbidden* response is generated.
+If it returns *True*, the route function is called to generate the response.
+
+If `mode` is not supplied, *None* is passed to the check function.
 If `variable` is not supplied, the *first* parameter of the route function
 is taken.
-If `mode` is not supplied, *None* is passed to the check function.
 
 
 ### Parameters
