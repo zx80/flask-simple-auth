@@ -573,7 +573,7 @@ If it returns *True*, the route function is called to generate the response.
 
 If `mode` is not supplied, *None* is passed to the check function.
 If `variable` is not supplied, the *first* parameter of the route function
-is taken.
+is taken:
 
 ```Python
 @app.patch("/message/<mid>", authorize=("msg",))
