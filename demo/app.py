@@ -56,5 +56,6 @@ app.register_blueprint(users)
 from scare import scare
 app.register_blueprint(scare)
 
+# demonstrate parameter typing, including JsonData "magic" type
 from types_path import types
 app.register_blueprint(types, url_prefix="/types")
