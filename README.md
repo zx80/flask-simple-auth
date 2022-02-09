@@ -168,7 +168,7 @@ Once initialized `app` is a standard Flask object with some additions:
 - `current_user` to get the authenticated user if any, or `None`.
 - `hash_password` and `check_password` to hash or check a password.
 - `create_token` to compute a new authentication token for the current user.
-- `clear_caches` to clear internal process caches.
+- `clear_caches` to clear internal process caches (probably a bad idea).
 - `register_object_perms` function to register a per-object permission helper function.
   or the `object_perms` decorator.
 
@@ -421,8 +421,9 @@ schemes: `param`, `basic`, `http-basic`, `http-digest`, `digest`, `password`.
 For checking passwords the password (salted hash) must be retrieved through
 `get_user_pass(user)`.
 This function must be provided by the application when the module is initialized.
-Because this function is cached by default, caches must be reset when users
-are changed by calling `clear_caches`.
+Because this function is cached by default, the cache expiration must
+be reached so that changes take effect, or the cache must be cleared
+manually, which may impair application performance.
 
 The following configuration directives are available to configure
 `passlib` password checks:
@@ -494,15 +495,17 @@ The parameter accepts a list of `str` and `int` for groups, and of
 `tuple` for object permissions.  If a scalar is provided, it is assumed
 to be equivalent to a list of one element.
 
-When multiple authorizations are provided they are cumulative.
+When multiple authorizations are provided they are cumulative,
+that is all conditions must be met.
 
 #### Group Authorizations
 
 A group or role is identified as an integer or a string.
 The `user_in_group(user, group)` function is called to check whether the
 authenticated user belongs to a given group.
-Because this function is cached by default, caches should be reset when roles
-are changed by calling `clear_caches`.
+Because this function is cached by default, the cache expiration must
+be reached so that changes take effect, or the cache must be cleared
+manually, which may impair application performance.
 
 ```Python
 @app.get("/admin-only", authorize="ADMIN")
@@ -580,6 +583,11 @@ is taken:
 def patch_message_mid(mid: int):
     …
 ```
+
+Because these functions are cached by default, the cache expiration must
+be reached so that changes take effect, or the cache must be cleared
+manually, which may impair application performance.
+
 
 ### Parameters
 
