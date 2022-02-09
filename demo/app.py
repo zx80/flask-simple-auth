@@ -40,7 +40,7 @@ def get_who():
     return json(app.current_user()), 200
 
 #
-# then register 3 blueprints
+# then register some blueprints
 #
 
 
