@@ -34,7 +34,7 @@ app.config.update(
 def check_users_perms(login: str, val: str, mode):
     return login in (val, "dad") if val in UP else None
 
-app.register_object_perms("users", check_users_perms)
+app.object_perms("users", check_users_perms)
 
 from SubApp import subapp
 app.register_blueprint(subapp, url_prefix="/b1")

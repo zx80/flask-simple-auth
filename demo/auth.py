@@ -26,4 +26,4 @@ def check_user_access(login: str, oid: str, mode) -> bool:
 def init_app(app: Flask):
     app.get_user_pass(get_user_pass)
     app.user_in_group(user_in_group)
-    app.register_object_perms("users", check_user_access)
+    app.object_perms("users", check_user_access)

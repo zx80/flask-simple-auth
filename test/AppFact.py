@@ -18,7 +18,7 @@ def create_app(**config):
     def check_users_access(user, val, mode):
         return user == val if val in UP else None
 
-    app.register_object_perms("users", check_users_access)
+    app.object_perms("users", check_users_access)
 
     # shared stuff
     Shared.init_app(something="AppFact")

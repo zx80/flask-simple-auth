@@ -984,7 +984,7 @@ def test_object_perms_errors():
         else:
             return True
     # triggers an overwrite warning
-    app.register_object_perms("known", is_okay)
+    app.object_perms("known", is_okay)
     # declaration time errors
     try:
         @app.get("/bad-perm-1", authorize=tuple())

@@ -169,8 +169,7 @@ Once initialized `app` is a standard Flask object with some additions:
 - `hash_password` and `check_password` to hash or check a password.
 - `create_token` to compute a new authentication token for the current user.
 - `clear_caches` to clear internal process caches (probably a bad idea).
-- `register_object_perms` function to register a per-object permission helper function.
-  or the `object_perms` decorator.
+- `object_perms` function/decorator to register a per-object permission helper function.
 
 Alternatively, it is possible but not recommended to use the flask extensions
 model, in which case the `FlaskSimpleAuth` object must be instanciated and
@@ -567,7 +566,7 @@ def can_access_message(user: str, mid: int, mode: str) -> bool:
     # does user can access message mid for operation mode?
     return …
 
-# also: app.register_object_perms("msg", can_access_message)
+# also: app.object_perms("msg", can_access_message)
 ```
 
 If the check function returns *None*, a *404 Not Found* response is generated.
@@ -806,6 +805,10 @@ If you like it, feel free to send a postcard to the author.
 Sources are available on [GitHub](https://github.com/zx80/flask-simple-auth)
 and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 Software license is *public domain*.
+
+#### ? in Future
+
+Rename `register_object_perms` function to simpler `object_perms`.
 
 #### 5.4.0 on 2022-02-08
 

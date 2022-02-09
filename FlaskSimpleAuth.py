@@ -217,7 +217,7 @@ class Flask(flask.Flask):
     - several additional methods are provided: `get_user_pass`,
       `user_in_group`, `check_password`, `hash_password`, `create_token`,
       `get_user`, `current_user`, `clear_caches`, `register_cast`,
-      `register_object_perms`.
+      `object_perms`.
     """
 
     def __init__(self, *args, **kwargs):
@@ -244,18 +244,14 @@ class Flask(flask.Flask):
         """Add a cast function for a type."""
         self._fsa.register_cast(t, c)
 
-    def register_object_perms(self, d, f):
+    def object_perms(self, d, f=None):
         """Add an object permission checker for a domain."""
-        self._fsa.register_object_perms(d, f)
+        return self._fsa.object_perms(d, f)
 
     # decorator versions
     def cast(self, t):
         """Decorator to add a type cast function."""
         return self._fsa.cast(t)
-
-    def object_perms(self, d):
-        """Decorator to add an object permission checker for a domain."""
-        return self._fsa.object_perms(d)
 
     # password management
     def check_password(self, pwd, ref):
@@ -507,18 +503,17 @@ class FlaskSimpleAuth:
             return fun
         return annotate
 
-    def register_object_perms(self, domain, checker: Callable):
+    def object_perms(self, domain, checker: Optional[Callable]):
         """Add an object permission helper for a domain."""
         if domain in self._object_perms:
             log.warning(f"overriding object permission checker for domain {domain}")
-        self._object_perms[domain] = checker
-
-    def object_perms(self, domain):
-        """Decorator to add an object permission hook for a domain."""
-        def annotate(fun):
-            self.register_object_perms(domain, fun)
-            return fun
-        return annotate
+        if checker:  # direct
+            self._object_perms[domain] = checker
+        else:  # decorator
+            def annotate(fun):
+                self._object_perms[domain] = fun
+                return fun
+            return annotate
 
     def _check_object_perms(self, user, domain, oid, mode):
         """Tell whether user can access object oid in domain for mode."""
