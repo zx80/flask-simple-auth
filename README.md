@@ -552,7 +552,7 @@ access this route.
 ```Python
 @app.get("/message/<mid>", authorize=("msg", "mid", "read"))
 def get_message_mid(mid: int):
-    return …
+    …
 ```
 
 The system will check whether the current user can access the *mid*
@@ -575,6 +575,11 @@ If `mode` is not supplied, *None* is passed to the check function.
 If `variable` is not supplied, the *first* parameter of the route function
 is taken.
 
+```Python
+@app.patch("/message/<mid>", authorize=("msg",))
+def patch_message_mid(mid: int):
+    …
+```
 
 ### Parameters
 
