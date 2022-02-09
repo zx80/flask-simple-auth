@@ -639,8 +639,8 @@ def get_mail_addr(addr: EmailAddr):
 ```
 
 If the constructor does not match, a custom function can be provided
-with the `register_cast` function or the `cast` decorator  and will be
-called automatically to convert parameters:
+with the `cast` function/decorator and will be called automatically
+to convert parameters:
 
 ```Python
 class House:
@@ -650,7 +650,7 @@ class House:
 def strToHouse(s: str) -> House:
     return …
 
-# or: app.register_cast(House, strToHouse)
+# or: app.cast(House, strToHouse)
 
 @app.get("/house/<h>", authorize="ANY")
 def get_house_h(h: House)
@@ -808,7 +808,8 @@ Software license is *public domain*.
 
 #### ? in Future
 
-Rename `register_object_perms` function to simpler `object_perms`.
+Rename `register_object_perms` and `register_cast` functions to simpler
+`object_perms` and `cast`.
 
 #### 5.4.0 on 2022-02-08
 
@@ -1111,4 +1112,3 @@ Initial release in beta.
 - add app.log?
 - should cachetools and cachetoolsutils be required?
 - multi login? access to other login data (uid, email)? on-demand supplied user data?
-- remove the `register_` on register functions?

@@ -98,11 +98,12 @@ _CASTS: Dict[type, Callable[[str], object]] = {
 }
 
 
-def register_cast(t: type, c: Callable[[str], object]):
+def register_cast(t: type, cast: Callable[[str], object]):
     """Add a cast for a custom type, if the type itself does not work."""
     if t in _CASTS:
         log.warning(f"overriding type casting function for {t}")
-    _CASTS[t] = c
+    _CASTS[t] = cast
+    return cast
 
 
 #
@@ -216,8 +217,7 @@ class Flask(flask.Flask):
       method: `get`, `post`, `put`, `patch`, `delete`.
     - several additional methods are provided: `get_user_pass`,
       `user_in_group`, `check_password`, `hash_password`, `create_token`,
-      `get_user`, `current_user`, `clear_caches`, `register_cast`,
-      `object_perms`.
+      `get_user`, `current_user`, `clear_caches`, `cast`, `object_perms`.
     """
 
     def __init__(self, *args, **kwargs):
@@ -231,7 +231,7 @@ class Flask(flask.Flask):
         """Clear all internal caches."""
         self._fsa.clear_caches()
 
-    # hooks
+    # register hooks, can be used as decorators
     def get_user_pass(self, gup):
         """Set `get_user_pass` helper function."""
         return self._fsa.get_user_pass(gup)
@@ -240,18 +240,13 @@ class Flask(flask.Flask):
         """Set `user_in_group` helper function."""
         return self._fsa.user_in_group(uig)
 
-    def register_cast(self, t, c):
-        """Add a cast function for a type."""
-        self._fsa.register_cast(t, c)
-
     def object_perms(self, d, f=None):
         """Add an object permission checker for a domain."""
         return self._fsa.object_perms(d, f)
 
-    # decorator versions
-    def cast(self, t):
+    def cast(self, t, c=None):
         """Decorator to add a type cast function."""
-        return self._fsa.cast(t)
+        return self._fsa.cast(t, c)
 
     # password management
     def check_password(self, pwd, ref):
@@ -492,18 +487,17 @@ class FlaskSimpleAuth:
         self._user_in_group = self._cache_function(uig, "u.")
         return uig
 
-    def register_cast(self, t, c):
-        """Add a cast function for a type."""
-        register_cast(t, c)
+    def cast(self, t, cast: Optional[Callable] = None):
+        """Add a cast function to a type."""
+        if cast:  # direct
+            return register_cast(t, cast)
+        else:  # decorator
+            def annotate(fun):
+                register_cast(t, fun)
+                return fun
+            return annotate
 
-    def cast(self, t):
-        """Decorator to add a type function."""
-        def annotate(fun):
-            self.register_cast(t, fun)
-            return fun
-        return annotate
-
-    def object_perms(self, domain, checker: Optional[Callable]):
+    def object_perms(self, domain, checker: Optional[Callable] = None):
         """Add an object permission helper for a domain."""
         if domain in self._object_perms:
             log.warning(f"overriding object permission checker for domain {domain}")
