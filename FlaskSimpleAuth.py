@@ -13,8 +13,6 @@ This code is public domain.
 from typing import Optional, Callable, Dict, List, Set, Any, Union, MutableMapping
 
 import functools
-import cachetools
-import CacheToolsUtils as ctu  # type: ignore
 import inspect
 import datetime as dt
 import re
@@ -457,8 +455,9 @@ class FlaskSimpleAuth:
         if not fun or self._gen_cache is None:
             return fun
         else:
+            import cachetools as ct
             fun_cache = self._gen_cache(prefix=prefix, cache=self._cache)
-            return cachetools.cached(cache=fun_cache)(fun)
+            return ct.cached(cache=fun_cache)(fun)
 
     def _params(self):
         """Get request parameters wherever they are."""
@@ -586,41 +585,44 @@ class FlaskSimpleAuth:
         #
         self._cache_opts: Dict[str, Any] = conf.get("FSA_CACHE_OPTS", {})
         cache = conf.get("FSA_CACHE", "lru")
-        if cache in ("ttl", "lru", "lfu", "mru", "fifo", "rr"):
-            maxsize = conf.get("FSA_CACHE_SIZE", _DEFAULT_CACHE_SIZE)
-            self._gen_cache = ctu.PrefixedCache
-            if cache == "ttl":
+        if cache:
+            import cachetools as ct
+            import CacheToolsUtils as ctu  # type: ignore
+            if cache in ("ttl", "lru", "lfu", "mru", "fifo", "rr"):
+                maxsize = conf.get("FSA_CACHE_SIZE", _DEFAULT_CACHE_SIZE)
+                self._gen_cache = ctu.PrefixedCache
+                if cache == "ttl":
+                    ttl = self._cache_opts.pop("ttl", _DEFAULT_CACHE_TTL)
+                    rcache: MutableMapping = ct.TTLCache(maxsize, **self._cache_opts, ttl=ttl)
+                elif cache == "lru":
+                    rcache = ct.LRUCache(maxsize, **self._cache_opts)
+                elif cache == "lfu":
+                    rcache = ct.LFUCache(maxsize, **self._cache_opts)
+                elif cache == "mru":
+                    rcache = ct.MRUCache(maxsize, **self._cache_opts)
+                elif cache == "fifo":
+                    rcache = ct.FIFOCache(maxsize, **self._cache_opts)
+                elif cache == "rr":
+                    rcache = ct.RRCache(maxsize, **self._cache_opts)
+                else:  # pragma: no cover
+                    raise Exception(f"unexpected simple cache type: {cache}")
+                self._cache = ctu.StatsCache(rcache)
+            elif cache in ("memcached", "pymemcache"):
+                import pymemcache as pmc  # type: ignore
+                if "serde" not in self._cache_opts:
+                    self._cache_opts.update(serde=ctu.JsonSerde())
+                self._cache = ctu.StatsMemCached(pmc.Client(**self._cache_opts))
+                self._gen_cache = ctu.PrefixedMemCached
+            elif cache == "redis":
+                import redis
                 ttl = self._cache_opts.pop("ttl", _DEFAULT_CACHE_TTL)
-                rcache: MutableMapping = cachetools.TTLCache(maxsize, **self._cache_opts, ttl=ttl)
-            elif cache == "lru":
-                rcache = cachetools.LRUCache(maxsize, **self._cache_opts)
-            elif cache == "lfu":
-                rcache = cachetools.LFUCache(maxsize, **self._cache_opts)
-            elif cache == "mru":
-                rcache = cachetools.MRUCache(maxsize, **self._cache_opts)
-            elif cache == "fifo":
-                rcache = cachetools.FIFOCache(maxsize, **self._cache_opts)
-            elif cache == "rr":
-                rcache = cachetools.RRCache(maxsize, **self._cache_opts)
-            else:  # pragma: no cover
-                raise Exception(f"unexpected simple cache type: {cache}")
-            self._cache = ctu.StatsCache(rcache)
-        elif cache in ("memcached", "pymemcache"):
-            import pymemcache as pmc  # type: ignore
-            if "serde" not in self._cache_opts:
-                self._cache_opts.update(serde=ctu.JsonSerde())
-            self._cache = ctu.StatsMemCached(pmc.Client(**self._cache_opts))
-            self._gen_cache = ctu.PrefixedMemCached
-        elif cache == "redis":
-            import redis
-            ttl = self._cache_opts.pop("ttl", _DEFAULT_CACHE_TTL)
-            self._cache = ctu.StatsRedisCache(redis.Redis(**self._cache_opts), ttl=ttl)
-            self._gen_cache = ctu.PrefixedRedisCache
-        elif cache == "dict":
-            self._cache = ctu.StatsCache(dict())
-            self._gen_cache = ctu.PrefixedCache
-        else:
-            raise Exception(f"unexpected FSA_CACHE: {cache}")
+                self._cache = ctu.StatsRedisCache(redis.Redis(**self._cache_opts), ttl=ttl)
+                self._gen_cache = ctu.PrefixedRedisCache
+            elif cache == "dict":
+                self._cache = ctu.StatsCache(dict())
+                self._gen_cache = ctu.PrefixedCache
+            else:
+                raise Exception(f"unexpected FSA_CACHE: {cache}")
         #
         # token setup
         #

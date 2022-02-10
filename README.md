@@ -752,7 +752,7 @@ Some control is available about caching features used for user authentication
 (user password access and token validations) and authorization (group and
 per-object permissions):
 
-- `FSA_CACHE` controls the type of cache to use, set to None to disallow
+- `FSA_CACHE` controls the type of cache to use, set to *None* to disallow
   caches. Values for standard `cachetools` cache classes are `ttl`, `lru`,
   `lfu`, `mru`, `fifo`, `rr` plus `dict`.
   MemCached is supported by setting it to `memcached`, and Redis with `redis`.
@@ -810,6 +810,7 @@ Software license is *public domain*.
 
 Rename `register_object_perms` and `register_cast` functions to simpler
 `object_perms` and `cast`.
+Make module work without `cachetools` if `FSA_CACHE` is set to *None*.
 
 #### 5.4.0 on 2022-02-08
 
@@ -1110,5 +1111,4 @@ Initial release in beta.
 - test `FSA_HTTP_AUTH_OPTS`?
 - add `any` token scheme?
 - add app.log?
-- should cachetools and cachetoolsutils be required?
 - multi login? access to other login data (uid, email)? on-demand supplied user data?
