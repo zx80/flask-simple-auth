@@ -1112,3 +1112,5 @@ Initial release in beta.
 - add `any` token scheme?
 - add app.log?
 - multi login? access to other login data (uid, email)? on-demand supplied user data?
+  how about more hooks, *eg* `load_user_data` that could be cached?
+  Two-login issue: "WHERE login = ... OR email = ..."? However then perms must follow…
