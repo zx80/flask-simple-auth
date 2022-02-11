@@ -1018,14 +1018,16 @@ class FlaskSimpleAuth:
         return self._token and not \
             (self._token == "jwt" and self._algo[0] in ("R", "E", "P") and not self._sign)
 
-    def create_token(self, user: str = None):
+    def create_token(self, user: str = None, realm: str = None, delay: float = None):
         """Create a new token for user depending on the configuration."""
         assert self._token
         user = user or self.get_user()
+        realm = realm or self._realm
+        delay = delay or self._delay
         if self._token == "fsa":
-            return self._get_fsa_token(self._realm, user, self._delay, self._secret)
+            return self._get_fsa_token(realm, user, delay, self._secret)
         else:
-            return self._get_jwt_token(self._realm, user, self._delay, self._sign)
+            return self._get_jwt_token(realm, user, delay, self._sign)
 
     def _get_fsa_token_auth(self, token):
         """Tell whether FSA token is ok: return validated user or None.
