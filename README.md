@@ -821,13 +821,14 @@ Sources are available on [GitHub](https://github.com/zx80/flask-simple-auth)
 and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 Software license is *public domain*.
 
-#### ? in Future
+#### 6.0 in Future
 
 Rename `register_object_perms` and `register_cast` functions to simpler
 `object_perms` and `cast`.
 Add `FSA_OBJECT_PERMS` and `FSA_CAST` configuration directives.
 Make module work without `cachetools` if `FSA_CACHE` is set to *None*.
 Use `ttl` as a default cache strategy.
+Simplify version numbering from 3 to 2 figures.
 
 #### 5.4.0 on 2022-02-08
 
@@ -1128,6 +1129,5 @@ Initial release in beta.
 - test `FSA_HTTP_AUTH_OPTS`?
 - add `any` token scheme?
 - add app.log?
-- multi login? access to other login data (uid, email)? on-demand supplied user data?
+- on-demand supplied user data?
   how about more hooks, *eg* `load_user_data` that could be cached?
-  Two-login issue: "WHERE login = ... OR email = ..."? However then perms must follow…
