@@ -23,17 +23,19 @@ def get_users_login(login: str):
 
 # POST /users (login, pass, admin): add a new user
 @users.post("/users", authorize="ADMIN")
-def post_users(login: str, _pass: str, admin: bool = False):
-    db.add_user(login=login, upass=app.hash_password(_pass), admin=admin)
+def post_users(login: str, email: str, _pass: str, admin: bool = False):
+    db.add_user(login=login, email=email, upass=app.hash_password(_pass), admin=admin)
     app.clear_caches()
     return "", 201
 
 
-# PATCH /users/<login> (pass?, admin?): update user data
+# PATCH /users/<login> (pass?, email? admin?): update user data
 @users.patch("/users/<login>", authorize="ADMIN")
-def patch_users_login(login: str, _pass: str = None, admin: bool = None):
+def patch_users_login(login: str, email: str = None, _pass: str = None, admin: bool = None):
     if _pass is not None:
         db.upd_user_password(login=login, upass=app.hash_password(_pass))
+    if email is not None:
+        db.upd_user_email(login=login, email=email)
     if admin is not None:
         db.upd_user_admin(login=login, admin=admin)
     app.clear_caches()

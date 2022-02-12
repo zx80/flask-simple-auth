@@ -25,6 +25,8 @@ BLA_BASIC = basic("bla", "foo")
 # temporary users for testing
 TMP_BASIC = basic("tmp", "tmp")
 TMP_BASIC_2 = basic("tmp", "TMP")
+TMP_BASIC_3 = basic("tmp@somewhere.org", "tmp")
+TMP_BASIC_4 = basic("tmp@somewhere.org", "TMP")
 
 @pytest.fixture
 def client():
@@ -113,7 +115,7 @@ def test_scare(client):
     bad_token = foo_token[:-1] + "z"
     check(401, client.get("/scare", data={"auth": bad_token}))
     check(401, client.get("/stuff", headers=TMP_BASIC))
-    check(201, client.post("/scare", data={"login": "tmp", "pass": "tmp"}, headers=FOO_BASIC))
+    check(201, client.post("/scare", data={"login": "tmp", "email": "tmp@somewhere.org", "pass": "tmp"}, headers=FOO_BASIC))
     res = check(200, client.get("/scare", headers=TMP_BASIC))
     assert b"tmp" in res.data
     check(401, client.patch("/scare", json={"opass": "tmp", "npass": "TMP"}, headers=TMP_BASIC_2))
@@ -137,16 +139,26 @@ def test_users(client):
     res = check(200, client.get("/users/foo", headers=BLA_BASIC))
     assert b"foo" in res.data and b"bla" not in res.data
     check(401, client.get("/stuff/1", headers=TMP_BASIC))
-    check(201, client.post("/users", data={"login": "tmp", "pass": "tmp", "admin": False}, headers=FOO_BASIC))
+    check(201, client.post("/users", data={"login": "tmp", "email": "tmp@somewhere.org", "pass": "tmp", "admin": False}, headers=FOO_BASIC))
     check(200, client.get("/stuff/1", headers=TMP_BASIC))
+    check(200, client.get("/stuff/1", headers=TMP_BASIC_3))
     check(403, client.get("/users", headers=TMP_BASIC))
+    check(403, client.get("/users", headers=TMP_BASIC_3))
     check(403, client.get("/users/foo", headers=TMP_BASIC))  # not self!
     check(200, client.get("/users/tmp", headers=TMP_BASIC))  # self!
     check(204, client.patch("/users/tmp", data={"admin": True}, headers=FOO_BASIC))
     check(200, client.get("/users", headers=TMP_BASIC))
+    check(200, client.get("/users", headers=TMP_BASIC_3))
     check(204, client.patch("/users/tmp", data={"pass": "TMP"}, headers=FOO_BASIC))
     check(401, client.get("/users", headers=TMP_BASIC))
     check(200, client.get("/users", headers=TMP_BASIC_2))
+    check(401, client.get("/users", headers=TMP_BASIC_3))
+    check(200, client.get("/users", headers=TMP_BASIC_4))
+    check(204, client.patch("/users/tmp", data={"email": "tmp2@somewhere.org"}, headers=FOO_BASIC))
+    check(200, client.get("/users", headers=TMP_BASIC_2))
+    check(401, client.get("/users", headers=TMP_BASIC))
+    check(401, client.get("/users", headers=TMP_BASIC_3))
+    check(401, client.get("/users", headers=TMP_BASIC_4))
     check(204, client.delete("/users/tmp", headers=FOO_BASIC))
     check(404, client.get("/users/tmp", headers=FOO_BASIC))
 

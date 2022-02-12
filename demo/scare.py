@@ -24,8 +24,8 @@ def get_scare_token():
 
 # POST /scare (login, pass): register a new user, or 500 if already exists
 @scare.post("/scare", authorize="ANY")
-def post_scare(login: str, _pass: str):
-    db.add_user(login=login, upass=app.hash_password(_pass), admin=False)
+def post_scare(login: str, email: str, _pass: str):
+    db.add_user(login=login, email=email, upass=app.hash_password(_pass), admin=False)
     app.clear_caches()
     return "", 201
 
@@ -36,7 +36,7 @@ def patch_scare(opass: str, npass: str):
     login = app.get_user()
     res = db.get_user_data(login=login)
     assert res  # ok because authorize did authenticate user
-    if not app.check_password(opass, res[1]):
+    if not app.check_password(opass, res[2]):
         return "invalid password provided", 403
     db.upd_user_password(login=login, upass=app.hash_password(npass))
     app.clear_caches()

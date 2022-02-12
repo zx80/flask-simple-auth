@@ -20,22 +20,25 @@ DELETE FROM Stuff WHERE sid = :sid;
 UPDATE Stuff SET sname = :sname WHERE sid = :sid;
 
 -- name: get_user_data^
-SELECT login, upass, admin FROM Auth WHERE login = :login;
+SELECT login, email, upass, admin FROM Auth WHERE :login IN (login, email);
 
 -- name: get_user_all
-SELECT login, upass, admin FROM Auth ORDER BY 1;
+SELECT login, email, upass, admin FROM Auth ORDER BY 1;
 
 -- name: add_user!
-INSERT INTO Auth(login, upass, admin) VALUES (:login, :upass, :admin);
+INSERT INTO Auth(login, email, upass, admin) VALUES (:login, :email, :upass, :admin);
 
 -- name: add_user_login!
-INSERT INTO Auth(login, upass) VALUES (:login, :upass);
+INSERT INTO Auth(login, email, upass) VALUES (:login, :email, :upass);
 
 -- name: del_user_login!
-DELETE FROM Auth WHERE login = :login;
+DELETE FROM Auth WHERE :login IN (login, email);
 
 -- name: upd_user_password!
-UPDATE Auth SET upass = :upass WHERE login = :login;
+UPDATE Auth SET upass = :upass WHERE :login IN (login, email);
+
+-- name: upd_user_email!
+UPDATE Auth SET email = :email WHERE :login IN (login, email);
 
 -- name: upd_user_admin!
-UPDATE Auth SET admin = :admin WHERE login = :login;
+UPDATE Auth SET admin = :admin WHERE :login IN (login, email);

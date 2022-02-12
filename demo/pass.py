@@ -16,9 +16,9 @@ pm = CryptContext(schemes=[scheme],
                   bcrypt__default_rounds=4,    # about 2 ms
                   bcrypt__default_ident='2y')  # apache compatible
 sep = " "
-print("INSERT INTO Auth(login, upass, admin) VALUES")
+print("INSERT INTO Auth(login, email, upass, admin) VALUES")
 for lp in sys.argv[2:]:
     login, mdp = lp.split(":", 1)
-    print(f"{sep} ('{login}', '{pm.hash(mdp)}', TRUE)")
+    print(f"{sep} ('{login}', '{login}@school.org', '{pm.hash(mdp)}', TRUE)")
     sep = ","
 print(";")

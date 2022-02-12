@@ -61,6 +61,8 @@ FlaskSimpleAuth passwords are retrieved with the `get_user_pass` hook,
 which must be provided.
 The `pass.py` script allows to generate initial credentials for the
 demo application.
+The astute query behind `get_user_pass` allows the user to authenticate
+themselves either using their login or their email.
 
 
 ## Application Authorization

@@ -4,7 +4,9 @@ CREATE TABLE Stuff(
 );
 
 CREATE TABLE Auth(
-  login TEXT PRIMARY KEY,
+  aid SERIAL PRIMARY KEY,
+  login TEXT UNIQUE NOT NULL CHECK (login NOT LIKE '%@%'),
+  email TEXT UNIQUE NOT NULL CHECK (email LIKE '%@%'),
   upass TEXT NOT NULL,
   admin BOOLEAN NOT NULL DEFAULT FALSE
 );
