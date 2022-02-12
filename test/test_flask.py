@@ -67,7 +67,7 @@ def client2():
 @pytest.fixture
 def client3():
     import AppFact as af
-    with af.create_app().test_client() as c:
+    with af.create_app(FSA_DEBUG=False, FSA_LOGGING_LEVEL=logging.DEBUG).test_client() as c:
         yield c
 
 @pytest.fixture

@@ -218,15 +218,15 @@ class Flask(flask.Flask):
       `get_user`, `current_user`, `clear_caches`, `cast`, `object_perms`.
     """
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, debug: Optional[bool] = None, **kwargs):
         super().__init__(*args, **kwargs)
-        self._fsa = FlaskSimpleAuth(self)
+        self._fsa = FlaskSimpleAuth(self, debug=debug)
         # needed for blueprint registration
         # overwritten late because called by upper Flask initialization for "static"
         self.add_url_rule = self._fsa.add_url_rule
 
     def clear_caches(self):
-        """Clear all internal caches."""
+        """Clear all internal caches. Probably a bad idea."""
         self._fsa.clear_caches()
 
     # register hooks, can be used as decorators
@@ -293,15 +293,15 @@ _DIRECTIVES = {
     # general settings
     "FSA_CHECK", "FSA_SKIP_PATH", "FSA_SECURE", "FSA_MODE",
     "FSA_SERVER_ERROR", "FSA_NOT_FOUND_ERROR",
-    # hooks
-    "FSA_GET_USER_PASS", "FSA_USER_IN_GROUP",
+    # register hooks
+    "FSA_GET_USER_PASS", "FSA_USER_IN_GROUP", "FSA_CAST", "FSA_OBJECT_PERMS",
     # authentication
     "FSA_AUTH", "FSA_REALM",
-    "FSA_PASSWORD_SCHEME", "FSA_PASSWORD_OPTS",
     "FSA_FAKE_LOGIN", "FSA_PARAM_USER", "FSA_PARAM_PASS",
     "FSA_TOKEN_TYPE", "FSA_TOKEN_ALGO", "FSA_TOKEN_CARRIER", "FSA_TOKEN_DELAY",
     "FSA_TOKEN_GRACE", "FSA_TOKEN_NAME", "FSA_TOKEN_LENGTH", "FSA_TOKEN_SECRET",
     "FSA_TOKEN_SIGN", "FSA_TOKEN_RENEWAL",
+    "FSA_PASSWORD_SCHEME", "FSA_PASSWORD_OPTS",
     "FSA_PASSWORD_LEN", "FSA_PASSWORD_RE",
     "FSA_HTTP_AUTH_OPTS",
     # internal caching
@@ -677,7 +677,7 @@ class FlaskSimpleAuth:
             import random
             import string
             log.warning("random token secret, only ok for one process app")
-            # list of 94 chars, about 6.5 bits per char
+            # list of 94 chars, about 6.5 bits per char, 40 chars => 260 bits
             chars = string.ascii_letters + string.digits + string.punctuation
             self._secret = "".join(random.SystemRandom().choices(chars, k=40))
         if not self._token:
@@ -720,12 +720,22 @@ class FlaskSimpleAuth:
         self._userp = conf.get("FSA_PARAM_USER", "USER")
         self._passp = conf.get("FSA_PARAM_PASS", "PASS")
         #
-        # password authentication and authorization hooks
+        # hooks
         #
         if "FSA_GET_USER_PASS" in conf:
             self.get_user_pass(conf["FSA_GET_USER_PASS"])
         if "FSA_USER_IN_GROUP" in conf:
             self.user_in_group(conf["FSA_USER_IN_GROUP"])
+        if "FSA_CAST" in conf:
+            casts = conf["FSA_CAST"]
+            assert isinstance(casts, dict)
+            for type_name, cast_fun in casts.items():
+                self.cast(type_name, cast_fun)
+        if "FSA_OBJECT_PERMS" in conf:
+            perms = conf["FSA_OBJECT_PERMS"]
+            assert isinstance(perms, dict)
+            for domain, checker in perms.items():
+                self.object_perms(domain, checker)
         #
         # http auth setup
         #

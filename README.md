@@ -584,6 +584,13 @@ def patch_message_mid(mid: int):
     …
 ```
 
+The `FSA_OBJECT_PERMS` configuration directive can be set as a dictionary
+which maps domains to their access checking functions:
+
+```Python
+FSA_OBJECT_PERMS = { "msg": can_access_message, "blog": can_access_blog }
+```
+
 Because these functions are cached by default, the cache expiration must
 be reached so that changes take effect, or the cache must be cleared
 manually, which may impair application performance.
@@ -655,6 +662,13 @@ def strToHouse(s: str) -> House:
 @app.get("/house/<h>", authorize="ANY")
 def get_house_h(h: House)
     …
+```
+
+The `FSA_CAST` directive can also be defined as a dictionary mapping
+types to their conversion functions:
+
+```Python
+FSA_CAST = { House: strToHouse, … }
 ```
 
 Finally, python parameter names can be prepended with a `_`,
@@ -811,6 +825,7 @@ Software license is *public domain*.
 
 Rename `register_object_perms` and `register_cast` functions to simpler
 `object_perms` and `cast`.
+Add `FSA_OBJECT_PERMS` and `FSA_CAST` configuration directives.
 Make module work without `cachetools` if `FSA_CACHE` is set to *None*.
 Use `ttl` as a default cache strategy.
 

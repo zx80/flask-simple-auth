@@ -21,11 +21,14 @@ fsa = FlaskSimpleAuth(app)
 # AUTH
 #
 app.config.update(
+    FSA_DEBUG = True,
     FSA_AUTH = "fake",
     FSA_MODE = "always",
     FSA_TOKEN_CARRIER = "cookie",
     FSA_GET_USER_PASS = get_user_pass,
-    FSA_USER_IN_GROUP = user_in_group
+    FSA_USER_IN_GROUP = user_in_group,
+    FSA_CAST = { list: lambda s: s.split(" ") },
+    FSA_OBJECT_PERMS = { "xyz": lambda d, i, m: False }
 )
 
 #

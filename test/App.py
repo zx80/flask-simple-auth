@@ -13,7 +13,7 @@ log = logging.getLogger("app")
 #
 import FlaskSimpleAuth as fsa
 from FlaskSimpleAuth import Flask, jsonify, ANY, ALL, NONE, path, string
-app = Flask("Test")
+app = Flask("Test", debug=True)
 
 #
 # AUTH
