@@ -37,6 +37,7 @@ stuff.pg2: stuff.pg
 
 app.pid: stuff.$(DB)
 	export FLASK_APP=app.py FLASK_ENV=development APP_CONFIG=app-$(DB).conf
+	type flask || exit 1
 	flask run > app.log 2>&1 &
 	echo $$! > $@
 
