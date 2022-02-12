@@ -223,7 +223,7 @@ class Flask(flask.Flask):
         self._fsa = FlaskSimpleAuth(self, debug=debug)
         # needed for blueprint registration
         # overwritten late because called by upper Flask initialization for "static"
-        self.add_url_rule = self._fsa.add_url_rule
+        setattr(self, "add_url_rule", self._fsa.add_url_rule)
 
     def clear_caches(self):
         """Clear all internal caches. Probably a bad idea."""
@@ -320,7 +320,7 @@ _DEFAULT_NOT_FOUND_ERROR = 404
 class FlaskSimpleAuth:
     """Flask extension for authentication, authorization and parameters."""
 
-    def __init__(self, app: flask.Flask = None, debug: bool = False):
+    def __init__(self, app: flask.Flask = None, debug: Optional[bool] = False):
         """Constructor parameter: flask application to extend."""
         self._debug = debug
         if debug:
