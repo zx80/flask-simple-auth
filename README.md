@@ -829,6 +829,7 @@ Add `FSA_OBJECT_PERMS` and `FSA_CAST` configuration directives.
 Make module work without `cachetools` if `FSA_CACHE` is set to *None*.
 Use `ttl` as a default cache strategy.
 Simplify version numbering from 3 to 2 figures.
+Improve demo example with login and email authentication.
 
 #### 5.4.0 on 2022-02-08
 
