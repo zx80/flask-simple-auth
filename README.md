@@ -812,6 +812,7 @@ Software license is *public domain*.
 Rename `register_object_perms` and `register_cast` functions to simpler
 `object_perms` and `cast`.
 Make module work without `cachetools` if `FSA_CACHE` is set to *None*.
+Use `ttl` as a default cache strategy.
 
 #### 5.4.0 on 2022-02-08
 
