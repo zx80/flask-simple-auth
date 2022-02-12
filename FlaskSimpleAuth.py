@@ -288,18 +288,26 @@ class Flask(flask.Flask):
 
 # all possible directives
 _DIRECTIVES = {
-    "FSA_401_REDIRECT", "FSA_AUTH", "FSA_CHECK", "FSA_DEBUG",
+    # debug
+    "FSA_DEBUG", "FSA_LOGGING_LEVEL",
+    # general settings
+    "FSA_CHECK", "FSA_SKIP_PATH", "FSA_SECURE", "FSA_MODE",
+    "FSA_SERVER_ERROR", "FSA_NOT_FOUND_ERROR",
+    # hooks
+    "FSA_GET_USER_PASS", "FSA_USER_IN_GROUP",
+    # authentication
+    "FSA_AUTH", "FSA_REALM",
+    "FSA_PASSWORD_SCHEME", "FSA_PASSWORD_OPTS",
+    "FSA_FAKE_LOGIN", "FSA_PARAM_USER", "FSA_PARAM_PASS",
+    "FSA_TOKEN_TYPE", "FSA_TOKEN_ALGO", "FSA_TOKEN_CARRIER", "FSA_TOKEN_DELAY",
+    "FSA_TOKEN_GRACE", "FSA_TOKEN_NAME", "FSA_TOKEN_LENGTH", "FSA_TOKEN_SECRET",
+    "FSA_TOKEN_SIGN", "FSA_TOKEN_RENEWAL",
+    "FSA_PASSWORD_LEN", "FSA_PASSWORD_RE",
+    "FSA_HTTP_AUTH_OPTS",
+    # internal caching
     "FSA_CACHE", "FSA_CACHE_SIZE", "FSA_CACHE_OPTS",
-    "FSA_FAKE_LOGIN", "FSA_GET_USER_PASS", "FSA_HTTP_AUTH_OPTS",
-    "FSA_MODE", "FSA_PARAM_PASS", "FSA_PARAM_USER", "FSA_PASSWORD_OPTS",
-    "FSA_PASSWORD_SCHEME", "FSA_SKIP_PATH", "FSA_TOKEN_ALGO",
-    "FSA_TOKEN_CARRIER", "FSA_TOKEN_DELAY", "FSA_TOKEN_GRACE",
-    "FSA_TOKEN_LENGTH", "FSA_TOKEN_NAME", "FSA_REALM",
-    "FSA_TOKEN_SECRET", "FSA_TOKEN_SIGN", "FSA_TOKEN_TYPE",
-    "FSA_TOKEN_RENEWAL", "FSA_URL_NAME", "FSA_USER_IN_GROUP",
-    "FSA_LOGGING_LEVEL", "FSA_CORS", "FSA_CORS_OPTS",
-    "FSA_PASSWORD_LEN", "FSA_PASSWORD_RE", "FSA_SERVER_ERROR", "FSA_SECURE",
-    "FSA_NOT_FOUND_ERROR",
+    # web-oriented settings
+    "FSA_401_REDIRECT", "FSA_URL_NAME", "FSA_CORS", "FSA_CORS_OPTS",
 }
 
 _DEFAULT_CACHE_SIZE = 262144  # a few MB
@@ -584,7 +592,7 @@ class FlaskSimpleAuth:
         # cache management for passwords, permissions, tokens…
         #
         self._cache_opts: Dict[str, Any] = conf.get("FSA_CACHE_OPTS", {})
-        cache = conf.get("FSA_CACHE", "lru")
+        cache = conf.get("FSA_CACHE", "ttl")
         if cache:
             import cachetools as ct
             import CacheToolsUtils as ctu  # type: ignore

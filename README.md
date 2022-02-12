@@ -756,15 +756,16 @@ per-object permissions):
   caches. Values for standard `cachetools` cache classes are `ttl`, `lru`,
   `lfu`, `mru`, `fifo`, `rr` plus `dict`.
   MemCached is supported by setting it to `memcached`, and Redis with `redis`.
+  Default is `ttl`.
 
 - `FSA_CACHE_OPTS` sets internal cache options with a dictionary.
   This must contain the expected connection parameters for `pymemcache.Client`
   and for `redis.Redis` redis, for instance.
   For `redis` and `ttl`, an expiration ttl of 10 minutes is used and can be
-  overwritten by providing a `ttl` parameter.
+  overwritten by providing the `ttl` parameter.
 
 - `FSA_CACHE_SIZE` controls size of internal `cachetools` caches.
-  Default is *262144*.
+  Default is *262144*, which should use a few MiB.
   *None* means unbounded, more or less.
 
 Web-application oriented features:
