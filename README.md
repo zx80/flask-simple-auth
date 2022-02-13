@@ -1136,3 +1136,4 @@ Initial release in beta.
 - add app.log?
 - on-demand supplied user data?
   how about more hooks, *eg* `load_user_data` that could be cached?
+- reduce cloc?
