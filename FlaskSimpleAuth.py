@@ -1279,8 +1279,7 @@ class FlaskSimpleAuth:
             defaults: Dict[str, Any] = {}
 
             # parameters types/casts and defaults taken from signature
-            sig = inspect.signature(fun)
-            keywords = False
+            sig, keywords = inspect.signature(fun), False
 
             for n, p in sig.parameters.items():
                 if n not in types and \
@@ -1365,8 +1364,7 @@ class FlaskSimpleAuth:
         def decorate(fun: Callable):
 
             # check perms wrt fun signature
-            for p in perms:
-                domaine, name, mode = p
+            for domain, name, mode in perms:
                 if name not in fun.__code__.co_varnames:
                     raise self._Bad(f"missing function parameter {name} for {perm} on {path}")
                 # FIXME should parameter type be restricted to int or str?
@@ -1377,9 +1375,9 @@ class FlaskSimpleAuth:
                 # track that some autorization check was performed
                 self._need_authorization = False
 
-                for perm in perms:
-                    domain, name, mode = perm
+                for domain, name, mode in perms:
                     val = kwargs[name]
+
                     try:
                         ok = self._check_object_perms(self._user, domain, val, mode)
                     except FSAException as e:
@@ -1387,6 +1385,7 @@ class FlaskSimpleAuth:
                     except Exception as e:
                         log.error(f"internal error on {request.method} {request.path} permission {perm} check: {e}")
                         return self._Resp("internal error in permission check", self._server_error)
+
                     if ok is None:
                         log.warning(f"none object permission on {domain} {val} {mode}")
                         return self._Resp("object not found", self._not_found_error)
@@ -1395,6 +1394,7 @@ class FlaskSimpleAuth:
                         return self._Resp("internal error with permission check", self._server_error)
                     elif not ok:
                         return self._Resp("", 403)
+                    # else: all is well, check next!
 
                 # then call the initial function
                 return self._safe_call(path, "perm authorization", fun, *args, **kwargs)
