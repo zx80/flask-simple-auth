@@ -821,7 +821,7 @@ Sources are available on [GitHub](https://github.com/zx80/flask-simple-auth)
 and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 Software license is *public domain*.
 
-#### 6.0 in Future
+#### 6.0 on 2022-02-13
 
 Rename `register_object_perms` and `register_cast` functions to simpler
 `object_perms` and `cast`.
