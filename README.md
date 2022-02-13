@@ -29,7 +29,7 @@ app.config.from_envvar("DEMO_CONFIG")
 # the function gets 3 typed parameters: one integer coming from the path (id)
 # and the remaining two ("some", "stuff") are coming from HTTP or JSON request
 # parameters. "some" is mandatory, "stuff" is optional because it has a default.
-# the declared parameter typing is inforced.
+# the declared parameter typing is enforced.
 @app.patch("/whatever/<id>", authorize="patcher")
 def patch_whatever(id: int, some: int, stuff: str = "wow"):
     # ok to do it, with parameters "id", "some" & "stuff"
