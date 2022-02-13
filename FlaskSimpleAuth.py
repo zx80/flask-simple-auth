@@ -1558,7 +1558,6 @@ class FlaskSimpleAuth:
             fun = self._any_noauth(newpath, *groups)(fun)
         if need_authenticate:
             assert perms or groups or ALL in predefs
-            log.info(f"authenticate on {newpath}")
             fun = self._authenticate(newpath, auth=auth)(fun)
         else:
             log.warning(f"no authenticate on {newpath}")
