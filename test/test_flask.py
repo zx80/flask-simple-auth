@@ -488,15 +488,9 @@ def test_params(client):
     assert res.data == b"su world"
 
 def test_missing(client):
-    saved, app._fsa._check = app._fsa._check, True
     check(403, client.get("/mis1"))
     check(403, client.get("/mis2"))
     check(403, client.get("/empty", data={"LOGIN": "dad"}))
-    app._fsa._check = False
-    # check(200, client.get("/mis1"))
-    # check(200, client.get("/mis2"))
-    check(403, client.get("/empty", data={"LOGIN": "dad"}))
-    app._fsa._check = saved
 
 def test_nogo(client):
     check(403, client.get("/nogo"))

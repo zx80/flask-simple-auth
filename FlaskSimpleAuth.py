@@ -270,7 +270,7 @@ _DIRECTIVES = {
     # debug
     "FSA_DEBUG", "FSA_LOGGING_LEVEL",
     # general settings
-    "FSA_CHECK", "FSA_SECURE", "FSA_SERVER_ERROR", "FSA_NOT_FOUND_ERROR",
+    "FSA_SECURE", "FSA_SERVER_ERROR", "FSA_NOT_FOUND_ERROR",
     # register hooks
     "FSA_GET_USER_PASS", "FSA_USER_IN_GROUP", "FSA_CAST", "FSA_OBJECT_PERMS",
     # authentication
@@ -358,12 +358,10 @@ class FlaskSimpleAuth:
     def _auth_after_cleanup(self, res: Response):
         """After request hook to cleanup authentication and detect missing
         authorization."""
-        self._user_set = False
-        self._user = None
         # NOTE this may be too late to prevent a commit?
         if res.status_code < 400 and self._need_authorization:
             method, path = request.method, request.path
-            if self._check and not (self._cors and method == "OPTIONS"):
+            if not (self._cors and method == "OPTIONS"):
                 log.error(f"missing authorization on {method} {path}")
                 return self._Resp("missing authorization check", self._server_error)
         return res
@@ -531,7 +529,6 @@ class FlaskSimpleAuth:
             self._auth = auth
         for a in self._auth:
             assert a in self._FSA_AUTH
-        self._check: bool = conf.get("FSA_CHECK", True)
         #
         # web apps…
         #

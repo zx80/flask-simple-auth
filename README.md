@@ -93,12 +93,10 @@ It allows to have a login route to generate authentication tokens.
 For registration, support functions allow to hash new passwords consistently
 with password checks.
 
-[**Authorizations**](#authorization) are managed by declaring permissions
-on a route (eg a role name, or an object access), and relies on a supplied
-functions to check whether a user has this role or can access an object.
-An additional feature is that the application aborts requests on routes
-for which there is no explicit authorization declarations, allowing to
-catch forgotten requirements (see `FSA_CHECK` below).
+[**Authorizations**](#authorization) are managed by mandatory permission
+declaration on a route (eg a role name, or an object access), and relies
+on supplied functions to check whether a user has this role or can access
+an object.
 
 [**Parameters**](#parameters) expected in the request can be declared, their
 presence and type checked, and they are added automatically as named parameters
@@ -725,10 +723,6 @@ Some directives govern various details for this extension internal working.
 - `FSA_SECURE` only allows secured requests on non-local connections.
   Default is *True*
 
-- `FSA_CHECK` tells whether to generate a *500* internal error if a route
-  is missing an explicit authorization check.
-  Default is *True*.
-
 - `FSA_SERVER_ERROR` controls the status code returned on the module internal
   errors, to help distinguish these from other internal errors which may occur.
   Default is *500*.
@@ -804,9 +798,9 @@ and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 #### 7.0 in Future
 
 Improve code.
-Remove `FSA_MODE` and `FSA_SKIP_PATH` directives to make authentication
-always on demand. This is safe because missing authorizations are treated
-as errors.
+Remove `FSA_MODE`, `FSA_SKIP_PATH` and `FSA_CHECK` directives to make
+authentication *always* on demand. This is safe because missing
+authorizations are treated as errors and route are closed by default.
 
 #### 6.0 on 2022-02-13
 
