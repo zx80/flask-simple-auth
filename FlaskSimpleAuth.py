@@ -48,18 +48,6 @@ class FSAException(BaseException):
 #
 # TYPE CASTS
 #
-def bool_cast(s: str) -> Optional[bool]:
-    """Parses a bool."""
-    return None if s is None else \
-        False if s.lower() in ("", "0", "false", "f") else \
-        True
-
-
-def int_cast(s: str) -> Optional[int]:
-    """Parses an integer, allowing several bases."""
-    return int(s, base=0) if s else None
-
-
 class path(str):
     """Type to distinguish str path parameters."""
     pass
@@ -78,8 +66,8 @@ class JsonData:
 
 # should this be inside the app?
 _CASTS: Dict[type, Callable[[str], object]] = {
-    bool: bool_cast,
-    int: int_cast,
+    bool: lambda s: None if s is None else s.lower() not in ("", "0", "false", "f"),
+    int: lambda s: int(s, base=0) if s else None,
     # NOTE mypy complains wrongly about non-existing _empty.
     inspect._empty: str,  # type: ignore
     path: str,
