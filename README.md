@@ -527,8 +527,8 @@ In order to implement this model, the `authorize` decorator parameter can
 hold a tuple `(domain, variable, mode)` which designates a permission domain
 (eg a table or object or concept name in the application), the name
 a variable in the request (path or HTTP or JSON parameters) which identifies
-an object of the domain, and the operation or level of access necessary to
-access this route:
+an object of the domain, and the operation or level of access necessary for
+this route:
 
 ```Python
 @app.get("/message/<mid>", authorize=("msg", "mid", "read"))
