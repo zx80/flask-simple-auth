@@ -355,7 +355,7 @@ class FlaskSimpleAuth:
             else:
                 log.warning(msg)
 
-    def _auth_set_user(self):
+    def _auth_reset_user(self):
         """Before request hook to perform early authentication."""
         self._user_set = False
         self._user = None
@@ -728,7 +728,7 @@ class FlaskSimpleAuth:
         # register auth request hooks
         #
         app.before_request(self._check_secure)
-        app.before_request(self._auth_set_user)
+        app.before_request(self._auth_reset_user)
         app.after_request(self._auth_after_cleanup)
         app.after_request(self._possible_redirect)
         app.after_request(self._set_auth_cookie)
