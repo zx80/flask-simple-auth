@@ -809,7 +809,7 @@ Web-application oriented features:
 
 ## License
 
-This software is public domain.
+This software is *public domain*.
 All software has bug, this is software, hence…
 Beware that you may lose your hairs or your friends because of it.
 If you like it, feel free to send a postcard to the author.
@@ -819,7 +819,6 @@ If you like it, feel free to send a postcard to the author.
 
 Sources are available on [GitHub](https://github.com/zx80/flask-simple-auth)
 and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
-Software license is *public domain*.
 
 #### 7.0 in Future
 
