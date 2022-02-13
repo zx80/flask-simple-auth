@@ -17,6 +17,7 @@ import inspect
 import datetime as dt
 import re
 import json
+from dataclasses import dataclass
 
 import flask
 
@@ -37,17 +38,11 @@ import pkg_resources as pkg  # type: ignore
 __version__ = pkg.require("FlaskSimpleAuth")[0].version
 
 
+@dataclass
 class FSAException(BaseException):
     """Exception class to carry fields for an error Response."""
-
-    def __init__(self, message: str, status: int):
-        """Constructor parameters:
-
-        - message: Response's message
-        - status: intended HTTP status
-        """
-        self.message = message
-        self.status = status
+    message: str
+    status: int
 
 
 #
