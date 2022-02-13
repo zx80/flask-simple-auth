@@ -354,6 +354,11 @@ class FlaskSimpleAuth:
             log.debug(f"fsa exception: {code} {msg}")
         return FSAException(msg, code)
 
+    def _Bad(self, msg: str):
+        """Raise an exception on a bad configuration."""
+        log.critical(msg)
+        return Exception(msg)
+
     #
     # HOOKS
     #
@@ -452,20 +457,6 @@ class FlaskSimpleAuth:
         if self._saved_auth:
             self._auth, self._saved_auth = self._saved_auth, None
         return res
-
-    # NOTE for multiprocess setups:
-    # clearing a cache in a process does not tell others to do it as well…
-    def _cache_function(self, fun, prefix=None):
-        """Generate or regenerate cache for function."""
-        # get the actual function when regenerating caches
-        while hasattr(fun, "__wrapped__"):
-            fun = fun.__wrapped__
-        if not fun or self._gen_cache is None:
-            return fun
-        else:
-            import cachetools as ct
-            fun_cache = self._gen_cache(prefix=prefix, cache=self._cache)
-            return ct.cached(cache=fun_cache)(fun)
 
     def _params(self):
         """Get request parameters wherever they are."""
@@ -613,7 +604,7 @@ class FlaskSimpleAuth:
                 elif cache == "rr":
                     rcache = ct.RRCache(maxsize, **self._cache_opts)
                 else:  # pragma: no cover
-                    raise Exception(f"unexpected simple cache type: {cache}")
+                    raise self._Bad(f"unexpected simple cache type: {cache}")
                 self._cache = ctu.StatsCache(rcache)
             elif cache in ("memcached", "pymemcache"):
                 import pymemcache as pmc  # type: ignore
@@ -630,21 +621,21 @@ class FlaskSimpleAuth:
                 self._cache = ctu.StatsCache(dict())
                 self._gen_cache = ctu.PrefixedCache
             else:
-                raise Exception(f"unexpected FSA_CACHE: {cache}")
+                raise self._Bad(f"unexpected FSA_CACHE: {cache}")
         #
         # token setup
         #
         self._token = conf.get("FSA_TOKEN_TYPE", "fsa")
         if self._token not in (None, "fsa", "jwt"):
-            raise Exception(f"unexpected FSA_TOKEN_TYPE: {self._token}")
+            raise self._Bad(f"unexpected FSA_TOKEN_TYPE: {self._token}")
         # token carrier
         need_carrier = self._token is not None
         self._carrier = conf.get("FSA_TOKEN_CARRIER", "bearer" if need_carrier else None)
         if self._carrier not in (None, "bearer", "param", "cookie", "header"):
-            raise Exception(f"unexpected FSA_TOKEN_CARRIER: {self._carrier}")
+            raise self._Bad(f"unexpected FSA_TOKEN_CARRIER: {self._carrier}")
         # sanity checks
         if need_carrier and not self._carrier:
-            raise Exception(f"Token type {self._token} requires a carrier")
+            raise self._Bad(f"Token type {self._token} requires a carrier")
         # name of token for cookie or param, Authentication scheme, or other header
         default_name: Optional[str] = None
         if self._carrier in ("param", "cookie"):
@@ -655,7 +646,7 @@ class FlaskSimpleAuth:
             default_name = "Auth"
         self._name = conf.get("FSA_TOKEN_NAME", default_name)
         if need_carrier and not self._name:
-            raise Exception(f"Token carrier {self._carrier} requires a name")
+            raise self._Bad(f"Token carrier {self._carrier} requires a name")
         # token realm…
         realm = conf.get("FSA_REALM", self._app.name)
         if self._token == "fsa":
@@ -702,10 +693,10 @@ class FlaskSimpleAuth:
             elif algo == "none":
                 self._sign = None
             else:
-                raise Exception(f"unexpected jwt FSA_TOKEN_ALGO ({algo})")
+                raise self._Bad(f"unexpected jwt FSA_TOKEN_ALGO ({algo})")
             self._siglen = 0
         else:  # pragma: no cover
-            raise Exception(f"invalid FSA_TOKEN_TYPE ({self._token})")
+            raise self._Bad(f"invalid FSA_TOKEN_TYPE ({self._token})")
         #
         # HTTP parameter names
         #
@@ -728,12 +719,14 @@ class FlaskSimpleAuth:
             self.user_in_group(conf["FSA_USER_IN_GROUP"])
         if "FSA_CAST" in conf:
             casts = conf["FSA_CAST"]
-            assert isinstance(casts, dict)
+            if not isinstance(casts, dict):
+                raise self._Bad("FSA_CAST must be a dict")
             for type_name, cast_fun in casts.items():
                 self.cast(type_name, cast_fun)
         if "FSA_OBJECT_PERMS" in conf:
             perms = conf["FSA_OBJECT_PERMS"]
-            assert isinstance(perms, dict)
+            if not isinstance(perms, dict):
+                raise self._Bad("FSA_OBJECT_PERMS must be a dict")
             for domain, checker in perms.items():
                 self.object_perms(domain, checker)
         #
@@ -787,7 +780,7 @@ class FlaskSimpleAuth:
             self.url_value_preprocessors = self._app.url_value_preprocessors
             self.template_context_processors = self._app.template_context_processors
         else:
-            log.warning("unexpected Flask version while dealing with blueprints?")  # pragma: no cover
+            raise self._Bad("unexpected Flask version while dealing with blueprints?")  # pragma: no cover
         #
         # caches
         #
@@ -923,7 +916,7 @@ class FlaskSimpleAuth:
         import base64 as b64
         assert request.remote_user is None
         auth = request.headers.get("Authorization", None)
-        log.debug(f"auth: {auth}")
+        # log.debug(f"auth: {auth}")
         if not auth:
             log.debug("AUTH (basic): missing authorization header")
             raise self._Except("missing authorization header", 401)
@@ -1008,7 +1001,7 @@ class FlaskSimpleAuth:
         """Parses a simplistic timestamp string."""
         p = re.match(r"^(\d{4})(\d\d)(\d\d)(\d\d)(\d\d)(\d\d)$", ts)
         if not p:
-            raise Exception(f"unexpected timestamp format: {ts}")
+            raise self._Except(f"unexpected timestamp format: {ts}", 400)
         return dt.datetime(*[int(p[i]) for i in range(1, 7)], tzinfo=dt.timezone.utc)
 
     def _get_fsa_token(self, realm, user, delay, secret):
@@ -1092,13 +1085,14 @@ class FlaskSimpleAuth:
             log.debug(f"AUTH (jwt token): invalid token ({e})")
             raise self._Except("invalid jwt token", 401)
 
+    # NOTE this function is expected to be cached
     def _get_any_token_auth_exp(self, token):
-        """return validated user and expiration."""
+        """Return validated user and expiration."""
         return \
             self._get_fsa_token_auth(token) if self._token == "fsa" else \
             self._get_jwt_token_auth(token)
 
-    def _get_any_token_auth(self, token):
+    def _get_any_token_auth(self, token) -> Optional[str]:
         """Tell whether token is ok: return validated user or None."""
         if not token:
             raise self._Except("missing token", 401)
@@ -1193,6 +1187,20 @@ class FlaskSimpleAuth:
         "_check_object_perms": "p.",
     }
 
+    # NOTE for multiprocess setups:
+    # clearing a cache in a process does not tell others to do it as well…
+    def _cache_function(self, fun, prefix=None):
+        """Generate or regenerate cache for function."""
+        # get the actual function when regenerating caches
+        while hasattr(fun, "__wrapped__"):
+            fun = fun.__wrapped__
+        if not fun or self._gen_cache is None:
+            return fun
+        else:
+            import cachetools as ct
+            fun_cache = self._gen_cache(prefix=prefix, cache=self._cache)
+            return ct.cached(cache=fun_cache)(fun)
+
     def _set_caches(self):
         """Create caches around some functions."""
         self._cache.clear()
@@ -1236,7 +1244,7 @@ class FlaskSimpleAuth:
                 auth = [auth]
             for a in auth:
                 if a not in self._FSA_AUTH:
-                    raise Exception(f"unexpected authentication scheme {auth} on {path}")
+                    raise self._Bad(f"unexpected authentication scheme {auth} on {path}")
 
         def decorate(fun: Callable):
 
@@ -1390,14 +1398,14 @@ class FlaskSimpleAuth:
         # perm checks
         for perm in perms:
             if not len(perm) == 3:
-                raise Exception(f"per-object permission tuples must have 3 data {perm} on {path}")
+                raise self._Bad(f"per-object permission tuples must have 3 data {perm} on {path}")
             domain, name, mode = perm
             if domain not in self._object_perms:
-                raise Exception(f"missing object permission checker for {perm} on {path}")
+                raise self._Bad(f"missing object permission checker for {perm} on {path}")
             if not isinstance(name, str):
-                raise Exception(f"unexpected identifier name type ({type(name)}) for {perm} on {path}")
+                raise self._Bad(f"unexpected identifier name type ({type(name)}) for {perm} on {path}")
             if mode is not None and type(mode) not in (int, str):
-                raise Exception(f"unexpected mode type ({type(mode)}) for {perm} on {path}")
+                raise self._Bad(f"unexpected mode type ({type(mode)}) for {perm} on {path}")
 
         def decorate(fun: Callable):
 
@@ -1405,7 +1413,7 @@ class FlaskSimpleAuth:
             for p in perms:
                 domaine, name, mode = p
                 if name not in fun.__code__.co_varnames:
-                    raise Exception(f"missing function parameter {name} for {perm} on {path}")
+                    raise self._Bad(f"missing function parameter {name} for {perm} on {path}")
                 # FIXME should parameter type be restricted to int or str?
 
             @functools.wraps(fun)
@@ -1485,17 +1493,17 @@ class FlaskSimpleAuth:
         # authorize are either in groups or in perms
         if len(authorize) != len(groups) + len(perms) + len(predefs):
             bads = list(filter(lambda a: a not in groups and a not in perms and a not in predefs, authorize))
-            raise Exception(f"unexpected authorizations on {rule}: {bads}")
+            raise self._Bad(f"unexpected authorizations on {rule}: {bads}")
 
         if NONE in predefs:
             groups, perms = [], []
         elif ANY in predefs:
             if len(predefs) > 1:
-                raise Exception(f"cannot mix ANY/ALL predefined groups on {path}")
+                raise self._Bad(f"cannot mix ANY/ALL predefined groups on {path}")
             if groups:
-                raise Exception(f"cannot mix ANY and other groups on {path}")
+                raise self._Bad(f"cannot mix ANY and other groups on {path}")
             if perms:
-                raise Exception(f"cannot mix ANY with per-object permissions on {path}")
+                raise self._Bad(f"cannot mix ANY with per-object permissions on {path}")
 
         from uuid import UUID
         # add the expected type to path sections, if available
@@ -1533,7 +1541,7 @@ class FlaskSimpleAuth:
 
         if perms:
             if not need_parameters:
-                raise Exception("permissions require some parameters")
+                raise self._Bad("permissions require some parameters")
             assert need_authenticate and need_parameters
             first = fun.__code__.co_varnames[0]
             fun = self._perm_auth(newpath, first, *perms)(fun)
@@ -1550,7 +1558,7 @@ class FlaskSimpleAuth:
             fun = self._any_noauth(newpath, *groups)(fun)
         if need_authenticate:
             assert perms or groups or ALL in predefs
-            log.warning(f"authenticate on {newpath}")
+            log.info(f"authenticate on {newpath}")
             fun = self._authenticate(newpath, auth=auth)(fun)
         else:
             log.warning(f"no authenticate on {newpath}")

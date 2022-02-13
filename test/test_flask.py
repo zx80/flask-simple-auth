@@ -230,8 +230,8 @@ def test_fsa_token():
     try:
         user = app._fsa._get_any_token_auth("R:U:demain:signature")
         assert False, "expecting a bad timestamp format"
-    except Exception as e:
-        assert "unexpected timestamp format" in str(e)
+    except fsa.FSAException as e:
+        assert "unexpected timestamp format" in e.message
     # force expiration
     grace = app._fsa._grace
     app._fsa._grace = -1000000
