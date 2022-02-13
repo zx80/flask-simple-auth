@@ -157,7 +157,7 @@ def all_auth(client, user, pswd, check, *args, **kwargs):
 def test_perms(client):
     check(200, client.get("/any"))  # open route
     check(401, client.get("/login"))  # login without login
-    check(401, client.get("/"))  # empty path
+    check(404, client.get("/"))  # empty path
     # admin only
     check(401, client.get("/admin"))
     log.debug(f"App.user_in_group: {App.user_in_group}")
@@ -189,11 +189,11 @@ def test_perms(client):
     all_auth(client, "hobbes", App.UP["hobbes"], check_200, "/read")
 
 def test_whatever(client):
-    check(401, client.get("/whatever"))
-    check(401, client.post("/whatever"))
-    check(401, client.put("/whatever"))
-    check(401, client.patch("/whatever"))
-    check(401, client.delete("/whatever"))
+    check(404, client.get("/whatever"))
+    check(404, client.post("/whatever"))
+    check(404, client.put("/whatever"))
+    check(404, client.patch("/whatever"))
+    check(404, client.delete("/whatever"))
     push_auth(app._fsa, "fake")
     check(404, client.get("/whatever", data={"LOGIN": "dad"}))
     check(404, client.post("/whatever", data={"LOGIN": "dad"}))
@@ -373,12 +373,6 @@ def test_authorize():
     app._fsa._user = "hobbes"
     res = stuff()
     assert res.status_code == 403
-    # FIXME
-    # mode, app._fsa._mode = app._fsa._mode, "always"
-    # app._fsa._user = None
-    # res = stuff()
-    # assert res.status_code == 401
-    # app._fsa._mode = mode
     try:
         @app._fsa._group_auth("stuff", fsa.ALL, fsa.ANY)
         def foo():
@@ -567,7 +561,7 @@ def test_custom(client):
     assert b"my_int: 5432" in res.data
 
 def test_appext(client2):
-    check(401, client2.get("/bad"))
+    check(500, client2.get("/bad"))
     check(500, client2.get("/bad", data={"LOGIN": "dad"}))
     check(401, client2.get("/stuff"))
     res = check(200, client2.get("/stuff", data={"LOGIN": "dad"}))
@@ -577,7 +571,7 @@ def test_appext(client2):
     check(500, client2.get("/bad"))
     client2.cookie_jar.clear()
     check(401, client2.get("/stuff"))
-    check(401, client2.get("/bad"))
+    check(500, client2.get("/bad"))
 
 def test_blueprint(client):
     check(401, client.get("/b1/words/foo"))
@@ -610,7 +604,7 @@ def test_appfact(client3):
     check(400, client3.get("/add", data={"i": "sept", "j": "deux", "LOGIN": "dad"}))
     check(400, client3.get("/add", data={"i": "7", "LOGIN": "dad"}))
     # blueprint
-    check(401, client3.get("/b/word/fun"))
+    check(404, client3.get("/b/word/fun"))
     res = check(200, client3.get("/b/words/fun", data={"LOGIN": "dad"}))
     assert res.data == b"fun"
     res = check(200, client3.get("/b/words/bin", data={"LOGIN": "dad", "n": "2"}))
@@ -746,8 +740,6 @@ def test_http_token():
         pop_auth(app._fsa)
 
 def test_per_route(client):
-    mode, app._fsa._mode = app._fsa._mode, "lazy"
-    log.debug(f"mode switched from {mode} to lazy")
     # data for 4 various authentication schemes
     from requests.auth import _basic_auth_str as basic_auth
     BASIC = {"Authorization": basic_auth("calvin", App.UP["calvin"])}
@@ -798,8 +790,6 @@ def test_per_route(client):
     check(200, client.get("/auth/ftp", data=PARAM))
     check(200, client.get("/auth/ftp", json=PARAM))
     check(401, client.get("/auth/ftp", headers=BASIC))
-    # cleanup
-    app._fsa._mode = mode
 
 def test_bad_app():
     from AppBad import create_app

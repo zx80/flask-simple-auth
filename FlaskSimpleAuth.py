@@ -360,16 +360,6 @@ class FlaskSimpleAuth:
         self._user_set = False
         self._user = None
         self._need_authorization = True
-        if self._mode == "lazy":
-            return
-        # keep on under always & all
-        for skip in self._skip_path:
-            if skip(request.path):
-                return
-        try:
-            self.get_user()
-        except FSAException as e:
-            return self._Resp(e.message, e.status)
 
     def _auth_after_cleanup(self, res: Response):
         """After request hook to cleanup authentication and detect missing
@@ -548,10 +538,7 @@ class FlaskSimpleAuth:
             self._auth = auth
         for a in self._auth:
             assert a in self._FSA_AUTH
-        self._mode = conf.get("FSA_MODE", "lazy")
-        assert self._mode in ("always", "lazy", "all")
         self._check: bool = conf.get("FSA_CHECK", True)
-        self._skip_path = [re.compile(r).match for r in conf.get("FSA_SKIP_PATH", [])]
         #
         # web apps…
         #

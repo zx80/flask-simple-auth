@@ -20,10 +20,6 @@ app = Flask("Test", debug=True)
 #
 app.config.update(
     FSA_AUTH = "fake",
-    FSA_MODE = "always",
-    FSA_SKIP_PATH = (r"/(register|required|_|my|json)",
-                     r"/(add|div|mul|sub|type|params|any|mis[12]|nogo|one)",
-                     r"/(infer|superid|cplx|bool|mail|path|string|auth|f2|myint)"),
     FSA_GET_USER_PASS = get_user_pass,
     FSA_USER_IN_GROUP = user_in_group,
     FSA_LOGGING_LEVEL = logging.DEBUG,

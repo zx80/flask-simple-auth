@@ -195,7 +195,6 @@ def get_what(flt: str = None):
 
 ### Authentication
 
-Three directives impact *how* and *when* authentication is performed.
 The main configuration directive is `FSA_AUTH` which governs authentication
 methods used by the `get_user` function, as described in the following sections.
 
@@ -212,26 +211,8 @@ methods used by the `get_user` function, as described in the following sections.
   not be merged.
   Also, only one HTTPAuth-based scheme can be active at a time.
 
-- `FSA_MODE` tells *when* to attempt authentication.
-
-  - With `always`, authentication is performed in a before request hook.
-    Once in a route function, `get_user` will always return the authenticated
-    user and cannot fail.
-
-  - With `lazy`, it is performed lazily when needed by an authorization
-    or when calling the `get_user` function.
-
-  - With `all`, it is always performed in the hook, which may skip some path
-    because of `FSA_SKIP_PATH`, and may be re-attempted lazily for path that
-    were skipped.
-
-  On authentication failures *401* is returned.
-  Default is `lazy`.
-
-- `FSA_SKIP_PATH` is a list of regular expression patterns which are matched
-  against the request path for skipping systematic authentication when in
-  `always` mode.
-  Default is empty, i.e. authentication is applied for all paths.
+Authentication is *always* performed on demand, either to check for a route
+authorization declared with `authorize` or when calling `get_user`.
 
 The authentication scheme attempted on a route can be altered with the
 `auth` parameter added to the `route` decorator.
@@ -822,7 +803,10 @@ and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 
 #### 7.0 in Future
 
-Wip.
+Improve code.
+Remove `FSA_MODE` and `FSA_SKIP_PATH` directives to make authentication
+always on demand. This is safe because missing authorizations are treated
+as errors.
 
 #### 6.0 on 2022-02-13
 
@@ -1130,7 +1114,6 @@ Initial release in beta.
 
 ### TODO
 
-- drop `FSA_MODE` and `FSA_SKIP_MODE`, implicitely on/empty?
 - test `FSA_HTTP_AUTH_OPTS`?
 - add `any` token scheme?
 - add app.log?
