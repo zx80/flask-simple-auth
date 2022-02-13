@@ -93,6 +93,7 @@ def register_cast(t: type, cast: Callable[[str], object]):
 #  ANY: anyone can come in, no authentication required
 #  ALL: all authenticated users are allowed
 # NONE: no one can come in, the path is forbidden
+#
 ANY, ALL, NONE = "ANY", "ALL", "NONE"
 _PREDEFS = (ANY, ALL, NONE)
 
@@ -1003,11 +1004,7 @@ class FlaskSimpleAuth:
             return self._get_jwt_token(realm, user, delay, self._sign)
 
     def _get_fsa_token_auth(self, token):
-        """Tell whether FSA token is ok: return validated user or None.
-
-        This function is expected to be cached, so it returns the token
-        expiration so that it can be rechecked later.
-        """
+        """Tell whether FSA token is ok: return validated user or None."""
         # token format: "realm:calvin:20380119031407:<signature>"
         realm, user, slimit, sig = token.split(":", 3)
         limit = self._from_timestamp(slimit)
@@ -1029,11 +1026,7 @@ class FlaskSimpleAuth:
         return user, limit
 
     def _get_jwt_token_auth(self, token):
-        """Tell whether JWT token is ok: return validated user or None.
-
-        This function is expected to be cached, so it returns the token
-        expiration so that it can be rechecked later.
-        """
+        """Tell whether JWT token is ok: return validated user or None."""
         import jwt
         try:
             data = jwt.decode(token, self._secret, leeway=self._grace * 60.0,
@@ -1059,7 +1052,7 @@ class FlaskSimpleAuth:
         if not token:
             raise self._Except("missing token", 401)
         user, exp = self._get_any_token_auth_exp(token)
-        # recheck token expiration
+        # must recheck token expiration
         now = dt.datetime.now(dt.timezone.utc) - dt.timedelta(minutes=self._grace)
         if now > exp:
             log.debug(f"AUTH (token): token {token} has expired")
