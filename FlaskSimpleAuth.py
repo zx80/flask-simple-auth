@@ -90,25 +90,20 @@ def register_cast(t: type, cast: Callable[[str], object]):
 #
 # SPECIAL PREDEFINED GROUP NAMES
 #
-ANY = "ANY"    # anyone can come in, no authentication required
-ALL = "ALL"    # all authenticated users are allowed
-NONE = "NONE"  # none can come in, the path is forbidden
-
+#  ANY: anyone can come in, no authentication required
+#  ALL: all authenticated users are allowed
+# NONE: no one can come in, the path is forbidden
+ANY, ALL, NONE = "ANY", "ALL", "NONE"
 _PREDEFS = (ANY, ALL, NONE)
 
 
 def typeof(p: inspect.Parameter):
     """Guess parameter type, possibly with some type inference."""
-    if p.kind is inspect.Parameter.VAR_KEYWORD:
-        return dict
-    elif p.kind is inspect.Parameter.VAR_POSITIONAL:
-        return list
-    elif p.annotation is not inspect._empty:  # type: ignore
-        return p.annotation
-    elif p.default and p.default is not inspect._empty:  # type: ignore
-        return type(p.default)  # type inference!
-    else:
-        return str
+    return dict if p.kind is inspect.Parameter.VAR_KEYWORD else \
+        list if p.kind is inspect.Parameter.VAR_POSITIONAL else \
+        p.annotation if p.annotation is not inspect._empty else \
+        type(p.default) if p.default and p.default is not inspect._empty else \
+        str  # type: ignore
 
 
 class Reference:
@@ -274,8 +269,7 @@ _DIRECTIVES = {
     # debug
     "FSA_DEBUG", "FSA_LOGGING_LEVEL",
     # general settings
-    "FSA_CHECK", "FSA_SKIP_PATH", "FSA_SECURE", "FSA_MODE",
-    "FSA_SERVER_ERROR", "FSA_NOT_FOUND_ERROR",
+    "FSA_CHECK", "FSA_SECURE", "FSA_SERVER_ERROR", "FSA_NOT_FOUND_ERROR",
     # register hooks
     "FSA_GET_USER_PASS", "FSA_USER_IN_GROUP", "FSA_CAST", "FSA_OBJECT_PERMS",
     # authentication
@@ -284,8 +278,7 @@ _DIRECTIVES = {
     "FSA_TOKEN_TYPE", "FSA_TOKEN_ALGO", "FSA_TOKEN_CARRIER", "FSA_TOKEN_DELAY",
     "FSA_TOKEN_GRACE", "FSA_TOKEN_NAME", "FSA_TOKEN_LENGTH", "FSA_TOKEN_SECRET",
     "FSA_TOKEN_SIGN", "FSA_TOKEN_RENEWAL",
-    "FSA_PASSWORD_SCHEME", "FSA_PASSWORD_OPTS",
-    "FSA_PASSWORD_LEN", "FSA_PASSWORD_RE",
+    "FSA_PASSWORD_SCHEME", "FSA_PASSWORD_OPTS", "FSA_PASSWORD_LEN", "FSA_PASSWORD_RE",
     "FSA_HTTP_AUTH_OPTS",
     # internal caching
     "FSA_CACHE", "FSA_CACHE_SIZE", "FSA_CACHE_OPTS",
@@ -500,7 +493,6 @@ class FlaskSimpleAuth:
         directives.
         """
         log.info("FSA initialization…")
-        assert app
         self._app = app
         conf = app.config
         # debugging mode
