@@ -161,13 +161,13 @@ Once initialized `app` is a standard Flask object with some additions:
   parameter and transparent management of request parameters.
 - per-method shortcut decorators `post`, `get`, `put`, `patch` and `delete` which
   support the same extensions.
-- `user_in_group` and `get_user_pass` methods/decorators to register helper functions.
+- `user_in_group`, `get_user_pass` and `object_perms` functions/decorators to
+  register authentication and authorization helper functions.
 - `get_user` to extract the authenticated user or raise an `FSAException`.
 - `current_user` to get the authenticated user if any, or `None`.
 - `hash_password` and `check_password` to hash or check a password.
 - `create_token` to compute a new authentication token for the current user.
 - `clear_caches` to clear internal process caches (probably a bad idea).
-- `object_perms` function/decorator to register a per-object permission helper function.
 
 Alternatively, it is possible but not recommended to use the flask extensions
 model, in which case the `FlaskSimpleAuth` object must be instanciated and
