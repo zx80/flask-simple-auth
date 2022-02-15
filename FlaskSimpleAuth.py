@@ -609,8 +609,7 @@ class FlaskSimpleAuth:
             raise self._Bad(f"Token carrier {self._carrier} requires a name")
         # token realm…
         realm = conf.get("FSA_REALM", self._app.name)
-        if self._token == "fsa":
-            # simplify realm for fsa
+        if self._token == "fsa":  # simplify realm for fsa
             keep_char = re.compile(r"[-A-Za-z0-9]").match
             realm = "".join(c if keep_char(c) else "-" for c in realm)
             realm = "-".join(filter(lambda s: s != "", realm.split("-")))
@@ -770,7 +769,7 @@ class FlaskSimpleAuth:
             from passlib.context import CryptContext  # type: ignore
             self._pm = CryptContext(schemes=[scheme], **options)
         self._password_len: int = conf.get("FSA_PASSWORD_LEN", 0)
-        self._password_re: List[str] = conf.get("FSA_PASSWORD_RE", [])
+        self._password_re: List[Callable[[str], bool]] = [re.compile(r).search for r in conf.get("FSA_PASSWORD_RE", [])]
 
     #
     # INHERITED HTTP AUTH
@@ -819,9 +818,9 @@ class FlaskSimpleAuth:
         if check:
             if len(pwd) < self._password_len:
                 raise self._Except(f"password is too short, must be at least {self._password_len}", 400)
-            for r in self._password_re:
-                if not re.search(r, pwd):
-                    raise self._Except(f"password must match {r}", 400)
+            for search in self._password_re:
+                if not search(pwd):
+                    raise self._Except(f"password must match {search.__self__.pattern}", 400)
         return self._pm.hash(pwd)
 
     def _check_password(self, user, pwd):
