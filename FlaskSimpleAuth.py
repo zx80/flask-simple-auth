@@ -122,7 +122,7 @@ class Reference:
 
     """
 
-    def __init__(self, obj: Any = None, set_name: str = "set"):
+    def __init__(self, obj: Any = None, set_name: str = None):
         """Constructor parameters:
 
         - obj: object to be wrapped, can also be provided later.
@@ -135,8 +135,7 @@ class Reference:
         # keep track of initial methods for later cleanup
         self._init: Set[str] = set()
         self._init.update(self.__dir__())
-        if obj:
-            self._set_obj(obj)
+        obj and self._set_obj(obj)
 
     def _set_obj(self, obj):
         """Set current wrapped object, possibly replacing the previous one."""
@@ -150,6 +149,7 @@ class Reference:
         for f in obj.__dir__():
             if f not in self._init:
                 setattr(self, f, getattr(obj, f))
+        return obj
 
     # forward standard methods
     # automating that with setattr/getattr does not work…
