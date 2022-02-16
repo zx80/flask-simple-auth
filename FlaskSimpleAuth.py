@@ -319,13 +319,13 @@ class FlaskSimpleAuth:
         # actual main initialization is deferred to `init_app`
         self._initialized = False
 
-    def _Resp(self, msg: str, code: int):
+    def _Res(self, msg: str, code: int):
         """Generate a text/plain Response."""
         if self._debug:
             log.debug(f"text response: {code} {msg}")
         return Response(msg, code, content_type="text/plain")
 
-    def _Except(self, msg: str, code: int):
+    def _Err(self, msg: str, code: int):
         """Build and trace an FSAException."""
         if self._debug:
             log.debug(f"fsa exception: {code} {msg}")
@@ -345,7 +345,7 @@ class FlaskSimpleAuth:
             msg = f"insecure HTTP request on {request.remote_addr}, allow with FSA_SECURE=False"
             if self._secure:
                 log.error(msg)
-                return self._Resp("insecure HTTP request denied", self._server_error)
+                return self._Res("insecure HTTP request denied", self._server_error)
             else:
                 log.warning(msg)
 
@@ -363,7 +363,7 @@ class FlaskSimpleAuth:
             method, path = request.method, request.path
             if not (self._cors and method == "OPTIONS"):
                 log.error(f"missing authorization on {method} {path}")
-                return self._Resp("missing authorization check", self._server_error)
+                return self._Res("missing authorization check", self._server_error)
         return res
 
     def _possible_redirect(self, res: Response):
@@ -794,7 +794,7 @@ class FlaskSimpleAuth:
         user = params.get(self._login, None)
         # it could check that the user exists in db
         if not user:
-            raise self._Except("missing login parameter", 401)
+            raise self._Err("missing login parameter", 401)
         return user
 
     #
@@ -817,10 +817,10 @@ class FlaskSimpleAuth:
         # check password quality
         if check:
             if len(pwd) < self._password_len:
-                raise self._Except(f"password is too short, must be at least {self._password_len}", 400)
+                raise self._Err(f"password is too short, must be at least {self._password_len}", 400)
             for search in self._password_re:
                 if not search(pwd):
-                    raise self._Except(f"password must match {search.__self__.pattern}", 400)
+                    raise self._Err(f"password must match {search.__self__.pattern}", 400)
         return self._pm.hash(pwd)
 
     def _check_password(self, user, pwd):
@@ -833,16 +833,16 @@ class FlaskSimpleAuth:
             raise fe
         except Exception as e:
             log.error(f"get_user_pass failed: {e}")
-            raise self._Except("internal error in get_user_pass", self._server_error)
+            raise self._Err("internal error in get_user_pass", self._server_error)
         if not ref:
             log.debug(f"AUTH (password): no such user ({user})")
-            raise self._Except(f"no such user: {user}", 401)
+            raise self._Err(f"no such user: {user}", 401)
         if not isinstance(ref, (str, bytes)):
             log.error(f"type error in get_user_pass: {type(ref)}, expecting None, str or bytes")
-            raise self._Except("internal error with get_user_pass", self._server_error)
+            raise self._Err("internal error with get_user_pass", self._server_error)
         if not self.check_password(pwd, ref):
             log.debug(f"AUTH (password): invalid password for {user}")
-            raise self._Except(f"invalid password for {user}", 401)
+            raise self._Err(f"invalid password for {user}", 401)
         return user
 
     #
@@ -865,7 +865,7 @@ class FlaskSimpleAuth:
             log.debug(f"AUTH (http-*): bad authentication {error}")
             raise error
         log.debug("AUTH (http-*): bad authentication")
-        raise self._Except("failed HTTP authentication", 401)
+        raise self._Err("failed HTTP authentication", 401)
 
     #
     # HTTP BASIC AUTH
@@ -878,15 +878,15 @@ class FlaskSimpleAuth:
         # log.debug(f"auth: {auth}")
         if not auth:
             log.debug("AUTH (basic): missing authorization header")
-            raise self._Except("missing authorization header", 401)
+            raise self._Err("missing authorization header", 401)
         if auth[:6] != "Basic ":
             log.debug(f"AUTH (basic): unexpected auth \"{auth}\"")
-            raise self._Except("unexpected authorization header", 401)
+            raise self._Err("unexpected authorization header", 401)
         try:
             user, pwd = b64.b64decode(auth[6:]).decode().split(":", 1)
         except Exception as e:
             log.debug(f"AUTH (basic): error while decoding auth \"{auth}\" ({e})")
-            raise self._Except("decoding error on authorization header", 401)
+            raise self._Err("decoding error on authorization header", 401)
         self._check_password(user, pwd)
         return user
 
@@ -904,10 +904,10 @@ class FlaskSimpleAuth:
         params = self._params()
         user = params.get(self._userp, None)
         if not user:
-            raise self._Except(f"missing login parameter: {self._userp}", 401)
+            raise self._Err(f"missing login parameter: {self._userp}", 401)
         pwd = params.get(self._passp, None)
         if not pwd:
-            raise self._Except(f"missing password parameter: {self._passp}", 401)
+            raise self._Err(f"missing password parameter: {self._passp}", 401)
         self._check_password(user, pwd)
         return user
 
@@ -960,7 +960,7 @@ class FlaskSimpleAuth:
         """Parses a simplistic timestamp string."""
         p = re.match(r"^(\d{4})(\d\d)(\d\d)(\d\d)(\d\d)(\d\d)$", ts)
         if not p:
-            raise self._Except(f"unexpected timestamp format: {ts}", 400)
+            raise self._Err(f"unexpected timestamp format: {ts}", 400)
         return dt.datetime(*[int(p[i]) for i in range(1, 7)], tzinfo=dt.timezone.utc)
 
     def _get_fsa_token(self, realm, user, delay, secret):
@@ -1007,17 +1007,17 @@ class FlaskSimpleAuth:
         # check realm
         if realm != self._realm:
             log.debug(f"AUTH (fsa token): unexpected realm {realm}")
-            raise self._Except(f"unexpected realm: {realm}", 401)
+            raise self._Err(f"unexpected realm: {realm}", 401)
         # check signature
         ref = self._cmp_sig(f"{realm}:{user}:{slimit}", self._secret)
         if ref != sig:
             log.debug("AUTH (fsa token): invalid signature")
-            raise self._Except("invalid fsa auth token signature", 401)
+            raise self._Err("invalid fsa auth token signature", 401)
         # check limit with a grace time
         now = dt.datetime.now(dt.timezone.utc) - dt.timedelta(minutes=self._grace)
         if now > limit:
             log.debug("AUTH (fsa token): token {token} has expired")
-            raise self._Except("expired fsa auth token", 401)
+            raise self._Err("expired fsa auth token", 401)
         # all is well
         return user, limit
 
@@ -1031,10 +1031,10 @@ class FlaskSimpleAuth:
             return data["sub"], exp
         except jwt.ExpiredSignatureError:
             log.debug(f"AUTH (jwt token): token {token} has expired")
-            raise self._Except("expired jwt auth token", 401)
+            raise self._Err("expired jwt auth token", 401)
         except Exception as e:
             log.debug(f"AUTH (jwt token): invalid token ({e})")
-            raise self._Except("invalid jwt token", 401)
+            raise self._Err("invalid jwt token", 401)
 
     # NOTE this function is expected to be cached
     def _get_any_token_auth_exp(self, token):
@@ -1046,13 +1046,13 @@ class FlaskSimpleAuth:
     def _get_any_token_auth(self, token) -> Optional[str]:
         """Tell whether token is ok: return validated user or None."""
         if not token:
-            raise self._Except("missing token", 401)
+            raise self._Err("missing token", 401)
         user, exp = self._get_any_token_auth_exp(token)
         # must recheck token expiration
         now = dt.datetime.now(dt.timezone.utc) - dt.timedelta(minutes=self._grace)
         if now > exp:
             log.debug(f"AUTH (token): token {token} has expired")
-            raise self._Except("expired auth token", 401)
+            raise self._Err("expired auth token", 401)
         return user
 
     def _get_token_auth(self) -> Optional[str]:
@@ -1169,10 +1169,10 @@ class FlaskSimpleAuth:
         try:  # the actual call
             res = fun(*args, **kwargs)
         except FSAException as e:  # something went wrong
-            res = self._Resp(e.message, e.status)
+            res = self._Res(e.message, e.status)
         except Exception as e:  # something went really wrong
             log.error(f"internal error on {request.method} {request.path}: {e}")
-            res = self._Resp(f"internal error caught at {level} on {path}", self._server_error)
+            res = self._Res(f"internal error caught at {level} on {path}", self._server_error)
 
         return res
 
@@ -1214,10 +1214,10 @@ class FlaskSimpleAuth:
                         # log.warning(f"auth = {self._auth}")
                         self._user = self.get_user()
                     except FSAException as e:
-                        return self._Resp(e.message, e.status)
+                        return self._Res(e.message, e.status)
 
                 if not self._user:  # pragma no cover
-                    return self._Resp("", 401)
+                    return self._Res("", 401)
 
                 return self._safe_call(path, "authenticate", fun, *args, **kwargs)
 
@@ -1247,15 +1247,15 @@ class FlaskSimpleAuth:
                     try:
                         ok = self._user_in_group(self._user, group)
                     except FSAException as fe:
-                        return self._Resp(fe.message, fe.status)
+                        return self._Res(fe.message, fe.status)
                     except Exception as e:
                         log.error(f"user_in_group failed: {e}")
-                        return self._Resp("internal error in user_in_group", self._server_error)
+                        return self._Res("internal error in user_in_group", self._server_error)
                     if not isinstance(ok, bool):
                         log.error(f"type error in user_in_group: {ok}: {type(ok)}, must return a boolean")
-                        return self._Resp("internal error with user_in_group", self._server_error)
+                        return self._Res("internal error with user_in_group", self._server_error)
                     if not ok:
-                        return self._Resp("", 403)
+                        return self._Res("", 403)
 
                 # all groups are ok, proceed to call underlying function
                 return self._safe_call(path, "group authorization", fun, *args, **kwargs)
@@ -1309,21 +1309,21 @@ class FlaskSimpleAuth:
                                 try:
                                     kwargs[p] = typing(val)
                                 except Exception as e:
-                                    return self._Resp(f"type error on parameter \"{pn}\" ({e})", 400)
+                                    return self._Res(f"type error on parameter \"{pn}\" ({e})", 400)
                             else:
                                 kwargs[p] = val
                         else:
                             if p in defaults:
                                 kwargs[p] = defaults[p]
                             else:
-                                return self._Resp(f"missing parameter \"{pn}\"", 400)
+                                return self._Res(f"missing parameter \"{pn}\"", 400)
                     else:
                         # possibly recast path parameters if needed
                         if not isinstance(kwargs[p], types[p]):
                             try:
                                 kwargs[p] = typing(kwargs[p])
                             except Exception as e:
-                                return self._Resp(f"type error on path parameter \"{pn}\": ({e})", 400)
+                                return self._Res(f"type error on path parameter \"{pn}\": ({e})", 400)
 
                 # possibly add others, without shadowing already provided ones
                 if keywords:
@@ -1377,19 +1377,19 @@ class FlaskSimpleAuth:
                     try:
                         ok = self._check_object_perms(self._user, domain, val, mode)
                     except FSAException as e:
-                        return self._Resp(e.message, e.status)
+                        return self._Res(e.message, e.status)
                     except Exception as e:
                         log.error(f"internal error on {request.method} {request.path} permission {perm} check: {e}")
-                        return self._Resp("internal error in permission check", self._server_error)
+                        return self._Res("internal error in permission check", self._server_error)
 
                     if ok is None:
                         log.warning(f"none object permission on {domain} {val} {mode}")
-                        return self._Resp("object not found", self._not_found_error)
+                        return self._Res("object not found", self._not_found_error)
                     elif not isinstance(ok, bool):  # paranoid?
                         log.error(f"type error on on {request.method} {request.path} permission {perm} check: {type(ok)}")
-                        return self._Resp("internal error with permission check", self._server_error)
+                        return self._Res("internal error with permission check", self._server_error)
                     elif not ok:
-                        return self._Resp("", 403)
+                        return self._Res("", 403)
                     # else: all is well, check next!
 
                 # then call the initial function
