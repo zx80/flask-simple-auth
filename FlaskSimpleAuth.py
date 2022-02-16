@@ -350,14 +350,13 @@ class FlaskSimpleAuth:
                 log.warning(msg)
 
     def _auth_reset_user(self):
-        """Before request hook to perform early authentication."""
+        """Before request hook to cleanup authentication and authorization."""
         self._user_set = False
         self._user = None
         self._need_authorization = True
 
     def _auth_after_cleanup(self, res: Response):
-        """After request hook to cleanup authentication and detect missing
-        authorization."""
+        """After request hook to detect missing authorizations."""
         # NOTE this may be too late to prevent a commit?
         if res.status_code < 400 and self._need_authorization:
             method, path = request.method, request.path
@@ -714,13 +713,15 @@ class FlaskSimpleAuth:
         else:
             self._http_auth = None
         #
-        # register auth request hooks
+        # register needed auth request hooks
         #
         app.before_request(self._check_secure)
         app.before_request(self._auth_reset_user)
         app.after_request(self._auth_after_cleanup)
-        app.after_request(self._possible_redirect)
-        app.after_request(self._set_auth_cookie)
+        if self._401_redirect:
+            app.after_request(self._possible_redirect)
+        if self._carrier == "cookie":
+            app.after_request(self._set_auth_cookie)
         app.after_request(self._set_www_authenticate)
         #
         # blueprint hacks

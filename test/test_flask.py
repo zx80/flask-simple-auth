@@ -628,15 +628,15 @@ def test_something_3(client3):
     res = check(200, client3.get("/b/something", data={"LOGIN": "dad"}))
     assert res.data == b"CALVIN"
 
-def test_401_redirect(client):
-    app._fsa._401_redirect = "/login-page"
-    res = check(307, client.get("/auth/fake"))
-    assert "/login-page" in res.location
-    app._fsa._url_name = "URL"
-    res = check(307, client.get("/auth/fake"))
-    assert "/login-page" in res.location and "URL" in res.location and "fake" in res.location
-    app._fsa._401_redirect = None
-    app._fsa._url_name = None
+def test_401_redirect():
+    import AppFact as af
+    app = af.create_app(FSA_401_REDIRECT="/login-page")
+    with app.test_client() as client:
+        res = check(307, client.get("/something"))
+        assert "/login-page" in res.location
+        app._fsa._url_name = "URL"
+        res = check(307, client.get("/something"))
+        assert "/login-page" in res.location and "URL" in res.location and "something" in res.location
 
 def test_path(client):
     res = check(200, client.get("/path/foo"))
