@@ -384,7 +384,6 @@ class FlaskSimpleAuth:
                 sep = "&" if "?" in self._url_name else "?"
                 import urllib
                 location += sep + urllib.parse.urlencode({self._url_name: request.url})
-            self._need_authorization = False  # avoid auth_check?
             return redirect(location, 307)
         return res
 
@@ -671,7 +670,7 @@ class FlaskSimpleAuth:
         self._userp = conf.get("FSA_PARAM_USER", "USER")
         self._passp = conf.get("FSA_PARAM_PASS", "PASS")
         #
-        # hooks
+        # authentication and authorization hooks
         #
         if "FSA_GET_USER_PASS" in conf:
             self.get_user_pass(conf["FSA_GET_USER_PASS"])
@@ -715,16 +714,16 @@ class FlaskSimpleAuth:
         else:
             self._http_auth = None
         #
-        # register needed hooks
+        # hooks: before request executed in order, after in reverse
         #
         app.before_request(self._check_secure)
         app.before_request(self._auth_reset_user)
-        app.after_request(self._auth_check)
-        if self._401_redirect:
-            app.after_request(self._possible_redirect)
+        app.after_request(self._set_www_authenticate)  # always for auth=…
         if self._carrier == "cookie":
             app.after_request(self._set_auth_cookie)
-        app.after_request(self._set_www_authenticate)
+        if self._401_redirect:
+            app.after_request(self._possible_redirect)
+        app.after_request(self._auth_check)
         #
         # blueprint hacks
         #
