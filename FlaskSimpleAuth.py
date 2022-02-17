@@ -340,6 +340,13 @@ class FlaskSimpleAuth:
         log.critical(msg)
         return Exception(msg)
 
+    def _auth_has(self, *auth):
+        """Tell whether current authentication includes any of these schemes."""
+        for a in auth:
+            if a in self._auth:
+                return True
+        return False
+
     #
     # HOOKS
     #
@@ -359,9 +366,8 @@ class FlaskSimpleAuth:
         self._user = None
         self._need_authorization = True
 
-    def _auth_after_cleanup(self, res: Response):
+    def _auth_check(self, res: Response):
         """After request hook to detect missing authorizations."""
-        # NOTE this may be too late to prevent a commit?
         if res.status_code < 400 and self._need_authorization:
             method, path = request.method, request.path
             if not (self._cors and method == "OPTIONS"):
@@ -378,8 +384,7 @@ class FlaskSimpleAuth:
                 sep = "&" if "?" in self._url_name else "?"
                 import urllib
                 location += sep + urllib.parse.urlencode({self._url_name: request.url})
-            # must not trigger "missing authorization" if 401 is turned into 307
-            self._need_authorization = False
+            self._need_authorization = False  # avoid auth_check?
             return redirect(location, 307)
         return res
 
@@ -401,24 +406,17 @@ class FlaskSimpleAuth:
                                    max_age=int(60 * self._delay))
         return res
 
-    def _auth_has(self, *auth):
-        """Tell whether current authentication includes any of these schemes."""
-        for a in auth:
-            if a in self._auth:
-                return True
-        return False
-
     def _set_www_authenticate(self, res: Response):
         """Set WWW-Authenticate response header depending on current scheme."""
         if res.status_code == 401:
             # FIXME should it prioritize based on self._auth order?
             if self._auth_has("basic", "password"):
                 res.headers["WWW-Authenticate"] = f"Basic realm=\"{self._realm}\""
+            elif "token" in self._auth and self._carrier == "bearer":
+                res.headers["WWW-Authenticate"] = f"{self._name} realm=\"{self._realm}\""
             elif self._auth_has("http-basic", "http-digest", "http-token", "digest"):
                 assert self._http_auth
                 res.headers["WWW-Authenticate"] = self._http_auth.authenticate_header()
-            elif "token" in self._auth and self._carrier == "bearer":
-                res.headers["WWW-Authenticate"] = f"{self._name} realm=\"{self._realm}\""
             # else: scheme does not rely on WWW-Authenticate…
         # else: no need for WWW-Authenticate
         # restore temporary auth if needed
@@ -717,11 +715,11 @@ class FlaskSimpleAuth:
         else:
             self._http_auth = None
         #
-        # register needed auth request hooks
+        # register needed hooks
         #
         app.before_request(self._check_secure)
         app.before_request(self._auth_reset_user)
-        app.after_request(self._auth_after_cleanup)
+        app.after_request(self._auth_check)
         if self._401_redirect:
             app.after_request(self._possible_redirect)
         if self._carrier == "cookie":
