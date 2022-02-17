@@ -729,10 +729,7 @@ class FlaskSimpleAuth:
         #
         self.blueprints = self._app.blueprints
         self.debug = False
-        # portability tricks which generates mypy errors…
-        if hasattr(self._app, '_blueprint_order'):  # Flask 1.x
-            self._blueprint_order = self._app._blueprint_order  # pragma: no cover
-        elif hasattr(self._app, '_is_setup_finished'):  # Flask 2.0
+        if hasattr(self._app, '_is_setup_finished'):  # Flask 2.0
             self._is_setup_finished = self._app._is_setup_finished
             self.before_request_funcs = self._app.before_request_funcs
             self.after_request_funcs = self._app.after_request_funcs
