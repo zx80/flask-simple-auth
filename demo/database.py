@@ -10,9 +10,12 @@ from FlaskSimpleAuth import Reference, Flask, Response  # type: ignore
 db : Any = Reference()
 
 
-# always commit
+# always close current transaction
 def db_commit(res: Response):
-    db.commit()
+    if res.status_code < 400:
+        db.commit()
+    else:
+        db.rollback()
     return res
 
 
