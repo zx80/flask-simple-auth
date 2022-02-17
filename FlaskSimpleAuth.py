@@ -287,10 +287,14 @@ _DIRECTIVES = {
     "FSA_401_REDIRECT", "FSA_URL_NAME", "FSA_CORS", "FSA_CORS_OPTS",
 }
 
+# default settings are centralized here
+_DEFAULT_CACHE = "ttl"
 _DEFAULT_CACHE_SIZE = 262144  # a few MB
 _DEFAULT_CACHE_TTL = 600  # seconds, 10 minutes
 _DEFAULT_SERVER_ERROR = 500
 _DEFAULT_NOT_FOUND_ERROR = 404
+_DEFAULT_PASSWORD_SCHEME = "bcrypt"
+_DEFAULT_PASSWORD_OPTS = {"bcrypt__default_rounds": 4, "bcrypt__default_ident": "2y"}
 
 
 # actual extension
@@ -542,7 +546,7 @@ class FlaskSimpleAuth:
         # cache management for passwords, permissions, tokens…
         #
         self._cache_opts: Dict[str, Any] = conf.get("FSA_CACHE_OPTS", {})
-        cache = conf.get("FSA_CACHE", "ttl")
+        cache = conf.get("FSA_CACHE", _DEFAULT_CACHE)
         if cache:
             import cachetools as ct
             import CacheToolsUtils as ctu  # type: ignore
@@ -757,16 +761,14 @@ class FlaskSimpleAuth:
             return
         assert self._app
         conf = self._app.config
-        scheme = conf.get("FSA_PASSWORD_SCHEME", "bcrypt")
+        scheme = conf.get("FSA_PASSWORD_SCHEME", _DEFAULT_PASSWORD_SCHEME)
         log.info(f"initializing password manager with {scheme}")
         if scheme:
             if scheme == "plaintext":
                 log.warning("plaintext password manager is a bad idea")
             # passlib context is a pain, you have to know the scheme name to set its
             # round. Ident "2y" is same as "2b" but apache compatible.
-            options = conf.get("FSA_PASSWORD_OPTS",
-                               {"bcrypt__default_rounds": 4,
-                                "bcrypt__default_ident": "2y"})
+            options = conf.get("FSA_PASSWORD_OPTS", _DEFAULT_PASSWORD_OPTS)
             from passlib.context import CryptContext  # type: ignore
             self._pm = CryptContext(schemes=[scheme], **options)
         self._password_len: int = conf.get("FSA_PASSWORD_LEN", 0)
