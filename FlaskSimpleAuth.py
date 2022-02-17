@@ -1193,7 +1193,6 @@ class FlaskSimpleAuth:
 
         # check auth parameter
         if auth:
-            # log.error(f"auth = {auth}") FIXME
             if isinstance(auth, str):
                 auth = [auth]
             for a in auth:
@@ -1404,9 +1403,6 @@ class FlaskSimpleAuth:
 
     # just to record that no authorization check was needed
     def _any_noauth(self, path, *groups):
-
-        # FIXME
-        # assert len(groups) == 1 and ANY in groups or ALL in groups
 
         def decorate(fun: Callable):
 
