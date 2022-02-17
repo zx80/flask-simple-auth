@@ -542,7 +542,7 @@ in *read* mode by calling a per-domain user-supplied function:
 ```Python
 @app.object_perms("msg")
 def can_access_message(user: str, mid: int, mode: str) -> bool:
-    # does user can access message mid for operation mode?
+    # can user access message mid for operation mode?
     return …
 
 # also: app.object_perms("msg", can_access_message)
