@@ -637,6 +637,7 @@ def test_401_redirect():
         app._fsa._url_name = "URL"
         res = check(307, client.get("/something"))
         assert "/login-page" in res.location and "URL" in res.location and "something" in res.location
+        res = check(200, client.get("/something", data={"LOGIN": "dad"}))
 
 def test_path(client):
     res = check(200, client.get("/path/foo"))
@@ -1185,6 +1186,17 @@ def test_warnings_and_errors():
     def cast_foo(s: str):
         return s
     app.cast("foo", cast_foo)
+    # type errors
+    try:
+        app = af.create_app(FSA_CAST="not a dict")
+        assert False, "should not get through"
+    except Exception as e:
+        assert "FSA_CAST must be a dict" in str(e)
+    try:
+        app = af.create_app(FSA_OBJECT_PERMS="should be a dict")
+        assert False, "should not get through"
+    except Exception as e:
+        assert "FSA_OBJECT_PERMS must be a dict" in str(e)
 
 def test_jsondata(client):
     # simple types, anything but strings
