@@ -808,3 +808,4 @@ See [all versions](VERSIONS.md).
 - on-demand supplied user data?
   how about more hooks, *eg* `load_user_data` that could be cached?
 - reduce cloc?
+- give curl examples in the demo documentation?
