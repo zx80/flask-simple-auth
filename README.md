@@ -81,9 +81,8 @@ application: CORS, login page redirection…
 
 [**Authentication**](#authentication) is available through the `get_user`
 function.
-It is performed on demand when the function is called, automatically when
-checking for permissions in a per-role authorization model, or possibly
-forced for all/most paths.
+It is performed on demand when the function is called or when checking for
+permissions.
 The module implements inheriting the web-server authentication,
 password authentication (HTTP Basic, or HTTP/JSON parameters),
 authentication tokens (custom or JWT passed in headers or as a
