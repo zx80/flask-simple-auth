@@ -801,6 +801,7 @@ Remove `FSA_MODE`, `FSA_SKIP_PATH` and `FSA_CHECK` directives to make
 authentication *always* on demand. This is safe because missing
 authorizations are treated as errors and route are closed by default.
 Drop Flask 1.x support.
+Remove `register_cast` function, in favor of the `cast` method.
 
 #### 6.0 on 2022-02-13
 

@@ -64,29 +64,6 @@ class JsonData:
     pass
 
 
-# should this be inside the app?
-_CASTS: Dict[type, Callable[[str], object]] = {
-    bool: lambda s: None if s is None else s.lower() not in ("", "0", "false", "f"),
-    int: lambda s: int(s, base=0) if s else None,
-    # NOTE mypy complains wrongly about non-existing _empty.
-    inspect._empty: str,  # type: ignore
-    path: str,
-    string: str,
-    dt.date: dt.date.fromisoformat,
-    dt.time: dt.time.fromisoformat,
-    dt.datetime: dt.datetime.fromisoformat,
-    JsonData: json.loads,
-}
-
-
-def register_cast(t: type, cast: Callable[[str], object]):
-    """Add a cast for a custom type, if the type itself does not work."""
-    if t in _CASTS:
-        log.warning(f"overriding type casting function for {t}")
-    _CASTS[t] = cast
-    return cast
-
-
 #
 # SPECIAL PREDEFINED GROUP NAMES
 #
@@ -311,6 +288,18 @@ class FlaskSimpleAuth:
         self._get_user_pass = None
         self._user_in_group = None
         self._object_perms: Dict[Any, Callable[[str, Any, Optional[str]], bool]] = dict()
+        self._casts: Dict[type, Callable[[str], object]] = {
+            bool: lambda s: None if s is None else s.lower() not in ("", "0", "false", "f"),
+            int: lambda s: int(s, base=0) if s else None,
+            # NOTE mypy complains wrongly about non-existing _empty.
+            inspect._empty: str,  # type: ignore
+            path: str,
+            string: str,
+            dt.date: dt.date.fromisoformat,
+            dt.time: dt.time.fromisoformat,
+            dt.datetime: dt.datetime.fromisoformat,
+            JsonData: json.loads,
+        }
         self._auth: List[str] = []
         self._saved_auth: Optional[List[str]] = None
         self._http_auth = None
@@ -450,13 +439,20 @@ class FlaskSimpleAuth:
         self._user_in_group = self._cache_function(uig, "u.")
         return uig
 
+    def _cast(self, t: type, cast: Callable[[str], object]):
+        """Add a cast for a custom type, if the type itself does not work."""
+        if t in self._casts:
+            log.warning(f"overriding type casting function for {t}")
+        self._casts[t] = cast
+        return cast
+
     def cast(self, t, cast: Optional[Callable] = None):
         """Add a cast function to a type."""
         if cast:  # direct
-            return register_cast(t, cast)
+            return self._cast(t, cast)
         else:  # decorator
             def annotate(fun):
-                register_cast(t, fun)
+                self._cast(t, fun)
                 return fun
             return annotate
 
@@ -1275,7 +1271,7 @@ class FlaskSimpleAuth:
                     # guess parameter type
                     t = typeof(p)
                     types[n] = t
-                    typings[n] = _CASTS.get(t, t)
+                    typings[n] = self._casts.get(t, t)
                 if p.default != inspect._empty:  # type: ignore
                     defaults[n] = p.default
                 if p.kind == p.VAR_KEYWORD:

@@ -1184,7 +1184,7 @@ def test_warnings_and_errors():
     @app.cast("foo")
     def cast_foo(s: str):
         return s
-    fsa.register_cast("foo", cast_foo)
+    app.cast("foo", cast_foo)
 
 def test_jsondata(client):
     # simple types, anything but strings
