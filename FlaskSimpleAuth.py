@@ -597,13 +597,11 @@ class FlaskSimpleAuth:
         if need_carrier and not self._carrier:
             raise self._Bad(f"Token type {self._token} requires a carrier")
         # name of token for cookie or param, Authentication scheme, or other header
-        default_name: Optional[str] = None
-        if self._carrier in ("param", "cookie"):
-            default_name = "auth"
-        elif self._carrier == "bearer":
-            default_name = "Bearer"
-        elif self._carrier == "header":
-            default_name = "Auth"
+        default_name: Optional[str] = \
+            "auth" if self._carrier in ("param", "cookie") else \
+            "Bearer" if self._carrier == "bearer" else \
+            "Auth" if self._carrier == "header" else \
+            None
         self._name = conf.get("FSA_TOKEN_NAME", default_name)
         if need_carrier and not self._name:
             raise self._Bad(f"Token carrier {self._carrier} requires a name")
