@@ -1142,19 +1142,17 @@ class FlaskSimpleAuth:
         # get the actual function when regenerating caches
         while hasattr(fun, "__wrapped__"):
             fun = fun.__wrapped__
-        if not fun or self._gen_cache is None:
+        if not self._gen_cache:
             return fun
         else:
             import cachetools as ct
-            fun_cache = self._gen_cache(prefix=prefix, cache=self._cache)
-            return ct.cached(cache=fun_cache)(fun)
+            cache = self._gen_cache(prefix=prefix, cache=self._cache)
+            return ct.cached(cache=cache)(fun)
 
     def _set_caches(self):
         """Create caches around some functions."""
-        self._cache.clear()
         for name, prefix in self._CACHABLE.items():
-            fun = getattr(self, name)
-            setattr(self, name, self._cache_function(fun, prefix))
+            setattr(self, name, self._cache_function(getattr(self, name), prefix))
 
     def clear_caches(self):
         """Clear internal caches."""
