@@ -158,8 +158,8 @@ Once initialized `app` is a standard Flask object with some additions:
 
 - `route` decorator, an extended version of Flask's own with an `authorize`
   parameter and transparent management of request parameters.
-- per-method shortcut decorators `post`, `get`, `put`, `patch` and `delete` which
-  support the same extensions.
+- per-method shortcut decorators `post`, `get`, `put`, `patch` and `delete`
+  which support the same extensions.
 - `user_in_group`, `get_user_pass` and `object_perms` functions/decorators to
   register authentication and authorization helper functions.
 - `get_user` to extract the authenticated user or raise an `FSAException`.
@@ -167,10 +167,12 @@ Once initialized `app` is a standard Flask object with some additions:
 - `hash_password` and `check_password` to hash or check a password.
 - `create_token` to compute a new authentication token for the current user.
 - `clear_caches` to clear internal process caches (probably a bad idea).
+- `cast` a function/decorator to register no str to some type casts for
+  parameters.
 
-Alternatively, it is possible but not recommended to use the flask extensions
-model, in which case the `FlaskSimpleAuth` object must be instanciated and
-routes *must* be created using this object:
+It is also possible, but *not* recommended to use the flask extensions model,
+in which case the `FlaskSimpleAuth` object must be instanciated and routes
+*must* be created using this object:
 
 ```Python
 from flask import Flask
@@ -192,33 +194,31 @@ def get_what(flt: str = None):
 
 ### Authentication
 
-The main configuration directive is `FSA_AUTH` which governs authentication
-methods used by the `get_user` function, as described in the following sections.
+The main authentication configuration directive is `FSA_AUTH` which governs the
+authentication methods used by the `get_user` function, as described in the
+following sections. Defaut is `httpd`.
 
-- `FSA_AUTH` governs the *how*: `none`, `httpd`, `basic`, `param`, `password`,
-  `token`… as described in details in the next sections.
-  Default is `httpd`.
+If a non-token single scheme is provided, authentication will be `token`
+followed by the provided scheme, i.e. `token` are tried first anyway.
 
-  If a non-token single scheme is provided, authentication will be `token`
-  followed by the provided scheme, i.e. `token` are tried first anyway.
-
-  To take full control of authentication scheme, provide an ordered list.
-  Note that it does not always make much sense to mix some schemes, e.g.
-  *basic* and *digest* password storage assumptions are distinct and should
-  not be merged.
-  Also, only one HTTPAuth-based scheme can be active at a time.
+To take full control of authentication scheme, provide an ordered list.
+Note that it does not always make much sense to mix some schemes, e.g.
+*basic* and *digest* password storage assumptions are distinct and should
+not be merged.  Also, only one HTTPAuth-based scheme can be active at a time.
 
 Authentication is *always* performed on demand, either to check for a route
 authorization declared with `authorize` or when calling `get_user`.
 
-The authentication scheme attempted on a route can be altered with the
-`auth` parameter added to the `route` decorator.
-This may be used to restrict the authentication scheme to a *subset*
-if those configured globally, and may or may not work otherwise
-depending on module internals.
-This feature is best avoided but in very particular cases because
-it counters a goal of this module which is to remove authentication
-considerations from the code and put them in the configuration only.
+The authentication scheme attempted on a route can be altered with the `auth`
+parameter added to the `route` decorator.
+This may be used to restrict the authentication scheme to a *subset* if those
+configured globally, and may or may not work otherwise depending on module
+internals.
+This feature is best avoided but in very particular cases because it counters
+a goal of this module which is to remove authentication considerations from the
+code and put them in the configuration only.
+A legitimate use for a REST API is to have `FSA_AUTH` defined to *token* and have
+only one *basic* route to obtain the token used by other routes.
 
 #### Authentication Schemes
 
