@@ -769,10 +769,8 @@ class FlaskSimpleAuth:
         """Delegate user authentication to HTTPAuth."""
         assert self._http_auth
         auth = self._http_auth.get_auth()
-        # log.debug(f"auth = {auth}")
         password = self._http_auth.get_auth_password(auth) \
             if "http-token" not in self._auth else None
-        # log.debug(f"password = {password}")
         try:
             # NOTE "authenticate" signature is not very clean…
             user = self._http_auth.authenticate(auth, password)
@@ -792,7 +790,6 @@ class FlaskSimpleAuth:
         import base64 as b64
         assert request.remote_user is None
         auth = request.headers.get("Authorization", None)
-        # log.debug(f"auth: {auth}")
         if not auth:
             log.debug("AUTH (basic): missing authorization header")
             raise self._Err("missing authorization header", 401)
@@ -911,10 +908,9 @@ class FlaskSimpleAuth:
         user = user or self.get_user()
         realm = realm or self._realm
         delay = delay or self._delay
-        if self._token == "fsa":
-            return self._get_fsa_token(realm, user, delay, self._secret)
-        else:
-            return self._get_jwt_token(realm, user, delay, self._sign)
+        return \
+            self._get_fsa_token(realm, user, delay, self._secret) if self._token == "fsa" else \
+            self._get_jwt_token(realm, user, delay, self._sign)
 
     def _get_fsa_token_auth(self, token):
         """Tell whether FSA token is ok: return validated user or None."""
@@ -1012,10 +1008,8 @@ class FlaskSimpleAuth:
 
     def get_user(self, required=True) -> Optional[str]:
         """Authenticate user or throw exception."""
-        # log.debug(f"get_user for {self._auth}")
 
-        # _user is reset before/after requests
-        # so relying on in-request persistance is safe
+        # safe because _user is reset before requests
         if self._user_set:
             return self._user
 
