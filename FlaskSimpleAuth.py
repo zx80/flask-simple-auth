@@ -177,69 +177,25 @@ class Flask(flask.Flask):
     def __init__(self, *args, debug: Optional[bool] = None, **kwargs):
         super().__init__(*args, **kwargs)
         self._fsa = FlaskSimpleAuth(self, debug=debug)
-        # needed for blueprint registration
         # overwritten late because called by upper Flask initialization for "static"
         setattr(self, "add_url_rule", self._fsa.add_url_rule)
-
-    def clear_caches(self):
-        """Clear all internal caches. Probably a bad idea."""
-        self._fsa.clear_caches()
-
-    # register hooks, can be used as decorators
-    def get_user_pass(self, gup):
-        """Set `get_user_pass` helper function."""
-        return self._fsa.get_user_pass(gup)
-
-    def user_in_group(self, uig):
-        """Set `user_in_group` helper function."""
-        return self._fsa.user_in_group(uig)
-
-    def object_perms(self, d, f=None):
-        """Add an object permission checker for a domain."""
-        return self._fsa.object_perms(d, f)
-
-    def cast(self, t, c=None):
-        """Decorator to add a type cast function."""
-        return self._fsa.cast(t, c)
-
-    # password management
-    def check_password(self, pwd, ref):
-        """Check whether password is ok wrt to current password manager."""
-        return self._fsa.check_password(pwd, ref)
-
-    def hash_password(self, pwd):
-        """Hash password using current password manager scheme."""
-        return self._fsa.hash_password(pwd)
-
-    # token
-    def create_token(self, user: str = None):
-        """Create a token with the current token scheme."""
-        return self._fsa.create_token(user)
-
-    # user
-    def get_user(self, required=True):
-        """Authenticate remote user or raise exception."""
-        return self._fsa.get_user(required)
-
-    def current_user(self):
-        """Get current authenticated user, if any, or None."""
-        return self._fsa.current_user()
-
-    # per-method decorator forwarding
-    def get(self, rule, **options):
-        return self._fsa.get(rule, **options)
-
-    def post(self, rule, **options):
-        return self._fsa.post(rule, **options)
-
-    def put(self, rule, **options):
-        return self._fsa.put(rule, **options)
-
-    def delete(self, rule, **options):
-        return self._fsa.delete(rule, **options)
-
-    def patch(self, rule, **options):
-        return self._fsa.patch(rule, **options)
+        # forwarded some methods
+        self.clear_caches = self._fsa.clear_caches
+        self.get_user_pass = self._fsa.get_user_pass
+        self.user_in_group = self._fsa.user_in_group
+        self.object_perms = self._fsa.object_perms
+        self.cast = self._fsa.cast
+        self.check_password = self._fsa.check_password
+        self.hash_password = self._fsa.hash_password
+        self.create_token = self._fsa.create_token
+        self.get_user = self._fsa.get_user
+        self.current_user = self._fsa.current_user
+        # overwrite decorators ("route" done through add_url_rule above)
+        setattr(self, "get", self._fsa.get)  # avoid mypy warnings
+        setattr(self, "put", self._fsa.put)
+        setattr(self, "post", self._fsa.post)
+        setattr(self, "patch", self._fsa.patch)
+        setattr(self, "delete", self._fsa.delete)
 
 
 # all possible directives
@@ -325,7 +281,7 @@ class FlaskSimpleAuth:
         return FSAException(msg, code)
 
     def _Bad(self, msg: str):
-        """Raise an exception on a bad configuration."""
+        """Build and trace an exception on a bad configuration."""
         log.critical(msg)
         return Exception(msg)
 
@@ -1149,7 +1105,7 @@ class FlaskSimpleAuth:
             setattr(self, name, self._cache_function(getattr(self, name), prefix))
 
     def clear_caches(self):
-        """Clear internal caches."""
+        """Clear internal caches. Probably a bad idea."""
         self._cache.clear()
 
     def _safe_call(self, path, level, fun, *args, **kwargs):

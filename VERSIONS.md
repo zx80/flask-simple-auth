@@ -5,7 +5,7 @@ and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 
 ## 7.0 in Future
 
-Improve and simplify code.
+Improve and simplify code where possible.
 Remove `FSA_MODE`, `FSA_SKIP_PATH` and `FSA_CHECK` directives to make
 authentication *always* on demand. This is safe because missing
 authorizations are treated as errors and route are closed by default.
