@@ -1124,7 +1124,6 @@ class FlaskSimpleAuth:
                     if auth:
                         self._saved_auth, self._auth = self._auth, auth
                     try:
-                        # log.warning(f"auth = {self._auth}")
                         self._user = self.get_user()
                     except FSAException as e:
                         return self._Res(e.message, e.status)
