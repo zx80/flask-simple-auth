@@ -276,7 +276,7 @@ class FlaskSimpleAuth:
             if self._secure:
                 log.error(msg)
                 return self._Res("insecure HTTP request denied", self._server_error)
-            else:
+            else:  # at least a warning is issued for each insecure request
                 log.warning(msg)
 
     def _auth_reset_user(self):
@@ -348,6 +348,7 @@ class FlaskSimpleAuth:
             return request.json
         else:
             # reimplement "request.values" after Flask 2.0 regression
+            # the logic of web-targetted HTTP does not make sense for a REST API
             # https://github.com/pallets/werkzeug/pull/2037
             # https://github.com/pallets/flask/issues/4120
             from werkzeug.datastructures import CombinedMultiDict, MultiDict
