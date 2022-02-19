@@ -395,7 +395,7 @@ class FlaskSimpleAuth:
             return annotate
 
     def _check_object_perms(self, user, domain, oid, mode):
-        """Tell whether user can access object oid in domain for mode."""
+        """Can user access object oid in domain for mode, cached."""
         assert domain in self._object_perms
         return self._object_perms[domain](user, oid, mode)
 
@@ -953,9 +953,8 @@ class FlaskSimpleAuth:
             log.debug(f"AUTH (jwt token): invalid token ({e})")
             raise self._Err("invalid jwt token", 401)
 
-    # NOTE this function is expected to be cached
     def _get_any_token_auth_exp(self, token):
-        """Return validated user and expiration."""
+        """Return validated user and expiration, cached."""
         return \
             self._get_fsa_token_auth(token) if self._token == "fsa" else \
             self._get_jwt_token_auth(token)
@@ -1047,7 +1046,7 @@ class FlaskSimpleAuth:
         """Return current authenticated user, if any."""
         return self.get_user(required=False)
 
-    # authentication and authorization methods that can be cached
+    # authentication and authorization methods that can/should be cached
     _CACHABLE = {
         "_get_any_token_auth_exp": "t.",
         "_get_user_pass": "u.",
@@ -1075,7 +1074,7 @@ class FlaskSimpleAuth:
             setattr(self, name, self._cache_function(getattr(self, name), prefix))
 
     def clear_caches(self):
-        """Clear internal caches. Probably a bad idea."""
+        """Clear internal cache. Probably a bad idea."""
         self._cache.clear()
 
     def _safe_call(self, path, level, fun, *args, **kwargs):
