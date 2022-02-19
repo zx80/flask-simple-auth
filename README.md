@@ -594,7 +594,7 @@ For `int`, base syntax is accepted for HTTP/JSON parameters, i.e. `0x11`,
 `0o21`, `0b10001` and `17` all mean decimal *17*.
 For `bool`, *False* is an empty string, `0`, `False` or `F`, otherwise
 the value is *True*.
-Type `path` is a special `str` type which allow to trigger accepting
+Type `path` is a special `str` type which allows to trigger accepting
 any path on a route.
 Type `JsonData` is a special type to convert, if necessary, a string value
 to JSON, expecting a list or a dictionary.
