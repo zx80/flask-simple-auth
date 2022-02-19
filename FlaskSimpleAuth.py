@@ -99,65 +99,39 @@ class Reference:
 
     """
 
-    def __init__(self, obj: Any = None, set_name: str = None):
+    def __init__(self, obj: Any = None, set_name: str = "set"):
         """Constructor parameters:
 
         - obj: object to be wrapped, can also be provided later.
         - set_name: provide another name for the "set" function.
         """
         self._obj = None
-        # create "set" method, which may use another name…
-        set_name = set_name or "set"
-        setattr(self, set_name, getattr(self, "_set_obj"))
-        # keep track of initial methods for later cleanup
-        self._init: Set[str] = set()
-        self._init.update(self.__dir__())
+        if set_name:
+            setattr(self, set_name, getattr(self, "_set_obj"))
         obj and self._set_obj(obj)
 
     def _set_obj(self, obj):
         """Set current wrapped object, possibly replacing the previous one."""
         log.debug(f"setting reference to {obj} ({type(obj)})")
         self._obj = obj
-        # method cleanup
-        for f in self.__dir__():
-            if f not in self._init:
-                delattr(self, f)
-        # forward
-        for f in obj.__dir__():
-            if f not in self._init:
-                setattr(self, f, getattr(obj, f))
         return obj
 
-    # forward standard methods
-    # automating that with setattr/getattr does not work…
-    # contrary to the documentation say, it seems that str(obj)
-    # really calls obj.__class__.__str__() and *not* obj.__str__().
+    def __getattr__(self, item):
+        """Forward everything to contained object."""
+        return self._obj.__getattribute__(item)
+
+    # also forward a few special methods
     def __str__(self):
         return self._obj.__str__()
 
     def __repr__(self):
         return self._obj.__repr__()
 
-    def __hash__(self):
-        return self._obj.__hash__()
+    def __eq__(self, v):
+        return self._obj.__eq__(v)
 
-    def __eq__(self, o):
-        return self._obj.__eq__(o)
-
-    def __ne__(self, o):
-        return self._obj.__ne__(o)
-
-    def __le__(self, o):
-        return self._obj.__le__(o)
-
-    def __lt__(self, o):
-        return self._obj.__lt__(o)
-
-    def __ge__(self, o):
-        return self._obj.__ge__(o)
-
-    def __gt__(self, o):
-        return self._obj.__gt__(o)
+    def __ne__(self, v):
+        return self._obj.__ne__(v)
 
 
 class Flask(flask.Flask):

@@ -11,6 +11,7 @@ authentication *always* on demand. This is safe because missing
 authorizations are treated as errors and route are closed by default.
 Drop Flask 1.x support.
 Remove `register_cast` function, in favor of the `cast` method.
+Simplify `Reference` implementation.
 
 ## 6.0 on 2022-02-13
 

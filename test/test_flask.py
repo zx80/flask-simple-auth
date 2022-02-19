@@ -653,14 +653,12 @@ def test_reference():
     v1, v2 = "hello!", "world!"
     r1 = fsa.Reference()
     r1.set(v1)
-    assert r1 == v1
+    assert r1 == v1 and not r1 != v1
     r2 = fsa.Reference(set_name="set_object")
     r2.set_object(v2)
     assert r2 == v2
     r3 = fsa.Reference("1")
     assert r3 == "1" and r3 != "one"
-    assert "0" < r3 and "1" <= r3 and "2" > r3 and "1" >= r3
-    assert "1".__hash__() == r3.__hash__()
     assert repr("1") == repr(r3)
 
 def test_www_authenticate(client):
