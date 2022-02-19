@@ -576,10 +576,9 @@ manually, which may impair application performance.
 
 ### Parameters
 
-Request parameters (HTTP or JSON) are translated automatically to
-named function parameters, by relying on function type annotations.
-The decorator guesses whether parameters are mandatory based on
-provided default values, i.e. they are optional when a default is provided.
+Request parameters (HTTP or JSON) are translated automatically to named function
+parameters, by relying on function type annotations.
+Parameters are considered mandatory unless a default value is provided.
 
 ```python
 @app.get("/something/<id>", authorize=…)
