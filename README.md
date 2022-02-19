@@ -463,7 +463,7 @@ headers for authenticating later requests, till it expires.
 
 Authorizations are declared with the `authorize` parameter to
 the `route` decorator (and its per-method shortcuts).
-The modules supports two permission model:
+The modules supports two permission models:
 
  - a group-oriented model
  - an object-oriented model
