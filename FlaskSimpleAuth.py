@@ -370,20 +370,15 @@ class FlaskSimpleAuth:
         self._user_in_group = self._cache_function(uig, "u.")
         return uig
 
-    def _cast(self, t: type, cast: Callable[[str], object]):
-        """Add a cast for a custom type, if the type itself does not work."""
-        if t in self._casts:
-            log.warning(f"overriding type casting function for {t}")
-        self._casts[t] = cast
-        return cast
-
     def cast(self, t, cast: Optional[Callable] = None):
         """Add a cast function to a type."""
+        if t in self._casts:
+            log.warning(f"overriding type casting function for {t}")
         if cast:  # direct
-            return self._cast(t, cast)
+            self._casts[t] = cast
         else:  # decorator
             def annotate(fun):
-                self._cast(t, fun)
+                self._casts[t] = cast
                 return fun
             return annotate
 
