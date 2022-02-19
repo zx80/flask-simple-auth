@@ -1129,7 +1129,7 @@ class FlaskSimpleAuth:
                         return self._Res(e.message, e.status)
 
                 if not self._user:  # pragma no cover
-                    return self._Res("", 401)
+                    return self._Res("no auth", 401)
 
                 return self._safe_call(path, "authenticate", fun, *args, **kwargs)
 
