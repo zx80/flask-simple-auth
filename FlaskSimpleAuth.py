@@ -429,7 +429,7 @@ class FlaskSimpleAuth:
             log.setLevel(conf["FSA_LOGGING_LEVEL"])
         # check directives for typos
         for name in conf:
-            if name[:4] == "FSA_" and name not in _DIRECTIVES:
+            if name.startswith("FSA_") and name not in _DIRECTIVES:
                 log.warning(f"unexpected directive: {name}")
         # whether to only allow secure requests
         self._secure = conf.get("FSA_SECURE", True)
