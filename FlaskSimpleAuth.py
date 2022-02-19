@@ -285,7 +285,7 @@ class FlaskSimpleAuth:
         self._user = None
         self._need_authorization = True
 
-    def _auth_check(self, res: Response):
+    def _auth_post_check(self, res: Response):
         """After request hook to detect missing authorizations."""
         if res.status_code < 400 and self._need_authorization:
             method, path = request.method, request.path
@@ -648,7 +648,7 @@ class FlaskSimpleAuth:
             app.after_request(self._set_auth_cookie)
         if self._401_redirect:
             app.after_request(self._possible_redirect)
-        app.after_request(self._auth_check)
+        app.after_request(self._auth_post_check)
         #
         # blueprint hacks
         #
