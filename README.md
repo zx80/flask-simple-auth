@@ -805,6 +805,11 @@ See [all versions](VERSIONS.md).
 - add `any` token scheme?
 - add app.log?
 - on-demand supplied user data?
-  how about more hooks, *eg* `load_user_data` that could be cached?
+  `get\_identity(user: str) -> Any` which is to be cached
+  registered with `app.identity(get_identity)`
+  then `id = app.get_identity(user: str = app.get_user())`
+  does it really need to be inside `FlaskSimpleAuth`?
+  possibly the id can be passed to perm hooks instead of the login?
+  can be managed there as well?
 - reduce cloc?
 - give curl examples in the demo documentation?
