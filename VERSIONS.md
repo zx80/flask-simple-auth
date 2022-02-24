@@ -3,7 +3,7 @@
 Sources are available on [GitHub](https://github.com/zx80/flask-simple-auth)
 and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 
-## 7.0 in Future
+## 7.0 on 2022-02-24
 
 Improve and simplify code where possible.
 Remove `FSA_MODE`, `FSA_SKIP_PATH` and `FSA_CHECK` directives to make
