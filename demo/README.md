@@ -90,6 +90,10 @@ includes a mandatory `login` url string parameter to identify the user,
 and two optional `pass` string and `admin` boolean parameters to describe
 expected changes.
 
+The [types\_path.py](types_path.py) blueprint illustrates getting
+various parameter types, including the convenient `JsonData` types
+which converts a string to a JSON data structure.
+
 
 ## Database
 
