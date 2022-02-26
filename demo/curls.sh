@@ -23,12 +23,31 @@ curl -i -X DELETE -u foo:bla                $URL/stuff/4  # 204
 
 # /users
 curl -i -X GET  -u foo:bla $URL/users  # list, 200
-curl -i -X POST -u foo:bla -d login=zeo -d email=z@d -d pass=zz -d admin=false $URL/users
+curl -i -X POST -u foo:bla -d login=z1 -d email=z@d -d pass=zz -d admin=false $URL/users
+curl -i -X POST -u foo:bla -d login=z2 -d email=y@d -d pass=yy -d admin=true  $URL/users
 
 # /users/<uid>
-curl -i -X GET    -u foo:bla               $URL/users/zeo  # 200
-curl -i -X GET    -u zeo:zz                $URL/users/zeo  # 200
-curl -i -X PATCH  -u foo:bla -d email=zz@d $URL/users/zeo  # 204
-curl -i -X GET    -u foo:bla               $URL/users/zeo  # 200
-curl -i -X GET    -u zeo:zz                $URL/users/foo  # 403
-curl -i -X DELETE -u foo:bla               $URL/users/foo  # 204
+curl -i -X GET    -u z2:yy               $URL/users/z1  # 200
+curl -i -X PATCH  -u z2:yy -d email=z1@d $URL/users/z1  # 204
+curl -i -X GET    -u z1:zz               $URL/users/z1  # 200
+curl -i -X PATCH  -u z1:zz -d email=z2@d $URL/users/z1  # 403
+curl -i -X PATCH  -u z2:yy -d email=z2@d $URL/users/z1  # 204
+curl -i -X GET    -u z1:zz               $URL/users/z1  # 200
+curl -i -X GET    -u z1:zz               $URL/users/z2  # 403
+curl -i -X DELETE -u z1:zz               $URL/users/z2  # 403
+curl -i -X DELETE -u z1:zz               $URL/users/z1  # 204
+curl -i -X DELETE -u z2:yy               $URL/users/z2  # 204
+
+# /scare
+curl -i -X POST            -d login=zz -d email=z@d -d pass=zz $URL/scare
+curl -i -X GET    -u zz:zz                                     $URL/scare
+curl -i -X PATCH  -u zz:zz -d opass=zz -d npass=yy             $URL/scare
+curl -i -X GET    -u zz:yy                                     $URL/scare/token
+curl -i -X DELETE -u zz:yy                                     $URL/scare
+
+# /types/*
+curl -i -X GET -d i=-12                 $URL/types/scalars
+curl -i -X GET -d f=5432.1              $URL/types/scalars
+curl -i -X GET -d b=true                $URL/types/scalars
+curl -i -X GET -d s=hello               $URL/types/scalars
+curl -i -X GET -d j='[{"a":1},{"b":2}]' $URL/types/json
