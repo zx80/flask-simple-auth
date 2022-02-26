@@ -46,8 +46,9 @@ curl -i -X GET    -u zz:yy                                     $URL/scare/token
 curl -i -X DELETE -u zz:yy                                     $URL/scare
 
 # /types/*
-curl -i -X GET -d i=-12                 $URL/types/scalars
-curl -i -X GET -d f=5432.1              $URL/types/scalars
-curl -i -X GET -d b=true                $URL/types/scalars
-curl -i -X GET -d s=hello               $URL/types/scalars
-curl -i -X GET -d j='[{"a":1},{"b":2}]' $URL/types/json
+curl -i -X GET -d i=-12                        $URL/types/scalars
+curl -i -X GET -d f=5432.1                     $URL/types/scalars
+curl -i -X GET -d b=true                       $URL/types/scalars
+curl -i -X GET -d s=hello                      $URL/types/scalars
+curl -i -X GET -d j='[{"a":1},{"b":2}]'        $URL/types/json
+curl -i -X GET -d j='{"pi":3.14159,"e":2.718}' $URL/types/json
