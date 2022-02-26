@@ -10,8 +10,8 @@ SELECT sid, sname FROM Stuff WHERE sname LIKE :pattern ORDER BY 1;
 -- name: get_stuff_sid^
 SELECT sname FROM Stuff WHERE sid = :sid;
 
--- name: add_stuff!
-INSERT INTO Stuff(sname) VALUES (:sname);
+-- name: add_stuff$
+INSERT INTO Stuff(sname) VALUES (:sname) RETURNING sid;
 
 -- name: del_stuff_sid!
 DELETE FROM Stuff WHERE sid = :sid;

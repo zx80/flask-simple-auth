@@ -18,8 +18,8 @@ def get_stuff(pattern: str = None):
 # POST /stuff: add new stuff
 @stuff.post("/stuff", authorize="ALL")
 def post_stuff(sname: str):
-    db.add_stuff(sname=sname)
-    return "", 201
+    res = db.add_stuff(sname=sname)
+    return json(res), 201
 
 
 # GET /stuff/<sid>: get this stuff

@@ -89,6 +89,9 @@ run: app.pid
 	curl -i -X GET http://0.0.0.0:5000/now
 	echo
 
+run-db:
+	$(MAKE) DB=db run
+
 run-pg:
 	$(MAKE) DB=pg run
 
@@ -97,3 +100,12 @@ run-pg2:
 
 log: run
 	tail -f app.log
+
+log-db:
+	$(MAKE) DB=db log
+
+log-pg:
+	$(MAKE) DB=pg log
+
+log-pg2:
+	$(MAKE) DB=pg2 log
