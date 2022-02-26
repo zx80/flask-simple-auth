@@ -1180,15 +1180,18 @@ class FlaskSimpleAuth:
 
         def decorate(fun: Callable):
 
-            # for each parameter name, its expected type, cast and default value
+            # for each parameter name: type, cast, default value, http param name
             types: Dict[str, type] = {}
             typings: Dict[str, Callable[[str], Any]] = {}
             defaults: Dict[str, Any] = {}
+            names: Dict[str, str] = {}
 
             # parameters types/casts and defaults taken from signature
             sig, keywords = inspect.signature(fun), False
 
             for n, p in sig.parameters.items():
+                sn = n[1:] if n[0] == '_' and len(n) > 1 else n
+                names[n], names[sn] = sn, n
                 if n not in types and \
                    p.kind not in (p.VAR_KEYWORD, p.VAR_POSITIONAL):
                     # guess parameter type
@@ -1209,8 +1212,7 @@ class FlaskSimpleAuth:
 
                 for p, typing in typings.items():
                     # guess which function parameters are request parameters
-                    # parameter HTTP name
-                    pn = p[1:] if p[0] == '_' and len(p) > 1 else p
+                    pn = names[p]
                     if p not in kwargs:
                         # parameter p not yet encountered
                         if pn in params:
@@ -1243,7 +1245,7 @@ class FlaskSimpleAuth:
                             kwargs[p] = params[p]
                 elif self._debug:  # warn about unused parameters
                     for p in params:
-                        if p not in typings and f"_{p}" not in typings and p not in self._names:
+                        if p not in names and p not in self._names:
                             log.debug(f"unexpected parameter {p} on {path}")
 
                 return self._safe_call(path, "parameters", fun, *args, **kwargs)
