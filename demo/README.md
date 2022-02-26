@@ -76,6 +76,11 @@ provided old password (`opass`) is not validated.
 FlaskSimpleAuth roles (groups) are checked with the `user_in_group` hook,
 which must be provided.
 
+The `GET` and `DELETE` methods on `/users/<login>` are controlled with
+a finer grain permission model: both admins and the user themselves can access
+the route, which is controlled through a domain-specific function registered
+wuth the `object_perms` hook.
+
 
 ## API Parameters
 
@@ -136,6 +141,7 @@ for initial application users.
    ```python
    from database import db
    ```
+
 If someone wants to change the underlying DB, the SQL files may need to be updated
 for the SQL variant syntax, as the `DB_*` configuration directives for driver
 and connection management.
