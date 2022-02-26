@@ -801,6 +801,7 @@ See [all versions](VERSIONS.md).
 
 ## TODO
 
+- detect unexpected parameters!
 - test `FSA_HTTP_AUTH_OPTS`?
 - add `any` token scheme?
 - add app.log?
