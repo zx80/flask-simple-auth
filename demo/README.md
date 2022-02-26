@@ -152,13 +152,15 @@ and [app-db.conf](app-db.conf) vs [app-pg.conf](app-pg.conf).
 ## Demo Run
 
 A [Makefile](Makefile) is provided to ease running the demo application.
+Make macro `DB` can be set to `db` for SQLite, `pg2` and `pg` for Postgres
+with `psycopg` driver version 2 and 3.
 
  - `make venv` generates a suitable virtual environment.
  - `make check` runs `pytest` on the demonstration with SQLite.
  - `make DB=pg check` to run tests with Postgres using the psycopg 3 driver.
- - `make run` starts the demo application, with logs in `app.log` and
+ - `make DB=pg run` starts the demo application, with logs in `app.log` and
     process id in `app.pid`.
- - `make log` runs and tails logs.
+ - `make DB=pg log` runs and tails logs.
  - `make stop` stops the application.
  - `make clean` cleans generated files.
  - `make clean-venv` removes the virtual environment.
