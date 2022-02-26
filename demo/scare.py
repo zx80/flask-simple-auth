@@ -25,9 +25,10 @@ def get_scare_token():
 # POST /scare (login, pass): register a new user, or 500 if already exists
 @scare.post("/scare", authorize="ANY")
 def post_scare(login: str, email: str, _pass: str):
-    db.add_user(login=login, email=email, upass=app.hash_password(_pass), admin=False)
+    res = db.add_user(login=login, email=email, upass=app.hash_password(_pass), admin=False)
+    # NOTE bad, should wait for cache expiration
     app.clear_caches()
-    return "", 201
+    return json(res), 201
 
 
 # PATCH /scare (opass, npass): change one's password
@@ -39,6 +40,7 @@ def patch_scare(opass: str, npass: str):
     if not app.check_password(opass, res[2]):
         return "invalid password provided", 403
     db.upd_user_password(login=login, upass=app.hash_password(npass))
+    # NOTE bad, should wait for cache expiration
     app.clear_caches()
     return "", 204
 
@@ -47,5 +49,6 @@ def patch_scare(opass: str, npass: str):
 @scare.delete("/scare", authorize="ALL")
 def delete_scare():
     db.del_user_login(login=app.get_user())
+    # NOTE bad, should wait for cache expiration
     app.clear_caches()
     return "", 204
