@@ -11,7 +11,7 @@ clean: stop
 	pkill flask || true
 	dropdb stuff || true
 
-clean-venv:
+clean-venv: clean
 	$(RM) -r venv
 
 # running the application
