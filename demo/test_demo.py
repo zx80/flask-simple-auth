@@ -108,12 +108,12 @@ def test_scare(client):
     res = check(200, client.get("/scare/token", headers=FOO_BASIC))
     assert b"demo:foo:" in res.data
     foo_token = json.loads(res.data)
-    res = check(200, client.get("/scare", data={"auth": foo_token}))
+    res = check(200, client.get("/scare", data={"AUTH": foo_token}))
     assert b"foo" in res.data
-    res = check(200, client.get("/scare", json={"auth": foo_token}))
+    res = check(200, client.get("/scare", json={"AUTH": foo_token}))
     assert b"foo" in res.data
     bad_token = foo_token[:-1] + "z"
-    check(401, client.get("/scare", data={"auth": bad_token}))
+    check(401, client.get("/scare", data={"AUTH": bad_token}))
     check(401, client.get("/stuff", headers=TMP_BASIC))
     check(201, client.post("/scare", data={"login": "tmp", "email": "tmp@somewhere.org", "pass": "tmp"}, headers=FOO_BASIC))
     res = check(200, client.get("/scare", headers=TMP_BASIC))

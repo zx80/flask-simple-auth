@@ -239,6 +239,7 @@ class FlaskSimpleAuth:
         self._server_error: int = _DEFAULT_SERVER_ERROR
         self._not_found_error: int = _DEFAULT_NOT_FOUND_ERROR
         self._secure: bool = True
+        self._names: Set[str] = set()
         # actual main initialization is deferred to `init_app`
         self._initialized = False
 
@@ -520,13 +521,16 @@ class FlaskSimpleAuth:
             raise self._Bad(f"Token type {self._token} requires a carrier")
         # name of token for cookie or param, Authentication scheme, or other header
         default_name: Optional[str] = \
-            "auth" if self._carrier in ("param", "cookie") else \
+            "AUTH" if self._carrier == "param" else \
+            "auth" if self._carrier == "cookie" else \
             "Bearer" if self._carrier == "bearer" else \
             "Auth" if self._carrier == "header" else \
             None
         self._name = conf.get("FSA_TOKEN_NAME", default_name)
         if need_carrier and not self._name:
             raise self._Bad(f"Token carrier {self._carrier} requires a name")
+        if self._carrier == "param":
+            self._names.add(self._name)
         # token realm…
         realm = conf.get("FSA_REALM", self._app.name)
         if self._token == "fsa":  # simplify realm for fsa
@@ -581,14 +585,15 @@ class FlaskSimpleAuth:
         #
         if "fake" not in self._auth and "FSA_FAKE_LOGIN" in conf:
             log.warning("ignoring directive FSA_FAKE_LOGIN")
-        self._login = conf.get("FSA_FAKE_LOGIN", "LOGIN")
         if "param" not in self._auth and "password" not in self._auth:
             if "FSA_PARAM_USER" in conf:
                 log.warning("ignoring directive FSA_PARAM_USER")
             if "FSA_PARAM_PASS" in conf:
                 log.warning("ignoring directive FSA_PARAM_PASS")
+        self._login = conf.get("FSA_FAKE_LOGIN", "LOGIN")
         self._userp = conf.get("FSA_PARAM_USER", "USER")
         self._passp = conf.get("FSA_PARAM_PASS", "PASS")
+        self._names.update([self._login, self._userp, self._passp])
         #
         # authentication and authorization hooks
         #
@@ -1236,6 +1241,10 @@ class FlaskSimpleAuth:
                     for p in params:
                         if p not in kwargs:
                             kwargs[p] = params[p]
+                elif self._debug:  # warn about unused parameters
+                    for p in params:
+                        if p not in typings and f"_{p}" not in typings and p not in self._names:
+                            log.debug(f"unexpected parameter {p} on {path}")
 
                 return self._safe_call(path, "parameters", fun, *args, **kwargs)
 

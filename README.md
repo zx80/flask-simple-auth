@@ -326,7 +326,7 @@ The available authentication schemes are:
     Default is *bearer*.
   - `FKA_TOKEN_NAME` name of parameter or cookie holding the token, or
     bearer scheme, or header name.
-    Default is `auth` for *param* and *cookie* carrier,
+    Default is `AUTH` for *param* carrier, `auth` for *cookie* carrier,
     `Bearer` for HTTP Authentication header (*bearer* carrier),
     `Auth` for *header* carrier.
   - `FSA_REALM` realm of authentication for token, basic or digest.
@@ -793,7 +793,7 @@ If you like it, feel free to send a postcard to the author.
 Sources are available on [GitHub](https://github.com/zx80/flask-simple-auth)
 and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 
-Latest version is *7.0* on 2022-02-24.
+Latest version is *8.0* on *unknown*
 Initial version was *0.9.0* published on 2021-02-21.
 
 See [all versions](VERSIONS.md).
@@ -801,7 +801,6 @@ See [all versions](VERSIONS.md).
 
 ## TODO
 
-- detect unexpected parameters!
 - test `FSA_HTTP_AUTH_OPTS`?
 - add `any` token scheme?
 - add app.log?
