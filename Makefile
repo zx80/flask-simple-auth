@@ -29,6 +29,7 @@ clean:
 
 clean-venv: clean
 	$(RM) -r venv
+	$(MAKE) -C demo clean-venv
 
 .PHONY: install
 install: $(MODULE).egg-info
