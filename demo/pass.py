@@ -10,15 +10,12 @@ if len(sys.argv) <= 1:
     print(f"Usage: {sys.argv[0]} bcrypt|plaintext|… [login1:pass1] …")
     sys.exit(0)
 
-scheme = sys.argv[1]
-
-pm = CryptContext(schemes=[scheme],
+pm = CryptContext(schemes=[sys.argv[1]],
                   bcrypt__default_rounds=4,    # about 2 ms
                   bcrypt__default_ident='2y')  # apache compatible
 sep = " "
 print("INSERT INTO Auth(login, email, upass, admin) VALUES")
-for lp in sys.argv[2:]:
-    login, mdp = lp.split(":", 1)
+for login, mdp in [lp.split(":", 1) for lp in sys.argv[2:]]:
     print(f"{sep} ('{login}', '{login}@school.org', '{pm.hash(mdp)}', TRUE)")
     sep = ","
 print(";")
