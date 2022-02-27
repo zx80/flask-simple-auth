@@ -6,8 +6,8 @@ and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 ## 8.0 in Future
 
 Use `AUTH` as the default parameter name for tokens.
-Under debug, warn of unused parameters.
-Improve demonstration code.
+Under debug, warn about unused parameters.
+Improve demonstration code and environment.
 
 ## 7.0 on 2022-02-24
 
