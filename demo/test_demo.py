@@ -18,6 +18,7 @@ log.setLevel(logging.DEBUG)
 def basic(login, upass):
     return {"Authorization": b"Basic " + base64.b64encode(bytes(login, "utf-8") + b":" + bytes(upass, "utf-8"))}
 
+
 # 2 predefined admins
 FOO_BASIC = basic("foo", "bla")
 BLA_BASIC = basic("bla", "foo")
@@ -28,15 +29,18 @@ TMP_BASIC_2 = basic("tmp", "TMP")
 TMP_BASIC_3 = basic("tmp@somewhere.org", "tmp")
 TMP_BASIC_4 = basic("tmp@somewhere.org", "TMP")
 
+
 @pytest.fixture
 def client():
     with app.test_client() as c:
         yield c
 
+
 # check that a request returned the expected result
 def check(status, res):
     assert res.status_code == status
     return res
+
 
 # GET /now
 def test_now(client):
@@ -47,6 +51,7 @@ def test_now(client):
     check(405, client.patch("/now"))
     check(405, client.delete("/now"))
     check(405, client.trace("/now"))
+
 
 # GET /who
 def test_who(client):
@@ -60,10 +65,12 @@ def test_who(client):
     check(405, client.delete("/who"))
     check(405, client.trace("/who"))
 
+
 # GET /version
 def test_version(client):
     res = check(200, client.get("/version"))
     assert b"." in res.data
+
 
 # GET /stuff helper
 def get_stuff_id(client, stuff):
@@ -73,6 +80,7 @@ def get_stuff_id(client, stuff):
         if t[1] == stuff:
             return t[0]
     return None
+
 
 # GET POST DELETE PATCH /stuff
 def test_stuff(client):
@@ -98,6 +106,7 @@ def test_stuff(client):
     assert b"Hello" in res.data and b"World" in res.data and b"Calvin" not in res.data
     res = check(200, client.get("/stuff", data={"pattern": "H%"}, headers=FOO_BASIC))
     assert b"Hello" in res.data and b"World" not in res.data
+
 
 # GET, POST, PATCH, DELETE /scare (self-care)
 def test_scare(client):
@@ -132,7 +141,8 @@ def test_scare(client):
     check(204, client.delete("/scare", headers=TMP_BASIC))
     check(401, client.get("/scare", headers=TMP_BASIC))
 
-# GET POST PATCH DELETE /users 
+
+# GET POST PATCH DELETE /users
 def test_users(client):
     res = check(200, client.get("/users", headers=FOO_BASIC))
     assert b"foo" in res.data and b"bla" in res.data
@@ -161,6 +171,7 @@ def test_users(client):
     check(401, client.get("/users", headers=TMP_BASIC_4))
     check(204, client.delete("/users/tmp", headers=FOO_BASIC))
     check(404, client.get("/users/tmp", headers=FOO_BASIC))
+
 
 def test_types(client):
     res = check(200, client.get("/types/scalars", data={"i": 1}))

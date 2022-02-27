@@ -7,7 +7,7 @@ from anodb import DB  # type: ignore
 from FlaskSimpleAuth import Reference, Flask, Response  # type: ignore
 
 # this reference will behave as a DB
-db : Any = Reference()
+db: Any = Reference()
 
 
 # always close current transaction

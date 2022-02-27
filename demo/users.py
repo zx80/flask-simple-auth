@@ -32,7 +32,8 @@ def post_users(login: str, email: str, _pass: str, admin: bool = False):
 
 # PATCH /users/<login> (pass?, email? admin?): update user data
 @users.patch("/users/<login>", authorize="ADMIN")
-def patch_users_login(login: str, email: str = None, _pass: str = None, admin: bool = None):
+def patch_users_login(login: str, email: str = None,
+                      _pass: str = None, admin: bool = None):
     if _pass is not None:
         db.upd_user_password(login=login, upass=app.hash_password(_pass))
     if email is not None:

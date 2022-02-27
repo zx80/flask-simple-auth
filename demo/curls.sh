@@ -52,3 +52,6 @@ curl -i -X GET -d b=true                       $URL/types/scalars
 curl -i -X GET -d s=hello                      $URL/types/scalars
 curl -i -X GET -d j='[{"a":1},{"b":2}]'        $URL/types/json
 curl -i -X GET -d j='{"pi":3.14159,"e":2.718}' $URL/types/json
+curl -i -X GET -d j=12                         $URL/types/json
+curl -i -X GET -d j=-12.34                     $URL/types/json
+curl -i -X GET -d j=false                      $URL/types/json

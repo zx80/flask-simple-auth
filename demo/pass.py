@@ -4,7 +4,7 @@
 #
 
 import sys
-from passlib.context import CryptContext
+from passlib.context import CryptContext  # types: ignore
 
 if len(sys.argv) <= 1:
     print(f"Usage: {sys.argv[0]} bcrypt|plaintext|… [login1:pass1] …")

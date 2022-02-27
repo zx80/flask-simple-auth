@@ -1,9 +1,12 @@
 .ONESHELL:
 
-# switch to pg to test with postgres
+# switch to pg or pg2 to test with postgres and psycopg
 DB	= db
 
-# cleaning
+#
+# CLEAN
+#
+
 .PHONY: clean clean-venv
 clean: stop
 	$(RM) -r __pycache__ .mypy_cache
@@ -14,9 +17,24 @@ clean: stop
 clean-venv: clean
 	$(RM) -r venv
 
-# running the application
+#
+# VENV
+#
+
+venv:
+	python3 -m venv venv
+	. venv/bin/activate
+	pip install -e ..
+	pip install passlib bcrypt anodb psycopg psycopg2
+	pip install pytest
+
+#
+# DATABASE
+#
+
 SCHEME	= bcrypt
 CREDS	= foo:bla bla:foo
+
 users.sql:
 	./pass.py $(SCHEME) $(CREDS) > $@
 
@@ -35,50 +53,17 @@ stuff.pg: users.sql
 .PHONY: stuff.pg2
 stuff.pg2: stuff.pg
 
+#
+# RUN
+#
+
+.PHONY: stop run run.db run.pg run.pg2 log log.db log.pg log.pg2
+
 app.pid: stuff.$(DB)
 	export FLASK_APP=app.py FLASK_ENV=development APP_CONFIG=app-$(DB).conf
 	type flask || exit 1
 	flask run > app.log 2>&1 &
 	echo $$! > $@
-
-venv:
-	python3 -m venv venv
-	. venv/bin/activate
-	pip install -e ..
-	pip install passlib bcrypt anodb psycopg psycopg2
-	pip install pytest
-
-.PHONY: stop run run-pg check check-all check-db check-pg check-pg2 log
-
-PYTEST  = pytest --log-level=debug --capture=tee-sys
-PYTOPT	=
-
-check: stuff.$(DB)
-	export FLASK_APP=app.py FLASK_ENV=development APP_CONFIG=app-$(DB).conf
-	$(PYTEST) $(PYTOPT) test_demo.py
-
-# source files
-F.py	= app.py auth.py database.py users.py scare.py stuff.py
-
-check-mypy:
-	mypy $(F.py)
-
-check-flake8:
-	flake8 $(F.py)
-
-check-pg:
-	$(MAKE) DB=pg check
-
-check-pg2:
-	$(MAKE) DB=pg2 check
-
-check-db:
-	$(MAKE) DB=db check
-
-check-all:
-	$(MAKE) check-db
-	$(MAKE) check-pg
-	$(MAKE) check-pg2
 
 stop:
 	[ -f app.pid ] && kill $(shell cat app.pid)
@@ -89,23 +74,64 @@ run: app.pid
 	curl -i -X GET http://0.0.0.0:5000/now
 	echo
 
-run-db:
-	$(MAKE) DB=db run
-
-run-pg:
-	$(MAKE) DB=pg run
-
-run-pg2:
-	$(MAKE) DB=pg2 run
-
+# NOTE colortail could be nice here
 log: run
 	tail -f app.log
 
-log-db:
+run.db:
+	$(MAKE) DB=db run
+
+run.pg:
+	$(MAKE) DB=pg run
+
+run.pg2:
+	$(MAKE) DB=pg2 run
+
+log.db:
 	$(MAKE) DB=db log
 
-log-pg:
+log.pg:
 	$(MAKE) DB=pg log
 
-log-pg2:
+log.pg2:
 	$(MAKE) DB=pg2 log
+
+#
+# TESTS
+#
+
+PYTEST  = pytest --log-level=debug --capture=tee-sys
+PYTOPT	=
+
+.PHONY: check.mypy check.flake8 check check.db check.pg check.pg2 check.all check.pgall
+
+check: stuff.$(DB)
+	export FLASK_APP=app.py FLASK_ENV=development APP_CONFIG=app-$(DB).conf
+	$(PYTEST) $(PYTOPT) test_demo.py
+
+# source files
+#F.py        = app.py auth.py database.py users.py scare.py stuff.py types_path.py
+F.py	= $(wildcard *.py)
+
+check.mypy:
+	mypy --ignore-missing-imports $(F.py)
+
+check.flake8:
+	flake8 --ignore=E402,E501 $(F.py)
+
+check.pg:
+	$(MAKE) DB=pg check
+
+check.pg2:
+	$(MAKE) DB=pg2 check
+
+check.db:
+	$(MAKE) DB=db check
+
+check.all:
+	$(MAKE) check.db
+	$(MAKE) check.pgall
+
+check.pgall:
+	$(MAKE) check.pg
+	$(MAKE) check.pg2
