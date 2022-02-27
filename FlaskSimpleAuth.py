@@ -133,6 +133,9 @@ class Reference:
     def __ne__(self, v):
         return self._obj.__ne__(v)
 
+    def __hash__(self):
+        return self._obj.__hash__()
+
 
 class Flask(flask.Flask):
     """Flask class wrapper.
