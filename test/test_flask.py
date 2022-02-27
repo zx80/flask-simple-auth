@@ -399,9 +399,9 @@ def test_self_care(client):
 def test_typed_params(client):
     res = check(200, client.get("/add/2", data={"a":"2.0", "b":"4.0"}))
     assert float(res.data) == 12.0
-    res = check(200, client.get("/mul/2", data={"j":"3", "k":"4"}))
+    res = check(200, client.get("/mul/2", data={"j":"3", "k":"4", "unused":"x"}))
     assert int(res.data) == 24
-    res = check(200, client.get("/mul/2", json={"j":5, "k":"4"}))
+    res = check(200, client.get("/mul/2", json={"j":5, "k":"4", "unused":"y"}))
     assert int(res.data) == 40
     check(400, client.get("/mul/1", data={"j":"3"}))
     check(400, client.get("/mul/1", data={"k":"4"}))
@@ -1145,6 +1145,7 @@ def test_warnings_and_errors():
         FSA_SUCH_DIRECTIVE="no-such-directive",
         FSA_AUTH=["basic", "token"],
         FSA_TOKEN_TYPE="fsa",
+        FSA_TOKEN_CARRIER="param",
         FSA_TOKEN_SIGN="signature-not-used-for-fsa-tokens",
         FSA_FAKE_LOGIN="not-used-if-no-fake",
         FSA_PARAM_USER="not-used-if-no-param",
