@@ -33,6 +33,11 @@ coverage:
 	coverage run -m $(PYTEST) $(PYTOPT)
 	coverage html FlaskSimpleAuth.py
 
+# not very usefull
+# .PHONY: profile
+# profile:
+# 	python -m cProfile -s tottime $(PYTEST) $(PYTOPT)
+
 .PHONY: clean
 clean: stop
 	$(RM) -r __pycache__ htmlcov .mypy_cache
