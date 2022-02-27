@@ -110,7 +110,6 @@ check: stuff.$(DB)
 	$(PYTEST) $(PYTOPT) test_demo.py
 
 # source files
-#F.py        = app.py auth.py database.py users.py scare.py stuff.py types_path.py
 F.py	= $(wildcard *.py)
 
 check.mypy:
