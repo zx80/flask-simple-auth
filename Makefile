@@ -18,7 +18,7 @@ check: install
 	mypy $(MODULE).py
 	flake8 --ignore=E402,E501,F401 $(MODULE).py
 	$(MAKE) -C test check && \
-	$(MAKE) -C demo check-all
+	$(MAKE) -C demo check.all
 
 .PHONY: clean clean-venv
 clean:
