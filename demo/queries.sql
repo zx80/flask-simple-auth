@@ -1,3 +1,5 @@
+-- NOTE RETURNING below requires SQLite 3.35
+
 -- name: now$
 SELECT CURRENT_TIMESTAMP;
 
