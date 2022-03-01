@@ -367,10 +367,10 @@ def test_authorize():
     @app._fsa._group_auth("stuff", App.ADMIN)
     def stuff():
         return Response("", 200)
-    app._fsa._user = "dad"
+    app._fsa._local.user = "dad"
     res = stuff()
     assert res.status_code == 200
-    app._fsa._user = "hobbes"
+    app._fsa._local.user = "hobbes"
     res = stuff()
     assert res.status_code == 403
     try:

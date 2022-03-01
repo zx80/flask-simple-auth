@@ -801,7 +801,7 @@ See [all versions](VERSIONS.md).
 
 ## TODO
 
-- what about flask threads?
+- threads: how to initialize a per-thread something?
 - what about asyncio?
 - test `FSA_HTTP_AUTH_OPTS`?
 - add `any` token scheme?

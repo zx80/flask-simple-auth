@@ -8,6 +8,7 @@ and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 Use `AUTH` as the default parameter name for tokens.
 Under debug, warn about unused parameters.
 Improve demonstration code and environment.
+Use `threading.local()` so that it can work with threads.
 
 ## 7.0 on 2022-02-24
 

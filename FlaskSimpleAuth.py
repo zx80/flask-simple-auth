@@ -20,6 +20,7 @@ import json
 from dataclasses import dataclass
 
 import flask
+import threading
 
 # for local use & forwarding
 from flask import Response, request
@@ -234,7 +235,6 @@ class FlaskSimpleAuth:
             JsonData: json.loads,
         }
         self._auth: List[str] = []
-        self._saved_auth: Optional[List[str]] = None
         self._http_auth = None
         self._pm = None
         self._cache: Optional[MutableMapping[str, str]] = None
@@ -243,6 +243,7 @@ class FlaskSimpleAuth:
         self._not_found_error: int = _DEFAULT_NOT_FOUND_ERROR
         self._secure: bool = True
         self._names: Set[str] = set()
+        self._local = threading.local()
         # actual main initialization is deferred to `init_app`
         self._initialized = False
 
@@ -266,7 +267,7 @@ class FlaskSimpleAuth:
     def _auth_has(self, *auth):
         """Tell whether current authentication includes any of these schemes."""
         for a in auth:
-            if a in self._auth:
+            if a in self._local.auth:
                 return True
         return False
 
@@ -285,13 +286,14 @@ class FlaskSimpleAuth:
 
     def _auth_reset_user(self):
         """Before request hook to cleanup authentication and authorization."""
-        self._user_set = False
-        self._user = None
-        self._need_authorization = True
+        self._local.user_set = False
+        self._local.user = None
+        self._local.need_authorization = True
+        self._local.auth = self._auth
 
     def _auth_post_check(self, res: Response):
         """After request hook to detect missing authorizations."""
-        if res.status_code < 400 and self._need_authorization:
+        if res.status_code < 400 and self._local.need_authorization:
             method, path = request.method, request.path
             if not (self._cors and method == "OPTIONS"):
                 log.error(f"missing authorization on {method} {path}")
@@ -315,7 +317,7 @@ class FlaskSimpleAuth:
         # NOTE thanks to max_age the client should not send stale cookies
         if self._carrier == "cookie":
             assert self._token and self._name
-            if self._user and self._can_create_token():
+            if self._local.user and self._can_create_token():
                 if self._name in request.cookies:
                     user, exp = self._get_any_token_auth_exp(request.cookies[self._name])
                     # renew token when closing expiration
@@ -324,7 +326,7 @@ class FlaskSimpleAuth:
                 else:
                     set_cookie = True
                 if set_cookie:
-                    res.set_cookie(self._name, self.create_token(self._user),
+                    res.set_cookie(self._name, self.create_token(self._local.user),
                                    max_age=int(60 * self._delay))
         return res
 
@@ -334,16 +336,13 @@ class FlaskSimpleAuth:
             # FIXME should it prioritize based on self._auth order?
             if self._auth_has("basic", "password"):
                 res.headers["WWW-Authenticate"] = f"Basic realm=\"{self._realm}\""
-            elif "token" in self._auth and self._carrier == "bearer":
+            elif "token" in self._local.auth and self._carrier == "bearer":
                 res.headers["WWW-Authenticate"] = f"{self._name} realm=\"{self._realm}\""
             elif self._auth_has("http-basic", "http-digest", "http-token", "digest"):
                 assert self._http_auth
                 res.headers["WWW-Authenticate"] = self._http_auth.authenticate_header()
             # else: scheme does not rely on WWW-Authenticate…
         # else: no need for WWW-Authenticate
-        # restore temporary auth if needed
-        if self._saved_auth:
-            self._auth, self._saved_auth = self._saved_auth, None
         return res
 
     def _params(self):
@@ -455,6 +454,7 @@ class FlaskSimpleAuth:
             self._auth = auth
         for a in self._auth:
             assert a in self._FSA_AUTH
+        self._local.auth = self._auth
         #
         # web apps…
         #
@@ -778,7 +778,7 @@ class FlaskSimpleAuth:
         assert self._http_auth
         auth = self._http_auth.get_auth()
         password = self._http_auth.get_auth_password(auth) \
-            if "http-token" not in self._auth else None
+            if "http-token" not in self._local.auth else None
         try:
             # NOTE "authenticate" signature is not very clean…
             user = self._http_auth.authenticate(auth, password)
@@ -1018,17 +1018,17 @@ class FlaskSimpleAuth:
         """Authenticate user or throw exception."""
 
         # safe because _user is reset before requests
-        if self._user_set:
-            return self._user
+        if self._local.user_set:
+            return self._local.user
 
         assert self._initialized, "FlaskSimpleAuth must be initialized"
 
         # try authentication schemes
         lae = None
-        for a in self._auth:
+        for a in self._local.auth:
             try:
-                self._user = self._FSA_AUTH[a](self)
-                if self._user:
+                self._local.user = self._FSA_AUTH[a](self)
+                if self._local.user:
                     break
             except FSAException as e:
                 lae = e
@@ -1036,13 +1036,13 @@ class FlaskSimpleAuth:
                 log.error(f"internal error in {a} authentication: {e}")
 
         # even if not set, we say that the answer is the right one.
-        self._user_set = True
+        self._local.user_set = True
 
         # rethrow last auth exception on failure
-        if required and not self._user:
+        if required and not self._local.user:
             raise lae or FSAException("missing authentication", 401)
 
-        return self._user
+        return self._local.user
 
     def current_user(self):
         """Return current authenticated user, if any."""
@@ -1118,19 +1118,18 @@ class FlaskSimpleAuth:
             def wrapper(*args, **kwargs):
 
                 # get user if needed
-                if not self._user_set:
+                if not self._local.user_set:
                     # possibly overwrite the authentication scheme
-                    # it will be restored in an after request hook
                     # NOTE this may or may not work because other settings may
                     #   not be compatible with the provided scheme…
                     if auth:
-                        self._saved_auth, self._auth = self._auth, auth
+                        self._local.auth = auth
                     try:
-                        self._user = self.get_user()
+                        self._local.user = self.get_user()
                     except FSAException as e:
                         return self._Res(e.message, e.status)
 
-                if not self._user:  # pragma no cover
+                if not self._local.user:  # pragma no cover
                     return self._Res("no auth", 401)
 
                 return self._safe_call(path, "authenticate", fun, *args, **kwargs)
@@ -1154,12 +1153,12 @@ class FlaskSimpleAuth:
             def wrapper(*args, **kwargs):
 
                 # track that some autorization check was performed
-                self._need_authorization = False
+                self._local.need_authorization = False
 
                 # check against all authorized groups/roles
                 for group in groups:
                     try:
-                        ok = self._user_in_group(self._user, group)
+                        ok = self._user_in_group(self._local.user, group)
                     except FSAException as fe:
                         return self._Res(fe.message, fe.status)
                     except Exception as e:
@@ -1289,13 +1288,13 @@ class FlaskSimpleAuth:
             def wrapper(*args, **kwargs):
 
                 # track that some autorization check was performed
-                self._need_authorization = False
+                self._local.need_authorization = False
 
                 for domain, name, mode in perms:
                     val = kwargs[name]
 
                     try:
-                        ok = self._check_object_perms(self._user, domain, val, mode)
+                        ok = self._check_object_perms(self._local.user, domain, val, mode)
                     except FSAException as e:
                         return self._Res(e.message, e.status)
                     except Exception as e:
@@ -1326,7 +1325,7 @@ class FlaskSimpleAuth:
 
             @functools.wraps(fun)
             def wrapper(*args, **kwargs):
-                self._need_authorization = False
+                self._local.need_authorization = False
                 return self._safe_call(path, "no authorization", fun, *args, **kwargs)
 
             return wrapper
