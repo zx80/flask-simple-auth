@@ -801,6 +801,8 @@ See [all versions](VERSIONS.md).
 
 ## TODO
 
+- what about flask threads?
+- what about asyncio?
 - test `FSA_HTTP_AUTH_OPTS`?
 - add `any` token scheme?
 - add app.log?
