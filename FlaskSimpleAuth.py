@@ -99,43 +99,66 @@ class Reference:
     ```
 
     """
+    class Local(object):
+        pass
 
-    def __init__(self, obj: Any = None, set_name: str = "set"):
+    def __init__(self, obj: Any = None, set_name: str = "set", fun: Optional[Callable] = None):
         """Constructor parameters:
 
+        - set_name: provide another prefix for the "set" functions.
         - obj: object to be wrapped, can also be provided later.
-        - set_name: provide another name for the "set" function.
+        - fun: function to generated a per-thread wrapped object.
         """
-        self._obj = None
+        if obj and fun:
+            raise Exception("reference cannot have both obj and fun")
+        elif obj:
+            self._set_obj(obj)
+        elif fun:
+            self._set_fun(fun)
         if set_name:
             setattr(self, set_name, getattr(self, "_set_obj"))
-        obj and self._set_obj(obj)
+            setattr(self, set_name + "_obj", getattr(self, "_set_obj"))
+            setattr(self, set_name + "_fun", getattr(self, "_set_fun"))
 
     def _set_obj(self, obj):
         """Set current wrapped object, possibly replacing the previous one."""
         log.debug(f"setting reference to {obj} ({type(obj)})")
-        self._obj = obj
+        self._fun = None
+        self._local = self.Local()
+        self._local.obj = obj
         return obj
+
+    def _set_fun(self, fun):
+        self._local = threading.local()
+        self._fun = fun
+        self._local.obj = fun()
+        pass
+
+    def _get_obj(self):
+        """Get current wrapped object."""
+        if "obj" not in self._local:
+            self._local.obj = self._fun()
+        return self._local.obj
 
     def __getattr__(self, item):
         """Forward everything to contained object."""
-        return self._obj.__getattribute__(item)
+        return self._local.obj.__getattribute__(item)
 
     # also forward a few special methods
     def __str__(self):
-        return self._obj.__str__()
+        return self._local.obj.__str__()
 
     def __repr__(self):
-        return self._obj.__repr__()
+        return self._local.obj.__repr__()
 
     def __eq__(self, v):
-        return self._obj.__eq__(v)
+        return self._local.obj.__eq__(v)
 
     def __ne__(self, v):
-        return self._obj.__ne__(v)
+        return self._local.obj.__ne__(v)
 
     def __hash__(self):
-        return self._obj.__hash__()
+        return self._local.obj.__hash__()
 
 
 class Flask(flask.Flask):

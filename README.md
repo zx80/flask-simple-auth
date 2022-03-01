@@ -103,7 +103,7 @@ to route functions, skipping the burden of checking them in typical REST functio
 In practice, importing Flask's `request` global variable is not necessary anymore.
 
 [**Utils**](#utils) include the convenient `Reference` class which allows to
-share for import an unitialized variable and CORS handling.
+share possibly thread-local data for import and CORS handling.
 
 ### Install
 
@@ -669,18 +669,22 @@ caching and CORS.
 
 This class implements a generic share-able global variable which can be
 used by modules (eg app, blueprints…) with its initialization differed.
-Under the hood, most methods calls are forwarded to the object stored
-inside the wrapper, so that the Reference object mostly behaves like
-the wrapped object.  The wrapped object can be reset at will with `set`.
-The `set` method name can be changed with the `set_name` initialization
-parameter.
+
+Under the hood, most methods calls are forwarded to a possibly thread-local
+object stored inside the wrapper, so that the Reference object mostly
+behaves like the wrapped object.  The wrapped object can be reset at
+will with `set_obj`. For thread-local objects, a function to generate the
+expected shared object must be provided with `set_fun` or as the `fun`
+parameter to the constructor.
+The `set` method prefix can be changed with the `set_name`
+initialization parameter.
 
 ```Python
 # file Shared.py
 from FlaskSimpleAuth import Reference
 stuff = Reference()
 def init_app(**conf):
-    stuff.set(…)
+    stuff.set_obj(…)
 ```
 
 Then in a blueprint:
@@ -801,7 +805,7 @@ See [all versions](VERSIONS.md).
 
 ## TODO
 
-- threads: how to initialize a per-thread something?
+- thread-local stuff in Reference: what about teardown?
 - what about asyncio?
 - test `FSA_HTTP_AUTH_OPTS`?
 - add `any` token scheme?
