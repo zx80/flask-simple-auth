@@ -103,7 +103,7 @@ to route functions, skipping the burden of checking them in typical REST functio
 In practice, importing Flask's `request` global variable is not necessary anymore.
 
 [**Utils**](#utils) include the convenient `Reference` class which allows to
-share possibly thread-local data for import and CORS handling.
+share possibly thread-local data for import, and CORS handling.
 
 ### Install
 
@@ -672,12 +672,13 @@ used by modules (eg app, blueprints…) with its initialization differed.
 
 Under the hood, most methods calls are forwarded to a possibly thread-local
 object stored inside the wrapper, so that the Reference object mostly
-behaves like the wrapped object.  The wrapped object can be reset at
-will with `set_obj`. For thread-local objects, a function to generate the
-expected shared object must be provided with `set_fun` or as the `fun`
-parameter to the constructor.
-The `set` method prefix can be changed with the `set_name`
-initialization parameter.
+behaves like the wrapped object itself.
+
+The wrapped object can be set or reset at will with `set_obj`.
+For thread-local objects, a function to generate the expected shared object
+must be provided with `set_fun` or as the `fun` parameter to the constructor.
+The `set` method prefix can be changed with the `set_name` initialization
+parameter.
 
 ```Python
 # file Shared.py
@@ -717,6 +718,10 @@ Shared.init_app(…)
 
 …
 ```
+
+When using a thread-local object, the generation function is passed an integer
+which is the invocation number, starting from 0. Attribute `_nthreads` stores
+the total number of objects created.
 
 ### Miscellaneous Configuration Directives
 

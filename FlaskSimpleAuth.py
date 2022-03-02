@@ -121,44 +121,47 @@ class Reference:
             setattr(self, set_name + "_fun", getattr(self, "_set_fun"))
 
     def _set_obj(self, obj):
-        """Set current wrapped object, possibly replacing the previous one."""
+        """Set current wrapped object."""
         log.debug(f"setting reference to {obj} ({type(obj)})")
         self._fun = None
+        self._nthreads = 1
         self._local = self.Local()
         self._local.obj = obj
         return obj
 
-    def _set_fun(self, fun):
-        self._local = threading.local()
+    def _set_fun(self, fun: Callable[[int], Any]):
+        """Set current wrapped object generation function."""
         self._fun = fun
-        self._local.obj = fun()
+        self._nthreads = 0
+        self._local = threading.local()
         pass
 
     def _get_obj(self):
         """Get current wrapped object."""
-        if "obj" not in self._local:
-            self._local.obj = self._fun()
+        if self._fun and not hasattr(self._local, "obj"):
+            self._local.obj = self._fun(self._nthreads)
+            self._nthreads += 1
         return self._local.obj
 
     def __getattr__(self, item):
-        """Forward everything to contained object."""
-        return self._local.obj.__getattribute__(item)
+        """Forward everything unknown to contained object."""
+        return self._get_obj().__getattribute__(item)
 
     # also forward a few special methods
     def __str__(self):
-        return self._local.obj.__str__()
+        return self._get_obj().__str__()
 
     def __repr__(self):
-        return self._local.obj.__repr__()
+        return self._get_obj().__repr__()
 
     def __eq__(self, v):
-        return self._local.obj.__eq__(v)
+        return self._get_obj().__eq__(v)
 
     def __ne__(self, v):
-        return self._local.obj.__ne__(v)
+        return self._get_obj().__ne__(v)
 
     def __hash__(self):
-        return self._local.obj.__hash__()
+        return self._get_obj().__hash__()
 
 
 class Flask(flask.Flask):
