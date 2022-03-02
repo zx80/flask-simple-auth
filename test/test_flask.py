@@ -663,6 +663,20 @@ def test_reference():
     assert r3 == "1" and r3 != "one"
     assert r3.isdigit()
     assert repr("1") == repr(r3)
+    # thread local stuff
+    def gen_data(i):
+        return f"data: {i}"
+    r = fsa.Reference(fun=gen_data)
+    assert r._nthreads == 0
+    assert isinstance(r.__hash__(), int)
+    assert r._nthreads == 1
+    assert isinstance(r._local.obj, str)
+    assert r == "data: 0"
+    try:
+        r = fsa.Reference(obj="hello", fun=gen_data)
+        assert False, "should have raised an exception"
+    except Exception as e:
+        assert "reference cannot have both obj and fun" in str(e)
 
 def test_www_authenticate(client):
     push_auth(app._fsa, "param")
