@@ -672,6 +672,21 @@ def test_reference():
     assert r._nthreads == 1
     assert isinstance(r._local.obj, str)
     assert r == "data: 0"
+    # another thread
+    import threading
+    def run(i):
+        assert r == f"data: {i}"
+    t1 = threading.Thread(target=run, args=(1,))
+    t1.start()
+    t1.join()
+    assert r._nthreads == 2
+    t2 = threading.Thread(target=run, args=(2,))
+    t2.start()
+    t2.join()
+    assert r._nthreads == 3
+    # local one is still ok
+    assert r == "data: 0"
+    # error
     try:
         r = fsa.Reference(obj="hello", fun=gen_data)
         assert False, "should have raised an exception"
