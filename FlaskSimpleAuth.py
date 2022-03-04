@@ -413,7 +413,7 @@ class FlaskSimpleAuth:
             self._casts[t] = cast
         else:  # decorator
             def annotate(fun):
-                self._casts[t] = cast
+                self._casts[t] = fun
                 return fun
             return annotate
 

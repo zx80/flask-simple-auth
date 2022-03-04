@@ -6,6 +6,7 @@ and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 ## 9.0 on later
 
 Extend `set` in `Reference` to handle both objects and generation functions.
+Fix `cast` decorator.
 
 ## 8.0 on 2022-03-04
 

@@ -1223,7 +1223,11 @@ def test_warnings_and_errors():
     @app.cast("foo")
     def cast_foo(s: str):
         return s
-    app.cast("foo", cast_foo)
+    assert app._fsa._casts["foo"] == cast_foo
+    app.cast("foo", lambda x: cast_foo(x))
+    assert app._fsa._casts["foo"] != cast_foo
+    s = "Hello World!"
+    assert app._fsa._casts["foo"](s) == cast_foo(s)
     # type errors
     try:
         app = af.create_app(FSA_CAST="not a dict")
