@@ -3,7 +3,7 @@
 Sources are available on [GitHub](https://github.com/zx80/flask-simple-auth)
 and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 
-## 8.0 in Future
+## 8.0 on 2022-03-04
 
 Use `AUTH` as the default parameter name for tokens.
 Under debug, warn about unused parameters.
