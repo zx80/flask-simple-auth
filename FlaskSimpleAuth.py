@@ -109,14 +109,9 @@ class Reference:
         - obj: object to be wrapped, can also be provided later.
         - fun: function to generated a per-thread wrapped object.
         """
-        if obj and fun:
-            raise Exception("reference cannot have both obj and fun")
-        elif obj:
-            self._set_obj(obj)
-        elif fun:
-            self._set_fun(fun)
-        if set_name:
-            setattr(self, set_name, getattr(self, "_set_obj"))
+        self._set(obj=obj, fun=fun, mandatory=False)
+        if set_name and set_name != "_set":
+            setattr(self, set_name, getattr(self, "_set"))
             setattr(self, set_name + "_obj", getattr(self, "_set_obj"))
             setattr(self, set_name + "_fun", getattr(self, "_set_fun"))
 
@@ -127,14 +122,25 @@ class Reference:
         self._nthreads = 1
         self._local = self.Local()
         self._local.obj = obj
-        return obj
+        return self
 
     def _set_fun(self, fun: Callable[[int], Any]):
         """Set current wrapped object generation function."""
         self._fun = fun
         self._nthreads = 0
         self._local = threading.local()
-        pass
+        return self
+
+    def _set(self, obj: Any = None, fun: Optional[Callable[[int], Any]] = None, mandatory=True):
+        """Set current wrapped object or generation function."""
+        if obj and fun:
+            raise Exception("reference cannot set both obj and fun")
+        elif obj:
+            return self._set_obj(obj)
+        elif fun:
+            return self._set_fun(fun)
+        elif mandatory:
+            raise Exception("reference must set either obj or fun")
 
     def _get_obj(self):
         """Get current wrapped object."""

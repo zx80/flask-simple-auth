@@ -691,7 +691,14 @@ def test_reference():
         r = fsa.Reference(obj="hello", fun=gen_data)
         assert False, "should have raised an exception"
     except Exception as e:
-        assert "reference cannot have both obj and fun" in str(e)
+        assert "reference cannot set both obj and fun" in str(e)
+    try:
+        r = fsa.Reference(set_name="add")
+        r.add()
+        assert False, "missing parameter in previous call"
+    except Exception as e:
+        assert "reference must set either obj or fun" in str(e)
+
 
 def test_www_authenticate(client):
     push_auth(app._fsa, "param")
