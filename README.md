@@ -823,3 +823,5 @@ See [all versions](VERSIONS.md).
   possibly the id can be passed to perm hooks instead of the login?
   can be managed there as well?
 - reduce cloc?
+- pypy compatibility? issues with date/time fromisoformat
+  and packages bcrypt, psycopg2, psycopg2cffi, psycopg…
