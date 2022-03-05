@@ -1113,16 +1113,13 @@ class FlaskSimpleAuth:
 
     def _safe_call(self, path, level, fun, *args, **kwargs):
         """Call a route function ensuring a response whatever."""
-
         try:  # the actual call
-            res = fun(*args, **kwargs)
+            return fun(*args, **kwargs)
         except FSAException as e:  # something went wrong
-            res = self._Res(e.message, e.status)
+            return self._Res(e.message, e.status)
         except Exception as e:  # something went really wrong
             log.error(f"internal error on {request.method} {request.path}: {e}")
-            res = self._Res(f"internal error caught at {level} on {path}", self._server_error)
-
-        return res
+            return self._Res(f"internal error caught at {level} on {path}", self._server_error)
 
     #
     # INTERNAL DECORATORS
@@ -1135,7 +1132,6 @@ class FlaskSimpleAuth:
     #
     def _authenticate(self, path, auth=None):
         """Decorator to authenticate current user."""
-
         # check auth parameter
         if auth:
             if isinstance(auth, str):
