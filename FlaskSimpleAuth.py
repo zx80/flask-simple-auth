@@ -1085,8 +1085,6 @@ class FlaskSimpleAuth:
         "_check_object_perms": "p.",
     }
 
-    # NOTE for multiprocess setups:
-    # clearing a cache in a process does not tell others to do it as well…
     def _cache_function(self, fun, prefix=None):
         """Generate or regenerate cache for function."""
         # get the actual function when regenerating caches
@@ -1105,18 +1103,15 @@ class FlaskSimpleAuth:
             setattr(self, name, self._cache_function(getattr(self, name), prefix))
 
     def clear_caches(self):
-        """Clear internal cache. Probably a bad idea."""
-        self._cache.clear()
+        """Clear internal shared cache.
 
-    def _safe_call(self, path, level, fun, *args, **kwargs):
-        """Call a route function ensuring a response whatever."""
-        try:  # the actual call
-            return fun(*args, **kwargs)
-        except FSAException as e:  # something went wrong
-            return self._Res(e.message, e.status)
-        except Exception as e:  # something went really wrong
-            log.error(f"internal error on {request.method} {request.path}: {e}")
-            return self._Res(f"internal error caught at {level} on {path}", self._server_error)
+        Probably a bad idea because:
+        - of the performance impact
+        - for a local cache in a multi-process setup, other processes are out
+
+        The best option is to wait for cache entries to expire with a TTL.
+        """
+        self._cache.clear()
 
     #
     # INTERNAL DECORATORS
@@ -1127,6 +1122,16 @@ class FlaskSimpleAuth:
     #    _perm_auth: check per-object permissions
     #   _any_noauth: validate that no authorization was needed
     #
+    def _safe_call(self, path, level, fun, *args, **kwargs):
+        """Call a route function ensuring a response whatever."""
+        try:  # the actual call
+            return fun(*args, **kwargs)
+        except FSAException as e:  # something went wrong
+            return self._Res(e.message, e.status)
+        except Exception as e:  # something went really wrong
+            log.error(f"internal error on {request.method} {request.path}: {e}")
+            return self._Res(f"internal error caught at {level} on {path}", self._server_error)
+
     def _authenticate(self, path, auth=None):
         """Decorator to authenticate current user."""
         # check auth parameter
