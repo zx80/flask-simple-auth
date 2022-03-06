@@ -98,6 +98,9 @@ class Reference:
     r.whatever(…) # behaves as o.whatever(…)
     ```
 
+    The object may be thread-local or global depending on whether it is
+    initialized directly or by providing a generation functions.
+    The generation function is called on demand in each thread automatically.
     """
     class Local(object):
         pass
