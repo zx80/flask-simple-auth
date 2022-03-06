@@ -3,9 +3,10 @@
 Sources are available on [GitHub](https://github.com/zx80/flask-simple-auth)
 and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 
-## 10.0 on *later*
+## 10.0 on 2022-03-06
 
 Improve documentation. Minor code cleanup.
+Take advantage of `CacheToolUtils` 3.0 to reduce the loc count.
 
 ## 9.0 on 2022-03-04
 

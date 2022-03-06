@@ -397,7 +397,7 @@ class FlaskSimpleAuth:
         """Set `get_user_pass` helper, can be used as a decorator."""
         if self._get_user_pass:
             log.warning("overriding already defined get_user_pass hook")
-        self._get_user_pass = self._cache_function(gup, "g.")
+        self._get_user_pass = gup
         self._init_password_manager()
         return gup
 
@@ -405,7 +405,7 @@ class FlaskSimpleAuth:
         """Set `user_in_group` helper, can be used as a decorator."""
         if self._user_in_group:
             log.warning("overriding already defined user_in_group hook")
-        self._user_in_group = self._cache_function(uig, "u.")
+        self._user_in_group = uig
         return uig
 
     def cast(self, t, cast: Optional[Callable] = None):
@@ -1088,22 +1088,12 @@ class FlaskSimpleAuth:
         "_check_object_perms": "p.",
     }
 
-    def _cache_function(self, fun, prefix=None):
-        """Generate or regenerate cache for function."""
-        # get the actual function when regenerating caches
-        while hasattr(fun, "__wrapped__"):
-            fun = fun.__wrapped__
-        if not self._gen_cache:
-            return fun
-        else:
-            import cachetools as ct
-            cache = self._gen_cache(prefix=prefix, cache=self._cache)
-            return ct.cached(cache=cache)(fun)
-
     def _set_caches(self):
         """Create caches around some functions."""
-        for name, prefix in self._CACHABLE.items():
-            setattr(self, name, self._cache_function(getattr(self, name), prefix))
+        if self._gen_cache is not None and self._cache is not None:
+            log.debug(f"caching: {self._CACHABLE}")
+            import CacheToolsUtils as ctu
+            ctu.cacheMethods(cache=self._cache, obj=self, gen=self._gen_cache, **self._CACHABLE)
 
     def clear_caches(self):
         """Clear internal shared cache.
