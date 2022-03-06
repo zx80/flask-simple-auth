@@ -744,7 +744,6 @@ class FlaskSimpleAuth:
     #
     def _get_fake_auth(self):
         """Return fake user. Only for local tests."""
-        assert request.remote_user is None, "do not shadow web server auth"
         assert request.remote_addr.startswith("127.") or \
                request.remote_addr == "::1", "fake auth only on localhost"
         params = self._params()
@@ -828,12 +827,11 @@ class FlaskSimpleAuth:
     def _get_basic_auth(self):
         """Get user with basic authentication."""
         import base64 as b64
-        assert request.remote_user is None
         auth = request.headers.get("Authorization", None)
         if not auth:
             log.debug("AUTH (basic): missing authorization header")
             raise self._Err("missing authorization header", 401)
-        if auth[:6] != "Basic ":
+        if not auth.startswith("Basic "):
             log.debug(f"AUTH (basic): unexpected auth \"{auth}\"")
             raise self._Err("unexpected authorization header", 401)
         try:
@@ -854,7 +852,6 @@ class FlaskSimpleAuth:
     #
     def _get_param_auth(self):
         """Get user with parameter authentication."""
-        assert request.remote_user is None
         params = self._params()
         user = params.get(self._userp, None)
         if not user:
