@@ -902,8 +902,8 @@ class PK():
 def test_typeof():
     import inspect
     P = inspect.Parameter
-    assert fsa.typeof(PK(P.VAR_KEYWORD)) == dict
-    assert fsa.typeof(PK(P.VAR_POSITIONAL)) == list
+    assert fsa._typeof(PK(P.VAR_KEYWORD)) == dict
+    assert fsa._typeof(PK(P.VAR_POSITIONAL)) == list
 
 def test_f2(client):
     res = check(200, client.get("/f2/get"))
