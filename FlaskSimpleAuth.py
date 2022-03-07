@@ -751,7 +751,6 @@ class FlaskSimpleAuth:
                request.remote_addr == "::1", "fake auth only on localhost"
         params = self._params()
         user = params.get(self._login, None)
-        # it could check that the user exists in db
         if not user:
             raise self._Err("missing login parameter", 401)
         return user
