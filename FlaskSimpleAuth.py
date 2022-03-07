@@ -76,7 +76,7 @@ ANY, ALL, NONE = "ANY", "ALL", "NONE"
 _PREDEFS = (ANY, ALL, NONE)
 
 
-def typeof(p: inspect.Parameter):
+def _typeof(p: inspect.Parameter):
     """Guess parameter type, possibly with some type inference."""
     return dict if p.kind is inspect.Parameter.VAR_KEYWORD else \
         list if p.kind is inspect.Parameter.VAR_POSITIONAL else \
@@ -1220,7 +1220,7 @@ class FlaskSimpleAuth:
                 if n not in types and \
                    p.kind not in (p.VAR_KEYWORD, p.VAR_POSITIONAL):
                     # guess parameter type
-                    t = typeof(p)
+                    t = _typeof(p)
                     types[n] = t
                     typings[n] = self._casts.get(t, t)
                 if p.default != inspect._empty:  # type: ignore
@@ -1405,7 +1405,7 @@ class FlaskSimpleAuth:
             if i > 0:
                 spec, remainder = s.split(">", 1)
                 if ":" not in spec and spec in sig.parameters:
-                    t = typeof(sig.parameters[spec])
+                    t = _typeof(sig.parameters[spec])
                     # Flask supports 5 types, with string the default?
                     if t in (int, float, UUID, path):
                         splits[i] = f"{t.__name__.lower()}:{spec}>{remainder}"
