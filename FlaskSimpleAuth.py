@@ -114,9 +114,9 @@ class Reference:
         """
         self._set(obj=obj, fun=fun, mandatory=False)
         if set_name and set_name != "_set":
-            setattr(self, set_name, getattr(self, "_set"))
-            setattr(self, set_name + "_obj", getattr(self, "_set_obj"))
-            setattr(self, set_name + "_fun", getattr(self, "_set_fun"))
+            setattr(self, set_name, self._set)
+            setattr(self, set_name + "_obj", self._set_obj)
+            setattr(self, set_name + "_fun", self._set_fun)
 
     def _set_obj(self, obj):
         """Set current wrapped object."""
