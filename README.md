@@ -826,3 +826,4 @@ See [all versions](VERSIONS.md).
 - pypy compatibility? issues with date/time fromisoformat
   and packages bcrypt, psycopg2, psycopg2cffi, psycopg…
 - check thread safety, esp cachetools
+- common prefix for cache?
