@@ -1143,25 +1143,28 @@ def run_some_checks(c, n=10):
 @pytest.mark.skipif(not has_service(port=11211), reason="no local memcached service available for testing")
 def test_memcached_cache(client):
     import AppFact as af
-    with af.create_app(
-        FSA_CACHE="memcached",
-        FSA_CACHE_OPTS={"server": "localhost:11211"}).test_client() as c:
-        run_some_checks(c)
+    for prefix in ["mmcap.", None]:
+        with af.create_app(
+            FSA_CACHE="memcached", FSA_CACHE_PREFIX=prefix,
+            FSA_CACHE_OPTS={"server": "localhost:11211"}).test_client() as c:
+            run_some_checks(c)
 
 @pytest.mark.skipif(not has_service(port=6379), reason="no local redis service available for testing")
 def test_redis_cache():
     import AppFact as af
-    with af.create_app(
-        FSA_CACHE="redis",
-        FSA_CACHE_OPTS={"host": "localhost", "port": 6379}).test_client() as c:
-        run_some_checks(c)
+    for prefix in ["redap.", None]:
+        with af.create_app(
+            FSA_CACHE="redis", FSA_CACHE_PREFIX=prefix,
+            FSA_CACHE_OPTS={"host": "localhost", "port": 6379}).test_client() as c:
+            run_some_checks(c)
 
 def test_caches():
     import AppFact as af
     for cache in ["ttl", "lru", "lfu", "mru", "fifo", "rr", "dict"]:
-        log.debug(f"testing cache type {cache}")
-        with af.create_app(FSA_CACHE=cache).test_client() as c:
-            run_some_checks(c)
+        for prefix in [cache + ".", None]:
+            log.debug(f"testing cache type {cache}")
+            with af.create_app(FSA_CACHE=cache, FSA_CACHE_PREFIX=prefix).test_client() as c:
+                run_some_checks(c)
 
 def test_no_such_cache():
     import AppFact as af

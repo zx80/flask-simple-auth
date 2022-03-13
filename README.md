@@ -744,9 +744,9 @@ Some directives govern various details for this extension internal working.
 - `FSA_LOGGING_LEVEL` adjust module internal logging level.
   Default is *None*.
 
-Some control is available about caching features used for user authentication
-(user password access and token validations) and authorization (group and
-per-object permissions):
+Some control is available about internal caching features used for user
+authentication (user password access and token validations) and
+authorization (group and per-object permissions):
 
 - `FSA_CACHE` controls the type of cache to use, set to *None* to disallow
   caches. Values for standard `cachetools` cache classes are `ttl`, `lru`,
@@ -763,6 +763,10 @@ per-object permissions):
 - `FSA_CACHE_SIZE` controls size of internal `cachetools` caches.
   Default is *262144*, which should use a few MiB.
   *None* means unbounded, more or less.
+
+- `FSA_CACHE_PREFIX` use this application-level prefix, useful for shared
+  distributed caches.  A good candidate could be `app.name + "."`.
+  Default is *None*, meaning no prefix.
 
 Web-application oriented features:
 
@@ -826,4 +830,3 @@ See [all versions](VERSIONS.md).
 - pypy compatibility? issues with date/time fromisoformat
   and packages bcrypt, psycopg2, psycopg2cffi, psycopg…
 - check thread safety, esp cachetools
-- common prefix for cache?

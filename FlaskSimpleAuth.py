@@ -228,7 +228,7 @@ _DIRECTIVES = {
     "FSA_PASSWORD_SCHEME", "FSA_PASSWORD_OPTS", "FSA_PASSWORD_LEN", "FSA_PASSWORD_RE",
     "FSA_HTTP_AUTH_OPTS",
     # internal caching
-    "FSA_CACHE", "FSA_CACHE_SIZE", "FSA_CACHE_OPTS",
+    "FSA_CACHE", "FSA_CACHE_SIZE", "FSA_CACHE_OPTS", "FSA_CACHE_PREFIX",
     # web-oriented settings
     "FSA_401_REDIRECT", "FSA_URL_NAME", "FSA_CORS", "FSA_CORS_OPTS",
 }
@@ -508,9 +508,10 @@ class FlaskSimpleAuth:
         if cache:
             import cachetools as ct
             import CacheToolsUtils as ctu  # type: ignore
-            if cache in ("ttl", "lru", "lfu", "mru", "fifo", "rr"):
+            prefix = conf.get("FSA_CACHE_PREFIX", None)
+            if cache in ("ttl", "lru", "lfu", "mru", "fifo", "rr", "dict"):
                 maxsize = conf.get("FSA_CACHE_SIZE", _DEFAULT_CACHE_SIZE)
-                self._gen_cache = ctu.PrefixedCache
+                # build actual storage tier
                 if cache == "ttl":
                     ttl = self._cache_opts.pop("ttl", _DEFAULT_CACHE_TTL)
                     rcache: MutableMapping = ct.TTLCache(maxsize, **self._cache_opts, ttl=ttl)
@@ -524,23 +525,33 @@ class FlaskSimpleAuth:
                     rcache = ct.FIFOCache(maxsize, **self._cache_opts)
                 elif cache == "rr":
                     rcache = ct.RRCache(maxsize, **self._cache_opts)
+                elif cache == "dict":
+                    rcache = dict()
                 else:  # pragma: no cover
                     raise self._Bad(f"unexpected simple cache type: {cache}")
+                if prefix:
+                    rcache = ctu.PrefixedCache(rcache, prefix)
                 self._cache = ctu.StatsCache(rcache)
+                self._gen_cache = ctu.PrefixedCache
             elif cache in ("memcached", "pymemcache"):
                 import pymemcache as pmc  # type: ignore
                 if "serde" not in self._cache_opts:
                     self._cache_opts.update(serde=ctu.JsonSerde())
+                if prefix and "key_prefix" not in self._cache_opts:
+                    self._cache_opts.update(key_prefix=prefix.encode("utf-8"))
                 self._cache = ctu.StatsMemCached(pmc.Client(**self._cache_opts))
                 self._gen_cache = ctu.PrefixedMemCached
             elif cache == "redis":
                 import redis
                 ttl = self._cache_opts.pop("ttl", _DEFAULT_CACHE_TTL)
-                self._cache = ctu.StatsRedisCache(redis.Redis(**self._cache_opts), ttl=ttl)
+                # FIXME prefix handling
+                rcache = redis.Redis(**self._cache_opts)
+                if prefix:
+                    rcache = ctu.PrefixedRedisCache(rcache, prefix=prefix, ttl=ttl)
+                else:
+                    rcache = ctu.RedisCache(rcache, ttl=ttl)
+                self._cache = rcache
                 self._gen_cache = ctu.PrefixedRedisCache
-            elif cache == "dict":
-                self._cache = ctu.StatsCache(dict())
-                self._gen_cache = ctu.PrefixedCache
             else:
                 raise self._Bad(f"unexpected FSA_CACHE: {cache}")
         #
