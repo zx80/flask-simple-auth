@@ -545,11 +545,11 @@ class FlaskSimpleAuth:
                 import redis
                 ttl = self._cache_opts.pop("ttl", _DEFAULT_CACHE_TTL)
                 # FIXME prefix handling
-                rcache = redis.Redis(**self._cache_opts)
+                cache = redis.Redis(**self._cache_opts)
                 if prefix:
-                    rcache = ctu.PrefixedRedisCache(rcache, prefix=prefix, ttl=ttl)
+                    rcache = ctu.PrefixedRedisCache(cache, prefix=prefix, ttl=ttl)
                 else:
-                    rcache = ctu.RedisCache(rcache, ttl=ttl)
+                    rcache = ctu.RedisCache(cache, ttl=ttl)
                 self._cache = rcache
                 self._gen_cache = ctu.PrefixedRedisCache
             else:
