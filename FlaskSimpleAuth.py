@@ -544,13 +544,11 @@ class FlaskSimpleAuth:
             elif cache == "redis":
                 import redis
                 ttl = self._cache_opts.pop("ttl", _DEFAULT_CACHE_TTL)
-                # FIXME prefix handling
-                cache = redis.Redis(**self._cache_opts)
+                rc = redis.Redis(**self._cache_opts)
                 if prefix:
-                    rcache = ctu.PrefixedRedisCache(cache, prefix=prefix, ttl=ttl)
+                    self._cache = ctu.PrefixedRedisCache(rc, prefix=prefix, ttl=ttl)
                 else:
-                    rcache = ctu.RedisCache(cache, ttl=ttl)
-                self._cache = rcache
+                    self._cache = ctu.RedisCache(rc, ttl=ttl)
                 self._gen_cache = ctu.PrefixedRedisCache
             else:
                 raise self._Bad(f"unexpected FSA_CACHE: {cache}")
