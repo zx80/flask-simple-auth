@@ -585,10 +585,10 @@ class FlaskSimpleAuth:
             realm = "".join(c if keep_char(c) else "-" for c in realm)
             realm = "-".join(filter(lambda s: s != "", realm.split("-")))
         self._realm = realm
-        # token expiration
+        # token expiration in minutes
         self._delay = conf.get("FSA_TOKEN_DELAY", 60.0)
         self._grace = conf.get("FSA_TOKEN_GRACE", 0.0)
-        self._renewal = conf.get("FSA_TOKEN_RENEWAL", 0.25)  # only for cookies
+        self._renewal = conf.get("FSA_TOKEN_RENEWAL", 0.25)  # ratio, only for cookies
         # token signature
         if "FSA_TOKEN_SECRET" in conf:
             self._secret = conf["FSA_TOKEN_SECRET"]
