@@ -11,7 +11,7 @@ F.pdf	= $(F.md:%.md=%.pdf)
 PYTHON	= python
 PIP		= venv/bin/pip
 
-.PHONY: check check.mypy check.flake8
+.PHONY: check check.mypy check.flake8 check.test check.demo
 check.mypy: install
 	. venv/bin/activate
 	mypy $(MODULE).py
@@ -20,13 +20,19 @@ check.flake8: install
 	. venv/bin/activate
 	flake8 --ignore=E402,E501,F401 $(MODULE).py
 
+check.test:
+	$(MAKE) -C test check
+
+check.demo:
+	$(MAKE) -C demo check.pgall
+
 check: install
 	. venv/bin/activate
 	type $(PYTHON)
 	$(MAKE) check.mypy
 	$(MAKE) check.flake8
-	$(MAKE) -C test check && \
-	$(MAKE) -C demo check.pgall
+	$(MAKE) check.test && \
+	$(MAKE) check.demo
 
 .PHONY: clean clean.venv
 clean:
