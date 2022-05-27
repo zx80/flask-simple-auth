@@ -29,7 +29,7 @@ from flask import Response, request
 # NOTE the only missing should be "Flask"
 from flask import session, jsonify, Blueprint, make_response, abort, \
     redirect, url_for, after_this_request, send_file, send_from_directory, \
-    safe_join, escape, Markup, render_template, current_app, g
+    escape, Markup, render_template, current_app, g
 
 import logging
 log = logging.getLogger("fsa")
