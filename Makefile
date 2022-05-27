@@ -28,16 +28,16 @@ check: install
 	$(MAKE) -C test check && \
 	$(MAKE) -C demo check.pgall
 
-.PHONY: clean clean-venv
+.PHONY: clean clean.venv
 clean:
 	$(RM) -r __pycache__ */__pycache__ *.egg-info dist build .mypy_cache .pytest_cache
 	$(RM) $(F.pdf)
 	$(MAKE) -C test clean
 	$(MAKE) -C demo clean
 
-clean-venv: clean
+clean.venv: clean
 	$(RM) -r venv
-	$(MAKE) -C demo clean-venv
+	$(MAKE) -C demo clean.venv
 
 .PHONY: install
 install: $(MODULE).egg-info

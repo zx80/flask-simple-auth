@@ -7,14 +7,14 @@ DB	= db
 # CLEAN
 #
 
-.PHONY: clean clean-venv
+.PHONY: clean clean.venv
 clean: stop
 	$(RM) -r __pycache__ .mypy_cache
 	$(RM) stuff.db stuff.pg app.pid app.log users.sql
 	pkill flask || true
 	dropdb stuff || true
 
-clean-venv: clean
+clean.venv: clean
 	$(RM) -r venv
 
 #
