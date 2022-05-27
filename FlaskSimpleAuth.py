@@ -382,7 +382,7 @@ class FlaskSimpleAuth:
 
     def _params(self):
         """Get request parameters wherever they are."""
-        if request.json:
+        if request.is_json:
             return request.json
         else:
             # reimplement "request.values" after Flask 2.0 regression

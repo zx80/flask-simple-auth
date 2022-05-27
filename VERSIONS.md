@@ -3,10 +3,14 @@
 Sources are available on [GitHub](https://github.com/zx80/flask-simple-auth)
 and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 
-## 11.0 on later
+## 11.0 on 2022-05-27
 
 Add `FSA_CACHE_PREFIX` directive to help with sharing a distributed cache
 such as redis or memcached.
+
+Fixes for Flask 2.1:
+Now `get_json` raises a exception when unhappy instead of returning `None`.
+Remove `safe_join` export as flask removed it.
 
 ## 10.0 on 2022-03-06
 
