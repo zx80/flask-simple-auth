@@ -8,7 +8,7 @@ json = fsa.jsonify
 app = fsa.Flask("demo")
 app.config.from_envvar("APP_CONFIG")
 
-# database initialisation before auth so that ar hooks are executed after
+# database initialisation before auth so that all hooks are executed after
 import database
 database.init_app(app)
 db = database.db
