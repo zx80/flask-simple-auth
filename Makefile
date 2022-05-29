@@ -8,6 +8,7 @@ MODULE	= FlaskSimpleAuth
 F.md	= $(wildcard *.md)
 F.pdf	= $(F.md:%.md=%.pdf)
 
+# PYTHON	= /snap/bin/pypy3
 PYTHON	= python
 PIP		= venv/bin/pip
 
