@@ -96,28 +96,23 @@ class _Pool:
         self._using: Set[Any] = set()
 
     def get(self):
-        try:
-            self._lock.acquire()
-            if len(self._available) > 1:
+        """Get a object from the pool, possibly creating one if needed."""
+        with self._lock:
+            try:
                 obj = self._available.pop()
-            else:
+            except KeyError:
                 log.debug(f"creating new obj with {self._fun}")
                 obj = self._fun(self._nobjs)
                 self._nobjs += 1
-            self._using.add(obj)
+            finally:
+                self._using.add(obj)
             return obj
-        finally:
-            self._lock.release()
 
     def ret(self, obj):
-        try:
-           log.debug(f"returning {obj} to pool")
-           self._lock.acquire()
-           # assert obj in self._using
+        """Return object to pool."""
+        with self._lock:
            self._using.remove(obj)
            self._available.add(obj)
-        finally:
-           self._lock.release()
 
 
 class Reference:
