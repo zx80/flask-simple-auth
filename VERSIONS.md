@@ -3,6 +3,10 @@
 Sources are available on [GitHub](https://github.com/zx80/flask-simple-auth)
 and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 
+## 12.0 on later
+
+Add `pool` option to `Reference`.
+
 ## 11.0 on 2022-05-27
 
 Add `FSA_CACHE_PREFIX` directive to help with sharing a distributed cache

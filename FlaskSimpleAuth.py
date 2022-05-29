@@ -85,6 +85,41 @@ def _typeof(p: inspect.Parameter):
         str  # type: ignore
 
 
+class _Pool:
+    """Thread-safe pool of something, created on demand."""
+
+    def __init__(self, fun: Callable[[int], Any]):
+        self._lock = threading.Lock()
+        self._fun = fun
+        self._nobjs = 0
+        self._available: Set[Any] = set()
+        self._using: Set[Any] = set()
+
+    def get(self):
+        try:
+            self._lock.acquire()
+            if len(self._available) > 1:
+                obj = self._available.pop()
+            else:
+                log.debug(f"creating new obj with {self._fun}")
+                obj = self._fun(self._nobjs)
+                self._nobjs += 1
+            self._using.add(obj)
+            return obj
+        finally:
+            self._lock.release()
+
+    def ret(self, obj):
+        try:
+           log.debug(f"returning {obj} to pool")
+           self._lock.acquire()
+           # assert obj in self._using
+           self._using.remove(obj)
+           self._available.add(obj)
+        finally:
+           self._lock.release()
+
+
 class Reference:
     """Convenient object wrapper class.
 
@@ -105,13 +140,15 @@ class Reference:
     class Local(object):
         pass
 
-    def __init__(self, obj: Any = None, set_name: str = "set", fun: Optional[Callable] = None):
+    def __init__(self, obj: Any = None, set_name: str = "set", fun: Optional[Callable] = None, pool: bool = False):
         """Constructor parameters:
 
         - set_name: provide another prefix for the "set" functions.
         - obj: object to be wrapped, can also be provided later.
         - fun: function to generated a per-thread wrapped object.
+        - pool: whether to use a pool on top of fun.
         """
+        self._pool = pool
         self._set(obj=obj, fun=fun, mandatory=False)
         if set_name and set_name != "_set":
             setattr(self, set_name, self._set)
@@ -122,7 +159,7 @@ class Reference:
         """Set current wrapped object."""
         log.debug(f"setting reference to {obj} ({type(obj)})")
         self._fun = None
-        self._nthreads = 1
+        self._nobjs = 1
         self._local = self.Local()
         self._local.obj = obj
         return self
@@ -130,7 +167,9 @@ class Reference:
     def _set_fun(self, fun: Callable[[int], Any]):
         """Set current wrapped object generation function."""
         self._fun = fun
-        self._nthreads = 0
+        if self._pool:
+            self._pool_set = _Pool(fun)
+        self._nobjs = 0
         self._local = threading.local()
         return self
 
@@ -148,9 +187,19 @@ class Reference:
     def _get_obj(self):
         """Get current wrapped object."""
         if self._fun and not hasattr(self._local, "obj"):
-            self._local.obj = self._fun(self._nthreads)
-            self._nthreads += 1
+            if self._pool:
+                self._local.obj = self._pool_set.get()
+                self._nobjs = self._pool_set._nobjs  # FIXME
+            else:
+                self._local.obj = self._fun(self._nobjs)
+                self._nobjs += 1
         return self._local.obj
+
+    def _ret_obj(self):
+        """Return current wrapped object to internal pool."""
+        assert self._pool
+        self._pool_set.ret(self._local.obj)
+        delattr(self._local, "obj")
 
     def __getattr__(self, item):
         """Forward everything unknown to contained object."""

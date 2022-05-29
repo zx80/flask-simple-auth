@@ -680,6 +680,11 @@ must be provided with `set_fun` or as the `fun` parameter to the constructor.
 The `set` method prefix can be changed with the `set_name` initialization
 parameter.
 
+When created with `pool=True`, the wrapper uses an internal pool to store
+and reuse created objects, in which case the object *must* be returned to
+the pool by calling `_ret_obj()`.
+This is useful when the WSGI server keeps on creating threads on each request.
+
 ```Python
 # file Shared.py
 from FlaskSimpleAuth import Reference
