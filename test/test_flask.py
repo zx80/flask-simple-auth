@@ -703,9 +703,15 @@ def test_reference():
 def test_ref_pool():
     ref = fsa.Reference(fun=lambda i: i, pool=True)
     i = ref._get_obj()
+    assert len(ref._pool_set._available) == 0
+    assert len(ref._pool_set._using) == 1
+    assert ref._pool_set._nobjs == 1
     j = ref._get_obj()
     assert i == j
     ref._ret_obj()
+    assert len(ref._pool_set._available) == 1
+    assert len(ref._pool_set._using) == 0
+    assert ref._pool_set._nobjs == 1
 
 
 def test_www_authenticate(client):
