@@ -667,9 +667,9 @@ def test_reference():
     def gen_data(i):
         return f"data: {i}"
     r = fsa.Reference(fun=gen_data)
-    assert r._nthreads == 0
+    assert r._nobjs == 0
     assert isinstance(r.__hash__(), int)
-    assert r._nthreads == 1
+    assert r._nobjs == 1
     assert isinstance(r._local.obj, str)
     assert r == "data: 0"
     # another thread
@@ -679,11 +679,11 @@ def test_reference():
     t1 = threading.Thread(target=run, args=(1,))
     t1.start()
     t1.join()
-    assert r._nthreads == 2
+    assert r._nobjs == 2
     t2 = threading.Thread(target=run, args=(2,))
     t2.start()
     t2.join()
-    assert r._nthreads == 3
+    assert r._nobjs == 3
     # local one is still ok
     assert r == "data: 0"
     # error
@@ -698,6 +698,14 @@ def test_reference():
         assert False, "missing parameter in previous call"
     except Exception as e:
         assert "reference must set either obj or fun" in str(e)
+
+
+def test_ref_pool():
+    ref = fsa.Reference(fun=lambda i: i, pool=True)
+    i = ref._get_obj()
+    j = ref._get_obj()
+    assert i == j
+    ref._ret_obj()
 
 
 def test_www_authenticate(client):
