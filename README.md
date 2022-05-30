@@ -819,8 +819,7 @@ See [all versions](VERSIONS.md).
 
 ## TODO
 
-- thread-local stuff in Reference: what about teardown?
-- what about asyncio?
+- use pool `max_size`?
 - test `FSA_HTTP_AUTH_OPTS`?
 - add `any` token scheme?
 - add app.log?
@@ -835,3 +834,5 @@ See [all versions](VERSIONS.md).
 - pypy compatibility? issues with date/time fromisoformat
   and packages bcrypt, psycopg2, psycopg2cffi, psycopg…
 - check thread safety, esp cachetools
+- thread-local stuff in Reference: what about teardown?
+- what about asyncio?

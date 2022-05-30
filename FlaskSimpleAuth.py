@@ -88,10 +88,11 @@ def _typeof(p: inspect.Parameter):
 class _Pool:
     """Thread-safe pool of something, created on demand."""
 
-    def __init__(self, fun: Callable[[int], Any]):
+    def __init__(self, fun: Callable[[int], Any], max_size: Optional[int] = None):
         self._lock = threading.Lock()
         self._fun = fun
         self._nobjs = 0
+        self._max_size = max_size
         self._available: Set[Any] = set()
         self._using: Set[Any] = set()
 
@@ -100,11 +101,13 @@ class _Pool:
         with self._lock:
             try:
                 obj = self._available.pop()
+                self._using.add(obj)
             except KeyError:
+                if self._max_size and self._nobjs >= self._max_size:
+                    raise Exception(f"object pool max size reached ({self._max_size})")
                 log.debug(f"creating new obj with {self._fun}")
                 obj = self._fun(self._nobjs)
                 self._nobjs += 1
-            finally:
                 self._using.add(obj)
             return obj
 
