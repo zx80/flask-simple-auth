@@ -12,7 +12,7 @@ F.pdf	= $(F.md:%.md=%.pdf)
 PYTHON	= python
 PIP		= venv/bin/pip
 
-.PHONY: check check.mypy check.flake8 check.test check.demo
+.PHONY: check check.mypy check.flake8 check.test check.demo check.coverage
 check.mypy: install
 	. venv/bin/activate
 	mypy $(MODULE).py
@@ -27,13 +27,17 @@ check.test:
 check.demo:
 	$(MAKE) -C demo check.pgall
 
+check.coverage:
+	$(MAKE) -C test coverage
+
 check: install
 	. venv/bin/activate
 	type $(PYTHON)
 	$(MAKE) check.mypy
 	$(MAKE) check.flake8
 	$(MAKE) check.test && \
-	$(MAKE) check.demo
+	$(MAKE) check.demo && \
+	$(MAKE) check.coverage
 
 .PHONY: clean clean.venv
 clean:
