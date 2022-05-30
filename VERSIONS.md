@@ -6,6 +6,7 @@ and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 ## 12.0 on later
 
 Add `pool` option to `Reference`.
+Improve documentation and code comments.
 
 ## 11.0 on 2022-05-27
 
