@@ -3,9 +3,9 @@
 Sources are available on [GitHub](https://github.com/zx80/flask-simple-auth)
 and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 
-## 12.0 on later
+## 12.0 on 2022-05-30
 
-Add `pool` option to `Reference`.
+Add `pool` option to `Reference` to better deal with `werkzeug` thread management.
 Improve documentation and code comments.
 
 ## 11.0 on 2022-05-27
