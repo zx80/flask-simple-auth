@@ -114,8 +114,8 @@ class _Pool:
     def ret(self, obj):
         """Return object to pool."""
         with self._lock:
-           self._using.remove(obj)
-           self._available.add(obj)
+            self._using.remove(obj)
+            self._available.add(obj)
 
 
 class Reference:
