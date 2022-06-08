@@ -835,4 +835,5 @@ See [all versions](VERSIONS.md).
   and packages bcrypt, psycopg2, psycopg2cffi, psycopg…
 - check thread safety, esp cachetools
 - thread-local stuff in Reference: what about teardown?
+- use flask Local instead of threading Local?
 - what about asyncio?
