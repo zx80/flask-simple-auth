@@ -12,7 +12,7 @@ F.pdf	= $(F.md:%.md=%.pdf)
 PYTHON	= python
 PIP		= venv/bin/pip
 
-.PHONY: check check.mypy check.flake8 check.test check.demo check.coverage
+.PHONY: check check.mypy check.flake8 check.black check.test check.demo check.coverage
 check.mypy: install
 	. venv/bin/activate
 	mypy $(MODULE).py
@@ -20,6 +20,10 @@ check.mypy: install
 check.flake8: install
 	. venv/bin/activate
 	flake8 --ignore=E402,E501,F401 $(MODULE).py
+
+check.black: install
+	. venv/bin/activate
+	black --check $(MODULE).py
 
 check.test:
 	$(MAKE) -C test check
@@ -30,11 +34,13 @@ check.demo:
 check.coverage:
 	$(MAKE) -C test coverage
 
+STYLE	= flake8
+
 check: install
 	. venv/bin/activate
 	type $(PYTHON)
 	$(MAKE) check.mypy
-	$(MAKE) check.flake8
+	$(MAKE) check.$(STYLE)
 	$(MAKE) check.test && \
 	$(MAKE) check.demo && \
 	$(MAKE) check.coverage
@@ -56,7 +62,7 @@ install: $(MODULE).egg-info
 # for local testing
 venv:
 	$(PYTHON) -m venv venv
-	$(PIP) install wheel mypy flake8 pytest coverage requests ipython \
+	$(PIP) install wheel mypy flake8 black pytest coverage requests ipython \
 	  passlib bcrypt pyjwt cryptography flask_httpauth flask_cors anodb \
 	  psycopg psycopg2 cachetools types-cachetools pymemcache redis types-redis
 
