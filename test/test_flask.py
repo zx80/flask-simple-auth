@@ -723,13 +723,13 @@ def test_ref_pool():
     import threading
     event = threading.Event()
     def run_1(i: int):
-        r = str(ref)
+        r = str(ref)      # get previous object, #0
         event.set()
         assert r == str(i)
         # ref._ret_obj()  # NOT RETURNED TO POOL
     def run_2(i: int):
         event.wait()
-        r = str(ref)
+        r = str(ref)      # generate a new object, #1
         assert r == str(i)
         # ref._ret_obj()  # NOT RETURNED TO POOL
     def run(i: int):
@@ -743,7 +743,7 @@ def test_ref_pool():
     t2.join()
     # use a 3rd reference to raise an pool max size exception
     try:
-        ref._get_obj()
+        ref._get_obj()   # failed attempt at generating #2
         assert False, "must reach max_size"
     except Exception as e:
         assert "pool max size reached" in str(e)
