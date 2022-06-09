@@ -819,7 +819,6 @@ See [all versions](VERSIONS.md).
 
 ## TODO
 
-- use pool `max_size`?
 - test `FSA_HTTP_AUTH_OPTS`?
 - add `any` token scheme?
 - add app.log?
@@ -837,3 +836,4 @@ See [all versions](VERSIONS.md).
 - thread-local stuff in Reference: what about teardown?
 - use werkzeug Local instead of threading Local? unclear.
 - what about asyncio?
+- `pool` vs `max_size`, simplify?
