@@ -721,14 +721,14 @@ def test_ref_pool():
     assert ref._pool_set._nobjs == 1
     # test with 2 ordered threads to grasp to objects from the pool
     import threading
-    barrier = threading.Event()
+    event = threading.Event()
     def run_1(i: int):
         r = str(ref)
-        barrier.set()
+        event.set()
         assert r == str(i)
         # ref._ret_obj()  # NOT RETURNED TO POOL
     def run_2(i: int):
-        barrier.wait()
+        event.wait()
         r = str(ref)
         assert r == str(i)
         # ref._ret_obj()  # NOT RETURNED TO POOL
