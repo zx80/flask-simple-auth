@@ -138,15 +138,17 @@ class Reference:
     class Local(object):
         pass
 
-    def __init__(self, obj: Any = None, set_name: str = "set", fun: Optional[Callable] = None, pool: bool = False):
+    def __init__(self, obj: Any = None, set_name: str = "set", fun: Optional[Callable] = None, pool: bool = False, max_size: int = 0):
         """Constructor parameters:
 
         - set_name: provide another prefix for the "set" functions.
         - obj: object to be wrapped, can also be provided later.
         - fun: function to generated a per-thread wrapped object.
         - pool: whether to use a pool on top of fun.
+        - max_size: pool maximum size.
         """
         self._pool = pool
+        self._pool_max_size = max_size
         self._set(obj=obj, fun=fun, mandatory=False)
         if set_name and set_name != "_set":
             setattr(self, set_name, self._set)
@@ -166,7 +168,7 @@ class Reference:
         """Set current wrapped object generation function."""
         self._fun = fun
         if self._pool:
-            self._pool_set = _Pool(fun)
+            self._pool_set = _Pool(fun, self._pool_max_size)
         self._nobjs = 0
         self._local = threading.local()
         return self
@@ -193,6 +195,7 @@ class Reference:
                 self._nobjs += 1
         return self._local.obj
 
+    # FIXME how to do that automatically when the thread ends?
     def _ret_obj(self):
         """Return current wrapped object to internal pool."""
         assert self._pool

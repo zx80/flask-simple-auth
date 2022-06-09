@@ -686,6 +686,7 @@ def test_reference():
     assert r._nobjs == 3
     # local one is still ok
     assert r == "data: 0"
+    # FIXME thread objects are not really returned?
     # error
     try:
         r = fsa.Reference(obj="hello", fun=gen_data)
@@ -701,17 +702,51 @@ def test_reference():
 
 
 def test_ref_pool():
-    ref = fsa.Reference(fun=lambda i: i, pool=True)
+    ref = fsa.Reference(fun=lambda i: i, pool=True, max_size=2)
     i = ref._get_obj()
     assert len(ref._pool_set._available) == 0
     assert len(ref._pool_set._using) == 1
     assert ref._pool_set._nobjs == 1
+    ref._ret_obj()
+    i = ref._get_obj()
+    assert len(ref._pool_set._available) == 0
+    assert len(ref._pool_set._using) == 1
+    assert ref._pool_set._nobjs == 1
+    # this should return the same object as we are in the same thread
     j = ref._get_obj()
     assert i == j
     ref._ret_obj()
     assert len(ref._pool_set._available) == 1
     assert len(ref._pool_set._using) == 0
     assert ref._pool_set._nobjs == 1
+    # test with 2 ordered threads to grasp to objects from the pool
+    import threading
+    barrier = threading.Event()
+    def run_1(i: int):
+        r = str(ref)
+        barrier.set()
+        assert r == str(i)
+        # ref._ret_obj()  # NOT RETURNED TO POOL
+    def run_2(i: int):
+        barrier.wait()
+        r = str(ref)
+        assert r == str(i)
+        # ref._ret_obj()  # NOT RETURNED TO POOL
+    def run(i: int):
+        r = str(ref)
+        assert r == str(i)
+    t1 = threading.Thread(target=run_1, args=(0,))
+    t2 = threading.Thread(target=run_2, args=(1,))
+    t1.start()
+    t2.start()
+    t1.join()
+    t2.join()
+    # use a 3rd reference to raise an pool max size exception
+    try:
+        ref._get_obj()
+        assert False, "must reach max_size"
+    except Exception as e:
+        assert "pool max size reached" in str(e)
 
 
 def test_www_authenticate(client):
