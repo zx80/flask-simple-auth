@@ -702,7 +702,7 @@ def test_reference():
 
 
 def test_ref_pool():
-    ref = fsa.Reference(fun=lambda i: i, pool=True, max_size=2)
+    ref = fsa.Reference(fun=lambda i: i, max_size=2)
     i = ref._get_obj()
     assert len(ref._pool_set._available) == 0
     assert len(ref._pool_set._using) == 1

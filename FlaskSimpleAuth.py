@@ -88,7 +88,7 @@ def _typeof(p: inspect.Parameter):
 class _Pool:
     """Thread-safe pool of something, created on demand."""
 
-    def __init__(self, fun: Callable[[int], Any], max_size: Optional[int] = None):
+    def __init__(self, fun: Callable[[int], Any], max_size: int = 0):
         self._lock = threading.Lock()
         self._fun = fun
         self._nobjs = 0
@@ -138,16 +138,14 @@ class Reference:
     class Local(object):
         pass
 
-    def __init__(self, obj: Any = None, set_name: str = "set", fun: Optional[Callable] = None, pool: bool = False, max_size: int = 0):
+    def __init__(self, obj: Any = None, set_name: str = "set", fun: Optional[Callable] = None, max_size: Optional[int] = None):
         """Constructor parameters:
 
         - set_name: provide another prefix for the "set" functions.
         - obj: object to be wrapped, can also be provided later.
         - fun: function to generated a per-thread wrapped object.
-        - pool: whether to use a pool on top of fun.
-        - max_size: pool maximum size.
+        - max_size: pool maximum size, 0 for unlimited, None for no pooling.
         """
-        self._pool = pool
         self._pool_max_size = max_size
         self._set(obj=obj, fun=fun, mandatory=False)
         if set_name and set_name != "_set":
@@ -167,7 +165,7 @@ class Reference:
     def _set_fun(self, fun: Callable[[int], Any]):
         """Set current wrapped object generation function."""
         self._fun = fun
-        if self._pool:
+        if self._pool_max_size is not None:
             self._pool_set = _Pool(fun, self._pool_max_size)
         self._nobjs = 0
         self._local = threading.local()
@@ -187,7 +185,7 @@ class Reference:
     def _get_obj(self):
         """Get current wrapped object."""
         if self._fun and not hasattr(self._local, "obj"):
-            if self._pool:
+            if self._pool_max_size is not None:
                 self._local.obj = self._pool_set.get()
                 self._nobjs = self._pool_set._nobjs  # FIXME
             else:
@@ -198,7 +196,7 @@ class Reference:
     # FIXME how to do that automatically when the thread ends?
     def _ret_obj(self):
         """Return current wrapped object to internal pool."""
-        assert self._pool
+        assert self._pool_max_size is not None
         self._pool_set.ret(self._local.obj)
         delattr(self._local, "obj")
 

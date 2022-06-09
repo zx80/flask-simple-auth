@@ -680,10 +680,12 @@ must be provided with `set_fun` or as the `fun` parameter to the constructor.
 The `set` method prefix can be changed with the `set_name` initialization
 parameter.
 
-When created with `pool=True`, the wrapper uses an internal pool to store
-and reuse created objects, in which case the object *must* be returned to
-the pool by calling `_ret_obj()`.
-This is useful when the WSGI server keeps on creating threads on each request.
+When created with `max_size` as a `int`, the wrapper uses an internal pool
+to store and reuse created objects, in which case the object *must* be returned
+to the pool by calling `_ret_obj()`.
+This is useful when the WSGI server keeps on creating threads on each request,
+such as `werkzeug`.
+Use `None` for no pooling.
 
 ```Python
 # file Shared.py
@@ -836,4 +838,3 @@ See [all versions](VERSIONS.md).
 - thread-local stuff in Reference: what about teardown?
 - use werkzeug Local instead of threading Local? unclear.
 - what about asyncio?
-- `pool` vs `max_size`, simplify?
