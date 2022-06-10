@@ -1079,8 +1079,7 @@ class FlaskSimpleAuth:
                 token = request.cookies[self._name] \
                     if self._name in request.cookies else None
             elif self._carrier == "param":
-                params = self._params()
-                token = params.get(self._name, None)
+                token = self._params().get(self._name, None)
             else:
                 assert self._carrier == "header" and self._name
                 token = request.headers.get(self._name, None)
