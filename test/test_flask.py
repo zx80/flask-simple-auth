@@ -723,18 +723,15 @@ def test_ref_pool():
     import threading
     event = threading.Event()
     def run_1(i: int):
-        r = str(ref)      # get previous object, #0
+        r = str(ref)      # get previous object #0
         event.set()
         assert r == str(i)
         # ref._ret_obj()  # NOT RETURNED TO POOL
     def run_2(i: int):
         event.wait()
-        r = str(ref)      # generate a new object, #1
+        r = str(ref)      # generate a new object #1
         assert r == str(i)
         # ref._ret_obj()  # NOT RETURNED TO POOL
-    def run(i: int):
-        r = str(ref)
-        assert r == str(i)
     t1 = threading.Thread(target=run_1, args=(0,))
     t2 = threading.Thread(target=run_2, args=(1,))
     t1.start()
