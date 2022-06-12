@@ -80,10 +80,10 @@ _PREDEFS = (ANY, ALL, NONE)
 def _typeof(p: inspect.Parameter):
     """Guess parameter type, possibly with some type inference."""
     return dict if p.kind is inspect.Parameter.VAR_KEYWORD else \
-        list if p.kind is inspect.Parameter.VAR_POSITIONAL else \
-        p.annotation if p.annotation is not inspect._empty else \
-        type(p.default) if p.default and p.default is not inspect._empty else \
-        str  # type: ignore
+           list if p.kind is inspect.Parameter.VAR_POSITIONAL else \
+           p.annotation if p.annotation is not inspect._empty else \
+           type(p.default) if p.default and p.default is not inspect._empty else \
+           str  # type: ignore
 
 
 class _Pool:
