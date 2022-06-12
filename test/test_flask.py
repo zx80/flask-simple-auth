@@ -699,26 +699,34 @@ def test_reference():
         assert False, "missing parameter in previous call"
     except Exception as e:
         assert "reference must set either obj or fun" in str(e)
+    # auto thread
+    r = fsa.Reference()
+    r._set_fun(lambda i: i)
+    assert str(r) == "0"
+    # versatile
+    r = fsa.Reference(mode=fsa.Reference.Mode.VERSATILE)
+    r._set_fun(lambda i: i+10)
+    assert str(r) == "10"
 
 
 def test_ref_pool():
     ref = fsa.Reference(fun=lambda i: i, max_size=2)
     i = ref._get_obj()
-    assert len(ref._pool_set._available) == 0
-    assert len(ref._pool_set._using) == 1
-    assert ref._pool_set._nobjs == 1
+    assert len(ref._pool._available) == 0
+    assert len(ref._pool._using) == 1
+    assert ref._pool._nobjs == 1
     ref._ret_obj()
     i = ref._get_obj()
-    assert len(ref._pool_set._available) == 0
-    assert len(ref._pool_set._using) == 1
-    assert ref._pool_set._nobjs == 1
+    assert len(ref._pool._available) == 0
+    assert len(ref._pool._using) == 1
+    assert ref._pool._nobjs == 1
     # this should return the same object as we are in the same thread
     j = ref._get_obj()
     assert i == j
     ref._ret_obj()
-    assert len(ref._pool_set._available) == 1
-    assert len(ref._pool_set._using) == 0
-    assert ref._pool_set._nobjs == 1
+    assert len(ref._pool._available) == 1
+    assert len(ref._pool._using) == 0
+    assert ref._pool._nobjs == 1
     # test with 2 ordered threads to grasp to objects from the pool
     import threading
     event = threading.Event()

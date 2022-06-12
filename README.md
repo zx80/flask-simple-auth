@@ -670,7 +670,7 @@ caching and CORS.
 This class implements a generic share-able global variable which can be
 used by modules (eg app, blueprints…) with its initialization differed.
 
-Under the hood, most methods calls are forwarded to a possibly thread-local
+Under the hood, most methods calls are forwarded to a possibly sub-thread-local
 object stored inside the wrapper, so that the Reference object mostly
 behaves like the wrapped object itself.
 
@@ -679,6 +679,11 @@ For thread-local objects, a function to generate the expected shared object
 must be provided with `set_fun` or as the `fun` parameter to the constructor.
 The `set` method prefix can be changed with the `set_name` initialization
 parameter.
+The `mode` constructor parameter defines the object scope with type
+`Reference.Mode`: `SHARED` for a global, `THREAD` for a per-thread local,
+`VERSATILE` for a sub-thread local (eg for greenlets). Default is `AUTO`
+which choses between `SHARED` and `THREAD` depending on whether an object
+or a function is provided.
 
 When created with `max_size` as a `int`, the wrapper uses an internal pool
 to store and reuse created objects, in which case the object *must* be returned

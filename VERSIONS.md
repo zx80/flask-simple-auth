@@ -7,6 +7,7 @@ and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 
 Add `max_size` parameter to `Reference` pool.
 Remove `pool` constructor parameter.
+Add `mode` option to `Reference` with a `VERSATILE` scope.
 
 ## 12.0 on 2022-05-30
 

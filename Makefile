@@ -19,7 +19,7 @@ check.mypy: install
 
 check.flake8: install
 	. venv/bin/activate
-	flake8 --ignore=E402,E501,F401 $(MODULE).py
+	flake8 --ignore=E127,E402,E501,F401 $(MODULE).py
 
 check.black: install
 	. venv/bin/activate
