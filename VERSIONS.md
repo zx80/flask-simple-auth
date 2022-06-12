@@ -3,7 +3,7 @@
 Sources are available on [GitHub](https://github.com/zx80/flask-simple-auth)
 and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 
-## 13.0 on later
+## 13.0 on 2022-06-12
 
 Add `max_size` parameter to `Reference` pool.
 Remove `pool` constructor parameter.
