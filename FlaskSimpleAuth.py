@@ -87,7 +87,11 @@ def _typeof(p: inspect.Parameter):
 
 
 class _Pool:
-    """Thread-safe pool of something, created on demand."""
+    """Thread-safe pool of something, created on demand.
+
+    - fun: function to create objects on demand, called with the creation number.
+    - max_size: of the pool
+    """
 
     def __init__(self, fun: Callable[[int], Any], max_size: int = 0):
         self._lock = threading.Lock()
@@ -491,7 +495,7 @@ class FlaskSimpleAuth:
         return uig
 
     def cast(self, t, cast: Optional[Callable] = None):
-        """Add a cast function to a type."""
+        """Add a cast function associated to a type."""
         if t in self._casts:
             log.warning(f"overriding type casting function for {t}")
         if cast:  # direct
@@ -503,7 +507,7 @@ class FlaskSimpleAuth:
             return annotate
 
     def object_perms(self, domain, checker: Optional[Callable] = None):
-        """Add an object permission helper for a domain."""
+        """Add an object permission helper for a given domain."""
         if domain in self._object_perms:
             log.warning(f"overriding object permission checker for domain {domain}")
         if checker:  # direct
@@ -1464,7 +1468,7 @@ class FlaskSimpleAuth:
         if len(authorize) == 0:
             authorize = [NONE]
 
-        # separate groups and perms
+        # separate predefs, groups and perms
         predefs = list(filter(lambda a: a in _PREDEFS, authorize))
         groups = list(filter(lambda a: type(a) in (int, str) and a not in _PREDEFS, authorize))
         perms = list(filter(lambda a: isinstance(a, tuple), authorize))
@@ -1556,7 +1560,7 @@ class FlaskSimpleAuth:
         return decorate
 
     # support Flask 2.0 per-method decorator shortcuts
-    # note that app.get("/", methods=["POST"], ...) would do a POST.
+    # note that app.get("/", methods=["POST"], …) would do a POST.
     def get(self, rule, **options):
         """Shortcut for `route` with `GET` method."""
         return self.route(rule, methods=["GET"], **options)
