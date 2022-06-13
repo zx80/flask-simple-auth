@@ -183,7 +183,7 @@ class Reference:
 
     def _set_obj(self, obj):
         """Set current wrapped object."""
-        log.debug(f"setting reference to {obj} ({type(obj)})")
+        log.debug(f"Setting Reference to {obj} ({type(obj)})")
         self._mode = Reference.Mode.SHARED
         self._fun = None
         self._pool = None
@@ -211,13 +211,13 @@ class Reference:
     def _set(self, obj: Any = None, fun: Optional[Callable[[int], Any]] = None, mandatory=True):
         """Set current wrapped object or generation function."""
         if obj and fun:
-            raise Exception("reference cannot set both obj and fun")
+            raise Exception("Reference cannot set both obj and fun")
         elif obj:
             return self._set_obj(obj)
         elif fun:
             return self._set_fun(fun)
         elif mandatory:
-            raise Exception("reference must set either obj or fun")
+            raise Exception("Reference must set either obj or fun")
 
     def _get_obj(self):
         """Get current wrapped object."""
