@@ -3,6 +3,10 @@
 Sources are available on [GitHub](https://github.com/zx80/flask-simple-auth)
 and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 
+## 14.0 on later
+
+Use `re2` instead of `re`.
+
 ## 13.0 on 2022-06-12
 
 Add `max_size` parameter to `Reference` pool.
