@@ -63,7 +63,7 @@ install: $(MODULE).egg-info
 venv:
 	$(PYTHON) -m venv venv
 	$(PIP) install wheel mypy flake8 black pytest coverage requests ipython \
-	  passlib bcrypt pyjwt cryptography flask_httpauth flask_cors anodb \
+	  passlib bcrypt pyjwt cryptography flask_httpauth flask_cors anodb google-re2 \
 	  psycopg psycopg2 cachetools types-cachetools pymemcache redis types-redis
 
 $(MODULE).egg-info: venv
