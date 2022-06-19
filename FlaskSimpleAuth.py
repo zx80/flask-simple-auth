@@ -15,7 +15,7 @@ from typing import Optional, Callable, Dict, List, Set, Any, Union, MutableMappi
 import functools
 import inspect
 import datetime as dt
-import re2 as re
+import re2 as re  # type: ignore
 import json
 from dataclasses import dataclass
 from enum import Enum
