@@ -712,19 +712,19 @@ def test_reference():
 def test_ref_pool():
     ref = fsa.Reference(fun=lambda i: i, max_size=2)
     i = ref._get_obj()
-    assert len(ref._pool._available) == 0
+    assert len(ref._pool._avail) == 0
     assert len(ref._pool._using) == 1
     assert ref._pool._nobjs == 1
     ref._ret_obj()
     i = ref._get_obj()
-    assert len(ref._pool._available) == 0
+    assert len(ref._pool._avail) == 0
     assert len(ref._pool._using) == 1
     assert ref._pool._nobjs == 1
     # this should return the same object as we are in the same thread
     j = ref._get_obj()
     assert i == j
     ref._ret_obj()
-    assert len(ref._pool._available) == 1
+    assert len(ref._pool._avail) == 1
     assert len(ref._pool._using) == 0
     assert ref._pool._nobjs == 1
     # test with 2 ordered threads to grasp to objects from the pool
