@@ -842,3 +842,4 @@ See [all versions](VERSIONS.md).
 - check thread safety, esp cachetools
 - thread-local stuff in Reference: what about teardown?
 - what about asyncio?
+- `FSA_PARAMS_STYLE` *any/http/json* to restrict/force parameters?
