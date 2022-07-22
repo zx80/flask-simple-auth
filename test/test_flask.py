@@ -754,6 +754,35 @@ def test_ref_pool():
         assert "pool max size reached" in str(e)
 
 
+def test_pool():
+    # test max_use
+    p1 = fsa._Pool(fun = lambda i: i, max_size = 1, max_use = 2)
+    i = p1.get()
+    assert i == 0
+    p1.ret(i)
+    i = p1.get()
+    assert i == 0
+    p1.ret(i)
+    i = p1.get()
+    assert i == 1
+    p1.ret(i)
+    # test with close and None
+    class T:
+        def __init__(self, count):
+            self._count = count
+        def close(self):
+            self._count = None
+        def __str__(self):
+            return f"T({self._count})"
+    p2 = fsa._Pool(fun = T, max_size = None, max_use = 1)
+    t = p2.get()
+    assert str(t) == "T(0)"
+    p2.ret(t)
+    t = p2.get()
+    assert str(t) == "T(1)"
+    p2.ret(t)
+
+
 def test_www_authenticate(client):
     push_auth(app._fsa, "param")
     res = check(401, client.get("/admin"))

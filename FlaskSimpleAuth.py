@@ -79,28 +79,35 @@ _PREDEFS = (ANY, ALL, NONE)
 
 def _typeof(p: inspect.Parameter):
     """Guess parameter type, possibly with some type inference."""
-    return dict if p.kind is inspect.Parameter.VAR_KEYWORD else \
-           list if p.kind is inspect.Parameter.VAR_POSITIONAL else \
-           p.annotation if p.annotation is not inspect._empty else \
-           type(p.default) if p.default and p.default is not inspect._empty else \
-           str  # type: ignore
+    return \
+        dict if p.kind is inspect.Parameter.VAR_KEYWORD else \
+        list if p.kind is inspect.Parameter.VAR_POSITIONAL else \
+        p.annotation if p.annotation is not inspect._empty else \
+        type(p.default) if p.default and p.default is not inspect._empty else \
+        str  # type: ignore
 
 
+# FIXME probably such a class already exists somewhere and should be reused?
 class _Pool:
     """Thread-safe pool of something, created on demand.
 
     - fun: function to create objects on demand, called with the creation number.
     - max_size: maximum size of the pool, 0 for unlimited.
+    - max_use: how many times to use a something, 0 for unlimited.
     """
 
-    def __init__(self, fun: Callable[[int], Any], max_size: int = 0):
+    def __init__(self, fun: Callable[[int], Any], max_size: int = 0, max_use: int = 0):
         self._lock = threading.Lock()
         self._fun = fun
         self._nobjs = 0
+        self._ncreated = 0
         self._max_size = max_size
+        self._max_use = max_use
         # pool's content: available vs in use objects
         self._avail: Set[Any] = set()
         self._using: Set[Any] = set()
+        # keep track of usage
+        self._uses: Dict[Any, int] = dict()
 
     def get(self):
         """Get a object from the pool, possibly creating one if needed."""
@@ -108,20 +115,33 @@ class _Pool:
             try:
                 obj = self._avail.pop()
                 self._using.add(obj)
-            except KeyError:
+                self._uses[obj] += 1
+            except KeyError:  # nothing available
                 if self._max_size and self._nobjs >= self._max_size:
                     raise Exception(f"object pool max size reached ({self._max_size})")
                 log.debug(f"creating new obj with {self._fun}")
-                obj = self._fun(self._nobjs)
+                obj = self._fun(self._ncreated)
+                self._ncreated += 1
                 self._nobjs += 1
                 self._using.add(obj)
+                self._uses[obj] = 1
             return obj
 
     def ret(self, obj):
         """Return object to pool."""
         with self._lock:
             self._using.remove(obj)
-            self._avail.add(obj)
+            if self._max_use and self._uses[obj] >= self._max_use:
+                if hasattr(obj, "close"):
+                    try:
+                        obj.close()
+                    except Exception as e:  # pragma: no cover
+                        log.warning(f"exception occured on close(): {e}")
+                del self._uses[obj]
+                del obj
+                self._nobjs -= 1
+            else:
+                self._avail.add(obj)
 
 
 class Reference:
@@ -159,20 +179,24 @@ class Reference:
         THREAD = 2
         VERSATILE = 3
 
-    def __init__(self, obj: Any = None, set_name: str = "set", fun: Optional[Callable] = None, max_size: Optional[int] = None, mode: Mode = Mode.AUTO):
+    def __init__(self, obj: Any = None, set_name: str = "set", fun: Optional[Callable] = None,
+                 max_size: int = 0, max_use: int = 0, mode: Mode = Mode.AUTO):
         """Constructor parameters:
 
         - set_name: provide another prefix for the "set" functions.
         - obj: object to be wrapped, can also be provided later.
         - fun: function to generated a per-thread/or-whatever wrapped object.
         - max_size: pool maximum size, 0 for unlimited, None for no pooling.
+        - max_use: when pooling, how many times to reuse an object.
         - mode: level of sharing, default is to chose between SHARED and THREAD.
         """
         # mode encodes the expected object unicity or multiplicity
-        self._mode = Reference.Mode.SHARED if mode == Reference.Mode.AUTO and obj else \
-                     Reference.Mode.THREAD if mode == Reference.Mode.AUTO and fun else \
-                     mode
+        self._mode = \
+            Reference.Mode.SHARED if mode == Reference.Mode.AUTO and obj else \
+            Reference.Mode.THREAD if mode == Reference.Mode.AUTO and fun else \
+            mode
         self._pool_max_size = max_size
+        self._pool_max_use = max_use
         self._set(obj=obj, fun=fun, mandatory=False)
         if set_name and set_name != "_set":
             setattr(self, set_name, self._set)
@@ -196,7 +220,7 @@ class Reference:
             self._mode = Reference.Mode.THREAD
         assert self._mode in (Reference.Mode.THREAD, Reference.Mode.VERSATILE)
         self._fun = fun
-        self._pool = _Pool(fun, self._pool_max_size) \
+        self._pool = _Pool(fun, self._pool_max_size, self._pool_max_use) \
             if self._pool_max_size is not None else None
         self._nobjs = 0
         if self._mode == Reference.Mode.THREAD:
