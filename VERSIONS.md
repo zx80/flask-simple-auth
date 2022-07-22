@@ -5,6 +5,7 @@ and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 
 ## 14.0 on later
 
+Add `max_use` to internal pool.
 Use `re2` instead of `re`.
 
 ## 13.0 on 2022-06-12
