@@ -666,7 +666,7 @@ def test_reference():
     # thread local stuff
     def gen_data(i):
         return f"data: {i}"
-    r = fsa.Reference(fun=gen_data)
+    r = fsa.Reference(fun=gen_data, max_size=None)
     assert r._nobjs == 0
     assert isinstance(r.__hash__(), int)
     assert r._nobjs == 1
