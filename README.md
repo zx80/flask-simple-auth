@@ -691,6 +691,7 @@ to the pool by calling `_ret_obj()`.
 This is useful when the WSGI server keeps on creating threads on each request,
 such as `werkzeug`.
 Use `None` for no pooling.
+Parameter `max_use` limits object's reuse from the pool.
 
 ```Python
 # file Shared.py
