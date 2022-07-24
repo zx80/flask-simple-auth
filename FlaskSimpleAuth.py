@@ -135,7 +135,7 @@ class _Pool:
                 if hasattr(obj, "close"):
                     try:
                         obj.close()
-                    except Exception as e:  # pragma: no cover
+                    except Exception as e:
                         log.warning(f"exception occured on close(): {e}")
                 del self._uses[obj]
                 del obj

@@ -772,6 +772,7 @@ def test_pool():
             self._count = count
         def close(self):
             self._count = None
+            raise Exception("Oops!")
         def __str__(self):
             return f"T({self._count})"
     p2 = fsa._Pool(fun = T, max_size = None, max_use = 1)
