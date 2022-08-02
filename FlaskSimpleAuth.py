@@ -15,7 +15,10 @@ from typing import Optional, Callable, Dict, List, Set, Any, Union, MutableMappi
 import functools
 import inspect
 import datetime as dt
-import re2 as re  # type: ignore
+try:
+    import re2 as re  # type: ignore
+except ModuleNotFoundError:
+    import re  # type: ignore
 import json
 from dataclasses import dataclass
 from enum import Enum
