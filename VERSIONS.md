@@ -3,10 +3,11 @@
 Sources are available on [GitHub](https://github.com/zx80/flask-simple-auth)
 and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 
-## 14.0 on later
+## 14.0 on 2022-08-02
 
+Fix compatibility with *Flask 2.2*.
 Add `max_use` to internal pool.
-Use `re2` instead of `re`.
+Use `re2` instead of `re` if available.
 Improve documentation.
 
 ## 13.0 on 2022-06-12

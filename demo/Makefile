@@ -60,7 +60,7 @@ stuff.pg2: stuff.pg
 .PHONY: stop run run.db run.pg run.pg2 log log.db log.pg log.pg2
 
 app.pid: stuff.$(DB)
-	export FLASK_APP=app.py FLASK_ENV=development APP_CONFIG=app-$(DB).conf
+	export FLASK_APP=app.py FLASK_DEBUG=1 APP_CONFIG=app-$(DB).conf
 	type flask || exit 1
 	flask run > app.log 2>&1 &
 	echo $$! > $@
@@ -106,7 +106,7 @@ PYTOPT	=
 .PHONY: check.mypy check.flake8 check check.db check.pg check.pg2 check.all check.pgall
 
 check: stuff.$(DB)
-	export FLASK_APP=app.py FLASK_ENV=development APP_CONFIG=app-$(DB).conf
+	export FLASK_APP=app.py FLASK_DEBUG=1 APP_CONFIG=app-$(DB).conf
 	$(PYTEST) $(PYTOPT) test_demo.py
 
 # source files

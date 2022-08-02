@@ -4,6 +4,11 @@ Simple authentication, authorization, parameter checks and utils
 for [Flask](https://flask.palletsprojects.com/), controled from
 Flask configuration and the extended `route` decorator.
 
+![Tests](https://img.shields.io/badge/tests-58%20✓-success)
+![Coverage](https://img.shields.io/badge/coverage-100%25-success)
+![Python](https://img.shields.io/badge/python-3-informational)
+![Version](https://img.shields.io/pypi/v/flask-simple-auth)
+![Badges](https://img.shields.io/badge/badges-5-informational)
 
 ## Example
 
@@ -819,7 +824,7 @@ If you like it, feel free to send a postcard to the author.
 Sources are available on [GitHub](https://github.com/zx80/flask-simple-auth)
 and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 
-Latest version is *13.0* published on 2022-06-12.
+Latest version is *14.0* published on 2022-08-02.
 Initial version was *0.9.0* on 2021-02-21.
 
 See [all versions](VERSIONS.md).

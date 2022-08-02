@@ -10,8 +10,7 @@ PYTOPT	=
 
 .PHONY: run
 run:
-	export FLASK_APP=$(APP).py
-	export FLASK_ENV=development
+	export FLASK_APP=$(APP).py FLASK_DEBUG=1
 	$(FLASK) routes
 	$(FLASK) run $(FLASK.opt) > $(APP).log 2>&1 &
 	echo "flask running, see $(APP).log"
