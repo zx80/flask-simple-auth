@@ -3,6 +3,10 @@
 Sources are available on [GitHub](https://github.com/zx80/flask-simple-auth)
 and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 
+## 14.1 on 2022-08-02
+
+Fix pypi badge version link.
+
 ## 14.0 on 2022-08-02
 
 Fix compatibility with *Flask 2.2*.
