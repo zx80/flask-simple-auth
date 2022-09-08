@@ -87,7 +87,7 @@ def _typeof(p: inspect.Parameter):
         list if p.kind is inspect.Parameter.VAR_POSITIONAL else \
         p.annotation if p.annotation is not inspect._empty else \
         type(p.default) if p.default and p.default is not inspect._empty else \
-        str  # type: ignore
+        str
 
 
 # FIXME probably such a class already exists somewhere and should be reused?
@@ -371,8 +371,7 @@ class FlaskSimpleAuth:
         self._casts: Dict[type, Callable[[str], object]] = {
             bool: lambda s: None if s is None else s.lower() not in ("", "0", "false", "f"),
             int: lambda s: int(s, base=0) if s else None,
-            # NOTE mypy complains wrongly about non-existing _empty.
-            inspect._empty: str,  # type: ignore
+            inspect._empty: str,
             path: str,
             string: str,
             dt.date: dt.date.fromisoformat,
@@ -1351,7 +1350,7 @@ class FlaskSimpleAuth:
                     t = _typeof(p)
                     types[n] = t
                     typings[n] = self._casts.get(t, t)
-                if p.default != inspect._empty:  # type: ignore
+                if p.default != inspect._empty:
                     defaults[n] = p.default
                 if p.kind == p.VAR_KEYWORD:
                     keywords = True
@@ -1532,6 +1531,14 @@ class FlaskSimpleAuth:
         for i, s in enumerate(splits):
             if i > 0:
                 spec, remainder = s.split(">", 1)
+                # some sanity checks on path parameters
+                name = spec.split(":")[1] if ":" in spec else spec
+                if name in sig.parameters:
+                    if sig.parameters[name].default != inspect._empty:
+                        raise self._Bad(f"path parameter cannot have a default: {name}")
+                else:
+                    raise self._Bad(f"path parameter missing from function signature: {name}")
+                # add explicit "Flask" path parameter type
                 if ":" not in spec and spec in sig.parameters:
                     t = _typeof(sig.parameters[spec])
                     # Flask supports 5 types, with string the default?

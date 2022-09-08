@@ -1059,6 +1059,20 @@ def test_bad_4(bad4):
     assert b"internal error caught at no authorization on /any" == res.data
     check(404, bad4.get("/no-such-route"))
 
+
+def test_bads():
+    import AppBad as ab
+    try:
+        app = ab.create_badapp_5()
+        assert False, "mandatory parameter with default should fail"
+    except Exception as e:
+        assert True, "default" in str(e)
+    try:
+        app = ab.create_badapp_6()
+        assert False, "missing path parameter"
+    except Exception as e:
+        assert True, "missing" in str(e)
+
 # per-object perms
 def test_object_perms(client):
     check(401, client.get("/my/calvin", data={"LOGIN": None}))

@@ -73,3 +73,25 @@ def create_badapp_4(**config):
         raise Exception("intended exception on get_any!")
 
     return app
+
+# mandatory path parameter
+def create_badapp_5(**config):
+    app = Flask("bad 5")
+    app.config.update(**config)
+
+    @app.get("/hello/<name>", authorize="ANY")
+    def get_hello_name(name: str = "Calvin"):
+        return f"Bonjour {name} !", 200
+
+    return app
+
+# missing path parameter
+def create_badapp_6(**config):
+    app = Flask("bad 6")
+    app.config.update(**config)
+
+    @app.get("/hello/<missing>", authorize="ANY")
+    def get_hello_missing():
+         return f"Bonsoir <missing> !", 200
+
+    return app
