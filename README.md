@@ -851,3 +851,4 @@ See [all versions](VERSIONS.md).
 - what about asyncio?
 - `FSA_PARAMS_STYLE` *any/http/json* to restrict/force parameters?
 - should have explicit tests for psycopg version 2 and 3 drivers
+- password re could use a dict for providing an explanation?
