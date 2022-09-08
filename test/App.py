@@ -332,7 +332,7 @@ def get_my_login(login: str):
 # raise instead of return
 @app.get("/oops", authorize=ANY)
 def get_oops():
-    raise fsa.FSAException("Ooops!", 518)
+    raise fsa.ErrorResponse("Ooops!", 518)
 
 # magic Json handling
 import json as js

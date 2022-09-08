@@ -8,7 +8,7 @@ import App
 from App import app
 
 import FlaskSimpleAuth as fsa
-from FlaskSimpleAuth import Response
+from FlaskSimpleAuth import Response, ConfigError
 import json
 
 import AppExt
@@ -230,7 +230,7 @@ def test_fsa_token():
     try:
         user = app._fsa._get_any_token_auth("R:U:demain:signature")
         assert False, "expecting a bad timestamp format"
-    except fsa.FSAException as e:
+    except fsa.ErrorResponse as e:
         assert "unexpected timestamp format" in e.message
     # force expiration
     grace = app._fsa._grace
@@ -238,14 +238,14 @@ def test_fsa_token():
     try:
         user = app._fsa._get_any_token_auth(calvin_token)
         assert False, "token must have expired"
-    except fsa.FSAException as e:
+    except fsa.ErrorResponse as e:
         assert "expired auth token" in e.message
     # again after clear cache, so the expiration is detected at fsa level
     app.clear_caches()
     try:
         user = app._fsa._get_any_token_auth(calvin_token)
         assert False, "token must have expired"
-    except fsa.FSAException as e:
+    except fsa.ErrorResponse as e:
         assert "expired fsa auth token" in e.message
     # cleanup
     app._fsa._grace = grace
@@ -255,7 +255,7 @@ def test_fsa_token():
     try:
         user = app._fsa._get_any_token_auth(hobbes_token)
         assert False, "token should be invalid"
-    except fsa.FSAException as e:
+    except fsa.ErrorResponse as e:
         assert e.status == 401
     app._fsa._grace = grace
 
@@ -297,7 +297,7 @@ def test_jwt_token():
     try:
         user = app._fsa._get_any_token_auth(susie_token)
         assert False, "expired token should fail"
-    except fsa.FSAException as e:
+    except fsa.ErrorResponse as e:
         assert "expired jwt auth token" in e.message
     finally:
         app._fsa._delay, app._fsa._grace = delay, grace
@@ -314,7 +314,7 @@ def test_jwt_token():
         bad_token = f"{pieces[0]}.{pieces[2]}.{pieces[1]}"
         user = app._fsa._get_any_token_auth(bad_token)
         assert False, "bad token should fail"
-    except fsa.FSAException as e:
+    except fsa.ErrorResponse as e:
         assert "invalid jwt token" in e.message
     # cleanup
     app._fsa._token, app._fsa._algo = tsave, hsave
@@ -327,7 +327,7 @@ def test_invalid_token():
     try:
         user = app._fsa._get_any_token_auth(susie_token)
         assert False, "token should be invalid"
-    except fsa.FSAException as e:
+    except fsa.ErrorResponse as e:
         assert e.status == 401
     # wrong token
     realm, app._fsa._realm = app._fsa._realm, "elsewhere"
@@ -336,7 +336,7 @@ def test_invalid_token():
     try:
         user = app._fsa._get_any_token_auth(moe_token)
         assert False, "token should be invalid"
-    except fsa.FSAException as e:
+    except fsa.ErrorResponse as e:
         assert e.status == 401
 
 def test_password_check(client):
@@ -378,7 +378,7 @@ def test_authorize():
         def foo():
             return "foo", 200
         assert False, "cannot mix ALL & ANY in authorize"
-    except Exception as e:
+    except ConfigError as e:
         assert True, "mix is forbidden"
 
 def test_self_care(client):
@@ -927,57 +927,58 @@ def test_bad_app():
     try:
         app = create_app(FSA_AUTH="bad")
         assert False, "bad app creation must fail"
-    except Exception:
-        assert True, "ok, bad app creation has failed"
+    except ConfigError as e:
+        assert "bad" in str(e), "ok, bad app creation has failed"
     try:
         app = create_app(FSA_AUTH=["fake", "basic", "bad"])
         assert False, "bad app creation must fail"
-    except Exception:
-        assert True, "ok, bad app creation has failed"
+    except ConfigError as e:
+        assert "bad" in str(e), "ok, bad app creation has failed"
     try:
         app = create_app(auth="bad")
         assert False, "bad app creation must fail"
-    except Exception:
-        assert True, "ok, bad app creation has failed"
+    except ConfigError as e:
+        assert "bad" in str(e), "ok, bad app creation has failed"
     try:
         app = create_app(auth=["basic", "token", "bad"])
         assert False, "bad app creation must fail"
-    except Exception:
-        assert True, "ok, bad app creation has failed"
+    except ConfigError as e:
+        assert "bad" in str(e), "ok, bad app creation has failed"
     # bad token type
     try:
         app = create_app(FSA_AUTH="token", FSA_TOKEN_TYPE="bad")
         assert False, "bad app creation must fail"
-    except Exception:
-        assert True, "ok, bad app creation has failed"
-    try:
-        app = create_app(FSA_AUTH="token", FSA_TOKEN_TYPE=None)
-        assert False, "bad app creation must fail"
-    except Exception:
-        assert True, "ok, bad app creation has failed"
+    except ConfigError as e:
+        assert "bad" in str(e), "ok, bad app creation has failed"
+    # FIXME, None is ok?
+    # try:
+    #     app = create_app(FSA_AUTH="token", FSA_TOKEN_TYPE=None)
+    #    # assert False, "bad app creation must fail"
+    # except ConfigError as e:
+    #     assert True, "ok, bad app creation has failed"
     # bad token carrier
     try:
         app = create_app(FSA_AUTH="token", FSA_TOKEN_CARRIER="bad")
         assert False, "bad app creation must fail"
-    except Exception:
-        assert True, "ok, bad app creation has failed"
+    except ConfigError as e:
+        assert "bad" in str(e), "ok, bad app creation has failed"
     try:
         app = create_app(FSA_AUTH="token", FSA_TOKEN_CARRIER=None)
         assert False, "bad app creation must fail"
-    except Exception:
-        assert True, "ok, bad app creation has failed"
+    except ConfigError as e:
+        assert "requires a carrier" in str(e), "ok, bad app creation has failed"
     # bad token name
     try:
         app = create_app(FSA_AUTH="token", FSA_TOKEN_CARRIER="bearer", FSA_TOKEN_NAME=None)
         assert False, "bad app creation must fail"
-    except Exception:
-        assert True, "ok, bad app creation has failed"
+    except ConfigError as e:
+        assert "requires a name" in str(e), "ok, bad app creation has failed"
     # bad jwt talgorithm
     try:
         app = create_app(FSA_AUTH="token", FSA_TOKEN_TYPE="jwt", FSA_TOKEN_ALGO="bad")
         assert False, "bad app creation must fail"
-    except Exception:
-        assert True, "ok, bad app creation has failed"
+    except ConfigError as e:
+        assert "bad" in str(e), "ok, bad app creation has failed"
 
 class PK():
     def __init__(self, kind):
@@ -1065,13 +1066,18 @@ def test_bads():
     try:
         app = ab.create_badapp_5()
         assert False, "mandatory parameter with default should fail"
-    except Exception as e:
-        assert True, "default" in str(e)
+    except ConfigError as e:
+        assert "default" in str(e)
     try:
         app = ab.create_badapp_6()
-        assert False, "missing path parameter"
-    except Exception as e:
-        assert True, "missing" in str(e)
+        assert False, "missing path parameter should fail"
+    except ConfigError as e:
+        assert "missing" in str(e)
+    try:
+        app = ab.create_badapp_7()
+        assert True, "inconsistent path parameter types should fail"
+    except ConfigError as e:
+        assert "bad" in str(e)
 
 # per-object perms
 def test_object_perms(client):
@@ -1096,7 +1102,7 @@ def test_object_perms_errors():
     def is_okay(u: str, v: str, m: str):
         log.debug(f"is_okay({u}, {v}, {m})")
         if v == "fsa":
-            raise fsa.FSAException("oops-1", 518)
+            raise fsa.ErrorResponse("oops-1", 518)
         elif v == "ex":
             raise Exception("oops-2")
         elif v == "float":
@@ -1111,42 +1117,42 @@ def test_object_perms_errors():
         def get_bad_perm_1(uid: int):
             return "should not get there", 200
         assert False, "should detect too short tuple"
-    except Exception as e:
+    except ConfigError as e:
         assert "3 data" in str(e)
     try:
         @app.get("/bad-perm-2/<uid>", authorize=("unknown",))
         def get_bad_perm_2_uid(uid: int):
             return "should not get there", 200
         assert False, "should detect unregistered permission domain"
-    except Exception as e:
+    except ConfigError as e:
         assert "missing object permission" in str(e)
     try:
         @app.get("/bad-perm-3", authorize=("known", 3))
         def get_bad_perm_3(uid: int):
             return "should not get there", 200
         assert False, "should detect bad variable name"
-    except Exception as e:
+    except ConfigError as e:
         assert "unexpected identifier name type" in str(e)
     try:
         @app.get("/bad-perm-4/<uid>", authorize=("known", "uid", 3.14159))
         def get_bad_perm_4_uid(uid: int):
             return "should not get there", 200
         assert False, "should detect bad mode type"
-    except Exception as e:
+    except ConfigError as e:
         assert "unexpected mode type" in str(e)
     try:
         @app.get("/bad-perm-5", authorize=("known", "uid"))
         def get_bad_perm_3(oid: int):
             return "should not get there", 200
         assert False, "should detect missing variable"
-    except Exception as e:
+    except ConfigError as e:
         assert "missing function parameter uid" in str(e)
     try:
         @app.get("/bad-perm-6", authorize=("known", "uid"))
         def get_bad_perm_3():
             return "should not get there", 200
         assert False, "should detect missing variable"
-    except Exception as e:
+    except ConfigError as e:
         assert "permissions require some parameters" in str(e)
     # run time errors
     @app.get("/oops/<err>", authorize=("known", "err"))
@@ -1168,35 +1174,35 @@ def test_authorize_errors():
         def get_bad_authorize():
             return "should not get there", 200
         assert False, "should detect bad authorize type"
-    except Exception as e:
+    except ConfigError as e:
         assert "unexpected authorization" in str(e)
     try:
         @app.get("/bad-mix-1", authorize=["ANY", "ALL"])
         def get_bad_mix_1():
             return "should not get there", 200
         assert False, "should detect ANY/ALL mix"
-    except Exception as e:
+    except ConfigError as e:
         assert "ANY/ALL" in str(e)
     try:
         @app.get("/bad-mix-2", authorize=["ANY", "OTHER"])
         def get_bad_mix_2():
             return "should not get there", 200
         assert False, "should detect ANY/other mix"
-    except Exception as e:
+    except ConfigError as e:
         assert "other" in str(e)
     try:
         @app.get("/bad-mix-3", authorize=["ANY", ("foo", "id")])
         def get_bad_mix_2():
             return "should not get there", 200
         assert False, "should detect ANY/other mix"
-    except Exception as e:
+    except ConfigError as e:
         assert "object" in str(e)
 
 def test_group_errors():
     import AppFact as af
     def bad_uig(login, group):
        if group == "ex":
-           raise fsa.FSAException("exception in user_in_group", 518)
+           raise fsa.ErrorResponse("exception in user_in_group", 518)
        elif group == "float":
            return 3.14159
        else:
@@ -1269,12 +1275,12 @@ def test_no_such_cache():
     try:
         af.create_app(FSA_CACHE="no-such-cache")
         assert False, "create app should fail"
-    except Exception as e:
+    except ConfigError as e:
         assert "unexpected FSA_CACHE" in e.args[0]
 
 def test_warnings_and_errors():
     def bad_gup_1(user: str):
-        raise fsa.FSAException("bad_gup_1", 518)
+        raise fsa.ErrorResponse("bad_gup_1", 518)
     def bad_gup_2(user: str):
         return 3.14159
     import AppFact as af
@@ -1296,17 +1302,17 @@ def test_warnings_and_errors():
     try:
         app.hash_password("short1")
         assert False, "should be too short"
-    except fsa.FSAException as e:
+    except fsa.ErrorResponse as e:
         assert e.status == 400 and "too short" in e.message
     try:
         app.hash_password("long-enough-but-missing-a-number")
         assert False, "should not match re"
-    except fsa.FSAException as e:
+    except fsa.ErrorResponse as e:
         assert e.status == 400 and "must match" in e.message
     try:
         app._fsa._check_password("calvin", "hobbes")
         assert False, "should not get through"
-    except fsa.FSAException as e:
+    except fsa.ErrorResponse as e:
         assert e.status == 518 and "bad" in e.message
     # unused length warning
     app = af.create_app(
@@ -1318,7 +1324,7 @@ def test_warnings_and_errors():
     try:
         app._fsa._check_password("calvin", "hobbes")
         assert False, "should not get through"
-    except fsa.FSAException as e:
+    except fsa.ErrorResponse as e:
         assert e.status == 500 and "internal error with get_user_pass" in e.message
     # overwrite warning
     @app.cast("foo")
@@ -1333,12 +1339,12 @@ def test_warnings_and_errors():
     try:
         app = af.create_app(FSA_CAST="not a dict")
         assert False, "should not get through"
-    except Exception as e:
+    except ConfigError as e:
         assert "FSA_CAST must be a dict" in str(e)
     try:
         app = af.create_app(FSA_OBJECT_PERMS="should be a dict")
         assert False, "should not get through"
-    except Exception as e:
+    except ConfigError as e:
         assert "FSA_OBJECT_PERMS must be a dict" in str(e)
 
 def test_jsondata(client):

@@ -92,6 +92,17 @@ def create_badapp_6(**config):
 
     @app.get("/hello/<missing>", authorize="ANY")
     def get_hello_missing():
-         return f"Bonsoir <missing> !", 200
+         return "Bonsoir <missing> !", 200
+
+    return app
+
+# inconsistent path parameter types
+def create_badapp_7(**config):
+    app = Flask("bad 7")
+    app.config.update(**config)
+
+    @app.get("/hello/<int:bad>", authorize="ANY")
+    def get_hello_missing(bad: str):
+         return f"Salut {bad} !", 200
 
     return app

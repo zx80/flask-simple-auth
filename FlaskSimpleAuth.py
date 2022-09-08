@@ -44,10 +44,14 @@ __version__ = pkg.require("FlaskSimpleAuth")[0].version
 
 
 @dataclass
-class FSAException(BaseException):
-    """Exception class to carry fields for an error Response."""
+class ErrorResponse(BaseException):
+    """Internal exception class to carry fields for an error Response."""
     message: str
     status: int
+
+class ConfigError(BaseException):
+    """FSA Configuration User Error"""
+    pass
 
 
 #
@@ -399,15 +403,15 @@ class FlaskSimpleAuth:
         return Response(msg, code, content_type="text/plain")
 
     def _Err(self, msg: str, code: int):
-        """Build and trace an FSAException."""
+        """Build and trace an ErrorResponse."""
         if self._debug:
-            log.debug(f"fsa exception: {code} {msg}")
-        return FSAException(msg, code)
+            log.debug(f"error: {code} {msg}")
+        return ErrorResponse(msg, code)
 
     def _Bad(self, msg: str):
         """Build and trace an exception on a bad configuration."""
         log.critical(msg)
-        return Exception(msg)
+        return ConfigError(msg)
 
     def _auth_has(self, *auth):
         """Tell whether current authentication includes any of these schemes."""
@@ -598,7 +602,8 @@ class FlaskSimpleAuth:
         else:
             self._auth = auth
         for a in self._auth:
-            assert a in self._FSA_AUTH
+            if a not in self._FSA_AUTH:
+                raise self._Bad(f"unexpected auth: {a}")
         self._local.auth = self._auth
         #
         # web apps…
@@ -916,8 +921,8 @@ class FlaskSimpleAuth:
         Raise an exception if not ok, otherwise simply proceeds."""
         try:
             ref = self._get_user_pass(user)
-        except FSAException as fe:
-            raise fe
+        except ErrorResponse as e:
+            raise e
         except Exception as e:
             log.error(f"get_user_pass failed: {e}")
             raise self._Err("internal error in get_user_pass", self._server_error)
@@ -946,9 +951,9 @@ class FlaskSimpleAuth:
             user = self._http_auth.authenticate(auth, password)
             if user is not None and user is not False:
                 return auth.username if user is True else user
-        except FSAException as error:
-            log.debug(f"AUTH (http-*): bad authentication {error}")
-            raise error
+        except ErrorResponse as e:
+            log.debug(f"AUTH (http-*): bad authentication {e}")
+            raise er
         log.debug("AUTH (http-*): bad authentication")
         raise self._Err("failed HTTP authentication", 401)
 
@@ -1000,7 +1005,7 @@ class FlaskSimpleAuth:
         """Get user from basic or param authentication."""
         try:
             return self._get_basic_auth()
-        except FSAException:  # failed, let's try param
+        except ErrorResponse:  # failed, let's try param
             return self._get_param_auth()
 
     #
@@ -1189,7 +1194,7 @@ class FlaskSimpleAuth:
                 self._local.user = self._FSA_AUTH[a](self)
                 if self._local.user:
                     break
-            except FSAException as e:
+            except ErrorResponse as e:
                 lae = e
             except Exception as e:  # pragma: no cover
                 log.error(f"internal error in {a} authentication: {e}")
@@ -1199,7 +1204,7 @@ class FlaskSimpleAuth:
 
         # rethrow last auth exception on failure
         if required and not self._local.user:
-            raise lae or FSAException("missing authentication", 401)
+            raise lae or self._Err("missing authentication", 401)
 
         return self._local.user
 
@@ -1246,7 +1251,7 @@ class FlaskSimpleAuth:
         """Call a route function ensuring a response whatever."""
         try:  # the actual call
             return fun(*args, **kwargs)
-        except FSAException as e:  # something went wrong
+        except ErrorResponse as e:  # something went wrong
             return self._Res(e.message, e.status)
         except Exception as e:  # something went really wrong
             log.error(f"internal error on {request.method} {request.path}: {e}")
@@ -1276,7 +1281,7 @@ class FlaskSimpleAuth:
                         self._local.auth = auth
                     try:
                         self._local.user = self.get_user()
-                    except FSAException as e:
+                    except ErrorResponse as e:
                         return self._Res(e.message, e.status)
 
                 if not self._local.user:  # pragma no cover
@@ -1292,10 +1297,11 @@ class FlaskSimpleAuth:
         """Decorator to authorize user groups."""
 
         for group in _PREDEFS:
-            assert group not in groups, f"unexpected predefined {group}"
+            if group in groups:
+                raise self._Bad(f"unexpected predefined {group}")
 
-        assert self._user_in_group, \
-            "user_in_group callback needed for group authorization on {path}"
+        if not self._user_in_group:
+            raise self._Bad(f"user_in_group callback needed for group authorization on {path}")
 
         def decorate(fun: Callable):
 
@@ -1309,8 +1315,8 @@ class FlaskSimpleAuth:
                 for group in groups:
                     try:
                         ok = self._user_in_group(self._local.user, group)
-                    except FSAException as fe:
-                        return self._Res(fe.message, fe.status)
+                    except ErrorResponse as e:
+                        return self._Res(e.message, e.status)
                     except Exception as e:
                         log.error(f"user_in_group failed: {e}")
                         return self._Res("internal error in user_in_group", self._server_error)
@@ -1445,7 +1451,7 @@ class FlaskSimpleAuth:
 
                     try:
                         ok = self._check_object_perms(self._local.user, domain, val, mode)
-                    except FSAException as e:
+                    except ErrorResponse as e:
                         return self._Res(e.message, e.status)
                     except Exception as e:
                         log.error(f"internal error on {request.method} {request.path} permission {perm} check: {e}")
