@@ -9,10 +9,11 @@ F.md	= $(wildcard *.md)
 F.pdf	= $(F.md:%.md=%.pdf)
 
 # PYTHON	= /snap/bin/pypy3
+# PYTHON	= python3
 PYTHON	= python
 PIP		= venv/bin/pip
 
-.PHONY: check check.mypy check.flake8 check.black check.test check.demo check.coverage
+.PHONY: check check.mypy check.flake8 check.black check.pytest check.demo check.coverage
 check.mypy: install
 	. venv/bin/activate
 	mypy $(MODULE).py
@@ -25,14 +26,15 @@ check.black: install
 	. venv/bin/activate
 	black --check $(MODULE).py
 
-check.test:
+check.pytest: install
 	$(MAKE) -C test check
 
-check.demo:
-	$(MAKE) -C demo check.pgall
-
-check.coverage:
+check.coverage: install
 	$(MAKE) -C test coverage
+
+# just run the demo
+check.demo: install
+	$(MAKE) -C demo check.pgall
 
 STYLE	= flake8
 
@@ -41,7 +43,7 @@ check: install
 	type $(PYTHON)
 	$(MAKE) check.mypy
 	$(MAKE) check.$(STYLE)
-	$(MAKE) check.test && \
+	$(MAKE) check.pytest && \
 	$(MAKE) check.demo && \
 	$(MAKE) check.coverage
 
