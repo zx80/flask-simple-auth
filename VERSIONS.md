@@ -7,6 +7,8 @@ and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 
 Add early sanity checks about path parameters: they *must* appear as function
 parameters and should not have a default value.
+Also, path parameters converter, if declared, should be consistent with
+the corresponding parameter type.
 Improve `mypy` checks by removing some *ignore* hints.
 Improve `Makefile`.
 Rename FSA generated exceptions: `ErrorResponse` and `ConfigError`.

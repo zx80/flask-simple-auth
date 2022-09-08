@@ -1075,9 +1075,14 @@ def test_bads():
         assert "missing" in str(e)
     try:
         app = ab.create_badapp_7()
-        assert True, "inconsistent path parameter types should fail"
+        assert False, "inconsistent path parameter types should fail"
     except ConfigError as e:
         assert "bad" in str(e)
+    try:
+        app = ab.create_badapp_8()
+        assert False, "unknown path parameter converter should fail"
+    except ConfigError as e:
+        assert "unknown" in str(e)
 
 # per-object perms
 def test_object_perms(client):

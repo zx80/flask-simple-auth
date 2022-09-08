@@ -102,7 +102,18 @@ def create_badapp_7(**config):
     app.config.update(**config)
 
     @app.get("/hello/<int:bad>", authorize="ANY")
-    def get_hello_missing(bad: str):
+    def get_hello_missing(bad: float):
+         return f"Salut {bad} !", 200
+
+    return app
+
+# again
+def create_badapp_8(**config):
+    app = Flask("bad 8")
+    app.config.update(**config)
+
+    @app.get("/hello/<unknown:bad>", authorize="ANY")
+    def get_hello_missing(bad: int):
          return f"Salut {bad} !", 200
 
     return app

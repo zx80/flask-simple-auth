@@ -49,6 +49,7 @@ class ErrorResponse(BaseException):
     message: str
     status: int
 
+
 class ConfigError(BaseException):
     """FSA Configuration User Error"""
     pass
@@ -716,7 +717,7 @@ class FlaskSimpleAuth:
             # list of 94 chars, about 6.5 bits per char, 40 chars => 260 bits
             chars = string.ascii_letters + string.digits + string.punctuation
             self._secret = "".join(random.SystemRandom().choices(chars, k=40))
-        if not self._token:
+        if not self._token:  # pragma: no cover
             pass
         elif self._token == "fsa":
             self._sign = self._secret
@@ -953,7 +954,7 @@ class FlaskSimpleAuth:
                 return auth.username if user is True else user
         except ErrorResponse as e:
             log.debug(f"AUTH (http-*): bad authentication {e}")
-            raise er
+            raise e
         log.debug("AUTH (http-*): bad authentication")
         raise self._Err("failed HTTP authentication", 401)
 
@@ -1300,7 +1301,7 @@ class FlaskSimpleAuth:
             if group in groups:
                 raise self._Bad(f"unexpected predefined {group}")
 
-        if not self._user_in_group:
+        if not self._user_in_group:  # pragma: no cover
             raise self._Bad(f"user_in_group callback needed for group authorization on {path}")
 
         def decorate(fun: Callable):
@@ -1530,7 +1531,8 @@ class FlaskSimpleAuth:
 
         from uuid import UUID
         # add the expected type to path sections, if available
-        # flask converter types: string (default), int, float, path, uuid
+        # flask converters: string (default), int, float, path, uuid
+        # NOTE it can be extended (`url_map`), but we are managing through annotations
         sig = inspect.signature(view_func)
 
         splits = rule.split("<")
@@ -1538,10 +1540,23 @@ class FlaskSimpleAuth:
             if i > 0:
                 spec, remainder = s.split(">", 1)
                 # some sanity checks on path parameters
-                name = spec.split(":")[1] if ":" in spec else spec
+                conv, name = spec.split(":") if ":" in spec else (None, spec)
+                # check for predefined converters, but "any"
+                if conv not in (None, "string", "int", "float", "path", "uuid"):
+                    raise self._Bad(f"unexpected converter: {conv}")
                 if name in sig.parameters:
-                    if sig.parameters[name].default != inspect._empty:
+                    namesig = sig.parameters[name]
+                    if namesig.default != inspect._empty:
                         raise self._Bad(f"path parameter cannot have a default: {name}")
+                    if conv and namesig.annotation != inspect.Parameter.empty:
+                        atype = namesig.annotation
+                        if conv == "string" and atype not in (string, str) or \
+                           conv == "uuid" and atype != UUID or \
+                           conv == "path" and atype not in (path, str) or \
+                           conv == "int" and atype != int or \
+                           conv == "float" and atype != float:
+                            raise self._Bad(f"inconsistent type for {conv} converter on {name}: {atype}")
+                    # else no annotation consistency to check
                 else:
                     raise self._Bad(f"path parameter missing from function signature: {name}")
                 # add explicit "Flask" path parameter type
@@ -1552,6 +1567,7 @@ class FlaskSimpleAuth:
                         splits[i] = f"{t.__name__.lower()}:{spec}>{remainder}"
                     else:
                         splits[i] = f"string:{spec}>{remainder}"
+                # else spec includes a type that we keep…
         newpath = "<".join(splits)
 
         # special shortcut for NONE
