@@ -168,7 +168,7 @@ Once initialized `app` is a standard Flask object with some additions:
   which support the same extensions.
 - `user_in_group`, `get_user_pass` and `object_perms` functions/decorators to
   register authentication and authorization helper functions.
-- `get_user` to extract the authenticated user or raise an `FSAException`.
+- `get_user` to extract the authenticated user or raise an exception.
 - `current_user` to get the authenticated user if any, or `None`.
 - `hash_password` and `check_password` to hash or check a password.
 - `create_token` to compute a new authentication token for the current user.
