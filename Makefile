@@ -61,7 +61,7 @@ clean.venv: clean
 # for local testing
 venv:
 	$(PYTHON) -m venv venv
-	$(PIP) install --update pip
+	$(PIP) install pip --upgrade
 	$(PIP) install -e .
 	$(PIP) install wheel mypy flake8 black pytest coverage requests ipython \
 	  passlib bcrypt pyjwt cryptography flask_httpauth flask_cors anodb \
