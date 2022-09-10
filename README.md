@@ -852,4 +852,5 @@ See [all versions](VERSIONS.md).
 - `FSA_PARAMS_STYLE` *any/http/json* to restrict/force parameters?
 - should have explicit tests for psycopg version 2 and 3 drivers
 - password re could use a dict for providing an explanation?
-- should try to "no cover" pragmas
+- should try to reduce "no cover" pragmas
+- should Reference use a lock?
