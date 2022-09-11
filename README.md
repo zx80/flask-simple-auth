@@ -62,7 +62,6 @@ needed beyond choosing the authentication scheme.
 Look at the [demo application](demo/README.md) for a simple full-featured
 application.
 
-
 ## Documentation
 
 This module helps managing authentication, authorizations and parameters
@@ -124,7 +123,8 @@ Depending on options, the following modules should be installed:
 - [bcrypt](https://pypi.org/project/bcrypt/)  for password hashing (default algorithm).
 - [PyJWT](https://pypi.org/project/PyJWT/) for JSON Web Token (JWT).
 - [cryptography](https://pypi.org/project/cryptography/) for pubkey-signed JWT.
-- [Flask HTTPAuth](https://github.com/miguelgrinberg/Flask-HTTPAuth) for `http-*` authentication options.
+- [Flask HTTPAuth](https://github.com/miguelgrinberg/Flask-HTTPAuth)
+  for `http-*` authentication options.
 - [Flask CORS](https://github.com/corydolphin/flask-cors) for CORS handling.
 
 ### Initialization
@@ -133,9 +133,9 @@ The module is simply initialize by calling its `Flask` constructor
 and providing a configuration through `FSA_*` directives, or possibly
 by calling some methods to register helper functions, such as:
 
- - a function to retrieve the password hash from the user name.
- - a function which tells whether a user is in a group or role.
- - functions which define object ownership.
+- a function to retrieve the password hash from the user name.
+- a function which tells whether a user is in a group or role.
+- functions which define object ownership.
 
 ```Python
 from FlaskSimpleAuth import Flask
@@ -395,7 +395,6 @@ The available authentication schemes are:
   - `FSA_FAKE_LOGIN` name of parameter holding the user name.
     Default is `LOGIN`.
 
-
 #### Password Management
 
 Password authentication is performed for the following authentication
@@ -411,13 +410,13 @@ manually, which may impair application performance.
 The following configuration directives are available to configure
 `passlib` password checks:
 
- - `FSA_PASSWORD_SCHEME` password scheme to use for passwords.
-   Default is `bcrypt`.
-   See [passlib documentation](https://passlib.readthedocs.io/en/stable/lib/passlib.hash.html)
-   for available options.
-   Set to `None` to disable password checking.
- - `FSA_PASSWORD_OPTS` relevant options (for `passlib.CryptContext`).
-   Default is `{'bcrypt__default_rounds': 4, 'bcrypt__default_ident': '2y'}`.
+- `FSA_PASSWORD_SCHEME` password scheme to use for passwords.
+  Default is `bcrypt`.
+  See [passlib documentation](https://passlib.readthedocs.io/en/stable/lib/passlib.hash.html)
+  for available options.
+  Set to `None` to disable password checking.
+- `FSA_PASSWORD_OPTS` relevant options (for `passlib.CryptContext`).
+  Default is `{'bcrypt__default_rounds': 4, 'bcrypt__default_ident': '2y'}`.
 
 Beware that modern password checking is often pretty expensive in order to
 thwart password cracking if the hashed passwords are leaked, so that you
@@ -464,15 +463,14 @@ def get_login():
 The client application will return the token as a parameter or in
 headers for authenticating later requests, till it expires.
 
-
 ### Authorization
 
 Authorizations are declared with the `authorize` parameter to
 the `route` decorator (and its per-method shortcuts).
 The modules supports two permission models:
 
- - a group-oriented model
- - an object-oriented model
+- a group-oriented model
+- an object-oriented model
 
 The parameter accepts a list of `str` and `int` for groups, and of
 `tuple` for object permissions.  If a scalar is provided, it is assumed
@@ -499,10 +497,11 @@ def get_admin_only():
 
 There are three special values that can be passed to the `authorize` decorator:
 
- - `ANY` declares that no authentication is needed on that route.
- - `ALL` declares that all authenticated user can access this route, without group checks.
- - `NONE` returns a *403* on all access. It can be used to close a route
-   temporarily. This is the default.
+- `ANY` declares that no authentication is needed on that route.
+- `ALL` declares that all authenticated user can access this route,
+  without group checks.
+- `NONE` returns a *403* on all access. It can be used to close a route
+  temporarily. This is the default.
 
 ```Python
 @app.get("/closed", authorize=NONE)
@@ -578,7 +577,6 @@ FSA_OBJECT_PERMS = { "msg": can_access_message, "blog": can_access_blog }
 Because these functions are cached by default, the cache expiration must
 be reached so that changes take effect, or the cache must be cleared
 manually, which may impair application performance.
-
 
 ### Parameters
 
@@ -811,14 +809,12 @@ Web-application oriented features:
   [`flask_cors`](https://pypi.org/project/Flask-Cors/) Flask extension
   which must be available if the feature is enabled.
 
-
 ## License
 
 This software is *public domain*.
 All software has bug, this is software, hence…
 Beware that you may lose your hairs or your friends because of it.
 If you like it, feel free to send a postcard to the author.
-
 
 ## Versions
 
@@ -829,7 +825,6 @@ Latest version is *14.2* published on 2022-08-02.
 Initial version was *0.9.0* on 2021-02-21.
 
 See [all versions](VERSIONS.md).
-
 
 ## TODO
 

@@ -241,7 +241,8 @@ Improve documentation.
 
 ## 2.4.0 on 2021-03-29
 
-Add `http-basic`, `http-digest` and `http-token` authentication schemes based on flask-HTTPAuth.
+Add `http-basic`, `http-digest` and `http-token` authentication schemes based
+on flask-HTTPAuth.
 Add coverage report on tests.
 Distribute as a one file python module.
 Only simplify realm for *fsa* tokens.

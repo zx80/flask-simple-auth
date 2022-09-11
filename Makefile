@@ -13,7 +13,7 @@ F.pdf	= $(F.md:%.md=%.pdf)
 PYTHON	= python
 PIP		= venv/bin/pip
 
-.PHONY: check check.mypy check.flake8 check.black check.pytest check.demo check.coverage
+.PHONY: check check.mypy check.flake8 check.black check.pytest check.demo check.coverage check.pymarkdown
 check.mypy: venv
 	. venv/bin/activate
 	mypy $(MODULE).py
@@ -32,6 +32,9 @@ check.pytest: venv
 check.coverage: venv
 	$(MAKE) -C test coverage
 
+check.pymarkdown:
+	pymarkdown scan *.md
+
 # just run the demo
 check.demo: venv
 	$(MAKE) -C demo check.pgall
@@ -42,6 +45,7 @@ check: venv
 	. venv/bin/activate
 	type $(PYTHON)
 	$(MAKE) check.mypy
+	$(MAKE) check.pymarkdown
 	$(MAKE) check.$(STYLE)
 	$(MAKE) check.pytest && \
 	$(MAKE) check.demo && \
@@ -63,7 +67,7 @@ venv:
 	$(PYTHON) -m venv venv
 	$(PIP) install pip --upgrade
 	$(PIP) install -e .
-	$(PIP) install wheel mypy flake8 black pytest coverage requests ipython \
+	$(PIP) install wheel mypy flake8 black pytest coverage pymarkdownlnt requests ipython \
 	  passlib bcrypt pyjwt cryptography flask_httpauth flask_cors anodb \
 	  psycopg psycopg2 cachetools types-cachetools pymemcache redis types-redis
 
