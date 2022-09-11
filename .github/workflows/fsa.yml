@@ -29,17 +29,17 @@ jobs:
         pip install -r dev-requirements.txt
     # Checks
     - name: Check with mypy
-      run: mypy CacheToolsUtils.py
+      run: mypy FlaskSimpleAuth.py
     # FIXME unwanted changes
     # - name: Check with black
     #   run: black --check CacheToolsUtils.py
     - name: Check with flake8
-      run: flake8 --ignore=E501 CacheToolsUtils.py
+      run: flake8 --ignore=E501 FlaskSimpleAuth.py
     - name: Check with pytest
       run: pytest test/
     - name: Check with coverage
       run: |
-        coverage run -m pytest --log-level=debug --capture=tee-sys
-        coverage report --fail-under=100 --include=CacheToolsUtils.py
+        coverage run -m pytest --log-level=debug --capture=tee-sys test/
+        coverage report --fail-under=100 --include=FlaskSimpleAuth.py
     - name: Check with pymarkdown
       run: pymarkdown scan *.md
