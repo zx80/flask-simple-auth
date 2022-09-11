@@ -3,7 +3,7 @@
 Sources are available on [GitHub](https://github.com/zx80/flask-simple-auth)
 and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 
-## 15.0 on ?
+## 15.0 on 2022-09-11
 
 Add early sanity checks about path parameters: they *must* appear as function
 parameters and should not have a default value.
@@ -12,6 +12,8 @@ the corresponding parameter type.
 Improve `mypy` checks by removing some *ignore* hints.
 Improve `Makefile`.
 Rename FSA generated exceptions: `ErrorResponse` and `ConfigError`.
+Add `pymarkdown` check.
+Add a GitHub CI configuration (with 99% coverage for now).
 
 ## 14.2 on 2022-08-02
 
