@@ -69,6 +69,9 @@ venv:
 	$(PIP) install -e .
 	$(PIP) install -r dev-requirements.txt
 
+.PHONY: venv.dev
+venv.dev: venv
+
 $(MODULE).egg-info: venv
 	$(PIP) install -e .
 
