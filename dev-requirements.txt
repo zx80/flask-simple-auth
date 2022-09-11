@@ -1,0 +1,24 @@
+wheel
+# tools
+mypy
+flake8
+black
+pytest
+coverage
+pymarkdownlnt
+# various lazy dependencies for test/
+requests
+passlib
+bcrypt
+pyjwt
+cryptography
+flask_httpauth
+flask_cors
+# dependencies for demo/
+anodb
+psycopg
+psycopg2
+pymemcache
+redis
+types-redis
+types-cachetools

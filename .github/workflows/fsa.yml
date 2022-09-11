@@ -1,0 +1,45 @@
+name: FlaskSimpleAuth Package
+
+on:
+  push:
+    branches: [ main ]
+  # push_request: ?
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # broken: pypy3.7
+        # broken: 3.7 (pymarkdownlnt)
+        python-version: [ "3.8", "3.9", "3.10", "3.11-dev", "pypy3.8", "pypy3.9" ]
+    steps:
+    # Setup
+    - uses: actions/checkout@v3
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+    # Dependencies
+    - name: Install Python Dependencies
+      run: |
+        pip install -U pip
+        pip install -e .
+        pip install -r dev-requirements.txt
+    # Checks
+    - name: Check with mypy
+      run: mypy CacheToolsUtils.py
+    # FIXME unwanted changes
+    # - name: Check with black
+    #   run: black --check CacheToolsUtils.py
+    - name: Check with flake8
+      run: flake8 --ignore=E501 CacheToolsUtils.py
+    - name: Check with pytest
+      run: pytest test/
+    - name: Check with coverage
+      run: |
+        coverage run -m pytest --log-level=debug --capture=tee-sys
+        coverage report --fail-under=100 --include=CacheToolsUtils.py
+    - name: Check with pymarkdown
+      run: pymarkdown scan *.md

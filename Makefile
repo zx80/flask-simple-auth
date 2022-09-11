@@ -65,11 +65,9 @@ clean.venv: clean
 # for local testing
 venv:
 	$(PYTHON) -m venv venv
-	$(PIP) install pip --upgrade
+	$(PIP) install -U pip
 	$(PIP) install -e .
-	$(PIP) install wheel mypy flake8 black pytest coverage pymarkdownlnt requests ipython \
-	  passlib bcrypt pyjwt cryptography flask_httpauth flask_cors anodb \
-	  psycopg psycopg2 cachetools types-cachetools pymemcache redis types-redis
+	$(PIP) install -r dev-requirements.txt
 
 $(MODULE).egg-info: venv
 	$(PIP) install -e .
