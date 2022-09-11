@@ -849,3 +849,4 @@ See [all versions](VERSIONS.md).
 - password re could use a dict for providing an explanation?
 - should try to reduce "no cover" pragmas
 - should Reference use a lock?
+- add github CI
