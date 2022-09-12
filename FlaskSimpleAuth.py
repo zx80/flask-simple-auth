@@ -887,7 +887,7 @@ class FlaskSimpleAuth:
         params = self._params()
         user = params.get(self._login, None)
         if not user:
-            raise self._Err("missing login parameter", 401)
+            raise self._Err(f"missing login parameter: {self._login}", 401)
         return user
 
     #
