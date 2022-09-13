@@ -203,6 +203,7 @@ class Reference:
             Reference.Mode.SHARED if mode == Reference.Mode.AUTO and obj else \
             Reference.Mode.THREAD if mode == Reference.Mode.AUTO and fun else \
             mode
+        # FIXME self._pool_lock? use pool internal lock?
         self._pool_max_size = max_size
         self._pool_max_use = max_use
         self._set(obj=obj, fun=fun, mandatory=False)
@@ -320,7 +321,7 @@ class Flask(flask.Flask):
         self.get_user = self._fsa.get_user
         self.current_user = self._fsa.current_user
         # overwrite decorators ("route" done through add_url_rule above)
-        setattr(self, "get", self._fsa.get)  # avoid mypy warnings
+        setattr(self, "get", self._fsa.get)  # FIXME avoid mypy warnings
         setattr(self, "put", self._fsa.put)
         setattr(self, "post", self._fsa.post)
         setattr(self, "patch", self._fsa.patch)
