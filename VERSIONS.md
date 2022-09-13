@@ -3,6 +3,11 @@
 Sources are available on [GitHub](https://github.com/zx80/flask-simple-auth)
 and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 
+## ? on ?
+
+Ensure `Reference` count consistency.
+Improve one error message.
+
 ## 15.0 on 2022-09-11
 
 Add early sanity checks about path parameters: they *must* appear as function
