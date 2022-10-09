@@ -7,7 +7,7 @@ and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 
 Ensure `Reference` count consistency.
 Improve one error message.
-Add `FSA_REJECT_UNEXPECTED_PARAMS` to be strict about unexpected parameters.
+Add `FSA_REJECT_UNEXPECTED_PARAM` to be strict about unexpected parameters.
 
 ## 15.0 on 2022-09-11
 

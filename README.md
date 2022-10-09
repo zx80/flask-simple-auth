@@ -756,7 +756,7 @@ Some directives govern various details for this extension internal working.
   checks returns *None*.
   Default is *404*.
 
-- `FSA_REJECT_UNEXPECTED_PARAMS` tells whether to reject requests with
+- `FSA_REJECT_UNEXPECTED_PARAM` tells whether to reject requests with
   unexpected parameters.
   Default is *True*.
 
@@ -833,7 +833,7 @@ See [all versions](VERSIONS.md).
 
 ## TODO
 
-- `FSA_PARAMS_STYLE` *any/http/json* to restrict/force parameters?
+- `FSA_PARAM_STYLE` *any/http/json* to restrict/force parameters?
 - test `FSA_HTTP_AUTH_OPTS`?
 - add `any` token scheme?
 - add app.log?

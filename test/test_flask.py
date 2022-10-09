@@ -400,13 +400,13 @@ def test_typed_params(client):
     res = check(200, client.get("/add/2", data={"a":"2.0", "b":"4.0"}))
     assert float(res.data) == 12.0
     # unused params are ignored
-    app._fsa._reject_params = False
+    app._fsa._reject_param = False
     res = check(200, client.get("/mul/2", data={"j":"3", "k":"4", "unused":"x"}))
     assert int(res.data) == 24
     res = check(200, client.get("/mul/2", json={"j":5, "k":"4", "unused":"y"}))
     assert int(res.data) == 40
     # unused params are rejected
-    app._fsa._reject_params = True
+    app._fsa._reject_param = True
     res = check(400, client.get("/mul/2", data={"j":"3", "k":"4", "unused":"x"}))
     res = check(400, client.get("/mul/2", json={"j":5, "k":"4", "unused":"y"}))
     # type errors

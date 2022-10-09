@@ -336,7 +336,7 @@ _DIRECTIVES = {
     # general settings
     "FSA_SECURE", "FSA_SERVER_ERROR", "FSA_NOT_FOUND_ERROR",
     # parameter handing
-    "FSA_REJECT_UNEXPECTED_PARAMS",
+    "FSA_REJECT_UNEXPECTED_PARAM",
     # register hooks
     "FSA_GET_USER_PASS", "FSA_USER_IN_GROUP", "FSA_CAST", "FSA_OBJECT_PERMS",
     # authentication
@@ -357,7 +357,7 @@ _DIRECTIVES = {
 _DEFAULT_CACHE = "ttl"
 _DEFAULT_CACHE_SIZE = 262144  # a few MB
 _DEFAULT_CACHE_TTL = 600  # seconds, 10 minutes
-_DEFAULT_REJECT_UNEXPECTED_PARAMS = True
+_DEFAULT_REJECT_UNEXPECTED_PARAM = True
 _DEFAULT_SERVER_ERROR = 500
 _DEFAULT_NOT_FOUND_ERROR = 404
 _DEFAULT_PASSWORD_SCHEME = "bcrypt"
@@ -595,7 +595,7 @@ class FlaskSimpleAuth:
         self._server_error = conf.get("FSA_SERVER_ERROR", _DEFAULT_SERVER_ERROR)
         self._not_found_error = conf.get("FSA_NOT_FOUND_ERROR", _DEFAULT_NOT_FOUND_ERROR)
         # whether to error on unexpected parameters
-        self._reject_params = conf.get("FSA_REJECT_UNEXPECTED_PARAMS", _DEFAULT_REJECT_UNEXPECTED_PARAMS)
+        self._reject_param = conf.get("FSA_REJECT_UNEXPECTED_PARAM", _DEFAULT_REJECT_UNEXPECTED_PARAM)
         #
         # overall auth setup
         #
@@ -1410,13 +1410,13 @@ class FlaskSimpleAuth:
                     for p in params:
                         if p not in kwargs:
                             kwargs[p] = params[p]
-                elif self._debug or self._reject_params:
+                elif self._debug or self._reject_param:
                     # detect unused parameters and warn or reject them
                     for p in params:
                         if p not in names and p not in self._names:
                             if self._debug:
                                 log.debug(f"unexpected parameter {p} on {path}")
-                            if self._reject_params:
+                            if self._reject_param:
                                 return self._Res(f"unexpected parameter {p} on {path}", 400)
 
                 return self._safe_call(path, "parameters", fun, *args, **kwargs)
