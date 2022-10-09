@@ -756,6 +756,10 @@ Some directives govern various details for this extension internal working.
   checks returns *None*.
   Default is *404*.
 
+- `FSA_REJECT_UNEXPECTED_PARAMS` tells whether to reject requests with
+  unexpected parameters.
+  Default is *True*.
+
 - `FSA_DEBUG` set module in debug mode, generating excessive traces…
   Default is *False*.
 
@@ -829,6 +833,7 @@ See [all versions](VERSIONS.md).
 
 ## TODO
 
+- `FSA_PARAMS_STYLE` *any/http/json* to restrict/force parameters?
 - test `FSA_HTTP_AUTH_OPTS`?
 - add `any` token scheme?
 - add app.log?
@@ -845,7 +850,6 @@ See [all versions](VERSIONS.md).
 - check thread safety, esp cachetools
 - thread-local stuff in Reference: what about teardown?
 - what about asyncio?
-- `FSA_PARAMS_STYLE` *any/http/json* to restrict/force parameters?
 - should have explicit tests for psycopg version 2 and 3 drivers
 - password re could use a dict for providing an explanation?
 - should try to reduce "no cover" pragmas
