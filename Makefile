@@ -15,15 +15,15 @@ PIP		= venv/bin/pip
 
 .PHONY: check check.mypy check.flake8 check.black check.pytest check.demo check.coverage check.pymarkdown
 check.mypy: venv
-	. venv/bin/activate
+	source venv/bin/activate
 	mypy $(MODULE).py
 
 check.flake8: venv
-	. venv/bin/activate
+	source venv/bin/activate
 	flake8 --ignore=E127,E402,E501,F401 $(MODULE).py
 
 check.black: venv
-	. venv/bin/activate
+	source venv/bin/activate
 	black --check $(MODULE).py
 
 check.pytest: venv
@@ -42,7 +42,7 @@ check.demo: venv
 STYLE	= flake8
 
 check: venv
-	. venv/bin/activate
+	source venv/bin/activate
 	type $(PYTHON)
 	$(MAKE) check.mypy
 	$(MAKE) check.pymarkdown
