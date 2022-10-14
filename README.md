@@ -855,3 +855,4 @@ See [all versions](VERSIONS.md).
 - should try to reduce "no cover" pragmas
 - should Reference use a lock?
 - document ErrorResponse?
+- discuss [Flask-Security](https://github.com/Flask-Middleware/flask-security/)
