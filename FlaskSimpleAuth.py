@@ -481,6 +481,7 @@ class FlaskSimpleAuth:
                 else:
                     set_cookie = True
                 if set_cookie:
+                    # path? other parameters?
                     res.set_cookie(self._name, self.create_token(self._local.user),
                                    max_age=int(60 * self._delay))
         return res
