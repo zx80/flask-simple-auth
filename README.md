@@ -834,6 +834,7 @@ See [all versions](VERSIONS.md).
 ## TODO
 
 - `FSA_PARAM_STYLE` *any/http/json* to restrict/force parameters?
+- add `Request` type parameter?
 - test `FSA_HTTP_AUTH_OPTS`?
 - add `any` token scheme?
 - add app.log?
