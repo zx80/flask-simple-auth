@@ -653,6 +653,10 @@ types to their conversion functions:
 FSA_CAST = { House: strToHouse, … }
 ```
 
+As a special case, the `Request` type used for a parameter results
+in the `request` flask special object to be passed as this
+parameter to the function, allowing to keep a functional style.
+
 Finally, python parameter names can be prepended with a `_`,
 which is ignored when translating HTTP parameters.
 This allows to use python keywords as parameter names, such
@@ -833,8 +837,8 @@ See [all versions](VERSIONS.md).
 
 ## TODO
 
+- add other special type parameters, eg `g`?
 - `FSA_PARAM_STYLE` *any/http/json* to restrict/force parameters?
-- add `Request` type parameter?
 - test `FSA_HTTP_AUTH_OPTS`?
 - add `any` token scheme?
 - add app.log?

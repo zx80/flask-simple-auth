@@ -27,13 +27,11 @@ import flask
 import threading  # for Local and Lock
 
 # for local use & forwarding
-from flask import Response, request
-
-# just for forwarding
 # NOTE the only missing should be "Flask"
-from flask import session, jsonify, Blueprint, make_response, abort, \
-    redirect, url_for, after_this_request, send_file, send_from_directory, \
-    escape, Markup, render_template, current_app, g
+from flask import \
+    Response, Request, request, session, jsonify, Blueprint, make_response, \
+    abort, redirect, url_for, after_this_request, send_file, current_app, g, \
+    send_from_directory, escape, Markup, render_template
 
 import logging
 log = logging.getLogger("fsa")
@@ -1396,6 +1394,8 @@ class FlaskSimpleAuth:
                         else:
                             if p in defaults:
                                 kwargs[p] = defaults[p]
+                            elif typing == Request:
+                                kwargs[p] = request
                             else:
                                 return self._Res(f"missing parameter \"{pn}\"", 400)
                     else:

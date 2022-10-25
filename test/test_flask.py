@@ -426,6 +426,8 @@ def test_typed_params(client):
     check(400, client.get("/sub", data={"j":"42"}))
     res = check(200, client.get("/sub", data={"i":"42"}))
     assert int(res.data) == 42
+    res = check(200, client.get("/request"))
+    assert res.data.endswith(b"/request")
 
 def test_types(client):
     res = check(200, client.get("/type", data={"f": "1.0"}))
