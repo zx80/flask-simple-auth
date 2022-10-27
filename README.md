@@ -838,7 +838,6 @@ See [all versions](VERSIONS.md).
 
 ## TODO
 
-- add other special type parameters, eg `g`?
 - `FSA_PARAM_STYLE` *any/http/json* to restrict/force parameters?
 - test `FSA_HTTP_AUTH_OPTS`?
 - add `any` token scheme?
