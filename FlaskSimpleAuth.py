@@ -134,7 +134,7 @@ class _Pool:
                 if hasattr(obj, "close"):  # pragma: no cover
                     try:
                         obj.close()
-                    except:
+                    except Exception:
                         pass
                 del obj
             self._avail.clear()
