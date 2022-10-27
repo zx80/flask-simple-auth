@@ -775,6 +775,7 @@ def test_pool():
     i = p1.get()
     assert i == 1
     p1.ret(i)
+    p1.__delete__()
     # test with close and None
     class T:
         def __init__(self, count):
@@ -791,6 +792,7 @@ def test_pool():
     t = p2.get()
     assert str(t) == "T(1)"
     p2.ret(t)
+    p2.__delete__()
 
 
 def test_www_authenticate(client):

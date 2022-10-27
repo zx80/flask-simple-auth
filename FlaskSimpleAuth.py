@@ -72,6 +72,16 @@ class JsonData:
     pass
 
 
+class Session:
+    """Session parameter type."""
+    pass
+
+
+class Globals:
+    """Global parameter type."""
+    pass
+
+
 #
 # SPECIAL PREDEFINED GROUP NAMES
 #
@@ -114,6 +124,14 @@ class _Pool:
         self._using: Set[Any] = set()
         # keep track of usage
         self._uses: Dict[Any, int] = dict()
+
+    def __delete__(self):
+        with self._lock:
+            self._using.clear()
+            self._uses.clear()
+            for obj in list(self._avail):
+                del obj
+            self._avail.clear()
 
     def get(self):
         """Get a object from the pool, possibly creating one if needed."""
@@ -1396,6 +1414,10 @@ class FlaskSimpleAuth:
                                 kwargs[p] = defaults[p]
                             elif typing == Request:
                                 kwargs[p] = request
+                            elif typing == Session:
+                                kwargs[p] = session
+                            elif typing == Globals:
+                                kwargs[p] = g
                             else:
                                 return self._Res(f"missing parameter \"{pn}\"", 400)
                     else:
