@@ -126,10 +126,16 @@ class _Pool:
         self._uses: Dict[Any, int] = dict()
 
     def __delete__(self):
+        """This should be done automatically, but eventually."""
         with self._lock:
             self._using.clear()
             self._uses.clear()
             for obj in list(self._avail):
+                if hasattr(obj, "close"):  # pragma: no cover
+                    try:
+                        obj.close()
+                    except:
+                        pass
                 del obj
             self._avail.clear()
 
