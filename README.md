@@ -858,6 +858,5 @@ See [all versions](VERSIONS.md).
 - should have explicit tests for psycopg version 2 and 3 drivers
 - password re could use a dict for providing an explanation?
 - should try to reduce "no cover" pragmas
-- should Reference use a lock?
 - document ErrorResponse?
 - discuss [Flask-Security](https://github.com/Flask-Middleware/flask-security/)
