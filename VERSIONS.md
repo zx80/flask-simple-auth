@@ -3,12 +3,13 @@
 Sources are available on [GitHub](https://github.com/zx80/flask-simple-auth)
 and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 
-## ? on ?
+## 16.0 on ?
 
-Ensure `Reference` count consistency.
-Improve one error message.
+Require Flask 2.2.
 Add `FSA_REJECT_UNEXPECTED_PARAM` to be strict about unexpected parameters.
 Add `Request`, `Session` and `Globals` special parameter types.
+Ensure `Reference` count consistency.
+Improve one error message.
 
 ## 15.0 on 2022-09-11
 

@@ -856,15 +856,6 @@ class FlaskSimpleAuth:
             self.url_default_functions = self._app.url_default_functions
             self.url_value_preprocessors = self._app.url_value_preprocessors
             self.template_context_processors = self._app.template_context_processors
-        elif hasattr(self._app, '_is_setup_finished'):  # pragma: no cover
-            # Flask 2.0 and 2.1
-            self._is_setup_finished = self._app._is_setup_finished  # type: ignore
-            self.before_request_funcs = self._app.before_request_funcs
-            self.after_request_funcs = self._app.after_request_funcs
-            self.teardown_request_funcs = self._app.teardown_request_funcs
-            self.url_default_functions = self._app.url_default_functions
-            self.url_value_preprocessors = self._app.url_value_preprocessors
-            self.template_context_processors = self._app.template_context_processors
         else:
             raise self._Bad("unexpected Flask version while dealing with blueprints?")  # pragma: no cover
         #
