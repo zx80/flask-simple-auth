@@ -925,7 +925,12 @@ class FlaskSimpleAuth:
     # FSA_PASSWORD_RE: list of re a password must match
     #
     # NOTE passlib bcrypt is Apache compatible
-    #
+    # NOTE about caching: if password checks are cached, this would
+    #      mean that the clear text password is stored in cache, which
+    #      is a VERY BAD IDEA because consulting the cache would give
+    #      access to said passwords. Thus `check_password`, `hash_password`
+    #      and `_check_password` should not be cached, ever, even if expensive.
+    #      Make good use of tokens to reduce password check costs.
 
     def check_password(self, pwd, ref):
         """Verify whether a password is correct."""
@@ -1045,7 +1050,7 @@ class FlaskSimpleAuth:
     # FSA_TOKEN_TYPE: 'jwt', 'fsa' or None to disactivate
     # - for 'fsa': format is <realm>:<user>:<validity-limit>:<signature>
     # FSA_TOKEN_CARRIER: 'param', 'header' or 'bearer'
-    # FSA_TOKEN_NAME: name of parameter holding the token, or None for bearer auth
+    # FSA_TOKEN_NAME: name of parameter/cookie/scheme holding the token
     # FSA_TOKEN_ALGO:
     # - for 'fsa': hashlib algorithm for token authentication ("blake2s")
     # - for 'jwt': signature algorithm ("HS256")
