@@ -861,3 +861,4 @@ See [all versions](VERSIONS.md).
 - should try to reduce "no cover" pragmas
 - document ErrorResponse?
 - discuss [Flask-Security](https://github.com/Flask-Middleware/flask-security/)
+- move `Reference` in a separate project? `ProxyPattern`?
