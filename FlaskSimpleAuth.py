@@ -24,7 +24,7 @@ from dataclasses import dataclass
 import threading
 
 import flask
-import ProxyPatternPool as ppp
+import ProxyPatternPool as ppp  # type: ignore
 
 # for local use & forwarding
 # NOTE the only missing should be "Flask"

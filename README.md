@@ -678,6 +678,9 @@ caching and CORS.
 
 #### `Reference` Object Wrapper
 
+This class provides a proxy object based on the `Proxy` class
+from [ProxyPatternPool](https://pypi.org/project/proxypatternpool/).
+
 This class implements a generic share-able global variable which can be
 used by modules (eg app, blueprints…) with its initialization differed.
 
@@ -685,67 +688,7 @@ Under the hood, most methods calls are forwarded to a possibly sub-thread-local
 object stored inside the wrapper, so that the Reference object mostly
 behaves like the wrapped object itself.
 
-The wrapped object can be set or reset at will with `set_obj`.
-For thread-local objects, a function to generate the expected shared object
-must be provided with `set_fun` or as the `fun` parameter to the constructor.
-The `set` method prefix can be changed with the `set_name` initialization
-parameter.
-The `mode` constructor parameter defines the object scope with type
-`Reference.Mode`: `SHARED` for a global, `THREAD` for a per-thread local,
-`VERSATILE` for a sub-thread local (eg for greenlets). Default is `AUTO`
-which choses between `SHARED` and `THREAD` depending on whether an object
-or a function is provided.
-
-When created with `max_size` as a `int`, the wrapper uses an internal pool
-to store and reuse created objects, in which case the object *must* be returned
-to the pool by calling `_ret_obj()`.
-This is useful when the WSGI server keeps on creating threads on each request,
-such as `werkzeug`.
-Use `None` for no pooling.
-Parameter `max_use` limits object's reuse from the pool.
-
-```Python
-# file Shared.py
-from FlaskSimpleAuth import Reference
-stuff = Reference()
-def init_app(**conf):
-    stuff.set_obj(…)
-```
-
-Then in a blueprint:
-
-```Python
-# file SubStuff.py
-from FlaskSimpleAuth import Blueprint
-from Shared import stuff
-
-sub = Blueprint(…)
-
-@sub.get("/stuff", authorize="ALL"):
-def get_stuff():
-    return str(stuff), 200
-```
-
-Then in the app itself:
-
-```Python
-# file App.py
-from FlaskSimpleAuth import Flask
-app = Flask(__name__)
-
-from SubStuff import sub
-app.register_blueprint(sub, url_prefix="/sub")
-
-# deferred "stuff" initialization
-import Shared
-Shared.init_app(…)
-
-…
-```
-
-When using a thread-local object, the generation function is passed an integer
-which is the invocation number, starting from 0. Attribute `_nthreads` stores
-the total number of objects created.
+See the module for a detailed documentation.
 
 ### Miscellaneous Configuration Directives
 
