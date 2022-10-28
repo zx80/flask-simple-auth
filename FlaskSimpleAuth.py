@@ -78,7 +78,12 @@ class Session:
 
 
 class Globals:
-    """Global parameter type."""
+    """Globals parameter type."""
+    pass
+
+
+class Environ:
+    "Environ parameter type."""
     pass
 
 
@@ -1415,6 +1420,8 @@ class FlaskSimpleAuth:
                                 kwargs[p] = session
                             elif typing == Globals:
                                 kwargs[p] = g
+                            elif typing == Environ:
+                                kwargs[p] = request.environ
                             else:
                                 return self._Res(f"missing parameter \"{pn}\"", 400)
                     else:

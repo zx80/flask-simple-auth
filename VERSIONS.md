@@ -3,7 +3,11 @@
 Sources are available on [GitHub](https://github.com/zx80/flask-simple-auth)
 and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 
-## 16.0 on ?
+## ? on ?
+
+Add `Environ` special parameter type.
+
+## 16.0 on 2022-10-27
 
 Require Flask 2.2.
 Add `FSA_REJECT_UNEXPECTED_PARAM` to be strict about unexpected parameters.

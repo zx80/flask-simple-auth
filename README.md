@@ -653,10 +653,11 @@ types to their conversion functions:
 FSA_CAST = { House: strToHouse, … }
 ```
 
-As a special case, the `Request`, `Session` and `Globals` type when used for
-parameters result in the `request`, `session` and `g` flask special objects to
-be passed as this parameter to the function, allowing to keep a functional
-programming style by hidding away these special proxies.
+As a special case, the `Request`, `Session`, `Globals` and `Environ` types,
+when used for parameters, result in the `request`, `session`, `g` flask special
+objects and `environ` WSGI parameter to be passed as this parameter to the
+function, allowing to keep a functional programming style by hidding away these
+special proxies.
 
 Finally, python parameter names can be prepended with a `_`,
 which is ignored when translating HTTP parameters.
