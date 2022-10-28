@@ -3,8 +3,9 @@
 Sources are available on [GitHub](https://github.com/zx80/flask-simple-auth)
 and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 
-## ? on ?
+## 17.0 on ?
 
+Move `Reference` implementation to module `ProxyPatternPool`.
 Add `Environ` special parameter type.
 
 ## 16.0 on 2022-10-27
