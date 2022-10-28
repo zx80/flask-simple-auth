@@ -660,7 +660,7 @@ def test_string(client):
 
 def test_reference():
     v1, v2 = "hello!", "world!"
-    r1 = fsa.Reference()
+    r1 = fsa.Reference(close="close")
     r1.set(v1)
     assert r1 == v1 and not r1 != v1
     assert r1.startswith("hell")
@@ -675,7 +675,7 @@ def test_reference():
     # thread local stuff
     def gen_data(i):
         return f"data: {i}"
-    r = fsa.Reference(fun=gen_data, max_size=None)
+    r = fsa.Reference(fun=gen_data, max_size=None, close="close")
     assert r._nobjs == 0
     assert isinstance(r.__hash__(), int)
     assert r._nobjs == 1
@@ -709,7 +709,7 @@ def test_reference():
     except Exception as e:
         assert "Reference must set either obj or fun" in str(e)
     # auto thread
-    r = fsa.Reference()
+    r = fsa.Reference(close="close")
     r._set_fun(lambda i: i)
     assert str(r) == "0"
     # versatile
@@ -785,7 +785,7 @@ def test_pool():
             raise Exception("Oops!")
         def __str__(self):
             return f"T({self._count})"
-    p2 = fsa._Pool(fun = T, max_size = None, max_use = 1)
+    p2 = fsa._Pool(fun = T, max_size = None, max_use = 1, close="close")
     t = p2.get()
     assert str(t) == "T(0)"
     p2.ret(t)

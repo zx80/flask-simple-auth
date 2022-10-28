@@ -115,15 +115,17 @@ class _Pool:
     - fun: function to create objects on demand, called with the creation number.
     - max_size: maximum size of the pool, 0 for unlimited.
     - max_use: how many times to use a something, 0 for unlimited.
+    - close: name of "close" method to call, if any.
     """
 
-    def __init__(self, fun: Callable[[int], Any], max_size: int = 0, max_use: int = 0):
+    def __init__(self, fun: Callable[[int], Any], max_size: int = 0, max_use: int = 0, close: str = None):
         self._lock = threading.RLock()
         self._fun = fun
         self._nobjs = 0
         self._ncreated = 0
         self._max_size = max_size
         self._max_use = max_use
+        self._close = close
         # pool's content: available vs in use objects
         self._avail: Set[Any] = set()
         self._using: Set[Any] = set()
@@ -136,9 +138,9 @@ class _Pool:
             self._using.clear()
             self._uses.clear()
             for obj in list(self._avail):
-                if hasattr(obj, "close"):  # pragma: no cover
+                if self._close and hasattr(obj, self._close):  # pragma: no cover
                     try:
-                        obj.close()
+                        getattr(obj, self._close)()
                     except Exception:
                         pass
                 del obj
@@ -167,11 +169,11 @@ class _Pool:
         with self._lock:
             self._using.remove(obj)
             if self._max_use and self._uses[obj] >= self._max_use:
-                if hasattr(obj, "close"):
+                if self._close and hasattr(obj, self._close):
                     try:
-                        obj.close()
+                        getattr(obj, self._close)()
                     except Exception as e:
-                        log.warning(f"exception occured on close(): {e}")
+                        log.warning(f"exception occured on {self._close}(): {e}")
                 del self._uses[obj]
                 del obj
                 self._nobjs -= 1
@@ -214,7 +216,7 @@ class Reference:
         VERSATILE = 3
 
     def __init__(self, obj: Any = None, set_name: str = "set", fun: Optional[Callable] = None,
-                 max_size: int = 0, max_use: int = 0, mode: Mode = Mode.AUTO):
+                 max_size: int = 0, max_use: int = 0, mode: Mode = Mode.AUTO, close: str = None):
         """Constructor parameters:
 
         - set_name: provide another prefix for the "set" functions.
@@ -223,6 +225,7 @@ class Reference:
         - max_size: pool maximum size, 0 for unlimited, None for no pooling.
         - max_use: when pooling, how many times to reuse an object.
         - mode: level of sharing, default is to chose between SHARED and THREAD.
+        - close: "close" method, if any.
         """
         # mode encodes the expected object unicity or multiplicity
         self._mode = \
@@ -231,6 +234,7 @@ class Reference:
             mode
         self._pool_max_size = max_size
         self._pool_max_use = max_use
+        self._close = close
         self._set(obj=obj, fun=fun, mandatory=False)
         if set_name and set_name != "_set":
             setattr(self, set_name, self._set)
@@ -254,7 +258,7 @@ class Reference:
             self._mode = Reference.Mode.THREAD
         assert self._mode in (Reference.Mode.THREAD, Reference.Mode.VERSATILE)
         self._fun = fun
-        self._pool = _Pool(fun, self._pool_max_size, self._pool_max_use) \
+        self._pool = _Pool(fun, self._pool_max_size, self._pool_max_use, close=self._close) \
             if self._pool_max_size is not None else None
         self._nobjs = 0
         if self._mode == Reference.Mode.THREAD:
