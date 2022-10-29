@@ -17,6 +17,9 @@ app = Flask("Test")
 from FlaskSimpleAuth import FlaskSimpleAuth
 fsa = FlaskSimpleAuth(app)
 
+class Special(str):
+    pass
+
 #
 # AUTH
 #
@@ -27,7 +30,8 @@ app.config.update(
     FSA_GET_USER_PASS = get_user_pass,
     FSA_USER_IN_GROUP = user_in_group,
     FSA_CAST = { list: lambda s: s.split(" ") },
-    FSA_OBJECT_PERMS = { "xyz": lambda d, i, m: False }
+    FSA_SPECIAL_PARAMETER = { Special: lambda: "special", },
+    FSA_OBJECT_PERMS = { "xyz": lambda d, i, m: False },
 )
 
 #

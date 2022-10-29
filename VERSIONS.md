@@ -3,6 +3,11 @@
 Sources are available on [GitHub](https://github.com/zx80/flask-simple-auth)
 and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 
+## 18.0 on ?
+
+Add `special_parameter` decorator and `FSA_SPECIAL_PARAMETER` directive
+to add special parameters.
+
 ## 17.0 on 2022-10-29
 
 Move `Reference` implementation to module `ProxyPatternPool`.

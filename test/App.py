@@ -346,3 +346,21 @@ def get_json(j: JsonData):
 @app.get("/request", authorize=ANY)
 def get_request(req: Request, ses: Session, glo: Globals, env: Environ):
     return req.base_url, 200
+
+# new magic parameters
+class Foo(str):
+    pass
+
+@app.special_parameter(Foo)
+def foo_parameter_value():
+    return "foo"
+
+class Bla(str):
+    pass
+
+app.special_parameter(Bla, lambda: "BAD")
+app.special_parameter(Bla, lambda: "bla")
+
+@app.get("/special", authorize=ANY)
+def get_special(foo: Foo, bla: Bla):
+    return f"{foo}-{bla}", 200

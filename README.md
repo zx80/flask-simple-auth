@@ -660,6 +660,17 @@ objects and `environ` WSGI parameter to be passed as this parameter to the
 function, allowing to keep a functional programming style by hidding away these
 special proxies.
 
+More special parameters can be added with the `special_parameter` app
+function/decorator, by providing a type and a function which returns the
+expected value. For instance, the `Request` definition corresponds to:
+
+```Python
+app.special_parameter(Request, lambda: request)
+```
+
+The `FSA_SPECIAL_PARAMETER` directive can also be defined as a dictionary
+mapping types to their parameter value function.
+
 Finally, python parameter names can be prepended with a `_`,
 which is ignored when translating HTTP parameters.
 This allows to use python keywords as parameter names, such
@@ -783,7 +794,6 @@ See [all versions](VERSIONS.md).
 
 ## TODO
 
-- add ability to record new special parameters? value or function?
 - `FSA_PARAM_STYLE` *any/http/json* to restrict/force parameters?
 - test `FSA_HTTP_AUTH_OPTS`?
 - add `any` token scheme?
@@ -806,3 +816,4 @@ See [all versions](VERSIONS.md).
 - should try to reduce "no cover" pragmas
 - document ErrorResponse?
 - discuss [Flask-Security](https://github.com/Flask-Middleware/flask-security/)
+- coverage should include demo run

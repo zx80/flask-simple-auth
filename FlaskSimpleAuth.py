@@ -140,6 +140,7 @@ class Flask(flask.Flask):
         self.user_in_group = self._fsa.user_in_group
         self.object_perms = self._fsa.object_perms
         self.cast = self._fsa.cast
+        self.special_parameter = self._fsa.special_parameter
         self.check_password = self._fsa.check_password
         self.hash_password = self._fsa.hash_password
         self.create_token = self._fsa.create_token
@@ -162,7 +163,8 @@ _DIRECTIVES = {
     # parameter handing
     "FSA_REJECT_UNEXPECTED_PARAM",
     # register hooks
-    "FSA_GET_USER_PASS", "FSA_USER_IN_GROUP", "FSA_CAST", "FSA_OBJECT_PERMS",
+    "FSA_GET_USER_PASS", "FSA_USER_IN_GROUP", "FSA_CAST",
+    "FSA_OBJECT_PERMS", "FSA_SPECIAL_PARAMETER",
     # authentication
     "FSA_AUTH", "FSA_REALM",
     "FSA_FAKE_LOGIN", "FSA_PARAM_USER", "FSA_PARAM_PASS",
@@ -212,6 +214,12 @@ class FlaskSimpleAuth:
             dt.time: dt.time.fromisoformat,
             dt.datetime: dt.datetime.fromisoformat,
             JsonData: json.loads,
+        }
+        self._special_parameters: Dict[type, Callable[[], Any]] = {
+            Request: lambda: request,
+            Environ: lambda: request.environ,
+            Session: lambda: session,
+            Globals: lambda: g,
         }
         self._auth: List[str] = []
         self._http_auth = None
@@ -362,6 +370,18 @@ class FlaskSimpleAuth:
         else:  # decorator
             def annotate(fun):
                 self._casts[t] = fun
+                return fun
+            return annotate
+
+    def special_parameter(self, t, sp: Optional[Callable] = None):
+        """Add a special parameter type."""
+        if t in self._special_parameters:
+            log.warning(f"overriding special parameter for {t}")
+        if sp:  # direct
+            self._special_parameters[t] = sp
+        else:  # decorator
+            def annotate(fun):
+                self._special_parameters[t] = fun
                 return fun
             return annotate
 
@@ -608,6 +628,12 @@ class FlaskSimpleAuth:
                 raise self._Bad("FSA_OBJECT_PERMS must be a dict")
             for domain, checker in perms.items():
                 self.object_perms(domain, checker)
+        if "FSA_SPECIAL_PARAMETER" in conf:
+            specials = conf["FSA_SPECIAL_PARAMETER"]
+            if not isinstance(specials, dict):
+                raise self._Bad("FSA_SPECIAL_PARAMETER must be a dict")
+            for type_name, special_fun in specials.items():
+                self.special_parameter(type_name, special_fun)
         #
         # http auth setup
         #
@@ -1216,14 +1242,8 @@ class FlaskSimpleAuth:
                         else:
                             if p in defaults:
                                 kwargs[p] = defaults[p]
-                            elif typing == Request:
-                                kwargs[p] = request
-                            elif typing == Session:
-                                kwargs[p] = session
-                            elif typing == Globals:
-                                kwargs[p] = g
-                            elif typing == Environ:
-                                kwargs[p] = request.environ
+                            elif typing in self._special_parameters:
+                                kwargs[p] = self._special_parameters[typing]()
                             else:
                                 return self._Res(f"missing parameter \"{pn}\"", 400)
                     else:

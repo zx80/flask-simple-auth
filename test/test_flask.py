@@ -428,6 +428,8 @@ def test_typed_params(client):
     assert int(res.data) == 42
     res = check(200, client.get("/request"))
     assert res.data.endswith(b"/request")
+    res = check(200, client.get("/special"))
+    assert res.data == b"foo-bla"
 
 def test_types(client):
     res = check(200, client.get("/type", data={"f": "1.0"}))
@@ -1226,6 +1228,11 @@ def test_warnings_and_errors():
         assert False, "should not get through"
     except ConfigError as e:
         assert "FSA_OBJECT_PERMS must be a dict" in str(e)
+    try:
+        app = af.create_app(FSA_SPECIAL_PARAMETER="not a dict")
+        assert False, "should not get through"
+    except ConfigError as e:
+        assert "FSA_SPECIAL_PARAMETER must be a dict" in str(e)
 
 def test_jsondata(client):
     # simple types, anything but strings
