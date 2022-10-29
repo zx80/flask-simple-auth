@@ -85,6 +85,8 @@ def get_stuff_id(client, stuff):
 # GET POST DELETE PATCH /stuff
 def test_stuff(client):
     res = check(401, client.get("/stuff"))
+    assert "WWW-Authenticate" in res.headers
+    assert "Basic" in res.headers["WWW-Authenticate"]
     res = check(200, client.get("/stuff", headers=FOO_BASIC))
     assert b"Hello" in res.data
     res = check(201, client.post("/stuff", data={"sname": "STUFF"}, headers=FOO_BASIC))

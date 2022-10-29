@@ -1280,3 +1280,28 @@ def test_jsondata(client):
     assert res.status_code == 200 and res.data == b'list: [false, true, [3, 14.0], {"q": 4}]'
     res = client.get("/json", json={"j": {"a": {"b": {"c": 3}}}})
     assert res.status_code == 200 and res.data == b'dict: {"a": {"b": {"c": 3}}}'
+
+def test_www_authenticate_priority(client):
+    fsa = app._fsa
+    token, carrier, name = fsa._token, fsa._carrier, fsa._name
+    fsa._token, fsa._carrier, fsa._name = "fsa", "bearer", "Bearer"
+    res = check(401, client.get("/perm/basic"))
+    assert "WWW-Authenticate" in res.headers
+    assert "Basic" in res.headers["WWW-Authenticate"]
+    res = check(401, client.get("/perm/token"))
+    assert "WWW-Authenticate" in res.headers
+    assert "Bearer" in res.headers["WWW-Authenticate"]
+    res = check(401, client.get("/perm/basic-token"))
+    assert "WWW-Authenticate" in res.headers
+    assert "Basic" in res.headers["WWW-Authenticate"]
+    res = check(401, client.get("/perm/token-basic"))
+    assert "WWW-Authenticate" in res.headers
+    assert "Bearer" in res.headers["WWW-Authenticate"]
+    fsa._name = "Foo"
+    res = check(401, client.get("/perm/token"))
+    assert "WWW-Authenticate" in res.headers
+    assert "Foo" in res.headers["WWW-Authenticate"]
+    res = check(401, client.get("/perm/token-basic"))
+    assert "WWW-Authenticate" in res.headers
+    assert "Foo" in res.headers["WWW-Authenticate"]
+    fsa._token, fsa._carrier, fsa._name = token, carrier, name

@@ -364,3 +364,20 @@ app.special_parameter(Bla, lambda: "bla")
 @app.get("/special", authorize=ANY)
 def get_special(foo: Foo, bla: Bla):
     return f"{foo}-{bla}", 200
+
+# WWW-Authenticate priority
+@app.get("/perm/basic", authorize=ALL, auth="basic")
+def get_perm_basic():
+    return "basic", 200
+
+@app.get("/perm/token", authorize=ALL, auth="token")
+def get_perm_token():
+    return "token", 200
+
+@app.get("/perm/token-basic", authorize=ALL, auth=("token", "basic"))
+def get_perm_token_basic():
+    return "token-basic", 200
+
+@app.get("/perm/basic-token", authorize=ALL, auth=("basic", "token"))
+def get_perm_basic_token():
+    return "basic-token", 200
