@@ -7,6 +7,7 @@ and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 
 Add `special_parameter` decorator and `FSA_SPECIAL_PARAMETER` directive
 to add special parameters.
+Prioritize authentication scheme based on configuration or route order.
 
 ## 17.0 on 2022-10-29
 

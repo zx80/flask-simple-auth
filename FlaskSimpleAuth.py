@@ -230,18 +230,19 @@ class FlaskSimpleAuth:
         self._not_found_error: int = _DEFAULT_NOT_FOUND_ERROR
         self._secure: bool = True
         self._names: Set[str] = set()
+        # FIXME should it be werkzeug.local.Local()?
         self._local = threading.local()
         # actual main initialization is deferred to `init_app`
         self._initialized = False
 
     def _Res(self, msg: str, code: int):
-        """Generate a text/plain Response."""
+        """Generate a text/plain Response with a message."""
         if self._debug:
             log.debug(f"text response: {code} {msg}")
         return Response(msg, code, content_type="text/plain")
 
     def _Err(self, msg: str, code: int):
-        """Build and trace an ErrorResponse."""
+        """Build and trace an ErrorResponse with a message."""
         if self._debug:
             log.debug(f"error: {code} {msg}")
         return ErrorResponse(msg, code)
@@ -258,10 +259,19 @@ class FlaskSimpleAuth:
                 return True
         return False
 
+    def _auth_first(self):
+        """Current priority authentication scheme for WWW-Authenticate."""
+        for a in self._local.auth:
+            if a == "token" and self._carrier == "bearer" or \
+               a in ("http-token", "basic", "http-basic", "digest", "http-digest", "password"):
+                return a
+        return None
+
     #
     # HOOKS
     #
     def _check_secure(self):
+        """Before request hook to reject insecure requests."""
         if not request.is_secure and \
            not (request.remote_addr.startswith("127.") or request.remote_addr == "::1"):  # pragma: no cover
             msg = f"insecure HTTP request on {request.remote_addr}, allow with FSA_SECURE=False"
@@ -321,12 +331,14 @@ class FlaskSimpleAuth:
     def _set_www_authenticate(self, res: Response):
         """Set WWW-Authenticate response header depending on current scheme."""
         if res.status_code == 401:
-            # FIXME should it prioritize based on self._auth order?
-            if self._auth_has("basic", "password"):
-                res.headers["WWW-Authenticate"] = f"Basic realm=\"{self._realm}\""
-            elif "token" in self._local.auth and self._carrier == "bearer":
+            auth = self._auth_first()
+            if not auth:
+                pass
+            elif auth == "token":
                 res.headers["WWW-Authenticate"] = f"{self._name} realm=\"{self._realm}\""
-            elif self._auth_has("http-basic", "http-digest", "http-token", "digest"):
+            elif auth in ("basic", "password"):
+                res.headers["WWW-Authenticate"] = f"Basic realm=\"{self._realm}\""
+            else:
                 assert self._http_auth
                 res.headers["WWW-Authenticate"] = self._http_auth.authenticate_header()
             # else: scheme does not rely on WWW-Authenticate…
