@@ -42,6 +42,6 @@ jobs:
       # only 100% for the CI because demo is not run
       run: |
         coverage run -m pytest --log-level=debug --capture=tee-sys test/
-        coverage report --fail-under=99 --include=FlaskSimpleAuth.py
+        coverage report --fail-under=98 --include=FlaskSimpleAuth.py
     - name: Check with pymarkdown
       run: pymarkdown scan *.md
