@@ -92,6 +92,13 @@ def pop_auth(app):
     app._auth, app._token, app._carrier, app._name = d["a"], d["t"], d["c"], d["n"]
     d.clear()
 
+def auth_header_basic(user: str):
+    from requests.auth import _basic_auth_str as basic_auth
+    return {"Authorization": basic_auth(user, App.UP[user])}
+
+def auth_header_token(user: str):
+    return {"Authorization": "Bearer " + app.create_token(user)}
+
 # test all auth variants on GET
 def all_auth(client, user, pswd, check, *args, **kwargs):
     # fake login
@@ -1282,21 +1289,37 @@ def test_jsondata(client):
     assert res.status_code == 200 and res.data == b'dict: {"a": {"b": {"c": 3}}}'
 
 def test_www_authenticate_priority(client):
+    # save current status
     fsa = app._fsa
     token, carrier, name = fsa._token, fsa._carrier, fsa._name
     fsa._token, fsa._carrier, fsa._name = "fsa", "bearer", "Bearer"
+    BASIC = auth_header_basic("calvin")
+    TOKEN = auth_header_token("calvin")
+    # /perm/basic only basic
     res = check(401, client.get("/perm/basic"))
     assert "WWW-Authenticate" in res.headers
     assert "Basic" in res.headers["WWW-Authenticate"]
+    res = check(200, client.get("/perm/basic", headers=BASIC))
+    res = check(401, client.get("/perm/basic", headers=TOKEN))
+    # /perm/token only token
     res = check(401, client.get("/perm/token"))
     assert "WWW-Authenticate" in res.headers
     assert "Bearer" in res.headers["WWW-Authenticate"]
+    res = check(401, client.get("/perm/token", headers=BASIC))
+    res = check(200, client.get("/perm/token", headers=TOKEN))
+    # /perm/basic-token both ok
     res = check(401, client.get("/perm/basic-token"))
     assert "WWW-Authenticate" in res.headers
     assert "Basic" in res.headers["WWW-Authenticate"]
+    res = check(200, client.get("/perm/basic-token", headers=BASIC))
+    res = check(200, client.get("/perm/basic-token", headers=TOKEN))
+    # /perm/token-basic both ok
     res = check(401, client.get("/perm/token-basic"))
     assert "WWW-Authenticate" in res.headers
     assert "Bearer" in res.headers["WWW-Authenticate"]
+    res = check(200, client.get("/perm/token-basic", headers=BASIC))
+    res = check(200, client.get("/perm/token-basic", headers=TOKEN))
+    # test with other name
     fsa._name = "Foo"
     res = check(401, client.get("/perm/token"))
     assert "WWW-Authenticate" in res.headers
@@ -1304,4 +1327,5 @@ def test_www_authenticate_priority(client):
     res = check(401, client.get("/perm/token-basic"))
     assert "WWW-Authenticate" in res.headers
     assert "Foo" in res.headers["WWW-Authenticate"]
+    # restore
     fsa._token, fsa._carrier, fsa._name = token, carrier, name
