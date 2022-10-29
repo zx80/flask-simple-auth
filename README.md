@@ -783,6 +783,7 @@ See [all versions](VERSIONS.md).
 
 ## TODO
 
+- add ability to record new special parameters? value or function?
 - `FSA_PARAM_STYLE` *any/http/json* to restrict/force parameters?
 - test `FSA_HTTP_AUTH_OPTS`?
 - add `any` token scheme?
