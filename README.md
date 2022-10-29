@@ -814,6 +814,7 @@ an ORM. By contrast, *Flask Simple Auth*:
 
 ## TODO
 
+- add option not to renew auth cookies automatically?
 - `FSA_PARAM_STYLE` *any/http/json* to restrict/force parameters?
 - test `FSA_HTTP_AUTH_OPTS`?
 - add `any` token scheme?
