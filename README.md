@@ -792,6 +792,26 @@ Initial version was *0.9.0* on 2021-02-21.
 
 See [all versions](VERSIONS.md).
 
+## See Also
+
+[Flask-Security](https://github.com/Flask-Middleware/flask-security/) is a
+feature-full web-oriented authentication and authorization framework based on
+an ORM. By contrast, *Flask Simple Auth*:
+- does NOT assume any ORM or impose a data model,
+  you only have to provide callback functions to access the needed data
+  (password, groups…).
+- does NOT do any web-related tasks (forms, views, templates, blueprint,
+  translation…), it just helps providing declarative security layer (role or
+  object permissions) to an HTTP API, well integrated into Flask by
+  extending the existing `route` decorator.
+- does provide a nice integrated parameter management to Flask,
+  including conversions and type checks, detecting missing parameters…
+- does care about performance by providing an automatic and relevant caching
+  mechanism to expensive authentication and authorization checks, including
+  relying on external stores such as *redis*.
+- is much smaller (about 1/10th, ignoring dependencies), so probably it does
+  less things!
+
 ## TODO
 
 - `FSA_PARAM_STYLE` *any/http/json* to restrict/force parameters?
@@ -815,5 +835,4 @@ See [all versions](VERSIONS.md).
 - password re could use a dict for providing an explanation?
 - should try to reduce "no cover" pragmas
 - document ErrorResponse?
-- discuss [Flask-Security](https://github.com/Flask-Middleware/flask-security/)
 - coverage should include demo run
