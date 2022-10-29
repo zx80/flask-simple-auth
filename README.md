@@ -7,9 +7,10 @@ Flask configuration and the extended `route` decorator.
 ![Status](https://github.com/zx80/flask-simple-auth/actions/workflows/fsa.yml/badge.svg?branch=master&style=flat)
 ![Tests](https://img.shields.io/badge/tests-56%20✓-success)
 ![Coverage](https://img.shields.io/badge/coverage-100%25-success)
+![Issues](https://img.shields.io/github/issues/zx80/flask-simple-auth?style=flat)
 ![Python](https://img.shields.io/badge/python-3-informational)
 ![Version](https://img.shields.io/pypi/v/FlaskSimpleAuth)
-![Badges](https://img.shields.io/badge/badges-7-informational)
+![Badges](https://img.shields.io/badge/badges-8-informational)
 ![License](https://img.shields.io/pypi/l/flasksimpleauth?style=flat)
 
 ## Example
