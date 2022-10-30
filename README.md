@@ -338,7 +338,7 @@ The available authentication schemes are:
   - `FKA_TOKEN_NAME` name of parameter or cookie holding the token, or
     bearer scheme, or header name.
     Default is `AUTH` for *param* carrier, `auth` for *cookie* carrier,
-    `Bearer` for HTTP Authentication header (*bearer* carrier),
+    `Bearer` for HTTP Authorization header (*bearer* carrier),
     `Auth` for *header* carrier.
   - `FSA_REALM` realm of authentication for token, basic or digest.
     Default is the simplified lower case application name.
