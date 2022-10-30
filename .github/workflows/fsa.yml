@@ -14,7 +14,7 @@ jobs:
         # broken: pypy3.7
         # broken: 3.7 (pymarkdownlnt)
         # TODO 3.12-dev when available
-        python-version: [ "3.8", "3.9", "3.10", "3.11", "3.12-dev", "pypy3.8", "pypy3.9" ]
+        python-version: [ "3.8", "3.9", "3.10", "3.11", "pypy3.8", "pypy3.9" ]
     steps:
     # Setup
     - name: Git Checkout
