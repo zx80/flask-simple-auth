@@ -947,6 +947,7 @@ class FlaskSimpleAuth:
     # FSA_TOKEN_SIGN: secret for signing new tokens for jwt pubkey algorithms
     # FSA_TOKEN_DELAY: token validity in minutes (60)
     # FSA_TOKEN_GRACE: grace delay for token validity in minutes (0)
+    # FSA_TOKEN_RENEWAL: fraction of delay for automatic renewal (0.0)
     # FSA_REALM: realm (lc simplified app name)
     #
     def _cmp_sig(self, data, secret):
