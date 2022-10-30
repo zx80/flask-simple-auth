@@ -98,6 +98,8 @@ testing.
 It allows to have a login route to generate authentication tokens.
 For registration, support functions allow to hash new passwords consistently
 with password checks.
+Alternate password checking schemes (eg a temporary code) can be plug in
+easily through a hook.
 
 [**Authorizations**](#authorization) are managed by mandatory permission
 declaration on a route (eg a role name, or an object access), and relies
