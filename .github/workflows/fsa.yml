@@ -22,7 +22,7 @@ jobs:
     - name: Set up Redis
       uses: supercharge/redis-github-action@1.4.0
       with:
-        redis-version: 6
+        redis-version: 7
     - name: Set up Memcached
       uses: niden/actions-memcached@v7
     - name: Set up Python ${{ matrix.python-version }}
