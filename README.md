@@ -439,7 +439,17 @@ It is just provided here for completeness.
 
 Function `hash_password(pass)` computes the password salted digest compatible
 with the current configuration, and may be used for setting or resetting
-passwords. An opened route for user registration with mandatory parameters
+passwords.
+
+The function checks the password quality by relying on:
+- `FSA_PASSWORD_LEN` minimal password length, *0* to disable
+- `FSA_PASSWORD_RE` list of regular expressions that a password must match
+- `FSA_PASSWORD_QUALITY` function which returns whether the password is
+  acceptable, possibly raising an exception to complain if not.
+  This hook allows to plug a password strength estimator such as
+  [zxcvbn](https://github.com/dropbox/zxcvbn).
+
+An opened route for user registration with mandatory parameters
 could look like that:
 
 ```Python
@@ -837,5 +847,5 @@ an ORM. By contrast, *Flask Simple Auth*:
 - should try to reduce "no cover" pragmas
 - document ErrorResponse?
 - coverage should include demo run
-- password strength evaluation with zxcvbn? hmmm…
-  uses a dictionary, rather provide a hook?
+- provide alternate options to passwords checking, see unified sign in,
+  eg one time codes, through some hook.

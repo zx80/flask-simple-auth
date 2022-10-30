@@ -3,12 +3,13 @@
 # FIXME tests are not perfectly isolated as they should be…
 #
 
+import re
 import pytest
 import App
 from App import app
 
 import FlaskSimpleAuth as fsa
-from FlaskSimpleAuth import Response, ConfigError
+from FlaskSimpleAuth import Response, ConfigError, ErrorResponse
 import json
 
 import AppExt
@@ -347,26 +348,92 @@ def test_invalid_token():
         assert e.status == 401
 
 def test_password_check(client):
-    app._fsa._init_password_manager()
+    fsa = app._fsa
+    # standard password
+    fsa._init_password_manager()
     ref = app.hash_password("hello")
     assert app.check_password("hello", ref)
     assert not app.check_password("bad-pass", ref)
-    push_auth(app._fsa, ["password"])
+    # password, through requests
+    push_auth(fsa, ["password"])
     res = check(401, client.get("/read", data={"USER": "dad", "PASS": "bad-dad-password"}))
     assert b"invalid password for" in res.data
     res = check(401, client.get("/read", data={"USER": "dad"}))
     assert b"missing password parameter" in res.data
-    pop_auth(app._fsa)
-    push_auth(app._fsa, ["basic"])
+    pop_auth(fsa)
+    # basic, through requests
+    push_auth(fsa, ["basic"])
     res = check(401, client.get("/read", headers={"Authorization": "Basic !!!"}))
     assert b"decoding error on authorization" in res.data
-    pop_auth(app._fsa)
-    pm = app._fsa._pm
-    app._fsa._pm = None
+    pop_auth(fsa)
+    # try plaintext
+    pm = fsa._pm
+    fsa._pm = None
     app.config.update(FSA_PASSWORD_SCHEME = "plaintext")
-    app._fsa._init_password_manager()
+    fsa._init_password_manager()
     assert app.hash_password("hello") == "hello"
-    app._fsa._pm = pm
+    fsa._pm = pm
+
+def test_password_quality():
+    fsa = app._fsa
+    # password len
+    assert fsa._password_len == 0
+    assert app.hash_password("") is not None
+    assert app.hash_password("c") is not None
+    assert app.hash_password("cy") is not None
+    fsa._password_len = 1
+    try:
+        app.hash_password("")
+        assert False, "len must be rejected"
+    except ErrorResponse as e:
+        assert "too short" in str(e)
+    assert app.hash_password("c") is not None
+    assert app.hash_password("cy") is not None
+    fsa._password_len = 2
+    assert app.hash_password("cy") is not None
+    # password re, eg password must contain a lc and uc letter
+    assert len(fsa._password_re) == 0
+    fsa._password_re = [
+        re.compile(r"[a-z]").search,
+        re.compile(r"[A-Z]").search,
+    ]
+    assert app.hash_password("Cy") is not None
+    try:
+        app.hash_password("CY")
+        assert False, "must detect missing lc letter"
+    except ErrorResponse as e:
+        assert "a-z" in str(e)
+    try:
+        app.hash_password("cy")
+        assert False, "must detect missing uc letter"
+    except ErrorResponse as e:
+        assert "A-Z" in str(e)
+    # password quality return
+    assert fsa._password_quality is None
+    def password_quality_checker(pwd):
+        if pwd == "G0od!":
+            return True
+        elif pwd == "B@d":
+            return False
+        else:
+            raise Exception(f"password quality checker is not happy about {pwd}")
+    fsa._password_quality = password_quality_checker
+    assert app.hash_password("G0od!") is not None
+    try:
+        app.hash_password("B@d")
+        assert False, "password should be rejected"
+    except ErrorResponse as e:
+        assert True, "password was rejected as expected"
+    # password quality exception
+    try:
+        app.hash_password("@ny-Password!")
+        assert False, "password should be rejected"
+    except ErrorResponse as e:
+        assert "not happy" in str(e)
+    # reset password checking rules
+    fsa._password_len = 0
+    fsa._password_re = []
+    fsa._password_quality = None
 
 def test_authorize():
     assert app._fsa._user_in_group("dad", App.ADMIN)

@@ -49,7 +49,7 @@ class ErrorResponse(BaseException):
 
 
 class ConfigError(BaseException):
-    """FSA Configuration User Error"""
+    """FSA Configuration User Error."""
     pass
 
 
@@ -171,7 +171,8 @@ _DIRECTIVES = {
     "FSA_TOKEN_TYPE", "FSA_TOKEN_ALGO", "FSA_TOKEN_CARRIER", "FSA_TOKEN_DELAY",
     "FSA_TOKEN_GRACE", "FSA_TOKEN_NAME", "FSA_TOKEN_LENGTH", "FSA_TOKEN_SECRET",
     "FSA_TOKEN_SIGN", "FSA_TOKEN_RENEWAL",
-    "FSA_PASSWORD_SCHEME", "FSA_PASSWORD_OPTS", "FSA_PASSWORD_LEN", "FSA_PASSWORD_RE",
+    "FSA_PASSWORD_SCHEME", "FSA_PASSWORD_OPTS",
+    "FSA_PASSWORD_LEN", "FSA_PASSWORD_RE", "FSA_PASSWORD_QUALITY",
     "FSA_HTTP_AUTH_OPTS",
     # internal caching
     "FSA_CACHE", "FSA_CACHE_SIZE", "FSA_CACHE_OPTS", "FSA_CACHE_PREFIX",
@@ -226,6 +227,7 @@ class FlaskSimpleAuth:
         self._pm = None
         self._cache: Optional[MutableMapping[str, str]] = None
         self._gen_cache: Optional[Callable] = None
+        self._password_quality: Optional[Callable[[str], bool]] = None
         self._server_error: int = _DEFAULT_SERVER_ERROR
         self._not_found_error: int = _DEFAULT_NOT_FOUND_ERROR
         self._secure: bool = True
@@ -726,6 +728,7 @@ class FlaskSimpleAuth:
             self._pm = CryptContext(schemes=[scheme], **options)
         self._password_len: int = conf.get("FSA_PASSWORD_LEN", 0)
         self._password_re: List[Callable[[str], bool]] = [re.compile(r).search for r in conf.get("FSA_PASSWORD_RE", [])]
+        self._password_quality = conf.get("FSA_PASSWORD_QUALITY", None)
 
     #
     # INHERITED HTTP AUTH
@@ -780,6 +783,12 @@ class FlaskSimpleAuth:
             for search in self._password_re:
                 if not search(pwd):
                     raise self._Err(f"password must match {search.__self__.pattern}", 400)
+            if self._password_quality:
+                try:
+                    if not self._password_quality(pwd):
+                        raise self._Err("password quality too low", 400)
+                except Exception as e:
+                    raise self._Err(f"password quality too low: {e}", 400)
         return self._pm.hash(pwd)
 
     def _check_password(self, user, pwd):
