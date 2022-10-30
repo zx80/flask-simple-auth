@@ -837,3 +837,5 @@ an ORM. By contrast, *Flask Simple Auth*:
 - should try to reduce "no cover" pragmas
 - document ErrorResponse?
 - coverage should include demo run
+- password strength evaluation with zxcvbn? hmmm…
+  uses a dictionary, rather provide a hook?
