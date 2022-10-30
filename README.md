@@ -5,7 +5,7 @@ for [Flask](https://flask.palletsprojects.com/), controled from
 Flask configuration and the extended `route` decorator.
 
 ![Status](https://github.com/zx80/flask-simple-auth/actions/workflows/fsa.yml/badge.svg?branch=master&style=flat)
-![Tests](https://img.shields.io/badge/tests-57%20✓-success)
+![Tests](https://img.shields.io/badge/tests-58%20✓-success)
 ![Coverage](https://img.shields.io/badge/coverage-100%25-success)
 ![Issues](https://img.shields.io/github/issues/zx80/flask-simple-auth?style=flat)
 ![Python](https://img.shields.io/badge/python-3-informational)
@@ -441,12 +441,22 @@ Function `hash_password(pass)` computes the password salted digest compatible
 with the current configuration, and may be used for setting or resetting
 passwords.
 
+The standard password checking can be overridden by providing an alternate
+password checking function with a directive:
+- `FSA_PASSWORD_CHECK` hook function which returns whether user and password
+  provided is acceptable for said user.
+This allows to plug a temporary password recovery scheme or other
+one-time or limited-time passwords sent by SMS or mail, for instance.
+This hook can also be filled with the `password_check` method/decorator.
+This alternate check is used if the primary check failed.
+
 The function checks the password quality by relying on:
 - `FSA_PASSWORD_LEN` minimal password length, *0* to disable
 - `FSA_PASSWORD_RE` list of regular expressions that a password must match
-- `FSA_PASSWORD_QUALITY` function which returns whether the password is
+- `FSA_PASSWORD_QUALITY` hook function which returns whether the password is
   acceptable, possibly raising an exception to complain if not.
-  This hook allows to plug a password strength estimator such as
+  This hook can also be filled with the `password_quality` method/decorator.
+  It allows to plug a password strength estimator such as
   [zxcvbn](https://github.com/dropbox/zxcvbn).
 
 An opened route for user registration with mandatory parameters

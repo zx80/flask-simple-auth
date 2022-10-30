@@ -7,7 +7,11 @@ and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 
 Add `special_parameter` decorator and `FSA_SPECIAL_PARAMETER` directive
 to add special parameters.
-Prioritize authentication scheme based on configuration or route order.
+Add `password_check` hook (also with `FSA_PASSWORD_CHECK` directive) for
+alternate password checking such as temporary access codes.
+Add `password_quality` hook (also with `FSA_PASSWORD_QUALITY` directive) to
+check for a password strength.
+Prioritize authentication scheme per configuration or route order (`auth`).
 
 ## 17.0 on 2022-10-29
 

@@ -354,6 +354,39 @@ def test_password_check(client):
     ref = app.hash_password("hello")
     assert app.check_password("hello", ref)
     assert not app.check_password("bad-pass", ref)
+    # password alternate hook
+    assert fsa._password_check is None
+    def test_check_pass(user, pwd):
+        if user == "calvin" and pwd == "hobbes":
+            return True
+        elif pwd == "magic":
+            return True
+        elif pwd == "none":
+            return False
+        elif pwd == "Error":
+             raise ErrorResponse("test_check_pass error", 400)
+        else:
+             raise Exception("oops!")
+    fsa._password_check = test_check_pass
+    assert fsa._check_password("calvin", "hobbes") == "calvin"
+    assert fsa._check_password("susie", "magic") == "susie"
+    assert fsa._check_password("moe", "magic") == "moe"
+    try:
+        fsa._check_password("boo", "none")
+        assert False, "should have raised an error"
+    except ErrorResponse as e:
+        assert True, "none password was rejected"
+    try:
+        fsa._check_password("dad", "Error")
+        assert False, "should raise an error"
+    except ErrorResponse as e:
+        assert "test_check_pass error" in str(e)
+    try:
+        fsa._check_password("baa", "whatever")
+        assert False, "should raise an Exception"
+    except ErrorResponse as e:
+        assert "no such user" in str(e)
+    fsa.password_check(None)
     # password, through requests
     push_auth(fsa, ["password"])
     res = check(401, client.get("/read", data={"USER": "dad", "PASS": "bad-dad-password"}))
@@ -433,7 +466,7 @@ def test_password_quality():
     # reset password checking rules
     fsa._password_len = 0
     fsa._password_re = []
-    fsa._password_quality = None
+    fsa.password_quality(None)
 
 def test_authorize():
     assert app._fsa._user_in_group("dad", App.ADMIN)

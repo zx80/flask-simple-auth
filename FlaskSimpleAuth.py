@@ -126,7 +126,8 @@ class Flask(flask.Flask):
       method: `get`, `post`, `put`, `patch`, `delete`.
     - several additional methods are provided: `get_user_pass`,
       `user_in_group`, `check_password`, `hash_password`, `create_token`,
-      `get_user`, `current_user`, `clear_caches`, `cast`, `object_perms`.
+      `get_user`, `current_user`, `clear_caches`, `cast`, `object_perms`,
+      `password_quality` and `password_check`.
     """
 
     def __init__(self, *args, debug: Optional[bool] = None, **kwargs):
@@ -134,18 +135,21 @@ class Flask(flask.Flask):
         self._fsa = FlaskSimpleAuth(self, debug=debug)
         # overwritten late because called by upper Flask initialization for "static"
         setattr(self, "add_url_rule", self._fsa.add_url_rule)
-        # forwarded some methods
-        self.clear_caches = self._fsa.clear_caches
+        # forward hooks
         self.get_user_pass = self._fsa.get_user_pass
         self.user_in_group = self._fsa.user_in_group
         self.object_perms = self._fsa.object_perms
         self.cast = self._fsa.cast
         self.special_parameter = self._fsa.special_parameter
+        self.password_quality = self._fsa.password_quality
+        self.password_check = self._fsa.password_check
+        # forward methods
         self.check_password = self._fsa.check_password
         self.hash_password = self._fsa.hash_password
         self.create_token = self._fsa.create_token
         self.get_user = self._fsa.get_user
         self.current_user = self._fsa.current_user
+        self.clear_caches = self._fsa.clear_caches
         # overwrite decorators ("route" done through add_url_rule above)
         setattr(self, "get", self._fsa.get)  # FIXME avoid mypy warnings
         setattr(self, "put", self._fsa.put)
@@ -171,7 +175,7 @@ _DIRECTIVES = {
     "FSA_TOKEN_TYPE", "FSA_TOKEN_ALGO", "FSA_TOKEN_CARRIER", "FSA_TOKEN_DELAY",
     "FSA_TOKEN_GRACE", "FSA_TOKEN_NAME", "FSA_TOKEN_LENGTH", "FSA_TOKEN_SECRET",
     "FSA_TOKEN_SIGN", "FSA_TOKEN_RENEWAL",
-    "FSA_PASSWORD_SCHEME", "FSA_PASSWORD_OPTS",
+    "FSA_PASSWORD_SCHEME", "FSA_PASSWORD_OPTS", "FSA_PASSWORD_CHECK",
     "FSA_PASSWORD_LEN", "FSA_PASSWORD_RE", "FSA_PASSWORD_QUALITY",
     "FSA_HTTP_AUTH_OPTS",
     # internal caching
@@ -202,9 +206,12 @@ class FlaskSimpleAuth:
             logging.warning("FlaskSimpleAuth running in debug mode")
             log.setLevel(logging.DEBUG)
         self._app = app
+        # hooks
         self._get_user_pass = None
         self._user_in_group = None
         self._object_perms: Dict[Any, Callable[[str, Any, Optional[str]], bool]] = dict()
+        self._password_check = None
+        self._password_quality = None
         self._casts: Dict[type, Callable[[str], object]] = {
             bool: lambda s: None if s is None else s.lower() not in ("", "0", "false", "f"),
             int: lambda s: int(s, base=0) if s else None,
@@ -373,6 +380,20 @@ class FlaskSimpleAuth:
             log.warning("overriding already defined user_in_group hook")
         self._user_in_group = uig
         return uig
+
+    def password_quality(self, pqc):
+        """Set `password_quality` hook."""
+        if self._password_quality:
+            log.warning("overriding already defined password_quality hook")
+        self._password_quality = pqc
+        return pqc
+
+    def password_check(self, pwc):
+        """Set `password_check` hook."""
+        if self._password_check:
+            log.warning("overriding already defined password_check hook")
+        self._password_check = pwc
+        return pwc
 
     def cast(self, t, cast: Optional[Callable] = None):
         """Add a cast function associated to a type."""
@@ -725,9 +746,10 @@ class FlaskSimpleAuth:
             options = conf.get("FSA_PASSWORD_OPTS", _DEFAULT_PASSWORD_OPTS)
             from passlib.context import CryptContext  # type: ignore
             self._pm = CryptContext(schemes=[scheme], **options)
+        self._password_check: Optional[Callable[[str, str], bool]] = conf.get("FSA_PASSWORD_CHECK", self._password_check)
         self._password_len: int = conf.get("FSA_PASSWORD_LEN", 0)
         self._password_re: List[Callable[[str], bool]] = [re.compile(r).search for r in conf.get("FSA_PASSWORD_RE", [])]
-        self._password_quality: Optional[Callable[[str], bool]] = conf.get("FSA_PASSWORD_QUALITY", None)
+        self._password_quality: Optional[Callable[[str], bool]] = conf.get("FSA_PASSWORD_QUALITY", self._password_quality)
 
     #
     # INHERITED HTTP AUTH
@@ -760,17 +782,20 @@ class FlaskSimpleAuth:
     # FSA_PASSWORD_OPTS: further options for passlib context
     # FSA_PASSWORD_LEN: minimal length of provided passwords
     # FSA_PASSWORD_RE: list of re a password must match
+    # FSA_PASSWORD_QUALITY: hook for password strength check
+    # FSA_PASSWORD_CHECK: hook for alternate password check
     #
     # NOTE passlib bcrypt is Apache compatible
     # NOTE about caching: if password checks are cached, this would
     #      mean that the clear text password is stored in cache, which
     #      is a VERY BAD IDEA because consulting the cache would give
     #      access to said passwords. Thus `check_password`, `hash_password`
-    #      and `_check_password` should not be cached, ever, even if expensive.
+    #      `_check_password`, `_password_check` and `_check_with_password_hook`
+    #      should not be cached, ever, even if expensive.
     #      Make good use of tokens to reduce password check costs.
 
     def check_password(self, pwd, ref):
-        """Verify whether a password is correct."""
+        """Verify whether a password is correct compared to a reference (eg salted hash)."""
         return self._pm.verify(pwd, ref)
 
     def hash_password(self, pwd, check=True):
@@ -790,10 +815,23 @@ class FlaskSimpleAuth:
                     raise self._Err(f"password quality too low: {e}", 400)
         return self._pm.hash(pwd)
 
+    def _check_with_password_hook(self, user, pwd):
+        """Check user password with external hook."""
+        if self._password_check:
+            try:
+                return self._password_check(user, pwd)
+            except ErrorResponse as e:
+                raise e
+            except Exception as e:
+                log.debug(f"AUTH (hook) failed: {e}")
+                return False
+        return False
+
     def _check_password(self, user, pwd):
         """Check user password against internal credentials.
 
         Raise an exception if not ok, otherwise simply proceeds."""
+        # first try with standard password to reduce performance implications
         try:
             ref = self._get_user_pass(user)
         except ErrorResponse as e:
@@ -802,14 +840,20 @@ class FlaskSimpleAuth:
             log.error(f"get_user_pass failed: {e}")
             raise self._Err("internal error in get_user_pass", self._server_error)
         if not ref:
-            log.debug(f"AUTH (password): no such user ({user})")
-            raise self._Err(f"no such user: {user}", 401)
-        if not isinstance(ref, (str, bytes)):
+            # try alternate check
+            if not self._check_with_password_hook(user, pwd):
+                log.debug(f"AUTH (password): no such user ({user})")
+                raise self._Err(f"no such user: {user}", 401)
+            # else OK because of alternate hook
+        elif not isinstance(ref, (str, bytes)):
             log.error(f"type error in get_user_pass: {type(ref)}, expecting None, str or bytes")
             raise self._Err("internal error with get_user_pass", self._server_error)
-        if not self.check_password(pwd, ref):
-            log.debug(f"AUTH (password): invalid password for {user}")
-            raise self._Err(f"invalid password for {user}", 401)
+        elif not self.check_password(pwd, ref):
+            # try alternate check
+            if not self._check_with_password_hook(user, pwd):
+                log.debug(f"AUTH (password): invalid password for {user}")
+                raise self._Err(f"invalid password for {user}", 401)
+            # else ok because of alternate hook
         return user
 
     #
