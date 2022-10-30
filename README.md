@@ -819,7 +819,7 @@ feature-full web-oriented authentication and authorization framework based on
 an ORM. By contrast, *Flask Simple Auth*:
 - does NOT assume any ORM or impose a data model,
   you only have to provide callback functions to access the needed data
-  (password, groups…).
+  (password, groups, object permissions…).
 - does NOT do any web-related tasks (forms, views, templates, blueprint,
   translation…), it just helps providing declarative security layer (role or
   object permissions) to an HTTP API, well integrated into Flask by
@@ -829,8 +829,8 @@ an ORM. By contrast, *Flask Simple Auth*:
 - does care about performance by providing an automatic and relevant caching
   mechanism to expensive authentication and authorization checks, including
   relying on external stores such as *redis*.
-- provides simple hooks to extend features, such as to plug a
-  password strength checker.
+- provides simple hooks to extend features, such as adding an
+  password strength checker or a password alternate verifier.
 - is much smaller (about 1/10th, ignoring dependencies), so probably it does
   less things!
 
@@ -859,5 +859,3 @@ an ORM. By contrast, *Flask Simple Auth*:
 - should try to reduce "no cover" pragmas
 - document ErrorResponse?
 - coverage should include demo run
-- provide alternate options to passwords checking, see unified sign in,
-  eg one time codes, through some hook.
