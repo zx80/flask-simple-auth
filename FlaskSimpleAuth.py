@@ -227,7 +227,6 @@ class FlaskSimpleAuth:
         self._pm = None
         self._cache: Optional[MutableMapping[str, str]] = None
         self._gen_cache: Optional[Callable] = None
-        self._password_quality: Optional[Callable[[str], bool]] = None
         self._server_error: int = _DEFAULT_SERVER_ERROR
         self._not_found_error: int = _DEFAULT_NOT_FOUND_ERROR
         self._secure: bool = True
@@ -728,7 +727,7 @@ class FlaskSimpleAuth:
             self._pm = CryptContext(schemes=[scheme], **options)
         self._password_len: int = conf.get("FSA_PASSWORD_LEN", 0)
         self._password_re: List[Callable[[str], bool]] = [re.compile(r).search for r in conf.get("FSA_PASSWORD_RE", [])]
-        self._password_quality = conf.get("FSA_PASSWORD_QUALITY", None)
+        self._password_quality: Optional[Callable[[str], bool]] = conf.get("FSA_PASSWORD_QUALITY", None)
 
     #
     # INHERITED HTTP AUTH
