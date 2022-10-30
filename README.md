@@ -124,6 +124,7 @@ Depending on options, the following modules should be installed:
 - [passlib](https://pypi.org/project/passlib/) for password management.
 - [cachetools](https://pypi.org/project/cachetools/) and
   [CacheToolsUtils](https://pypi.org/project/cachetoolsutils/) for caching.
+- [ProxyPatternPool](https://pypi.org/project/ProxyPatternPool/) for sharing.
 - [bcrypt](https://pypi.org/project/bcrypt/)  for password hashing (default algorithm).
 - [PyJWT](https://pypi.org/project/PyJWT/) for JSON Web Token (JWT).
 - [cryptography](https://pypi.org/project/cryptography/) for pubkey-signed JWT.
