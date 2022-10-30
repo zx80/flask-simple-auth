@@ -11,6 +11,7 @@ Add `password_check` hook (also with `FSA_PASSWORD_CHECK` directive) for
 alternate password checking such as temporary access codes.
 Add `password_quality` hook (also with `FSA_PASSWORD_QUALITY` directive) to
 check for a password strength.
+Set `FSA_TOKEN_RENEWAL` default to *0.0*.
 Prioritize authentication scheme per configuration or route order (`auth`).
 Improve documentation.
 
