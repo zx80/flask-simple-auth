@@ -323,12 +323,11 @@ class FlaskSimpleAuth:
         if self._carrier == "cookie":
             assert self._token and self._name
             if self._local.user and self._can_create_token():
-                if self._name in request.cookies:  # renew token when closing expiration
-                    # FIXME should be optional?
+                if self._name in request.cookies and self._renewal:  # renew token when closing expiration
                     user, exp = self._get_any_token_auth_exp(request.cookies[self._name])
                     limit = dt.datetime.now(dt.timezone.utc) + self._renewal * dt.timedelta(minutes=self._delay)
                     set_cookie = exp < limit
-                else:
+                else:  # no cookie, set it
                     set_cookie = True
                 if set_cookie:
                     # path? other parameters?
@@ -590,7 +589,7 @@ class FlaskSimpleAuth:
         # token expiration in minutes
         self._delay = conf.get("FSA_TOKEN_DELAY", 60.0)
         self._grace = conf.get("FSA_TOKEN_GRACE", 0.0)
-        self._renewal = conf.get("FSA_TOKEN_RENEWAL", 0.25)  # ratio, only for cookies
+        self._renewal = conf.get("FSA_TOKEN_RENEWAL", 0.0)  # ratio of delay, only for cookies
         # token signature
         if "FSA_TOKEN_SECRET" in conf:
             self._secret = conf["FSA_TOKEN_SECRET"]

@@ -32,6 +32,7 @@ app.config.update(
     FSA_CAST = { list: lambda s: s.split(" ") },
     FSA_SPECIAL_PARAMETER = { Special: lambda: "special", },
     FSA_OBJECT_PERMS = { "xyz": lambda d, i, m: False },
+    FSA_TOKEN_RENEWAL = 0.25,
 )
 
 #

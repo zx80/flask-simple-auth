@@ -358,6 +358,9 @@ The available authentication schemes are:
     Default is `blake2s` for `fsa` and `HS256` for *jwt*.
   - `FSA_TOKEN_LENGTH` number of hash bytes kept for token signature.
     Default is *16* for `fsa`. The directive is ignored for `jwt`.
+  - `FSA_TOKEN_RENEWAL` for cookie token, the fraction of delay under
+    which the cookie/token is renewed automatically.
+    Default is *0.0*, meaning no renewal.
 
   Function `create_token(user)` creates a token for the user depending
   on the current scheme. If `user` is not given, the current user is taken.
