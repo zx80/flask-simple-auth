@@ -819,6 +819,8 @@ an ORM. By contrast, *Flask Simple Auth*:
 - does care about performance by providing an automatic and relevant caching
   mechanism to expensive authentication and authorization checks, including
   relying on external stores such as *redis*.
+- provides simple hooks to extend features, such as to plug a
+  password strength checker.
 - is much smaller (about 1/10th, ignoring dependencies), so probably it does
   less things!
 
