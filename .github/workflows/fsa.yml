@@ -17,7 +17,12 @@ jobs:
         python-version: [ "3.8", "3.9", "3.10", "3.11", "pypy3.8", "pypy3.9" ]
     steps:
     # Setup
-    - uses: actions/checkout@v3
+    - name: Set up Redis
+      uses: supercharge/redis-github-action@1.4.0
+      with:
+        redis-version: 6
+    - name: Git Checkout
+      uses: actions/checkout@v3
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v4
       with:
