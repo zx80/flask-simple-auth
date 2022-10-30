@@ -12,6 +12,7 @@ alternate password checking such as temporary access codes.
 Add `password_quality` hook (also with `FSA_PASSWORD_QUALITY` directive) to
 check for a password strength.
 Prioritize authentication scheme per configuration or route order (`auth`).
+Improve documentation.
 
 ## 17.0 on 2022-10-29
 
