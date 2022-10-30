@@ -323,9 +323,9 @@ class FlaskSimpleAuth:
         if self._carrier == "cookie":
             assert self._token and self._name
             if self._local.user and self._can_create_token():
-                if self._name in request.cookies:
+                if self._name in request.cookies:  # renew token when closing expiration
+                    # FIXME should be optional?
                     user, exp = self._get_any_token_auth_exp(request.cookies[self._name])
-                    # renew token when closing expiration
                     limit = dt.datetime.now(dt.timezone.utc) + self._renewal * dt.timedelta(minutes=self._delay)
                     set_cookie = exp < limit
                 else:
