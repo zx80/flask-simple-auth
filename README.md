@@ -865,3 +865,4 @@ an ORM. By contrast, *Flask Simple Auth*:
 - should try to reduce "no cover" pragmas
 - document ErrorResponse?
 - coverage should include demo run
+- how to use external authentication stuff? eg LDAP? others?
