@@ -865,5 +865,7 @@ an ORM. By contrast, *Flask Simple Auth*:
 - should try to reduce "no cover" pragmas
 - document ErrorResponse?
 - coverage should include demo run
+- add ldap password check how-to?
+- add JWT authorizations?
 - how to use external authentication stuff? eg LDAP? others?
   it should also work as an alternate pm…
