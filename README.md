@@ -98,8 +98,8 @@ testing.
 It allows to have a login route to generate authentication tokens.
 For registration, support functions allow to hash new passwords consistently
 with password checks.
-Alternate password checking schemes (eg a temporary code) can be plug in
-easily through a hook.
+Alternate password checking schemes (eg temporary code, external LDAP server)
+can be plug in easily through a hook.
 
 [**Authorizations**](#authorization) are managed by mandatory permission
 declaration on a route (eg a role name, or an object access), and relies
@@ -451,8 +451,8 @@ The standard password checking can be overridden by providing an alternate
 password checking function with a directive:
 - `FSA_PASSWORD_CHECK` hook function which returns whether user and password
   provided is acceptable for said user.
-This allows to plug a temporary password recovery scheme or other
-one-time or limited-time passwords sent by SMS or mail, for instance.
+This allows to plug a LDAP server or a temporary password recovery scheme or
+other one-time or limited-time passwords sent by SMS or mail, for instance.
 This hook can also be filled with the `password_check` method/decorator.
 This alternate check is used if the primary check failed.
 
