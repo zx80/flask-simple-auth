@@ -115,6 +115,30 @@ class Reference(ppp.Proxy):
         super().__init__(*args, close=close, **kwargs)
 
 
+class LDAPAuthentication:
+    """Use LDAP for password validation."""
+
+    def __init__(self, app: Flask, ldap_uri: str, uname: Callable[[str], str] = lambda s: s):
+
+        import ldap
+        self._app = app
+        self._uname = uname
+        self._ldap = ldap.initialize(ldap_uri)
+        self._ldap.set_option(ldap.OPT_REFERRALS, 0)
+
+    def check_password(self, user, password):
+        try:
+            self._ldap.simple_bind_s(self._uname(user), password)
+            # get groups?
+            return True
+        except ldap.INVALID_CREDENTIALS:
+            return False
+        except ldap.SERVER_DOWN:
+            return None
+        finally:
+            self._ldap.unbind()
+
+
 class Flask(flask.Flask):
     """Flask class wrapper.
 
