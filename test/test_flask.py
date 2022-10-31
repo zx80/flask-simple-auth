@@ -386,6 +386,14 @@ def test_password_check(client):
         assert False, "should raise an Exception"
     except ErrorResponse as e:
         assert "no such user" in str(e)
+    saved = fsa._get_user_pass
+    fsa.get_user_pass(None)
+    try:
+        fsa._check_password("calvin", "Oops!")
+        assert False, "should raise an error"
+    except ErrorResponse as e:
+        assert "invalid user/password" in str(e)
+    fsa.get_user_pass(saved)
     fsa.password_check(None)
     # password, through requests
     push_auth(fsa, ["password"])

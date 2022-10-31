@@ -866,3 +866,4 @@ an ORM. By contrast, *Flask Simple Auth*:
 - document ErrorResponse?
 - coverage should include demo run
 - how to use external authentication stuff? eg LDAP? others?
+  it should also work as an alternate pm…

@@ -729,12 +729,14 @@ class FlaskSimpleAuth:
 
     def _init_password_manager(self):
         """Deferred password manager initialization."""
-        # only initialize if some password may need to be checked
-        # so that passlib is not imported for nothing
-        if not self._get_user_pass or self._pm:
-            return
         assert self._app
         conf = self._app.config
+        self._password_check: Optional[Callable[[str, str], bool]] = conf.get("FSA_PASSWORD_CHECK", self._password_check)
+        # FIXME add _password_hash?
+        self._password_len: int = conf.get("FSA_PASSWORD_LEN", 0)
+        self._password_re: List[Callable[[str], bool]] = [re.compile(r).search for r in conf.get("FSA_PASSWORD_RE", [])]
+        self._password_quality: Optional[Callable[[str], bool]] = conf.get("FSA_PASSWORD_QUALITY", self._password_quality)
+        # only actually initialize with passlib if needed
         scheme = conf.get("FSA_PASSWORD_SCHEME", _DEFAULT_PASSWORD_SCHEME)
         log.info(f"initializing password manager with {scheme}")
         if scheme:
@@ -745,10 +747,6 @@ class FlaskSimpleAuth:
             options = conf.get("FSA_PASSWORD_OPTS", _DEFAULT_PASSWORD_OPTS)
             from passlib.context import CryptContext  # type: ignore
             self._pm = CryptContext(schemes=[scheme], **options)
-        self._password_check: Optional[Callable[[str, str], bool]] = conf.get("FSA_PASSWORD_CHECK", self._password_check)
-        self._password_len: int = conf.get("FSA_PASSWORD_LEN", 0)
-        self._password_re: List[Callable[[str], bool]] = [re.compile(r).search for r in conf.get("FSA_PASSWORD_RE", [])]
-        self._password_quality: Optional[Callable[[str], bool]] = conf.get("FSA_PASSWORD_QUALITY", self._password_quality)
 
     #
     # INHERITED HTTP AUTH
@@ -797,25 +795,28 @@ class FlaskSimpleAuth:
         """Verify whether a password is correct compared to a reference (eg salted hash)."""
         return self._pm.verify(pwd, ref)
 
+    def _check_password_quality(self, pwd):
+        """Check password quality, raising issues or proceeding."""
+        if len(pwd) < self._password_len:
+            raise self._Err(f"password is too short, must be at least {self._password_len}", 400)
+        for search in self._password_re:
+            if not search(pwd):
+                raise self._Err(f"password must match {search.__self__.pattern}", 400)
+        if self._password_quality:
+           try:
+               if not self._password_quality(pwd):
+                   raise self._Err("password quality too low", 400)
+           except Exception as e:
+               raise self._Err(f"password quality too low: {e}", 400)
+
     def hash_password(self, pwd, check=True):
         """Hash password according to the current password scheme."""
-        # check password quality
         if check:
-            if len(pwd) < self._password_len:
-                raise self._Err(f"password is too short, must be at least {self._password_len}", 400)
-            for search in self._password_re:
-                if not search(pwd):
-                    raise self._Err(f"password must match {search.__self__.pattern}", 400)
-            if self._password_quality:
-                try:
-                    if not self._password_quality(pwd):
-                        raise self._Err("password quality too low", 400)
-                except Exception as e:
-                    raise self._Err(f"password quality too low: {e}", 400)
+            self._check_password_quality(pwd)
         return self._pm.hash(pwd)
 
     def _check_with_password_hook(self, user, pwd):
-        """Check user password with external hook."""
+        """Check user/password with external hook."""
         if self._password_check:
             try:
                 return self._password_check(user, pwd)
@@ -827,30 +828,35 @@ class FlaskSimpleAuth:
         return False
 
     def _check_password(self, user, pwd):
-        """Check user password against internal credentials.
+        """Check user/password against internal or external credentials.
 
-        Raise an exception if not ok, otherwise simply proceeds."""
-        # first try with standard password to reduce performance implications
-        try:
-            ref = self._get_user_pass(user)
-        except ErrorResponse as e:
-            raise e
-        except Exception as e:
-            log.error(f"get_user_pass failed: {e}")
-            raise self._Err("internal error in get_user_pass", self._server_error)
-        if not ref:
-            # try alternate check
+        Raise an exception if not ok, otherwise simply return the user."""
+        # first, get user password hash if available
+        if self._get_user_pass:
+            try:
+                ref = self._get_user_pass(user)
+            except ErrorResponse as e:
+                raise e
+            except Exception as e:
+                log.error(f"get_user_pass failed: {e}")
+                raise self._Err("internal error in get_user_pass", self._server_error)
+        else:
+            ref = None
+        if not ref: # not available, try alternate check
             if not self._check_with_password_hook(user, pwd):
-                log.debug(f"AUTH (password): no such user ({user})")
-                raise self._Err(f"no such user: {user}", 401)
+                if self._get_user_pass:
+                    log.debug(f"AUTH (password): no such user ({user})")
+                    raise self._Err(f"no such user: {user}", 401)
+                else:
+                    log.debug(f"AUTH (password): invalid user/password ({user})")
+                    raise self._Err(f"invalid user/password for {user}", 401)
             # else OK because of alternate hook
-        elif not isinstance(ref, (str, bytes)):
-            log.error(f"type error in get_user_pass: {type(ref)}, expecting None, str or bytes")
+        elif not isinstance(ref, (str, bytes)):  # do a type check in passing
+            log.error(f"type error in get_user_pass: {type(ref)} on {user}, expecting None, str or bytes")
             raise self._Err("internal error with get_user_pass", self._server_error)
-        elif not self.check_password(pwd, ref):
-            # try alternate check
+        elif not self.check_password(pwd, ref):  # does not match, try alternate check
             if not self._check_with_password_hook(user, pwd):
-                log.debug(f"AUTH (password): invalid password for {user}")
+                log.debug(f"AUTH (password): invalid password ({user})")
                 raise self._Err(f"invalid password for {user}", 401)
             # else ok because of alternate hook
         return user
@@ -893,8 +899,7 @@ class FlaskSimpleAuth:
         except Exception as e:
             log.debug(f"AUTH (basic): error while decoding auth \"{auth}\" ({e})")
             raise self._Err("decoding error on authorization header", 401)
-        self._check_password(user, pwd)
-        return user
+        return self._check_password(user, pwd)
 
     #
     # HTTP PARAM AUTH
@@ -913,8 +918,7 @@ class FlaskSimpleAuth:
         pwd = params.get(self._passp, None)
         if not pwd:
             raise self._Err(f"missing password parameter: {self._passp}", 401)
-        self._check_password(user, pwd)
-        return user
+        return self._check_password(user, pwd)
 
     #
     # HTTP BASIC OR PARAM AUTH

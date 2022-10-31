@@ -8,7 +8,8 @@ and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 Add `special_parameter` decorator and `FSA_SPECIAL_PARAMETER` directive
 to add special parameters.
 Add `password_check` hook (also with `FSA_PASSWORD_CHECK` directive) for
-alternate password checking such as temporary access codes.
+alternate password checking such as temporary access codes or external
+passwords, eg LDAP.
 Add `password_quality` hook (also with `FSA_PASSWORD_QUALITY` directive) to
 check for a password strength.
 Set `FSA_TOKEN_RENEWAL` default to *0.0*.
