@@ -869,3 +869,4 @@ an ORM. By contrast, *Flask Simple Auth*:
 - add JWT authorizations?
 - how to use external authentication stuff? eg LDAP? others?
   it should also work as an alternate pm…
+- refactor password manager in a separate class?
