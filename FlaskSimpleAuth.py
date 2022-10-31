@@ -803,11 +803,11 @@ class FlaskSimpleAuth:
             if not search(pwd):
                 raise self._Err(f"password must match {search.__self__.pattern}", 400)
         if self._password_quality:
-           try:
-               if not self._password_quality(pwd):
-                   raise self._Err("password quality too low", 400)
-           except Exception as e:
-               raise self._Err(f"password quality too low: {e}", 400)
+            try:
+                if not self._password_quality(pwd):
+                    raise self._Err("password quality too low", 400)
+            except Exception as e:
+                raise self._Err(f"password quality too low: {e}", 400)
 
     def hash_password(self, pwd, check=True):
         """Hash password according to the current password scheme."""
@@ -842,7 +842,7 @@ class FlaskSimpleAuth:
                 raise self._Err("internal error in get_user_pass", self._server_error)
         else:
             ref = None
-        if not ref: # not available, try alternate check
+        if not ref:  # not available, try alternate check
             if not self._check_with_password_hook(user, pwd):
                 if self._get_user_pass:
                     log.debug(f"AUTH (password): no such user ({user})")
