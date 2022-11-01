@@ -91,10 +91,10 @@ function.
 It is performed on demand when the function is called or when checking for
 permissions.
 The module implements inheriting the web-server authentication,
-password authentication (HTTP Basic, or HTTP/JSON parameters),
-authentication tokens (custom or JWT passed in headers or as a
-parameter), and a fake authentication scheme useful for local application
-testing.
+various password authentication (HTTP Basic, or HTTP/JSON parameters),
+tokens (custom or JWT passed in headers or as a parameter),
+a fake authentication scheme useful for local application testing,
+or relying on a user provided function to check a password or code.
 It allows to have a login route to generate authentication tokens.
 For registration, support functions allow to hash new passwords consistently
 with password checks.
@@ -405,24 +405,30 @@ The available authentication schemes are:
 
 #### Password Management
 
-Password authentication is performed for the following authentication
-schemes: `param`, `basic`, `http-basic`, `http-digest`, `digest`, `password`.
+Password authentication is performed for the following authentication schemes:
+`param`, `basic`, `http-basic`, `http-digest`, `digest`, `password`.
 
-For checking passwords the password (salted hash) must be retrieved through
-`get_user_pass(user)`.
-This function must be provided by the application when the module is initialized.
-Because this function is cached by default, the cache expiration must
-be reached so that changes take effect, or the cache must be cleared
-manually, which may impair application performance.
+The provided password management comprises handling password verification
+in the application, relying on standard password hashing schemes and
+a user-provided function to retrieve the password hash (`get_user_pass`),
+and/or delegating the whole verification process to a user-provided function
+(`password_check`).
 
-The following configuration directives are available to configure
-`passlib` password checks:
+For checking passwords internally, the password (salted hash) must be retrieved
+through `get_user_pass(user)`.
+This function must be provided when the module is initialized.
+Because this function is cached by default, the cache expiration must be reached
+so that changes take effect, or the cache must be cleared manually, which may
+impair application performance.
+
+The following configuration directives are available to configure `passlib`
+password checks:
 
 - `FSA_PASSWORD_SCHEME` password scheme to use for passwords.
   Default is `bcrypt`.
   See [passlib documentation](https://passlib.readthedocs.io/en/stable/lib/passlib.hash.html)
   for available options.
-  Set to `None` to disable password checking.
+  Set to `None` to disable internal password checking.
 - `FSA_PASSWORD_OPTS` relevant options (for `passlib.CryptContext`).
   Default is `{'bcrypt__default_rounds': 4, 'bcrypt__default_ident': '2y'}`.
 
@@ -440,30 +446,29 @@ later).
 As retrieving the stored information is enough to steal the password (plaintext)
 or at least impersonate a user (hash), consider avoiding `digest` altogether.
 HTTP Digest Authentication only makes sense for unencrypted connexions, which
-are a bad practice anyway.
-It is just provided here for completeness.
+are a bad practice anyway. It is just provided here for completeness.
 
 Function `hash_password(pass)` computes the password salted digest compatible
-with the current configuration, and may be used for setting or resetting
-passwords.
+with the current configuration, and may be used by the application for setting
+or resetting passwords.
 
-The standard password checking can be overridden by providing an alternate
-password checking function with a directive:
-- `FSA_PASSWORD_CHECK` hook function which returns whether user and password
-  provided is acceptable for said user.
-This allows to plug a LDAP server or a temporary password recovery scheme or
-other one-time or limited-time passwords sent by SMS or mail, for instance.
-This hook can also be filled with the `password_check` method/decorator.
-This alternate check is used if the primary check failed.
-
-The function checks the password quality by relying on:
-- `FSA_PASSWORD_LEN` minimal password length, *0* to disable
-- `FSA_PASSWORD_RE` list of regular expressions that a password must match
+This function checks the password quality by relying on:
+- `FSA_PASSWORD_LEN` minimal password length, *0* to disable.
+- `FSA_PASSWORD_RE` list of regular expressions that a password must match.
 - `FSA_PASSWORD_QUALITY` hook function which returns whether the password is
   acceptable, possibly raising an exception to complain if not.
   This hook can also be filled with the `password_quality` method/decorator.
   It allows to plug a password strength estimator such as
   [zxcvbn](https://github.com/dropbox/zxcvbn).
+
+This application-managed standard password checking can be overridden by
+providing an alternate password checking function with a directive:
+- `FSA_PASSWORD_CHECK` hook function which returns whether user and password
+  provided is acceptable for said user.
+This allows to plug a LDAP server or a temporary password recovery scheme or
+other one-time or limited-time passwords sent by SMS or mail, for instance.
+This hook can also be filled with the `password_check` method/decorator.
+This alternate check is used if the primary check failed or is disactivated.
 
 An opened route for user registration with mandatory parameters
 could look like that:
