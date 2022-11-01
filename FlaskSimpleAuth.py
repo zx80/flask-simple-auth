@@ -238,7 +238,7 @@ class FlaskSimpleAuth:
         self._not_found_error: int = _DEFAULT_NOT_FOUND_ERROR
         self._secure: bool = True
         self._names: Set[str] = set()
-        # FIXME should it be werkzeug.local.Local()?
+        # NOTE threading.local might not be enough?
         self._local = threading.local()
         # actual main initialization is deferred to `init_app`
         self._initialized = False
@@ -395,7 +395,7 @@ class FlaskSimpleAuth:
         return pwc
 
     def _store(self, store: Dict[Any, Any], what: str, key: Any, val: Optional[Callable] = None):
-        """Add a function associated to somthing in a dict."""
+        """Add a function associated to something in a dict."""
         if key in store:
             log.warning(f"overriding {what} function for {key}")
         if val:  # direct
@@ -474,6 +474,7 @@ class FlaskSimpleAuth:
             else:
                 self._auth = [auth]
         else:
+            # FIXME should it add token?
             self._auth = auth
         for a in self._auth:
             if a not in self._FSA_AUTH:
@@ -637,24 +638,18 @@ class FlaskSimpleAuth:
             self.get_user_pass(conf["FSA_GET_USER_PASS"])
         if "FSA_USER_IN_GROUP" in conf:
             self.user_in_group(conf["FSA_USER_IN_GROUP"])
-        if "FSA_CAST" in conf:
-            casts = conf["FSA_CAST"]
-            if not isinstance(casts, dict):
-                raise self._Bad("FSA_CAST must be a dict")
-            for type_name, cast_fun in casts.items():
-                self.cast(type_name, cast_fun)
-        if "FSA_OBJECT_PERMS" in conf:
-            perms = conf["FSA_OBJECT_PERMS"]
-            if not isinstance(perms, dict):
-                raise self._Bad("FSA_OBJECT_PERMS must be a dict")
-            for domain, checker in perms.items():
-                self.object_perms(domain, checker)
-        if "FSA_SPECIAL_PARAMETER" in conf:
-            specials = conf["FSA_SPECIAL_PARAMETER"]
-            if not isinstance(specials, dict):
-                raise self._Bad("FSA_SPECIAL_PARAMETER must be a dict")
-            for type_name, special_fun in specials.items():
-                self.special_parameter(type_name, special_fun)
+
+        def _set_hooks(directive: str, set_hook: Callable[[Any], Callable]):
+            if directive in conf:
+                hooks = conf[directive]
+                if not isinstance(hooks, dict):
+                    raise self._Bad(f"{directive} must be a dict")
+                for key, val in hooks.items():
+                    set_hook(key, val)
+
+        _set_hooks("FSA_CAST", self.cast)
+        _set_hooks("FSA_OBJECT_PERMS", self.object_perms)
+        _set_hooks("FSA_SPECIAL_PARAMETER", self.special_parameter)
         #
         # http auth setup
         #
