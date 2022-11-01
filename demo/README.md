@@ -70,7 +70,7 @@ themselves either using their login or their email.
 Authorization are declared on each route with the `authorize` parameter.
 
 Further permissions are checked within route functions, for instance
-the `PATCH /self` route for changing one's password rejects a user if the
+the `PATCH /scare` route for changing one's password rejects a user if the
 provided old password (`opass`) is not validated.
 
 FlaskSimpleAuth roles (groups) are checked with the `user_in_group` hook,
