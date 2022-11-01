@@ -394,41 +394,29 @@ class FlaskSimpleAuth:
         self._password_check = pwc
         return pwc
 
-    def cast(self, t, cast: Optional[Callable] = None):
-        """Add a cast function associated to a type."""
-        if t in self._casts:
-            log.warning(f"overriding type casting function for {t}")
-        if cast:  # direct
-            self._casts[t] = cast
+    def _store(self, store: Dict[Any, Any], what: str, key: Any, val: Optional[Callable] = None):
+        """Add a function associated to somthing in a dict."""
+        if key in store:
+            log.warning(f"overriding {what} function for {key}")
+        if val:  # direct
+            store[key] = val
         else:  # decorator
             def annotate(fun):
-                self._casts[t] = fun
+                store[key] = fun
                 return fun
             return annotate
+
+    def cast(self, t, cast: Optional[Callable] = None):
+        """Add a cast function associated to a type."""
+        return self._store(self._casts, "type casting", t, cast)
 
     def special_parameter(self, t, sp: Optional[Callable] = None):
         """Add a special parameter type."""
-        if t in self._special_parameters:
-            log.warning(f"overriding special parameter for {t}")
-        if sp:  # direct
-            self._special_parameters[t] = sp
-        else:  # decorator
-            def annotate(fun):
-                self._special_parameters[t] = fun
-                return fun
-            return annotate
+        return self._store(self._special_parameters, "special parameter", t, sp)
 
-    def object_perms(self, domain, checker: Optional[Callable] = None):
+    def object_perms(self, domain: str, checker: Optional[Callable] = None):
         """Add an object permission helper for a given domain."""
-        if domain in self._object_perms:
-            log.warning(f"overriding object permission checker for domain {domain}")
-        if checker:  # direct
-            self._object_perms[domain] = checker
-        else:  # decorator
-            def annotate(fun):
-                self._object_perms[domain] = fun
-                return fun
-            return annotate
+        return self._store(self._object_perms, "object permission checker", domain, checker)
 
     def _check_object_perms(self, user, domain, oid, mode):
         """Can user access object oid in domain for mode, cached."""
