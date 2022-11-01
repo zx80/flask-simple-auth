@@ -79,7 +79,7 @@ which must be provided.
 The `GET` and `DELETE` methods on `/users/<login>` are controlled with
 a finer grain permission model: both admins and the user themselves can access
 the route, which is controlled through a domain-specific function registered
-wuth the `object_perms` hook.
+with the `object_perms` hook.
 
 
 ## API Parameters
