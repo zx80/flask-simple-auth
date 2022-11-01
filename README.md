@@ -71,9 +71,8 @@ in a Flask REST application back-end.
 
 ### Features
 
-The module provides a wrapper around the `Flask` class which
-extends its capabilities for managing authentication, authorization and
-parameters.
+The module provides a wrapper around the `Flask` class which extends its
+capabilities for managing authentication, authorization and parameters.
 
 This is intended for a REST API implementation serving a remote client
 application through HTTP methods called on a path, with HTTP or JSON
@@ -82,14 +81,13 @@ an authenticated function call over HTTP.
 
 Note that web-oriented flask authentication modules are not really
 relevant in the REST API context, where the server does not care about
-presenting login forms for instance.
-However, some provisions are made so that it can also be used for a web
+presenting login forms or managing views, for instance.
+However, some provisions are made so that it can *also* be used for a web
 application: CORS, login page redirection…
 
-[**Authentication**](#authentication) is available through the `get_user`
-function.
-It is performed on demand when the function is called or when checking for
-permissions.
+[**Authentication**](#authentication), i.e. checking *who* is doing the request,
+is available through the `get_user` function. It is performed on demand when
+the function is called or when checking for permissions.
 The module implements inheriting the web-server authentication,
 various password authentication (HTTP Basic, or HTTP/JSON parameters),
 tokens (custom or JWT passed in headers or as a parameter),
@@ -101,10 +99,10 @@ with password checks.
 Alternate password checking schemes (eg temporary code, external LDAP server)
 can be plug in easily through a hook.
 
-[**Authorizations**](#authorization) are managed by mandatory permission
-declaration on a route (eg a role name, or an object access), and relies
-on supplied functions to check whether a user has this role or can access
-an object.
+[**Authorizations**](#authorization), i.e. checking whether the above who can
+perform a request, are managed by mandatory permission declaration on a route
+(eg a role name, or an object access), and relies on supplied functions to
+check whether a user has this role or can access an object.
 
 [**Parameters**](#parameters) expected in the request can be declared, their
 presence and type checked, and they are added automatically as named parameters
@@ -134,9 +132,9 @@ Depending on options, the following modules should be installed:
 
 ### Initialization
 
-The module is simply initialize by calling its `Flask` constructor
-and providing a configuration through `FSA_*` directives, or possibly
-by calling some methods to register helper functions, such as:
+The module is simply initialize by calling its `Flask` constructor and providing
+a configuration through `FSA_*` directives, or possibly by calling some methods
+to register helper functions, such as:
 
 - a function to retrieve the password hash from the user name.
 - a function which tells whether a user is in a group or role.
