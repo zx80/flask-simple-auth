@@ -210,7 +210,7 @@ authentication methods used by the `get_user` function, as described in the
 following sections. Defaut is `httpd`.
 
 If a non-token single scheme is provided, authentication will be `token`
-followed by the provided scheme, i.e. `token` are tried first anyway.
+followed by the provided scheme, i.e. `token` is tried first anyway.
 
 To take full control of authentication scheme, provide an ordered list.
 Note that it does not always make much sense to mix some schemes, e.g.
@@ -245,11 +245,11 @@ The available authentication schemes are:
   This is the default.
 
   There are plenty authentication schemes available in a web server such as
-  [Apache](https://httpd.apache.org/) or [Nginx](https://nginx.org/), all of
-  which probably more efficiently implemented than this python code, so it
-  should be the preferred option.
-  However, it could require significant configuration effort compared to
-  the application-side approach.
+  [Apache](https://httpd.apache.org/) or [Nginx](https://nginx.org/), including
+  LDAP or other databases, all of which probably more efficiently implemented
+  than this python code, so it should be the preferred option.
+  However, it could require significant configuration effort compared to the
+  application-side approach.
 
 - `basic`
 
@@ -291,8 +291,8 @@ The available authentication schemes are:
 
   HTTP Digest authentication based on [flask-HTTPAuth](https://pypi.org/project/Flask-HTTPAuth/).
 
-  Note that the implementation relies on *sessions*, which may require
-  the `SECRET_KEY` option to be set to something.
+  Note that the implementation relies on *sessions*, which may require the
+  `SECRET_KEY` option to be set to something.
   The documentation states that server-side sessions are needed because
   otherwise the *nonce* and *opaque* parameters could be reused, which
   may be a security issue under some conditions. I'm unsure about that,
