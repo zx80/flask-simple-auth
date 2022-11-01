@@ -400,11 +400,11 @@ class FlaskSimpleAuth:
             log.warning(f"overriding {what} function for {key}")
         if val:  # direct
             store[key] = val
-        else:  # decorator
-            def annotate(fun):
+        else:
+            def decorate(fun: Callable):
                 store[key] = fun
                 return fun
-            return annotate
+            return decorate
 
     def cast(self, t, cast: Optional[Callable] = None):
         """Add a cast function associated to a type."""
