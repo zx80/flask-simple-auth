@@ -639,7 +639,7 @@ class FlaskSimpleAuth:
         if "FSA_USER_IN_GROUP" in conf:
             self.user_in_group(conf["FSA_USER_IN_GROUP"])
 
-        def _set_hooks(directive: str, set_hook: Callable[[Any], Callable]):
+        def _set_hooks(directive: str, set_hook: Callable[[Any, Callable], Any]):
             if directive in conf:
                 hooks = conf[directive]
                 if not isinstance(hooks, dict):
