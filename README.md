@@ -103,6 +103,8 @@ can be plug in easily through a hook.
 perform a request, are managed by mandatory permission declaration on a route
 (eg a role name, or an object access), and relies on supplied functions to
 check whether a user has this role or can access an object.
+Authorization can also be provided from a third party through JWT tokens
+following the [OAuth2](https://oauth.net/2/) approach.
 
 [**Parameters**](#parameters) expected in the request can be declared, their
 presence and type checked, and they are added automatically as named parameters
@@ -885,3 +887,4 @@ an ORM. By contrast, *Flask Simple Auth*:
 - refactor password manager in a separate class?
 - issuer could/should be a list?
   not easily, because each should have its own sig?
+- demo: add convincing OAuth2 example?
