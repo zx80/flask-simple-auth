@@ -1250,7 +1250,7 @@ class FlaskSimpleAuth:
                 # check against all authorized groups/roles
                 for group in groups:
                     # try JWT provided "groups" (RFC 8693, OAuth 2.0)
-                    if user_authz_mode(group):
+                    if self.user_authz_mode(group):
                         continue
                     elif self._user_in_group:
                         try:
