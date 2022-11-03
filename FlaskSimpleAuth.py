@@ -424,6 +424,17 @@ class FlaskSimpleAuth:
         assert domain in self._object_perms
         return self._object_perms[domain](user, oid, mode)
 
+    # FIXME WIP OAuth2 usability
+    # If the user is fully logged in, probably they can do whatever.
+    # In the case of delegated permissions (through token with a scope),
+    # the delegation would be some restricted access. Currently permissions
+    # are cumulative, so we cannot do a "OR". ISTM that it would depend on
+    # the check object function to be quite subtle. Maybe a simpler yet
+    # declarative solutions would be to provide distinct routes.
+    def user_authz_mode(mode):
+        """Can current user perform an operation in some mode."""
+        return self._scope and self._local.scope and mode in self._local.scope
+
     #
     # DEFERRED INITIALIZATIONS
     #
