@@ -428,9 +428,11 @@ class FlaskSimpleAuth:
     # If the user is fully logged in, probably they can do whatever.
     # In the case of delegated permissions (through token with a scope),
     # the delegation would be some restricted access. Currently permissions
-    # are cumulative, so we cannot do a "OR". ISTM that it would depend on
-    # the check object function to be quite subtle. Maybe a simpler yet
-    # declarative solutions would be to provide distinct routes.
+    # are cumulative, so we cannot do an "OR", and it does not seem a good
+    # practice to allow it because of the risk of security issues.
+    # ISTM that it would depend on the check object function to be quite subtle
+    # to handle both usages. Maybe a simpler yet # declarative solutions
+    # would be to provide distinct routes.
     def user_authz_mode(self, mode):
         """Can current user perform an operation in some mode."""
         return self._scope and self._local.scope and mode in self._local.scope
