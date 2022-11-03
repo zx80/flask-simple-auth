@@ -1339,6 +1339,8 @@ def test_warnings_and_errors():
     assert app._fsa._casts["foo"] != cast_foo
     s = "Hello World!"
     assert app._fsa._casts["foo"](s) == cast_foo(s)
+    # OAuth2 warnings
+    app = af.create_app(FSA_TOKEN_SCOPE=True)
     # type errors
     try:
         app = af.create_app(FSA_CAST="not a dict")

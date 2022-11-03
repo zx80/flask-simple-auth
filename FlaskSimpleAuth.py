@@ -424,14 +424,16 @@ class FlaskSimpleAuth:
         assert domain in self._object_perms
         return self._object_perms[domain](user, oid, mode)
 
+    #
     # FIXME WIP OAuth2 usability
+    #
     # If the user is fully logged in, probably they can do whatever.
     # In the case of delegated permissions (through token with a scope),
     # the delegation would be some restricted access. Currently permissions
     # are cumulative, so we cannot do an "OR", and it does not seem a good
     # practice to allow it because of the risk of security issues.
     # ISTM that it would depend on the check object function to be quite subtle
-    # to handle both usages. Maybe a simpler yet # declarative solutions
+    # to handle both usages. Maybe a simpler yet declarative solutions
     # would be to provide distinct routes.
     def user_authz_mode(self, mode):
         """Can current user perform an operation in some mode."""
@@ -634,6 +636,11 @@ class FlaskSimpleAuth:
             raise self._Bad(f"invalid FSA_TOKEN_TYPE ({self._token})")
         # JWT authorizations (RFC 8693)
         self._scope: bool = conf.get("FSA_TOKEN_SCOPE", False)
+        if self._scope:
+            if self._token != "jwt":
+                log.warning("FSA_TOKEN_SCOPE directive requires JWT")
+            if not self._issuer:
+                log.warning("FSA_TOKEN_SCOPE directives requires FSA_TOKEN_ISSUER")
         #
         # HTTP parameter names
         #
