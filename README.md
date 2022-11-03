@@ -887,4 +887,4 @@ an ORM. By contrast, *Flask Simple Auth*:
 - refactor password manager in a separate class?
 - issuer could/should be a list?
   not easily, because each should have its own sig?
-- demo: add convincing OAuth2 example?
+- demo: add convincing OAuth2 example? also in the doc?
