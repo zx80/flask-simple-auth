@@ -968,7 +968,7 @@ class FlaskSimpleAuth:
         sig = self._cmp_sig(data, secret)
         return f"{data}:{sig}"
 
-    def _get_jwt_token(self, realm: str, issuer: Optional[str], user: str,
+    def _get_jwt_token(self, realm: str, issuer: Optional[str], user,
                        delay: float, secret, scope: Optional[List[str]] = None):
         """Json Web Token (JWT) generation.
 
@@ -993,7 +993,7 @@ class FlaskSimpleAuth:
         return self._token and not \
             (self._token == "jwt" and self._algo[0] in ("R", "E", "P") and not self._sign)
 
-    def create_token(self, user: str = None, realm: str = None,
+    def create_token(self, user: Optional[str] = None, realm: Optional[str] = None,
                      issuer: Optional[str] = None, delay: Optional[float] = None):
         """Create a new token for user depending on the configuration."""
         assert self._token
