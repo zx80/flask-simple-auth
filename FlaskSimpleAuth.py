@@ -174,7 +174,7 @@ _DIRECTIVES = {
     "FSA_FAKE_LOGIN", "FSA_PARAM_USER", "FSA_PARAM_PASS",
     "FSA_TOKEN_TYPE", "FSA_TOKEN_ALGO", "FSA_TOKEN_CARRIER", "FSA_TOKEN_DELAY",
     "FSA_TOKEN_GRACE", "FSA_TOKEN_NAME", "FSA_TOKEN_LENGTH", "FSA_TOKEN_SECRET",
-    "FSA_TOKEN_SIGN", "FSA_TOKEN_RENEWAL", "FSA_TOKEN_ISSUER",
+    "FSA_TOKEN_SIGN", "FSA_TOKEN_RENEWAL", "FSA_TOKEN_ISSUER", "FSA_TOKEN_SCOPE",
     "FSA_PASSWORD_SCHEME", "FSA_PASSWORD_OPTS", "FSA_PASSWORD_CHECK",
     "FSA_PASSWORD_LEN", "FSA_PASSWORD_RE", "FSA_PASSWORD_QUALITY",
     "FSA_HTTP_AUTH_OPTS",
@@ -295,6 +295,7 @@ class FlaskSimpleAuth:
         self._local.user = None
         self._local.need_authorization = True
         self._local.auth = self._auth
+        self._local.scope = None
 
     def _auth_post_check(self, res: Response):
         """After request hook to detect missing authorizations."""
@@ -324,7 +325,7 @@ class FlaskSimpleAuth:
             assert self._token and self._name
             if self._local.user and self._can_create_token():
                 if self._name in request.cookies and self._renewal:  # renew token when closing expiration
-                    user, exp = self._get_any_token_auth_exp(request.cookies[self._name])
+                    user, exp, _ = self._get_any_token_auth_exp(request.cookies[self._name])
                     limit = dt.datetime.now(dt.timezone.utc) + self._renewal * dt.timedelta(minutes=self._delay)
                     set_cookie = exp < limit
                 else:  # no cookie, set it
@@ -618,6 +619,8 @@ class FlaskSimpleAuth:
             self._siglen = 0
         else:  # pragma: no cover
             raise self._Bad(f"invalid FSA_TOKEN_TYPE ({self._token})")
+        # JWT authorizations (RFC 8693)
+        self._scope: bool = conf.get("FSA_TOKEN_SCOPE", False)
         #
         # HTTP parameter names
         #
@@ -965,7 +968,8 @@ class FlaskSimpleAuth:
         sig = self._cmp_sig(data, secret)
         return f"{data}:{sig}"
 
-    def _get_jwt_token(self, realm, issuer, user, delay, secret):
+    def _get_jwt_token(self, realm: str, issuer: Optional[str], user: str,
+                       delay: float, secret, scope: Optional[List[str]] = None):
         """Json Web Token (JWT) generation.
 
         - exp: expiration
@@ -973,12 +977,15 @@ class FlaskSimpleAuth:
         - iss: issuer (the source)
         - aud : audience (the realm)
         - not used: iat (issued at), nbf (not before), jti (jtw id)
+        - scope: optional authorizations (for testing)
         """
         exp = dt.datetime.now(dt.timezone.utc) + dt.timedelta(minutes=delay)
         import jwt
         token = {"exp": exp, "sub": user, "aud": realm}
         if issuer:
             token.update(iss=issuer)
+        if scope:
+            token.update(scope=" ".join(scope))
         return jwt.encode(token, secret, algorithm=self._algo)
 
     def _can_create_token(self):
@@ -986,7 +993,8 @@ class FlaskSimpleAuth:
         return self._token and not \
             (self._token == "jwt" and self._algo[0] in ("R", "E", "P") and not self._sign)
 
-    def create_token(self, user: str = None, realm: str = None, issuer: Optional[str] = None, delay: float = None):
+    def create_token(self, user: str = None, realm: str = None,
+                     issuer: Optional[str] = None, delay: Optional[float] = None):
         """Create a new token for user depending on the configuration."""
         assert self._token
         user = user or self.get_user()
@@ -1018,7 +1026,7 @@ class FlaskSimpleAuth:
             log.debug("AUTH (fsa token): token {token} has expired")
             raise self._Err("expired fsa auth token", 401)
         # all is well
-        return user, limit
+        return user, limit, None
 
     def _get_jwt_token_auth(self, token):
         """Tell whether JWT token is ok: return validated user or None."""
@@ -1027,7 +1035,8 @@ class FlaskSimpleAuth:
             data = jwt.decode(token, self._secret, leeway=self._grace * 60.0,
                               audience=self._realm, issuer=self._issuer, algorithms=[self._algo])
             exp = dt.datetime.fromtimestamp(data["exp"], tz=dt.timezone.utc)
-            return data["sub"], exp
+            scope = data["scope"].split(" ") if "scope" in data else None
+            return data["sub"], exp, scope
         except jwt.ExpiredSignatureError:
             log.debug(f"AUTH (jwt token): token {token} has expired")
             raise self._Err("expired jwt auth token", 401)
@@ -1045,12 +1054,13 @@ class FlaskSimpleAuth:
         """Tell whether token is ok: return validated user or None."""
         if not token:
             raise self._Err("missing token", 401)
-        user, exp = self._get_any_token_auth_exp(token)
+        user, exp, scope = self._get_any_token_auth_exp(token)
         # must recheck token expiration
         now = dt.datetime.now(dt.timezone.utc) - dt.timedelta(minutes=self._grace)
         if now > exp:
             log.debug(f"AUTH (token): token {token} has expired")
             raise self._Err("expired auth token", 401)
+        self._local.scope = scope
         return user
 
     def _get_token_auth(self) -> Optional[str]:
@@ -1226,17 +1236,23 @@ class FlaskSimpleAuth:
 
                 # check against all authorized groups/roles
                 for group in groups:
-                    try:
-                        ok = self._user_in_group(self._local.user, group)
-                    except ErrorResponse as e:
-                        return self._Res(e.message, e.status)
-                    except Exception as e:
-                        log.error(f"user_in_group failed: {e}")
-                        return self._Res("internal error in user_in_group", self._server_error)
-                    if not isinstance(ok, bool):
-                        log.error(f"type error in user_in_group: {ok}: {type(ok)}, must return a boolean")
-                        return self._Res("internal error with user_in_group", self._server_error)
-                    if not ok:
+                    # try JWT provided "groups" (RFC 8693, OAuth 2.0)
+                    if self._scope and self._local.scope and group in self._local.scope:
+                        continue
+                    elif self._user_in_group:
+                        try:
+                            ok = self._user_in_group(self._local.user, group)
+                        except ErrorResponse as e:
+                            return self._Res(e.message, e.status)
+                        except Exception as e:
+                            log.error(f"user_in_group failed: {e}")
+                            return self._Res("internal error in user_in_group", self._server_error)
+                        if not isinstance(ok, bool):
+                            log.error(f"type error in user_in_group: {ok}: {type(ok)}, must return a boolean")
+                            return self._Res("internal error with user_in_group", self._server_error)
+                        if not ok:
+                            return self._Res("", 403)
+                    else:
                         return self._Res("", 403)
 
                 # all groups are ok, proceed to call underlying function

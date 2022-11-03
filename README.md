@@ -364,6 +364,9 @@ The available authentication schemes are:
   - `FSA_TOKEN_RENEWAL` for cookie token, the fraction of delay under
     which the cookie/token is renewed automatically.
     Default is *0.0*, meaning no renewal.
+  - `FSA_TOKEN_SCOPE` whether to allow OAuth 2.0 authorizations with
+    the `scope` field.
+    Default is *False*, meaning the `scope` field is ignored.
 
   Function `create_token(user)` creates a token for the user depending
   on the current scheme. If `user` is not given, the current user is taken.

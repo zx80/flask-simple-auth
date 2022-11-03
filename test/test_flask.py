@@ -1444,3 +1444,24 @@ def test_www_authenticate_priority(client):
     assert "Foo" in res.headers["WWW-Authenticate"]
     # restore
     fsa._token, fsa._carrier, fsa._name = token, carrier, name
+
+
+def test_jwt_authorization(client):
+    fsa = app._fsa
+    token, carrier, name, algo, realm = fsa._token, fsa._carrier, fsa._name, fsa._algo, fsa._realm
+    assert not fsa._scope
+    fsa._token, fsa._carrier, fsa._name, fsa._algo, fsa._realm = "jwt", "bearer", "Bearer", "HS256", "comics"
+    fsa._scope = True
+    rosalyn_token = fsa._get_jwt_token(fsa._realm, None, "rosalyn", 10.0, fsa._secret, scope=["character"])
+    rosalyn_auth=("Authorization", f"Bearer {rosalyn_token}")
+    moe_token = fsa._get_jwt_token(fsa._realm, None, "moe", 10.0, fsa._secret, scope=["sidekick"])
+    moe_auth=("Authorization", f"Bearer {moe_token}")
+    check(401, client.get("/perm/jwt-authz"))
+    check(200, client.get("/perm/jwt-authz", headers=[rosalyn_auth]))
+    check(403, client.get("/perm/jwt-authz", headers=[moe_auth]))
+    uig = fsa._user_in_group
+    fsa._user_in_group = None
+    check(403, client.get("/perm/jwt-authz", headers=[moe_auth]))
+    fsa._user_in_group = uig
+    fsa._scope = False
+    fsa._token, fsa._carrier, fsa._name, fsa._algo, fsa._realm = token, carrier, name, algo, realm

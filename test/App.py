@@ -381,3 +381,8 @@ def get_perm_token_basic():
 @app.get("/perm/basic-token", authorize=ALL, auth=("basic", "token"))
 def get_perm_basic_token():
     return "basic-token", 200
+
+# OAuth 2.0
+@app.get("/perm/jwt-authz", authorize="character", auth="token")
+def get_perm_jwt_authz():
+    return f"jwt-authz: {app.get_user()}", 200
