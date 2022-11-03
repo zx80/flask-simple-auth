@@ -231,6 +231,11 @@ def test_register(client):
 def test_fsa_token():
     tsave, hsave = app._fsa._token, app._fsa._algo
     app._fsa._token, app._fsa._algo = "fsa", "blake2s"
+    app._fsa._issuer = "self"
+    foo_token = app.create_token("foo")
+    assert foo_token.startswith("Test/self:foo:")
+    assert app._fsa._get_any_token_auth(foo_token) == "foo"
+    app._fsa._issuer = None
     calvin_token = app.create_token("calvin")
     assert calvin_token[:12] == "Test:calvin:"
     assert app._fsa._get_any_token_auth(calvin_token) == "calvin"
@@ -290,13 +295,15 @@ def test_jwt_token():
     tsave, hsave, app._fsa._token, app._fsa._algo = app._fsa._token, app._fsa._algo, "jwt", "HS256"
     Ksave, ksave = app._fsa._secret, app._fsa._sign
     # hmac signature scheme
+    app._fsa._issuer = "self"
     moe_token = app.create_token("moe")
     assert "." in moe_token and len(moe_token.split(".")) == 3
     user = app._fsa._get_any_token_auth(moe_token)
     assert user == "moe"
-    # again for caching
+    # again for caching test
     user = app._fsa._get_any_token_auth(moe_token)
     assert user == "moe"
+    app._fsa._issuer = None
     # expired token
     delay, grace = app._fsa._delay, app._fsa._grace
     app._fsa._delay, app._fsa._grace = -1, 0

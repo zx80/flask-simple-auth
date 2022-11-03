@@ -12,6 +12,7 @@ alternate password checking such as temporary access codes or external
 passwords, eg LDAP.
 Add `password_quality` hook (also with `FSA_PASSWORD_QUALITY` directive) to
 check for a password strength.
+Add `FSA_TOKEN_ISSUER` to specify a token issuer.
 Set `FSA_TOKEN_RENEWAL` default to *0.0*.
 Prioritize authentication scheme per configuration or route order (`auth`).
 Improve documentation.

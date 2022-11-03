@@ -325,6 +325,8 @@ The available authentication schemes are:
   can be checked easily by the application client.
   Compared to `jwt` tokens, they are easy to interpret and compare manually,
   no decoding is involved.
+  If an issuer is set (`FSA_TOKEN_ISSUER`), the name is appended to the realm
+  after a `/`.
 
   The following configuration directives are available:
 
@@ -353,6 +355,8 @@ The available authentication schemes are:
     Default is *60* minutes.
   - `FSA_TOKEN_GRACE` number of minutes of grace time for token validity.
     Default is *0* minutes.
+  - `FSA_TOKEN_ISSUER` the issuer of the token.
+    Default is *None*.
   - `FSA_TOKEN_ALGO` algorithm used to sign the token.
     Default is `blake2s` for `fsa` and `HS256` for *jwt*.
   - `FSA_TOKEN_LENGTH` number of hash bytes kept for token signature.
@@ -872,3 +876,5 @@ an ORM. By contrast, *Flask Simple Auth*:
 - how to use external authentication stuff? eg LDAP? others?
   it should also work as an alternate pm…
 - refactor password manager in a separate class?
+- issuer could/should be a list?
+  not easily, because each should have its own sig?

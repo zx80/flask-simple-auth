@@ -174,7 +174,7 @@ _DIRECTIVES = {
     "FSA_FAKE_LOGIN", "FSA_PARAM_USER", "FSA_PARAM_PASS",
     "FSA_TOKEN_TYPE", "FSA_TOKEN_ALGO", "FSA_TOKEN_CARRIER", "FSA_TOKEN_DELAY",
     "FSA_TOKEN_GRACE", "FSA_TOKEN_NAME", "FSA_TOKEN_LENGTH", "FSA_TOKEN_SECRET",
-    "FSA_TOKEN_SIGN", "FSA_TOKEN_RENEWAL",
+    "FSA_TOKEN_SIGN", "FSA_TOKEN_RENEWAL", "FSA_TOKEN_ISSUER",
     "FSA_PASSWORD_SCHEME", "FSA_PASSWORD_OPTS", "FSA_PASSWORD_CHECK",
     "FSA_PASSWORD_LEN", "FSA_PASSWORD_RE", "FSA_PASSWORD_QUALITY",
     "FSA_HTTP_AUTH_OPTS",
@@ -568,13 +568,14 @@ class FlaskSimpleAuth:
             raise self._Bad(f"Token carrier {self._carrier} requires a name")
         if self._carrier == "param":
             self._names.add(self._name)
-        # token realm…
+        # token realm and possible issuer…
         realm = conf.get("FSA_REALM", self._app.name)
         if self._token == "fsa":  # simplify realm for fsa
             keep_char = re.compile(r"[-A-Za-z0-9]").match
             realm = "".join(c if keep_char(c) else "-" for c in realm)
             realm = "-".join(filter(lambda s: s != "", realm.split("-")))
         self._realm = realm
+        self._issuer: Optional[str] = conf.get("FSA_TOKEN_ISSUER", None)
         # token expiration in minutes
         self._delay = conf.get("FSA_TOKEN_DELAY", 60.0)
         self._grace = conf.get("FSA_TOKEN_GRACE", 0.0)
@@ -935,6 +936,7 @@ class FlaskSimpleAuth:
     # FSA_TOKEN_DELAY: token validity in minutes (60)
     # FSA_TOKEN_GRACE: grace delay for token validity in minutes (0)
     # FSA_TOKEN_RENEWAL: fraction of delay for automatic renewal (0.0)
+    # FSA_TOKEN_ISSUER: token issuer (None)
     # FSA_REALM: realm (lc simplified app name)
     #
     def _cmp_sig(self, data, secret):
@@ -956,48 +958,53 @@ class FlaskSimpleAuth:
             raise self._Err(f"unexpected timestamp format: {ts}", 400)
         return dt.datetime(*[int(p[i]) for i in range(1, 7)], tzinfo=dt.timezone.utc)
 
-    def _get_fsa_token(self, realm, user, delay, secret):
+    def _get_fsa_token(self, realm, issuer, user, delay, secret):
         """Compute a signed token for "user" valid for "delay" minutes."""
         limit = self._to_timestamp(dt.datetime.now(dt.timezone.utc) + dt.timedelta(minutes=delay))
-        data = f"{realm}:{user}:{limit}"
+        data = f"{realm}/{issuer}:{user}:{limit}" if issuer else f"{realm}:{user}:{limit}"
         sig = self._cmp_sig(data, secret)
         return f"{data}:{sig}"
 
-    def _get_jwt_token(self, realm, user, delay, secret):
+    def _get_jwt_token(self, realm, issuer, user, delay, secret):
         """Json Web Token (JWT) generation.
 
         - exp: expiration
         - sub: subject (the user)
-        - iss: issuer (not used)
-        - aud = audience (the realm)
+        - iss: issuer (the source)
+        - aud : audience (the realm)
+        - not used: iat (issued at), nbf (not before), jti (jtw id)
         """
         exp = dt.datetime.now(dt.timezone.utc) + dt.timedelta(minutes=delay)
         import jwt
-        return jwt.encode({"exp": exp, "sub": user, "aud": realm},
-                          secret, algorithm=self._algo)
+        token = {"exp": exp, "sub": user, "aud": realm}
+        if issuer:
+            token.update(iss=issuer)
+        return jwt.encode(token, secret, algorithm=self._algo)
 
     def _can_create_token(self):
         """Whether it is possible to create a token."""
         return self._token and not \
             (self._token == "jwt" and self._algo[0] in ("R", "E", "P") and not self._sign)
 
-    def create_token(self, user: str = None, realm: str = None, delay: float = None):
+    def create_token(self, user: str = None, realm: str = None, issuer: Optional[str] = None, delay: float = None):
         """Create a new token for user depending on the configuration."""
         assert self._token
         user = user or self.get_user()
         realm = realm or self._realm
+        issuer = issuer or self._issuer
         delay = delay or self._delay
         return \
-            self._get_fsa_token(realm, user, delay, self._secret) if self._token == "fsa" else \
-            self._get_jwt_token(realm, user, delay, self._sign)
+            self._get_fsa_token(realm, issuer, user, delay, self._secret) if self._token == "fsa" else \
+            self._get_jwt_token(realm, issuer, user, delay, self._sign)
 
     def _get_fsa_token_auth(self, token):
         """Tell whether FSA token is ok: return validated user or None."""
-        # token format: "realm:calvin:20380119031407:<signature>"
+        # token format: "realm[/issuer]:calvin:20380119031407:<signature>"
         realm, user, slimit, sig = token.split(":", 3)
         limit = self._from_timestamp(slimit)
         # check realm
-        if realm != self._realm:
+        if self._issuer and realm != f"{self._realm}/{self._issuer}" or \
+           not self._issuer and realm != self._realm:
             log.debug(f"AUTH (fsa token): unexpected realm {realm}")
             raise self._Err(f"unexpected realm: {realm}", 401)
         # check signature
@@ -1018,7 +1025,7 @@ class FlaskSimpleAuth:
         import jwt
         try:
             data = jwt.decode(token, self._secret, leeway=self._grace * 60.0,
-                              audience=self._realm, algorithms=[self._algo])
+                              audience=self._realm, issuer=self._issuer, algorithms=[self._algo])
             exp = dt.datetime.fromtimestamp(data["exp"], tz=dt.timezone.utc)
             return data["sub"], exp
         except jwt.ExpiredSignatureError:
