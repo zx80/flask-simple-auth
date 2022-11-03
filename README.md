@@ -5,7 +5,7 @@ for [Flask](https://flask.palletsprojects.com/), controled from
 Flask configuration and the extended `route` decorator.
 
 ![Status](https://github.com/zx80/flask-simple-auth/actions/workflows/fsa.yml/badge.svg?branch=master&style=flat)
-![Tests](https://img.shields.io/badge/tests-58%20✓-success)
+![Tests](https://img.shields.io/badge/tests-59%20✓-success)
 ![Coverage](https://img.shields.io/badge/coverage-100%25-success)
 ![Issues](https://img.shields.io/github/issues/zx80/flask-simple-auth?style=flat)
 ![Python](https://img.shields.io/badge/python-3-informational)
@@ -875,7 +875,6 @@ an ORM. By contrast, *Flask Simple Auth*:
 - should try to reduce "no cover" pragmas
 - document ErrorResponse?
 - coverage should include demo run
-- add JWT authorizations? OAuth2 (RFC 9068)?
 - how to use external authentication stuff? eg LDAP? others?
   it should also work as an alternate pm…
 - refactor password manager in a separate class?
