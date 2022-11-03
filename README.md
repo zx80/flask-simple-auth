@@ -738,6 +738,12 @@ behaves like the wrapped object itself.
 
 See the module for a detailed documentation.
 
+### `ErrorResponse` class
+
+Raising this exception with a message and status from any user-defined function
+generates a `Response` of this status with the text message contents sent to the
+request.
+
 ### Miscellaneous Configuration Directives
 
 Some directives govern various details for this extension internal working.
@@ -873,7 +879,6 @@ an ORM. By contrast, *Flask Simple Auth*:
 - should have explicit tests for psycopg version 2 and 3 drivers
 - password re could use a dict for providing an explanation?
 - should try to reduce "no cover" pragmas
-- document ErrorResponse?
 - coverage should include demo run
 - how to use external authentication stuff? eg LDAP? others?
   it should also work as an alternate pm…
