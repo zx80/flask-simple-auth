@@ -431,7 +431,7 @@ class FlaskSimpleAuth:
     # are cumulative, so we cannot do a "OR". ISTM that it would depend on
     # the check object function to be quite subtle. Maybe a simpler yet
     # declarative solutions would be to provide distinct routes.
-    def user_authz_mode(mode):
+    def user_authz_mode(self, mode):
         """Can current user perform an operation in some mode."""
         return self._scope and self._local.scope and mode in self._local.scope
 
