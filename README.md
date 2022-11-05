@@ -45,7 +45,8 @@ def patch_whatever(id: int, some: int, stuff: str = "wow"):
 ```
 
 Authentication is manage from the application flask configuration
-with `FSA_*` (Flask simple authentication) directives:
+with `FSA_*` (Flask simple authentication) directives from
+the configuration file (`DEMO_CONFIG`):
 
 ```Python
 FSA_AUTH = "httpd"     # inherit web-serveur authentication
