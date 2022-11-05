@@ -922,3 +922,4 @@ is both shorter (32 vs 40 cloc), elegant and more featureful.
 - add `issuer` route parameter?
 - make oauth and object\_perms compatible?
 - document oauth authz in the Authorizations section?
+- how to have several issuers and their signatures?
