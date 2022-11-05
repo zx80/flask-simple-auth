@@ -5,6 +5,7 @@
 from FlaskSimpleAuth import Flask, abort
 
 app = Flask("todo")
+# NOTE we assume that requests are authenticated somehow
 # FIXME app.config.from_envvar("TODO_CONFIG")
 
 TODOS = {
@@ -14,27 +15,25 @@ TODOS = {
 }
 
 
-def abort_if_todo_doesnt_exist(tid):
-    if tid not in TODOS:
-        abort(404, message=f"Todo {tid} doesn't exist")
+@app.object_perms("todos")
+def check_todo_access(login: str, tid: str, mode = None):
+    # returning None triggers a 404
+    return True if tid in TODOS else None
 
 
-@app.get("/todos/<tid>", authorize="ANY")
+@app.get("/todos/<tid>", authorize=("todos",))
 def get_todos_tid(tid: str):
-    abort_if_todo_doesnt_exist(tid)
     return TODOS[tid], 200
 
 
-@app.put("/todos/<tid>", authorize="ANY")
+@app.put("/todos/<tid>", authorize=("todos",))
 def put_todos_tid(tid: str, task: str):
-    abort_if_todo_doesnt_exist(tid)
     TODOS[tid] = task
     return "", 201
 
 
-@app.delete("/todos/<tid>", authorize="ANY")
+@app.delete("/todos/<tid>", authorize=("todos",))
 def delete_todos_tid(tid: str):
-    abort_if_todo_doesnt_exist(tid)
     del TODOS[tid]
     return "", 204
 

@@ -863,8 +863,13 @@ By contrast, *Flask Simple Auth*:
 Flask extension designed to ease developping a REST API by associating
 classes to routes, with class methods to handle each HTTP method.
 By contrast, *Flask Simple Auth*:
-- does NOT impose a method/class for each route.
-- does provide a simpler parameter management.
+- does NOT propose/impose a method/class for each route.
+- does provide a simpler parameter management scheme.
+- integrates cleanly authentification and authorizations,
+  including handling *404* transparently.
+The [reimplementation](demo/todos-fsa.py) of the todo
+[example](https://flask-restful.readthedocs.io/en/latest/quickstart.html#full-example)
+with our package is both shorter (32 vs 40 cloc) and more featureful.
 
 
 ## TODO
