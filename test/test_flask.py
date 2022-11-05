@@ -1353,6 +1353,7 @@ def test_warnings_and_errors():
     # unused length warning
     app = af.create_app(
         FSA_TOKEN_TYPE="jwt",
+        FSA_TOKEN_ISSUER="calvin",
         FSA_TOKEN_LENGTH=8,  # no used if jwt
         FSA_GET_USER_PASS=bad_gup_2,
     )
@@ -1495,6 +1496,15 @@ def test_jwt_authorization():
         assert False, "route should be rejected"
     except fsa.ConfigError as e:
         assert "mixed" in str(e)
+    app._fsa._issuer = None
+    try:
+        @app.patch("/any/stuff", authorize=["write"], auth="oauth")
+        def patch_any_stuff():
+            return "", 204
+        assert False, "route should be rejected"
+    except fsa.ConfigError as e:
+        assert "ISSUER" in str(e)
+    app._fsa._issuer = "god"
     # usage errors
     a = app._fsa
     rosalyn_token = a._get_jwt_token(a._realm, "god", "rosalyn", 10.0, a._secret, scope=["character"])

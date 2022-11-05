@@ -1494,7 +1494,7 @@ class FlaskSimpleAuth:
             if self._token != "jwt":
                 raise self._Bad(f"oauth authorizations require JWT tokens on {rule}")
             if not self._issuer:
-                raise self._Bad("oauth token authorizations require FSA_TOKEN_ISSUER on {rule}")
+                raise self._Bad(f"oauth token authorizations require FSA_TOKEN_ISSUER on {rule}")
 
         # separate predefs, groups and perms
         predefs = list(filter(lambda a: a in _PREDEFS, authorize))
