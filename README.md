@@ -178,11 +178,18 @@ Once initialized `app` is a standard Flask object with some additions:
   register authentication and authorization helper functions.
 - `get_user` to extract the authenticated user or raise an exception.
 - `current_user` to get the authenticated user if any, or `None`.
+  It can also be requested as a parameter with the `CurrentUser` type.
+- `user_oauth` to function to check if the current token-authenticated user
+  has some authorizations.
 - `hash_password` and `check_password` to hash or check a password.
 - `create_token` to compute a new authentication token for the current user.
 - `clear_caches` to clear internal process caches (probably a bad idea).
 - `cast` a function/decorator to register no str to some type casts for
   parameters.
+- `special_parameter` a function/decorator to register new special parameter types.
+- `password_quality` a function/decorator to register a function to check for
+  password quality.
+- `password_check` a function/decorator to register a new password checker.
 
 It is also possible, but *not* recommended to use the flask extensions model,
 in which case the `FlaskSimpleAuth` object must be instanciated and routes
