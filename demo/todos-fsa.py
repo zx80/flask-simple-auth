@@ -2,7 +2,7 @@
 # FlaskSimpleAuth version of Flask-RESTful TODO application
 # https://flask-restful.readthedocs.io/en/latest/quickstart.html
 #
-from FlaskSimpleAuth import Flask, abort
+from FlaskSimpleAuth import Flask
 
 app = Flask("todo")
 # NOTE we assume that requests are authenticated somehow
