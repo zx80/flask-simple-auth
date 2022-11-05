@@ -867,9 +867,8 @@ By contrast, *Flask Simple Auth*:
 - does provide a simpler parameter management scheme.
 - integrates cleanly authentification and authorizations,
   including handling *404* transparently.
-The [reimplementation](demo/todos-fsa.py) of the todo
-[example](https://flask-restful.readthedocs.io/en/latest/quickstart.html#full-example)
-with our package is both shorter (32 vs 40 cloc) and more featureful.
+Our [implementation](demo/todos-fsa.py) of the doc [example](demo/todos-frf.py)
+is both shorter (32 vs 40 cloc), elegant and more featureful.
 
 
 ## TODO
