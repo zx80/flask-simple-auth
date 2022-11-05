@@ -750,7 +750,8 @@ def put_user_pass(_pass: str, _def: str, _import: str):
 
 ### Utils
 
-Utilities include the `Reference` generic object wrapper class and
+Utilities include the `Reference` generic object wrapper class,
+a `ErrorResponse` class to quickly generate error replies and 
 miscellaneous configuration directives which cover security,
 caching and CORS.
 
@@ -774,7 +775,7 @@ Raising this exception with a message and status from any user-defined function
 generates a `Response` of this status with the text message contents sent to the
 request.
 
-### Miscellaneous Configuration Directives
+#### Miscellaneous Configuration Directives
 
 Some directives govern various details for this extension internal working.
 
