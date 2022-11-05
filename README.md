@@ -543,7 +543,7 @@ The parameter accepts a list of `str` and `int` for groups, and of
 `tuple` for object permissions.  If a scalar is provided, it is assumed
 to be equivalent to a list of one element.
 
-When multiple authorizations are provided they are cumulative,
+When multiple authorizations are required through a list, they are cumulative,
 that is all conditions must be met.
 
 #### Group Authorizations
