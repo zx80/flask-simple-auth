@@ -920,3 +920,4 @@ is both shorter (32 vs 40 cloc), elegant and more featureful.
 - allow to restrict allowed group for early typo detection?
 - same with oauth scopes?
 - add `issuer` route parameter?
+- make oauth and object\_perms compatible?
