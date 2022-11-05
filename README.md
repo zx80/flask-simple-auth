@@ -713,9 +713,10 @@ types to their conversion functions:
 FSA_CAST = { House: strToHouse, … }
 ```
 
-As a special case, the `Request`, `Session`, `Globals` and `Environ` types,
-when used for parameters, result in the `request`, `session`, `g` flask special
-objects and `environ` WSGI parameter to be passed as this parameter to the
+As a special case, the `Request`, `Session`, `Globals`, `Environ` and
+`CurrentUser` types, when used for parameters, result in the `request`,
+`session`, `g` flask special objects, `environ` WSGI parameter and
+the current authenticated user to be passed as this parameter to the
 function, allowing to keep a functional programming style by hidding away these
 special proxies.
 

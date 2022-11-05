@@ -83,7 +83,12 @@ class Globals:
 
 
 class Environ:
-    "Environ parameter type."""
+    """Environ parameter type."""
+    pass
+
+
+class CurrentUser:
+    """CurrentUser parameter type."""
     pass
 
 
@@ -229,6 +234,7 @@ class FlaskSimpleAuth:
             Environ: lambda: request.environ,
             Session: lambda: session,
             Globals: lambda: g,
+            CurrentUser: lambda: self.current_user(),
         }
         self._auth: List[str] = []
         self._http_auth = None

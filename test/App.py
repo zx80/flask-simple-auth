@@ -13,7 +13,7 @@ log = logging.getLogger("app")
 #
 import FlaskSimpleAuth as fsa
 from FlaskSimpleAuth import Flask, jsonify, ANY, ALL, NONE, path, string, \
-    Request, Session, Globals, Environ
+    Request, Session, Globals, Environ, CurrentUser
 app = Flask("Test", debug=True)
 
 #
@@ -342,9 +342,9 @@ from FlaskSimpleAuth import JsonData
 def get_json(j: JsonData):
     return f"{type(j).__name__}: {js.dumps(j)}", 200
 
-# magic parameters
+# magic parameters, user should be None as there is no authentication required
 @app.get("/request", authorize=ANY)
-def get_request(req: Request, ses: Session, glo: Globals, env: Environ):
+def get_request(req: Request, ses: Session, glo: Globals, env: Environ, user: CurrentUser):
     return req.base_url, 200
 
 # new magic parameters

@@ -7,6 +7,7 @@ and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 
 Add `special_parameter` decorator and `FSA_SPECIAL_PARAMETER` directive
 to add special parameters.
+Add `CurrentUser` special parameter.
 Add `password_check` hook (also with `FSA_PASSWORD_CHECK` directive) for
 alternate password checking such as temporary access codes or external
 passwords, eg LDAP.
