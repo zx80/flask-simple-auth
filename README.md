@@ -840,7 +840,8 @@ See [all versions](VERSIONS.md).
 
 [Flask-Security](https://github.com/Flask-Middleware/flask-security/) is a
 feature-full web-oriented authentication and authorization framework based on
-an ORM. By contrast, *Flask Simple Auth*:
+an ORM.
+By contrast, *Flask Simple Auth*:
 - does NOT assume any ORM or impose a data model,
   you only have to provide callback functions to access the needed data
   (password, groups, object permissions…).
@@ -857,6 +858,14 @@ an ORM. By contrast, *Flask Simple Auth*:
   password strength checker or a password alternate verifier.
 - is much smaller (about 1/10th, ignoring dependencies), so probably it does
   less things!
+
+[Flask-RESTful](https://github.com/flask-restful/flask-restful) is a
+Flask extension designed to ease developping a REST API by associating
+classes to routes, with class methods to handle each HTTP method.
+By contrast, *Flask Simple Auth*:
+- does NOT impose a method/class for each route.
+- does provide a simpler parameter management.
+
 
 ## TODO
 
