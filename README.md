@@ -393,12 +393,16 @@ The available authentication schemes are:
 - `oauth`
 
   Synonymous to `token`, but to be used on a route so as to trigger JWT *scope*
-  authorizations on that route.
+  authorizations on that route: Authorizations are attached to the current
+  authentification performed through a token.
   In that case, the `authorize` groups are interpreted as scopes that must be
   provided by the token.
   In order to simplify security implications, *scopes* and *groups*
   (`user_in_group`) authorizations cannot be mixed on a route:
   create distinct routes to handle these.
+
+  Method `user_oauth` allows to check whether the current user can perform
+  some operation.
 
 - `http-token`
 
@@ -908,3 +912,4 @@ is both shorter (32 vs 40 cloc), elegant and more featureful.
   not easily, because each should have its own sig?
 - allow to restrict allowed group for early typo detection?
 - same with oauth scopes?
+- add `issuer` route parameter?

@@ -127,7 +127,7 @@ class Flask(flask.Flask):
     - several additional methods are provided: `get_user_pass`,
       `user_in_group`, `check_password`, `hash_password`, `create_token`,
       `get_user`, `current_user`, `clear_caches`, `cast`, `object_perms`,
-      `password_quality` and `password_check`.
+      `user_oauth`, `password_quality` and `password_check`.
     """
 
     def __init__(self, *args, debug: Optional[bool] = None, **kwargs):
@@ -139,6 +139,7 @@ class Flask(flask.Flask):
         self.get_user_pass = self._fsa.get_user_pass
         self.user_in_group = self._fsa.user_in_group
         self.object_perms = self._fsa.object_perms
+        self.user_oauth = self._fsa.user_oauth
         self.cast = self._fsa.cast
         self.special_parameter = self._fsa.special_parameter
         self.password_quality = self._fsa.password_quality
@@ -295,7 +296,7 @@ class FlaskSimpleAuth:
         self._local.user = None
         self._local.need_authorization = True
         self._local.auth = self._auth
-        self._local.scope = None
+        self._local.scopes = None
 
     def _auth_post_check(self, res: Response):
         """After request hook to detect missing authorizations."""
@@ -424,20 +425,9 @@ class FlaskSimpleAuth:
         assert domain in self._object_perms
         return self._object_perms[domain](user, oid, mode)
 
-    #
-    # FIXME WIP OAuth2 usability
-    #
-    # If the user is fully logged in, probably they can do whatever.
-    # In the case of delegated permissions (through token with a scope),
-    # the delegation would be some restricted access. Currently permissions
-    # are cumulative, so we cannot do an "OR", and it does not seem a good
-    # practice to allow it because of the risk of security issues.
-    # ISTM that it would depend on the check object function to be quite subtle
-    # to handle both usages. Maybe a simpler yet declarative solutions
-    # would be to provide distinct routes.
-    def user_authz_mode(self, mode):
-        """Can current user perform an operation in some mode."""
-        return self._local.scope and mode in self._local.scope
+    def user_oauth(self, scope):
+        """Is scope in the current user scope."""
+        return self._local.scopes and scope in self._local.scopes
 
     #
     # DEFERRED INITIALIZATIONS
@@ -1059,8 +1049,8 @@ class FlaskSimpleAuth:
             data = jwt.decode(token, self._secret, leeway=self._grace * 60.0,
                               audience=self._realm, issuer=self._issuer, algorithms=[self._algo])
             exp = dt.datetime.fromtimestamp(data["exp"], tz=dt.timezone.utc)
-            scope = data["scope"].split(" ") if "scope" in data else None
-            return data["sub"], exp, scope
+            scopes = data["scope"].split(" ") if "scope" in data else None
+            return data["sub"], exp, scopes
         except jwt.ExpiredSignatureError:
             log.debug(f"AUTH (jwt token): token {token} has expired")
             raise self._Err("expired jwt auth token", 401)
@@ -1078,13 +1068,13 @@ class FlaskSimpleAuth:
         """Tell whether token is ok: return validated user or None."""
         if not token:
             raise self._Err("missing token", 401)
-        user, exp, scope = self._get_any_token_auth_exp(token)
+        user, exp, scopes = self._get_any_token_auth_exp(token)
         # must recheck token expiration
         now = dt.datetime.now(dt.timezone.utc) - dt.timedelta(minutes=self._grace)
         if now > exp:
             log.debug(f"AUTH (token): token {token} has expired")
             raise self._Err("expired auth token", 401)
-        self._local.scope = scope
+        self._local.scopes = scopes
         return user
 
     def _get_token_auth(self) -> Optional[str]:
@@ -1253,7 +1243,7 @@ class FlaskSimpleAuth:
                 self._local.need_authorization = False
 
                 for scope in scopes:
-                    if not self.user_authz_mode(scope):
+                    if not self.user_oauth(scope):
                         return self._Res("", 403)
 
                 return self._safe_call(path, "oauth authorization", fun, *args, **kwargs)
