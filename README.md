@@ -110,6 +110,8 @@ following the [OAuth2](https://oauth.net/2/) approach.
 presence and type checked, and they are added automatically as named parameters
 to route functions, skipping the burden of checking them in typical REST functions.
 In practice, importing Flask's `request` global variable is not necessary anymore.
+The philosophy is that a REST API entry point is a function call through HTTP,
+so the route definition should be a function, avoiding relying on magic globals.
 
 [**Utils**](#utils) include the convenient `Reference` class which allows to
 share possibly thread-local data for import, and CORS handling.
