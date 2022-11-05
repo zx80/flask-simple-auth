@@ -404,6 +404,13 @@ The available authentication schemes are:
   Method `user_oauth` allows to check whether the current user can perform
   some operation.
 
+  ```python
+  # /data is only accessible through a trusted JWT token with "read" scope
+  @app.get("/data", authorize="read", auth="oauth"):
+  def get_data():
+      return access_some_data(app.get_user()), 200
+  ```
+
 - `http-token`
 
   Token scheme based on [flask-HTTPAuth](https://pypi.org/project/Flask-HTTPAuth/).
