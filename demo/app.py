@@ -59,3 +59,8 @@ app.register_blueprint(scare)
 # demonstrate parameter typing, including JsonData "magic" type
 from types_path import types
 app.register_blueprint(types, url_prefix="/types")
+
+# demonstrate delegated authorizations through JWT tokens
+if app._fsa._token == "jwt":
+    from oauth import oauth
+    app.register_blueprint(oauth)

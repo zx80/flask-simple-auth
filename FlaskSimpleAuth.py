@@ -174,7 +174,7 @@ _DIRECTIVES = {
     "FSA_FAKE_LOGIN", "FSA_PARAM_USER", "FSA_PARAM_PASS",
     "FSA_TOKEN_TYPE", "FSA_TOKEN_ALGO", "FSA_TOKEN_CARRIER", "FSA_TOKEN_DELAY",
     "FSA_TOKEN_GRACE", "FSA_TOKEN_NAME", "FSA_TOKEN_LENGTH", "FSA_TOKEN_SECRET",
-    "FSA_TOKEN_SIGN", "FSA_TOKEN_RENEWAL", "FSA_TOKEN_ISSUER", "FSA_TOKEN_SCOPE",
+    "FSA_TOKEN_SIGN", "FSA_TOKEN_RENEWAL", "FSA_TOKEN_ISSUER",
     "FSA_PASSWORD_SCHEME", "FSA_PASSWORD_OPTS", "FSA_PASSWORD_CHECK",
     "FSA_PASSWORD_LEN", "FSA_PASSWORD_RE", "FSA_PASSWORD_QUALITY",
     "FSA_HTTP_AUTH_OPTS",
@@ -270,7 +270,7 @@ class FlaskSimpleAuth:
     def _auth_first(self):
         """Current priority authentication scheme for WWW-Authenticate."""
         for a in self._local.auth:
-            if a == "token" and self._carrier == "bearer" or \
+            if a in ("token", "oauth") and self._carrier == "bearer" or \
                a in ("http-token", "basic", "http-basic", "digest", "http-digest", "password"):
                 return a
         return None
@@ -342,7 +342,7 @@ class FlaskSimpleAuth:
             auth = self._auth_first()
             if not auth:
                 pass
-            elif auth == "token":
+            elif auth in ("token", "oauth"):
                 res.headers["WWW-Authenticate"] = f"{self._name} realm=\"{self._realm}\""
             elif auth in ("basic", "password"):
                 res.headers["WWW-Authenticate"] = f"Basic realm=\"{self._realm}\""
@@ -437,7 +437,7 @@ class FlaskSimpleAuth:
     # would be to provide distinct routes.
     def user_authz_mode(self, mode):
         """Can current user perform an operation in some mode."""
-        return self._scope and self._local.scope and mode in self._local.scope
+        return self._local.scope and mode in self._local.scope
 
     #
     # DEFERRED INITIALIZATIONS
@@ -485,12 +485,11 @@ class FlaskSimpleAuth:
         if not auth:
             self._auth = ["httpd"]
         elif isinstance(auth, str):
-            if auth not in ("token", "http-token"):
+            if auth not in ("oauth", "token", "http-token"):
                 self._auth = ["token", auth]
             else:
                 self._auth = [auth]
-        else:
-            # FIXME should it add token?
+        else:  # keep the provided list, whatever
             self._auth = auth
         for a in self._auth:
             if a not in self._FSA_AUTH:
@@ -634,13 +633,11 @@ class FlaskSimpleAuth:
             self._siglen = 0
         else:  # pragma: no cover
             raise self._Bad(f"invalid FSA_TOKEN_TYPE ({self._token})")
-        # JWT authorizations (RFC 8693)
-        self._scope: bool = conf.get("FSA_TOKEN_SCOPE", False)
-        if self._scope:
+        if "oauth" in self._auth:  # JWT authorizations (RFC 8693)
             if self._token != "jwt":
-                log.warning("FSA_TOKEN_SCOPE directive requires JWT")
+                raise self._Bad("oauth token authorizations require JWT")
             if not self._issuer:
-                log.warning("FSA_TOKEN_SCOPE directives requires FSA_TOKEN_ISSUER")
+                raise self._Bad("oauth token authorizations require FSA_TOKEN_ISSUER")
         #
         # HTTP parameter names
         #
@@ -1028,8 +1025,15 @@ class FlaskSimpleAuth:
     def _get_fsa_token_auth(self, token):
         """Tell whether FSA token is ok: return validated user or None."""
         # token format: "realm[/issuer]:calvin:20380119031407:<signature>"
+        if token.count(":") != 3:
+            log.debug(f"AUTH (fsa token): unexpected token {token}")
+            raise self._Err(f"invalid fsa token: {token}", 401)
         realm, user, slimit, sig = token.split(":", 3)
-        limit = self._from_timestamp(slimit)
+        try:
+            limit = self._from_timestamp(slimit)
+        except Exception as e:
+            log.debug(f"AUTH (fsa token): malformed timestamp {slimit}: {e}")
+            raise self._Err(f"unexpected limit: {slimit}", 401)
         # check realm
         if self._issuer and realm != f"{self._realm}/{self._issuer}" or \
            not self._issuer and realm != self._realm:
@@ -1111,6 +1115,7 @@ class FlaskSimpleAuth:
         "none": lambda s: None,
         "httpd": _get_httpd_auth,
         "token": _get_token_auth,
+        "oauth": _get_token_auth,
         "fake": _get_fake_auth,
         "basic": _get_basic_auth,
         "digest": _get_httpauth,
@@ -1185,6 +1190,7 @@ class FlaskSimpleAuth:
     # INTERNAL DECORATORS
     #
     # _authenticate: set self._user
+    #   _oauth_auth: check OAuth scope authorization
     #   _group_auth: check group authorization
     #   _parameters: handle HTTP/JSON to python parameter translation
     #    _perm_auth: check per-object permissions
@@ -1236,6 +1242,26 @@ class FlaskSimpleAuth:
 
         return decorate
 
+    def _oauth_auth(self, path, *scopes):
+        """Decorator to authorize OAuth scopes (token-provided authz)."""
+
+        def decorate(fun: Callable):
+
+            @functools.wraps(fun)
+            def wrapper(*args, **kwargs):
+
+                self._local.need_authorization = False
+
+                for scope in scopes:
+                    if not self.user_authz_mode(scope):
+                        return self._Res("", 403)
+
+                return self._safe_call(path, "oauth authorization", fun, *args, **kwargs)
+
+            return wrapper
+
+        return decorate
+
     def _group_auth(self, path, *groups):
         """Decorator to authorize user groups."""
 
@@ -1256,23 +1282,17 @@ class FlaskSimpleAuth:
 
                 # check against all authorized groups/roles
                 for group in groups:
-                    # try JWT provided "groups" (RFC 8693, OAuth 2.0)
-                    if self.user_authz_mode(group):
-                        continue
-                    elif self._user_in_group:
-                        try:
-                            ok = self._user_in_group(self._local.user, group)
-                        except ErrorResponse as e:
-                            return self._Res(e.message, e.status)
-                        except Exception as e:
-                            log.error(f"user_in_group failed: {e}")
-                            return self._Res("internal error in user_in_group", self._server_error)
-                        if not isinstance(ok, bool):
-                            log.error(f"type error in user_in_group: {ok}: {type(ok)}, must return a boolean")
-                            return self._Res("internal error with user_in_group", self._server_error)
-                        if not ok:
-                            return self._Res("", 403)
-                    else:
+                    try:
+                        ok = self._user_in_group(self._local.user, group)
+                    except ErrorResponse as e:
+                        return self._Res(e.message, e.status)
+                    except Exception as e:
+                        log.error(f"user_in_group failed: {e}")
+                        return self._Res("internal error in user_in_group", self._server_error)
+                    if not isinstance(ok, bool):
+                        log.error(f"type error in user_in_group: {ok}: {type(ok)}, must return a boolean")
+                        return self._Res("internal error with user_in_group", self._server_error)
+                    if not ok:
                         return self._Res("", 403)
 
                 # all groups are ok, proceed to call underlying function
@@ -1464,6 +1484,18 @@ class FlaskSimpleAuth:
         if len(authorize) == 0:
             authorize = [NONE]
 
+        # special handling of "oauth" rule-specific authentication
+        if auth and type(auth) in (tuple, list) and "oauth" in auth:
+            if len(auth) != 1:
+                raise self._Bad(f"oauth authentication cannot be mixed with other schemes on {rule}")
+            auth = "oauth"
+
+        if auth == "oauth":  # sanity checks
+            if self._token != "jwt":
+                raise self._Bad(f"oauth authorizations require JWT tokens on {rule}")
+            if not self._issuer:
+                log.warning("oauth token authorizations require FSA_TOKEN_ISSUER on {rule}")
+
         # separate predefs, groups and perms
         predefs = list(filter(lambda a: a in _PREDEFS, authorize))
         groups = list(filter(lambda a: type(a) in (int, str) and a not in _PREDEFS, authorize))
@@ -1551,7 +1583,10 @@ class FlaskSimpleAuth:
             fun = self._parameters(newpath)(fun)
         if groups:
             assert need_authenticate
-            fun = self._group_auth(newpath, *groups)(fun)
+            if auth == "oauth":
+                fun = self._oauth_auth(newpath, *groups)(fun)
+            else:
+                fun = self._group_auth(newpath, *groups)(fun)
         if ANY in predefs:
             assert not groups and not perms
             fun = self._any_noauth(newpath, *groups)(fun)

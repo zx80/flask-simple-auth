@@ -239,12 +239,23 @@ def test_fsa_token():
     calvin_token = app.create_token("calvin")
     assert calvin_token[:12] == "Test:calvin:"
     assert app._fsa._get_any_token_auth(calvin_token) == "calvin"
+    # malformed token
+    try:
+        user = app._fsa._get_any_token_auth("not an FSA token")
+        assert False, "expecting a malformed error"
+    except fsa.ErrorResponse as e:
+        assert "invalid fsa token" in str(e)
     # bad timestamp format
     try:
         user = app._fsa._get_any_token_auth("R:U:demain:signature")
         assert False, "expecting a bad timestamp format"
     except fsa.ErrorResponse as e:
         assert "unexpected timestamp format" in e.message
+    try:
+        user = app._fsa._get_any_token_auth("Test:calvin:20201500000000:signature")
+        assert False, "expecting a bad timestamp format"
+    except fsa.ErrorResponse as e:
+        assert "unexpected limit" in e.message
     # force expiration
     grace = app._fsa._grace
     app._fsa._grace = -1000000
@@ -1224,6 +1235,27 @@ def test_group_errors():
     res = c.get("/float", data={"LOGIN": "calvin"})
     assert res.status_code == 500 and b"internal error with user_in_group" in res.data
 
+def test_scope_errors():
+    import AppFact as af
+    try:
+        app = af.create_app(FSA_AUTH="oauth", FSA_TOKEN_TYPE="fsa")
+        assert False, "should raise an exception"
+    except ConfigError as e:
+        assert "oauth" in str(e) and "JWT" in str(e)
+    try:
+        app = af.create_app(FSA_AUTH="oauth", FSA_TOKEN_TYPE="jwt", FSA_TOKEN_ISSUER=None)
+        assert False, "should raise an exception"
+    except ConfigError as e:
+        assert "oauth" in str(e) and "ISSUER" in str(e)
+    try:
+        app = af.create_app(FSA_AUTH="token", FSA_TOKEN_TYPE="fsa", FSA_TOKEN_ISSUER="god")
+        @app.get("/foo/bla", authorize=["read"], auth=["oauth"])
+        def get_foo_bla():
+            return "", 200
+        assert False, "should be rejected"
+    except ConfigError as e:
+        assert "JWT" in str(e)
+
 # run some checks on AppFact, repeat to exercise caching
 def run_some_checks(c, n=10):
     assert n >= 1
@@ -1448,22 +1480,28 @@ def test_www_authenticate_priority(client):
     fsa._token, fsa._carrier, fsa._name = token, carrier, name
 
 
-def test_jwt_authorization(client):
-    fsa = app._fsa
-    token, carrier, name, algo, realm = fsa._token, fsa._carrier, fsa._name, fsa._algo, fsa._realm
-    assert not fsa._scope
-    fsa._token, fsa._carrier, fsa._name, fsa._algo, fsa._realm = "jwt", "bearer", "Bearer", "HS256", "comics"
-    fsa._scope = True
-    rosalyn_token = fsa._get_jwt_token(fsa._realm, None, "rosalyn", 10.0, fsa._secret, scope=["character"])
+def test_jwt_authorization():
+    import AppFact as af
+    app = af.create_app(FSA_TOKEN_TYPE="jwt", FSA_REALM="comics", FSA_TOKEN_ISSUER="god")
+    # oauth in list auth
+    @app.get("/some/stuff", authorize=["read"], auth=["oauth"])
+    def get_some_stuff():
+        return "", 200
+    # config errors
+    try:
+        @app.get("/some/path", authorize=["read", "write"], auth=["oauth", "basic"])
+        def get_some_path():
+            return "", 200
+        assert False, "route should be rejected"
+    except fsa.ConfigError as e:
+        assert "mixed" in str(e)
+    # usage errors
+    a = app._fsa
+    rosalyn_token = a._get_jwt_token(a._realm, "god", "rosalyn", 10.0, a._secret, scope=["character"])
     rosalyn_auth=("Authorization", f"Bearer {rosalyn_token}")
-    moe_token = fsa._get_jwt_token(fsa._realm, None, "moe", 10.0, fsa._secret, scope=["sidekick"])
+    moe_token = a._get_jwt_token(a._realm, "god", "moe", 10.0, a._secret, scope=["sidekick"])
     moe_auth=("Authorization", f"Bearer {moe_token}")
+    client = app.test_client()
     check(401, client.get("/perm/jwt-authz"))
     check(200, client.get("/perm/jwt-authz", headers=[rosalyn_auth]))
     check(403, client.get("/perm/jwt-authz", headers=[moe_auth]))
-    uig = fsa._user_in_group
-    fsa._user_in_group = None
-    check(403, client.get("/perm/jwt-authz", headers=[moe_auth]))
-    fsa._user_in_group = uig
-    fsa._scope = False
-    fsa._token, fsa._carrier, fsa._name, fsa._algo, fsa._realm = token, carrier, name, algo, realm

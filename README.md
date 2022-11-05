@@ -5,7 +5,7 @@ for [Flask](https://flask.palletsprojects.com/), controled from
 Flask configuration and the extended `route` decorator.
 
 ![Status](https://github.com/zx80/flask-simple-auth/actions/workflows/fsa.yml/badge.svg?branch=master&style=flat)
-![Tests](https://img.shields.io/badge/tests-59%20✓-success)
+![Tests](https://img.shields.io/badge/tests-60%20✓-success)
 ![Coverage](https://img.shields.io/badge/coverage-100%25-success)
 ![Issues](https://img.shields.io/github/issues/zx80/flask-simple-auth?style=flat)
 ![Python](https://img.shields.io/badge/python-3-informational)
@@ -366,9 +366,6 @@ The available authentication schemes are:
   - `FSA_TOKEN_RENEWAL` for cookie token, the fraction of delay under
     which the cookie/token is renewed automatically.
     Default is *0.0*, meaning no renewal.
-  - `FSA_TOKEN_SCOPE` whether to allow OAuth 2.0 authorizations with
-    the `scope` field.
-    Default is *False*, meaning the `scope` field is ignored.
 
   Function `create_token(user)` creates a token for the user depending
   on the current scheme. If `user` is not given, the current user is taken.
@@ -392,6 +389,16 @@ The available authentication schemes are:
 
   Internally *jwt* token checks are cached so that even with slow public-key schemes
   the performance impact should be low.
+
+- `oauth`
+
+  Synonymous to `token`, but to be used on a route so as to trigger JWT *scope*
+  authorizations on that route.
+  In that case, the `authorize` groups are interpreted as scopes that must be
+  provided by the token.
+  In order to simplify security implications, *scopes* and *groups*
+  (`user_in_group`) authorizations cannot be mixed on a route:
+  create distinct routes to handle these.
 
 - `http-token`
 
@@ -870,7 +877,6 @@ By contrast, *Flask Simple Auth*:
 Our [implementation](demo/todos-fsa.py) of the doc [example](demo/todos-frf.py)
 is both shorter (32 vs 40 cloc), elegant and more featureful.
 
-
 ## TODO
 
 - add option not to renew auth cookies automatically?
@@ -900,4 +906,5 @@ is both shorter (32 vs 40 cloc), elegant and more featureful.
 - refactor password manager in a separate class?
 - issuer could/should be a list?
   not easily, because each should have its own sig?
-- demo: add convincing OAuth2 example? also in the doc?
+- allow to restrict allowed group for early typo detection?
+- same with oauth scopes?
