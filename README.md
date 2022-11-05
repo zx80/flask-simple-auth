@@ -393,7 +393,6 @@ The available authentication schemes are:
 
   Token expiration can be understood as a kind of automatic logout, which suggests
   to choose the delay with some care depending on the use case.
-
   When the token is carried as a *cookie*, it is automatically updated when 25% of
   the delay remains, if possible.
 
@@ -411,15 +410,15 @@ The available authentication schemes are:
   (`user_in_group`) authorizations cannot be mixed on a route:
   create distinct routes to handle these.
 
-  Method `user_oauth` allows to check whether the current user can perform
-  some operation.
-
   ```python
   # /data is only accessible through a trusted JWT token with "read" scope
   @app.get("/data", authorize="read", auth="oauth"):
   def get_data():
       return access_some_data(app.get_user()), 200
   ```
+
+  Method `user_oauth` allows to check whether the current user can perform
+  some operation.
 
 - `http-token`
 
