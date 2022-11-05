@@ -49,7 +49,7 @@ def post_todos(task: str):
     i = int(max(TODOS.keys()).lstrip("todo")) + 1
     tid = f"todo{i}"
     TODOS[tid] = {"task": task}
-    return TODOS[tid], 201
+    return tid, 201  # NOTE return the created key
 
 
 # NOTE not really needed
