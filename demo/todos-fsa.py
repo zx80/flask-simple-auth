@@ -17,7 +17,7 @@ TODOS = {
 
 @app.object_perms("todos")
 def check_todo_access(login: str, tid: str, mode = None):
-    # returning None triggers a 404
+    # NOTE returning None triggers a 404
     return True if tid in TODOS else None
 
 
