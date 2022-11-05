@@ -5,7 +5,7 @@
 from FlaskSimpleAuth import Flask, abort
 
 app = Flask("todo")
-app.config.from_env("TODO_CONFIG")
+# FIXME app.config.from_envvar("TODO_CONFIG")
 
 TODOS = {
     "todo1": {"task": "build an API"},
