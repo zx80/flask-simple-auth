@@ -758,7 +758,7 @@ behaves like the wrapped object itself.
 
 See the module for a detailed documentation.
 
-### `ErrorResponse` class
+#### `ErrorResponse` class
 
 Raising this exception with a message and status from any user-defined function
 generates a `Response` of this status with the text message contents sent to the
