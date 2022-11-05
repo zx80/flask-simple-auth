@@ -292,7 +292,7 @@ class FlaskSimpleAuth:
 
     def _auth_reset_user(self):
         """Before request hook to cleanup authentication and authorization."""
-        self._local.user_set = False
+        self._local.source = None
         self._local.user = None
         self._local.need_authorization = True
         self._local.auth = self._auth
@@ -1120,7 +1120,7 @@ class FlaskSimpleAuth:
         """Authenticate user or throw exception."""
 
         # safe because _user is reset before requests
-        if self._local.user_set:
+        if self._local.source:
             return self._local.user
 
         assert self._initialized, "FlaskSimpleAuth must be initialized"
@@ -1131,6 +1131,7 @@ class FlaskSimpleAuth:
             try:
                 self._local.user = self._FSA_AUTH[a](self)
                 if self._local.user:
+                    self._local.source = a
                     break
             except ErrorResponse as e:
                 lae = e
@@ -1138,7 +1139,7 @@ class FlaskSimpleAuth:
                 log.error(f"internal error in {a} authentication: {e}")
 
         # even if not set, we say that the answer is the right one.
-        self._local.user_set = True
+        self._local.source = "none"
 
         # rethrow last auth exception on failure
         if required and not self._local.user:
@@ -1212,14 +1213,14 @@ class FlaskSimpleAuth:
             def wrapper(*args, **kwargs):
 
                 # get user if needed
-                if not self._local.user_set:
+                if not self._local.source:
                     # possibly overwrite the authentication scheme
                     # NOTE this may or may not work because other settings may
                     #   not be compatible with the provided scheme…
                     if auth:
                         self._local.auth = auth
                     try:
-                        self._local.user = self.get_user()
+                        self.get_user()
                     except ErrorResponse as e:
                         return self._Res(e.message, e.status)
 
