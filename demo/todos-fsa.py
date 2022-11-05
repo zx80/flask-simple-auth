@@ -40,7 +40,7 @@ def delete_todos_tid(tid: str):
 
 @app.get("/todos", authorize="ANY")
 def get_todos():
-    return TODOS
+    return TODOS, 200
 
 
 @app.post("/todos", authorize="ANY")
