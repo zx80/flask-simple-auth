@@ -2,11 +2,10 @@
 # FlaskSimpleAuth version of Flask-RESTful TODO application
 # https://flask-restful.readthedocs.io/en/latest/quickstart.html
 #
-from FlaskSimpleAuth import Flask
+from FlaskSimpleAuth import Flask, jsonify as json
 
-app = Flask("todo")
-# NOTE we assume that requests are authenticated somehow
-# FIXME app.config.from_envvar("TODO_CONFIG")
+app = Flask("todos")
+app.config.from_envvar("TODOS_CONFIG")
 
 TODOS = {
     "todo1": {"task": "build an API"},
@@ -14,9 +13,8 @@ TODOS = {
     "todo3": {"task": "profit!"},
 }
 
-
 @app.object_perms("todos")
-def check_todo_access(login: str, tid: str, mode = None):
+def check_todos_access(login: str, tid: str, mode = None):
     # NOTE returning None triggers a 404
     return True if tid in TODOS else None
 
@@ -29,7 +27,7 @@ def get_todos_tid(tid: str):
 @app.put("/todos/<tid>", authorize=("todos",))
 def put_todos_tid(tid: str, task: str):
     TODOS[tid] = task
-    return "", 201
+    return "", 204
 
 
 @app.delete("/todos/<tid>", authorize=("todos",))
@@ -49,7 +47,7 @@ def post_todos(task: str):
     i = int(max(TODOS.keys()).lstrip("todo")) + 1
     tid = f"todo{i}"
     TODOS[tid] = {"task": task}
-    return tid, 201  # NOTE return the created key
+    return json(tid), 201  # NOTE return the created key
 
 
 # NOTE not really needed

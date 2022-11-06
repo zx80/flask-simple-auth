@@ -57,12 +57,14 @@ stuff.pg2: stuff.pg
 # RUN
 #
 
+APP	= app
+
 .PHONY: stop run run.db run.pg run.pg2 log log.db log.pg log.pg2
 
 app.pid: stuff.$(DB)
-	export FLASK_APP=app.py FLASK_DEBUG=1 APP_CONFIG=app-$(DB).conf
+	export APP_CONFIG=$(APP)-$(DB).conf TODOS_CONFIG=todos.conf
 	type flask || exit 1
-	flask run > app.log 2>&1 &
+	flask --app=$(APP).py --debug run > app.log 2>&1 &
 	echo $$! > $@
 
 stop:
@@ -73,6 +75,15 @@ run: app.pid
 	sleep 1  # wait for flask to start
 	curl -i -X GET http://0.0.0.0:5000/now
 	echo
+
+.PHONY: %.run
+%.run:
+	$(MAKE) APP=$* run
+
+.PHONY: todos-run
+todos-run:
+	$(MAKE) todos-fsa.run
+	./curl-todos.sh
 
 # NOTE colortail could be nice here
 log: run

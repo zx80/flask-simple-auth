@@ -165,4 +165,4 @@ with `psycopg` driver version 2 and 3.
  - `make clean` cleans generated files.
  - `make clean-venv` removes the virtual environment.
 
-See example `curl` commands in [curls.sh](curls.sh).
+See example `curl` commands in [curl-demo.sh](curl-demo.sh).
