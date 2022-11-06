@@ -76,13 +76,13 @@ run: app.pid
 	curl -i -X GET http://0.0.0.0:5000/now
 	echo
 
-.PHONY: %.run
 %.run:
 	$(MAKE) APP=$* run
 
-.PHONY: todos-run
-todos-run:
-	$(MAKE) todos-fsa.run
+# make todos-fsa.demo
+# make todos-frf.demo
+%.demo:
+	$(MAKE) $*.run
 	./curl-todos.sh
 
 # NOTE colortail could be nice here

@@ -1,4 +1,8 @@
 #! /bin/bash
+#
+# run tests on todos application
+#
+# NOTE fails with todos-frf because "task" is expected in json
 
 req="curl -i -u calvin:sesame -X"
 URL="http://0.0.0.0:5000"
@@ -6,7 +10,7 @@ URL="http://0.0.0.0:5000"
 # check for errors
 curl -i -X GET $URL/todos/todo1            # 401
 $req DELETE $URL/todos/todo0               # 404
-$req POST -d stuff="WIP" $URL/todos        # 400
+$req POST -d stuff="WIP 0" $URL/todos      # 400
 
 # exercise all methods and path
 $req POST -d task="WIP 1" $URL/todos       # 201
