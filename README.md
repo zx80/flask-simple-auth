@@ -926,11 +926,10 @@ is both shorter (32 vs 40 cloc), elegant and more featureful.
 - how to use external authentication stuff? eg LDAP? others?
   it should also work as an alternate pm…
 - refactor password manager in a separate class?
-- issuer could/should be a list?
-  not easily, because each should have its own sig?
 - allow to restrict allowed group for early typo detection?
 - same with oauth scopes?
 - add `issuer` route parameter?
 - make oauth and object\_perms compatible?
 - document oauth authz in the Authorizations section?
 - how to have several issuers and their signatures?
+- disable cache when running in debug mode?
