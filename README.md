@@ -751,7 +751,7 @@ def put_user_pass(_pass: str, _def: str, _import: str):
 ### Utils
 
 Utilities include the `Reference` generic object wrapper class,
-a `ErrorResponse` class to quickly generate error replies and 
+a `ErrorResponse` class to quickly generate error replies and
 miscellaneous configuration directives which cover security,
 caching and CORS.
 
