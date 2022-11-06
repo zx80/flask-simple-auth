@@ -9,7 +9,7 @@ connection and queries using [AnoDB](https://pypi.org/project/anodb/),
 or [Postgres](https://postgresql.org).
 
 
-## Application
+## Main Application
 
 The application is structured around [app.py](app.py) which is configured from
 [app-db.conf](app-db.conf) (for SQLite) or
@@ -36,6 +36,9 @@ object:
    and deleting oneself, all this in under *30* lines of code.
  - [`types_path.py`](types_path.py) defines `/types` routes which demonstrates
    parameter types management.
+ - [`oauth.py`](oauth.py) defines `/oauth` routes to demonstrates OAuth usage,
+   that is authorizations granted by some external issuer and delivered using
+   a token.
 
 The next sections describe the convenient features which distinguish this
 demo compared to what would be required if only Flask was being used.
@@ -166,3 +169,18 @@ with `psycopg` driver version 2 and 3.
  - `make clean-venv` removes the virtual environment.
 
 See example `curl` commands in [curl-demo.sh](curl-demo.sh).
+
+## Todos Application
+
+The simplistic `todos` application from Flask-RESTful documentation is proposed
+in two flavors:
+
+- [`todos-frf.py`](todos-frf.py) is a copy of the
+  [initial version](https://github.com/flask-restful/flask-restful/blob/master/examples/todo.py).
+- [`todos-fsa.py`](todos-fsa.py) is a reimplementation with *Flask Simple Auth*
+  which is shorter, simpler and IMO more elegant, that is better.
+  It is initialized with file [`todos.conf`](todos.conf).
+
+The [`curl-todos.sh`](curl-todos.sh) script provides simple `curl` requests
+to test all methods and paths.
+To test this applications, run `make todos-fsa.demo`.
