@@ -1593,7 +1593,7 @@ class FlaskSimpleAuth:
         if need_authenticate:
             assert perms or groups or ALL in predefs
             fun = self._authenticate(newpath, auth=auth)(fun)
-        else:
+        else:  # "ANY" case deserves a warning
             log.warning(f"no authenticate on {newpath}")
 
         assert fun != view_func, "some wrapping added"
