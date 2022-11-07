@@ -907,7 +907,6 @@ is both shorter (32 vs 40 cloc), elegant and more featureful.
 
 ## TODO
 
-- add option not to renew auth cookies automatically?
 - `FSA_PARAM_STYLE` *any/http/json* to restrict/force parameters?
 - test `FSA_HTTP_AUTH_OPTS`?
 - add `any` token scheme?
@@ -919,23 +918,19 @@ is both shorter (32 vs 40 cloc), elegant and more featureful.
   does it really need to be inside `FlaskSimpleAuth`?
   possibly the id can be passed to perm hooks instead of the login?
   can be managed there as well?
-- reduce cloc?
+- reduce sloc?
 - pypy compatibility? issues with date/time fromisoformat
   and packages bcrypt, psycopg2, psycopg2cffi, psycopg…
-- check thread safety, esp cachetools
 - thread-local stuff in Reference: what about teardown?
 - what about asyncio?
 - should have explicit tests for psycopg version 2 and 3 drivers
 - password re could use a dict for providing an explanation?
 - should try to reduce "no cover" pragmas
 - coverage should include demo run
-- how to use external authentication stuff? eg LDAP? others?
-  it should also work as an alternate pm…
 - refactor password manager in a separate class?
 - allow to restrict allowed group for early typo detection?
 - same with oauth scopes?
 - add `issuer` route parameter?
-- make oauth and object\_perms compatible?
+- make oauth and object\_perms compatible, if needed?
 - document oauth authz in the Authorizations section?
 - how to have several issuers and their signatures?
-- disable cache when running in debug mode?
