@@ -3,7 +3,7 @@
 Sources are available on [GitHub](https://github.com/zx80/flask-simple-auth)
 and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 
-## 18.0 on ?
+## 18.0 on 2022-11-07
 
 Add `special_parameter` decorator and `FSA_SPECIAL_PARAMETER` directive
 to add special parameters.

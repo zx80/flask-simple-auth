@@ -866,7 +866,7 @@ If you like it, feel free to send a postcard to the author.
 Sources are available on [GitHub](https://github.com/zx80/flask-simple-auth)
 and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 
-Latest version is *17.0* published on 2022-10-29.
+Latest version is *18.0* published on 2022-11-07.
 Initial version was *0.9.0* on 2021-02-21.
 
 See [all versions](VERSIONS.md).
