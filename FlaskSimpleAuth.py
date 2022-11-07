@@ -206,7 +206,7 @@ _DEFAULT_PASSWORD_OPTS = {"bcrypt__default_rounds": 4, "bcrypt__default_ident": 
 class FlaskSimpleAuth:
     """Flask extension for authentication, authorization and parameters."""
 
-    def __init__(self, app: flask.Flask = None, debug: Optional[bool] = False):
+    def __init__(self, app: Optional[flask.Flask] = None, debug: Optional[bool] = False):
         """Constructor parameter: flask application to extend."""
         self._debug = debug
         if debug:
@@ -745,19 +745,17 @@ class FlaskSimpleAuth:
         self._initialized = True
         return
 
-    def _init_password_manager(self):
+    def _init_password_manager(self) -> None:
         """Deferred password manager initialization."""
         assert self._app
         conf = self._app.config
-        self._password_check: Optional[Callable[[str, str], bool]] = \
-            conf.get("FSA_PASSWORD_CHECK", self._password_check)
+        self._password_check = conf.get("FSA_PASSWORD_CHECK", self._password_check)
         # FIXME add _password_hash?
         self._password_len: int = conf.get("FSA_PASSWORD_LEN", 0)
         self._password_re: List[Callable[[str], bool]] = [
             re.compile(r).search for r in conf.get("FSA_PASSWORD_RE", [])
         ]
-        self._password_quality: Optional[Callable[[str], bool]] = \
-            conf.get("FSA_PASSWORD_QUALITY", self._password_quality)
+        self._password_quality = conf.get("FSA_PASSWORD_QUALITY", self._password_quality)
         # only actually initialize with passlib if needed
         scheme = conf.get("FSA_PASSWORD_SCHEME", _DEFAULT_PASSWORD_SCHEME)
         log.info(f"initializing password manager with {scheme}")
