@@ -591,8 +591,7 @@ class FlaskSimpleAuth:
             "auth" if self._carrier == "cookie" else
             "Bearer" if self._carrier == "bearer" else
             "Auth" if self._carrier == "header" else
-            None
-        )
+            None)
         self._name = conf.get("FSA_TOKEN_NAME", default_name)
         if need_carrier and not self._name:
             raise self._Bad(f"Token carrier {self._carrier} requires a name")
@@ -750,17 +749,15 @@ class FlaskSimpleAuth:
         """Deferred password manager initialization."""
         assert self._app
         conf = self._app.config
-        self._password_check: Optional[Callable[[str, str], bool]] = conf.get(
-            "FSA_PASSWORD_CHECK", self._password_check
-        )
+        self._password_check: Optional[Callable[[str, str], bool]] = \
+            conf.get("FSA_PASSWORD_CHECK", self._password_check)
         # FIXME add _password_hash?
         self._password_len: int = conf.get("FSA_PASSWORD_LEN", 0)
         self._password_re: List[Callable[[str], bool]] = [
             re.compile(r).search for r in conf.get("FSA_PASSWORD_RE", [])
         ]
-        self._password_quality: Optional[Callable[[str], bool]] = conf.get(
-            "FSA_PASSWORD_QUALITY", self._password_quality
-        )
+        self._password_quality: Optional[Callable[[str], bool]] = \
+            conf.get("FSA_PASSWORD_QUALITY", self._password_quality)
         # only actually initialize with passlib if needed
         scheme = conf.get("FSA_PASSWORD_SCHEME", _DEFAULT_PASSWORD_SCHEME)
         log.info(f"initializing password manager with {scheme}")
@@ -894,10 +891,8 @@ class FlaskSimpleAuth:
         """Delegate user authentication to HTTPAuth."""
         assert self._http_auth
         auth = self._http_auth.get_auth()
-        password = (
-            self._http_auth.get_auth_password(auth) if "http-token" not in self._local.auth else
-            None
-        )
+        password = self._http_auth.get_auth_password(auth) \
+            if "http-token" not in self._local.auth else None
         try:
             # NOTE "authenticate" signature is not very clean…
             user = self._http_auth.authenticate(auth, password)
@@ -1205,9 +1200,7 @@ class FlaskSimpleAuth:
             log.debug(f"caching: {self._CACHABLE}")
             import CacheToolsUtils as ctu
 
-            ctu.cacheMethods(
-                cache=self._cache, obj=self, gen=self._gen_cache, **self._CACHABLE
-            )
+            ctu.cacheMethods(cache=self._cache, obj=self, gen=self._gen_cache, **self._CACHABLE)
 
     def clear_caches(self):
         """Clear internal shared cache.
@@ -1322,9 +1315,7 @@ class FlaskSimpleAuth:
                         return self._Res(e.message, e.status)
                     except Exception as e:
                         log.error(f"user_in_group failed: {e}")
-                        return self._Res(
-                            "internal error in user_in_group", self._server_error
-                        )
+                        return self._Res("internal error in user_in_group", self._server_error)
                     if not isinstance(ok, bool):
                         log.error(f"type error in user_in_group: {ok}: {type(ok)}, must return a boolean")
                         return self._Res("internal error with user_in_group", self._server_error)
