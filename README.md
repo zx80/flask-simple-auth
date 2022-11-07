@@ -191,28 +191,6 @@ Once initialized `app` is a standard Flask object with some additions:
   password quality.
 - `password_check` a function/decorator to register a new password checker.
 
-It is also possible, but *not* recommended to use the flask extensions model,
-in which case the `FlaskSimpleAuth` object must be instanciated and routes
-*must* be created using this object:
-
-```Python
-from flask import Flask
-app = Flask("demo")
-app.config.from_envvar("DEMO_CONFIG")
-
-from FlaskSimpleAuth import FlaskSimpleAuth
-fsa = FlaskSimpleAuth(app)
-
-# imaginary blueprint registration on the fsa object:
-from DemoAdmin import abp
-fsa.register_blueprint(abp, url_path="/admin")
-
-# define a route with an optional paramater "flt"
-@fsa.get("/what", authorize="ALL")
-def get_what(flt: str = None):
-    …
-```
-
 ### Authentication
 
 The main authentication configuration directive is `FSA_AUTH` which governs the
