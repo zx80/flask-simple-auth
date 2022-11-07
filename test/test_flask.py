@@ -774,7 +774,7 @@ def test_something_3(client3):
 
 def test_401_redirect():
     import AppFact as af
-    app = af.create_app(FSA_401_REDIRECT="/login-page")
+    app = af.create_app(FSA_401_REDIRECT="/login-page", FSA_LOCAL="process")
     with app.test_client() as client:
         res = check(307, client.get("/something"))
         assert "/login-page" in res.location
@@ -920,7 +920,7 @@ def test_per_route(client):
 def test_bad_app():
     from AppBad import create_app
     # working versions, we basically test that there is no exception
-    app = create_app(FSA_AUTH="basic")
+    app = create_app(FSA_AUTH="basic", FSA_LOCAL="werkzeug")
     app = create_app(FSA_AUTH=["token", "basic"])
     app = create_app(auth="fake")
     app = create_app(auth=["token", "fake"])
@@ -989,6 +989,12 @@ def test_bad_app():
         assert False, "bad app creation must fail"
     except ConfigError as e:
         assert "bad" in str(e), "ok, bad app creation has failed"
+    # bad local
+    try:
+        app = create_app(FSA_LOCAL="oops!")
+        assert False, "bad app creation must fail"
+    except ConfigError as e:
+        assert "FSA_LOCAL" in str(e)
 
 class PK():
     def __init__(self, kind):

@@ -15,6 +15,7 @@ Add `password_quality` hook (also with `FSA_PASSWORD_QUALITY` directive) to
 check for a password strength.
 Add `FSA_TOKEN_ISSUER` to specify a token issuer.
 Add `oauth` authentication for OAuth 2.0 authorization support (RFC 8693).
+Add `FSA_LOCAL` to adjust local data management.
 Set `FSA_TOKEN_RENEWAL` default to *0.0*.
 Prioritize authentication scheme per configuration or route order (`auth`).
 Improve documentation.

@@ -800,6 +800,12 @@ Some directives govern various details for this extension internal working.
 - `FSA_LOGGING_LEVEL` adjust module internal logging level.
   Default is *None*.
 
+- `FSA_LOCAL` sets the internal object isolation level, must be consistent
+  with the module WSGI usage. Possible values are *process*, *thread*
+  (several threads can be used by the WSGI server) and *werkzeug*
+  (should work with sub-thread level request handling, eg greenlets).
+  Default is *thread*.
+
 Some control is available about internal caching features used for user
 authentication (user password access and token validations) and
 authorization (group and per-object permissions):

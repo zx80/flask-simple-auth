@@ -15,23 +15,23 @@ from typing import Optional, Callable, Dict, List, Set, Any, Union, MutableMappi
 import functools
 import inspect
 import datetime as dt
+from dataclasses import dataclass
+import json
+
 try:
     import re2 as re  # type: ignore
 except ModuleNotFoundError:
     import re  # type: ignore
-import json
-from dataclasses import dataclass
-import threading
 
 import flask
 import ProxyPatternPool as ppp  # type: ignore
 
 # for local use & forwarding
 # NOTE the only missing should be "Flask"
-from flask import \
-    Response, Request, request, session, jsonify, Blueprint, make_response, \
-    abort, redirect, url_for, after_this_request, send_file, current_app, g, \
-    send_from_directory, escape, Markup, render_template
+from flask import (
+    Response, Request, request, session, jsonify, Blueprint, make_response,
+    abort, redirect, url_for, after_this_request, send_file, current_app, g,
+    send_from_directory, escape, Markup, render_template)
 
 import logging
 log = logging.getLogger("fsa")
@@ -44,6 +44,7 @@ __version__ = pkg.require("FlaskSimpleAuth")[0].version
 @dataclass
 class ErrorResponse(BaseException):
     """Internal exception class to carry fields for an error Response."""
+
     message: str
     status: int
 
@@ -105,12 +106,12 @@ _PREDEFS = (ANY, ALL, NONE)
 
 def _typeof(p: inspect.Parameter):
     """Guess parameter type, possibly with some type inference."""
-    return \
-        dict if p.kind is inspect.Parameter.VAR_KEYWORD else \
-        list if p.kind is inspect.Parameter.VAR_POSITIONAL else \
-        p.annotation if p.annotation is not inspect._empty else \
-        type(p.default) if p.default and p.default is not inspect._empty else \
-        str
+    return (
+        dict if p.kind is inspect.Parameter.VAR_KEYWORD else
+        list if p.kind is inspect.Parameter.VAR_POSITIONAL else
+        p.annotation if p.annotation is not inspect._empty else
+        type(p.default) if p.default and p.default is not inspect._empty else
+        str)
 
 
 class Reference(ppp.Proxy):
@@ -169,7 +170,7 @@ _DIRECTIVES = {
     # debug
     "FSA_DEBUG", "FSA_LOGGING_LEVEL",
     # general settings
-    "FSA_SECURE", "FSA_SERVER_ERROR", "FSA_NOT_FOUND_ERROR",
+    "FSA_SECURE", "FSA_SERVER_ERROR", "FSA_NOT_FOUND_ERROR", "FSA_LOCAL",
     # parameter handing
     "FSA_REJECT_UNEXPECTED_PARAM",
     # register hooks
@@ -245,8 +246,7 @@ class FlaskSimpleAuth:
         self._not_found_error: int = _DEFAULT_NOT_FOUND_ERROR
         self._secure: bool = True
         self._names: Set[str] = set()
-        # NOTE threading.local might not be enough?
-        self._local = threading.local()
+        self._local: Any = None
         # actual main initialization is deferred to `init_app`
         self._initialized = False
 
@@ -287,8 +287,9 @@ class FlaskSimpleAuth:
     #
     def _check_secure(self):
         """Before request hook to reject insecure requests."""
-        if not request.is_secure and \
-           not (request.remote_addr.startswith("127.") or request.remote_addr == "::1"):  # pragma: no cover
+        if not request.is_secure and not (
+            request.remote_addr.startswith("127.") or request.remote_addr == "::1"
+        ):  # pragma: no cover
             msg = f"insecure HTTP request on {request.remote_addr}, allow with FSA_SECURE=False"
             if self._secure:
                 log.error(msg)
@@ -350,9 +351,9 @@ class FlaskSimpleAuth:
             if not auth:
                 pass
             elif auth in ("token", "oauth"):
-                res.headers["WWW-Authenticate"] = f"{self._name} realm=\"{self._realm}\""
+                res.headers["WWW-Authenticate"] = f'{self._name} realm="{self._realm}"'
             elif auth in ("basic", "password"):
-                res.headers["WWW-Authenticate"] = f"Basic realm=\"{self._realm}\""
+                res.headers["WWW-Authenticate"] = f'Basic realm="{self._realm}"'
             else:
                 assert self._http_auth
                 res.headers["WWW-Authenticate"] = self._http_auth.authenticate_header()
@@ -467,6 +468,19 @@ class FlaskSimpleAuth:
         for name in conf:
             if name.startswith("FSA_") and name not in _DIRECTIVES:
                 log.warning(f"unexpected directive, ignored: {name}")
+        # set self._local internal holder
+        local = conf.get("FSA_LOCAL", "thread")
+        if local == "process":
+            class Local(object):  # type: ignore
+                pass
+        elif local == "thread":
+            from threading import local as Local  # type: ignore
+        elif local == "werkzeug":
+            from werkzeug.local import Local  # type: ignore
+        else:
+            raise self._Bad(f"unexpected FSA_LOCAL value: {local}")
+        self._local = Local()
+        # NOTE threading.local might not be enough?
         # whether to only allow secure requests
         self._secure = conf.get("FSA_SECURE", True)
         # status code for some errors errors
@@ -490,7 +504,7 @@ class FlaskSimpleAuth:
         for a in self._auth:
             if a not in self._FSA_AUTH:
                 raise self._Bad(f"unexpected auth: {a}")
-        self._local.auth = self._auth
+        self._local.auth = self._auth  # type: ignore
         #
         # web apps…
         #
@@ -498,6 +512,7 @@ class FlaskSimpleAuth:
         self._cors_opts: Dict[str, Any] = conf.get("FSA_CORS_OPTS", {})
         if self._cors:
             from flask_cors import CORS  # type: ignore
+
             CORS(self._app, **self._cors_opts)
         self._401_redirect = conf.get("FSA_401_REDIRECT", None)
         self._url_name = conf.get("FSA_URL_NAME", "URL" if self._401_redirect else None)
@@ -509,6 +524,7 @@ class FlaskSimpleAuth:
         if cache:
             import cachetools as ct
             import CacheToolsUtils as ctu  # type: ignore
+
             prefix = conf.get("FSA_CACHE_PREFIX", None)
             if cache in ("ttl", "lru", "lfu", "mru", "fifo", "rr", "dict"):
                 maxsize = conf.get("FSA_CACHE_SIZE", _DEFAULT_CACHE_SIZE)
@@ -536,6 +552,7 @@ class FlaskSimpleAuth:
                 self._gen_cache = ctu.PrefixedCache
             elif cache in ("memcached", "pymemcache"):
                 import pymemcache as pmc  # type: ignore
+
                 if "serde" not in self._cache_opts:
                     self._cache_opts.update(serde=ctu.JsonSerde())
                 if prefix and "key_prefix" not in self._cache_opts:
@@ -544,6 +561,7 @@ class FlaskSimpleAuth:
                 self._gen_cache = ctu.PrefixedMemCached
             elif cache == "redis":
                 import redis
+
                 ttl = self._cache_opts.pop("ttl", _DEFAULT_CACHE_TTL)
                 rc = redis.Redis(**self._cache_opts)
                 if prefix:
@@ -568,12 +586,13 @@ class FlaskSimpleAuth:
         if need_carrier and not self._carrier:
             raise self._Bad(f"Token type {self._token} requires a carrier")
         # name of token for cookie or param, Authentication scheme, or other header
-        default_name: Optional[str] = \
-            "AUTH" if self._carrier == "param" else \
-            "auth" if self._carrier == "cookie" else \
-            "Bearer" if self._carrier == "bearer" else \
-            "Auth" if self._carrier == "header" else \
+        default_name: Optional[str] = (
+            "AUTH" if self._carrier == "param" else
+            "auth" if self._carrier == "cookie" else
+            "Bearer" if self._carrier == "bearer" else
+            "Auth" if self._carrier == "header" else
             None
+        )
         self._name = conf.get("FSA_TOKEN_NAME", default_name)
         if need_carrier and not self._name:
             raise self._Bad(f"Token carrier {self._carrier} requires a name")
@@ -708,7 +727,7 @@ class FlaskSimpleAuth:
         #
         self.blueprints = self._app.blueprints
         self.debug = False
-        if hasattr(self._app, '_check_setup_finished'):
+        if hasattr(self._app, "_check_setup_finished"):
             # Flask 2.2
             self._check_setup_finished = self._app._check_setup_finished
             self.before_request_funcs = self._app.before_request_funcs
@@ -717,8 +736,8 @@ class FlaskSimpleAuth:
             self.url_default_functions = self._app.url_default_functions
             self.url_value_preprocessors = self._app.url_value_preprocessors
             self.template_context_processors = self._app.template_context_processors
-        else:
-            raise self._Bad("unexpected Flask version while dealing with blueprints?")  # pragma: no cover
+        else:  # pragma: no cover
+            raise self._Bad("unexpected Flask version while dealing with blueprints?")
         #
         # caches
         #
@@ -731,11 +750,17 @@ class FlaskSimpleAuth:
         """Deferred password manager initialization."""
         assert self._app
         conf = self._app.config
-        self._password_check: Optional[Callable[[str, str], bool]] = conf.get("FSA_PASSWORD_CHECK", self._password_check)
+        self._password_check: Optional[Callable[[str, str], bool]] = conf.get(
+            "FSA_PASSWORD_CHECK", self._password_check
+        )
         # FIXME add _password_hash?
         self._password_len: int = conf.get("FSA_PASSWORD_LEN", 0)
-        self._password_re: List[Callable[[str], bool]] = [re.compile(r).search for r in conf.get("FSA_PASSWORD_RE", [])]
-        self._password_quality: Optional[Callable[[str], bool]] = conf.get("FSA_PASSWORD_QUALITY", self._password_quality)
+        self._password_re: List[Callable[[str], bool]] = [
+            re.compile(r).search for r in conf.get("FSA_PASSWORD_RE", [])
+        ]
+        self._password_quality: Optional[Callable[[str], bool]] = conf.get(
+            "FSA_PASSWORD_QUALITY", self._password_quality
+        )
         # only actually initialize with passlib if needed
         scheme = conf.get("FSA_PASSWORD_SCHEME", _DEFAULT_PASSWORD_SCHEME)
         log.info(f"initializing password manager with {scheme}")
@@ -746,6 +771,7 @@ class FlaskSimpleAuth:
             # round. Ident "2y" is same as "2b" but apache compatible.
             options = conf.get("FSA_PASSWORD_OPTS", _DEFAULT_PASSWORD_OPTS)
             from passlib.context import CryptContext  # type: ignore
+
             self._pm = CryptContext(schemes=[scheme], **options)
 
     #
@@ -764,8 +790,8 @@ class FlaskSimpleAuth:
     #
     def _get_fake_auth(self):
         """Return fake user. Only for local tests."""
-        assert request.remote_addr.startswith("127.") or \
-               request.remote_addr == "::1", "fake auth only on localhost"
+        assert request.remote_addr.startswith("127.") or request.remote_addr == "::1", \
+            "fake auth only on localhost"
         params = self._params()
         user = params.get(self._login, None)
         if not user:
@@ -868,8 +894,10 @@ class FlaskSimpleAuth:
         """Delegate user authentication to HTTPAuth."""
         assert self._http_auth
         auth = self._http_auth.get_auth()
-        password = self._http_auth.get_auth_password(auth) \
-            if "http-token" not in self._local.auth else None
+        password = (
+            self._http_auth.get_auth_password(auth) if "http-token" not in self._local.auth else
+            None
+        )
         try:
             # NOTE "authenticate" signature is not very clean…
             user = self._http_auth.authenticate(auth, password)
@@ -887,17 +915,18 @@ class FlaskSimpleAuth:
     def _get_basic_auth(self):
         """Get user with basic authentication."""
         import base64 as b64
+
         auth = request.headers.get("Authorization", None)
         if not auth:
             log.debug("AUTH (basic): missing authorization header")
             raise self._Err("missing authorization header", 401)
         if not auth.startswith("Basic "):
-            log.debug(f"AUTH (basic): unexpected auth \"{auth}\"")
+            log.debug(f'AUTH (basic): unexpected auth "{auth}"')
             raise self._Err("unexpected authorization header", 401)
         try:
             user, pwd = b64.b64decode(auth[6:]).decode().split(":", 1)
         except Exception as e:
-            log.debug(f"AUTH (basic): error while decoding auth \"{auth}\" ({e})")
+            log.debug(f'AUTH (basic): error while decoding auth "{auth}" ({e})')
             raise self._Err("decoding error on authorization header", 401)
         return self._check_password(user, pwd)
 
@@ -958,6 +987,7 @@ class FlaskSimpleAuth:
     def _cmp_sig(self, data, secret):
         """Compute signature for data."""
         import hashlib
+
         h = hashlib.new(self._algo)
         h.update(f"{data}:{secret}".encode())
         return h.digest()[:self._siglen].hex()
@@ -994,6 +1024,7 @@ class FlaskSimpleAuth:
         """
         exp = dt.datetime.now(dt.timezone.utc) + dt.timedelta(minutes=delay)
         import jwt
+
         token = {"exp": exp, "sub": user, "aud": realm}
         if issuer:
             token.update(iss=issuer)
@@ -1003,8 +1034,9 @@ class FlaskSimpleAuth:
 
     def _can_create_token(self):
         """Whether it is possible to create a token."""
-        return self._token and not \
-            (self._token == "jwt" and self._algo[0] in ("R", "E", "P") and not self._sign)
+        return self._token and not (
+            self._token == "jwt" and self._algo[0] in ("R", "E", "P") and not self._sign
+        )
 
     def create_token(self, user: Optional[str] = None, realm: Optional[str] = None,
                      issuer: Optional[str] = None, delay: Optional[float] = None):
@@ -1014,9 +1046,10 @@ class FlaskSimpleAuth:
         realm = realm or self._realm
         issuer = issuer or self._issuer
         delay = delay or self._delay
-        return \
-            self._get_fsa_token(realm, issuer, user, delay, self._secret) if self._token == "fsa" else \
+        return (
+            self._get_fsa_token(realm, issuer, user, delay, self._secret) if self._token == "fsa" else
             self._get_jwt_token(realm, issuer, user, delay, self._sign)
+        )
 
     def _get_fsa_token_auth(self, token):
         """Tell whether FSA token is ok: return validated user or None."""
@@ -1051,6 +1084,7 @@ class FlaskSimpleAuth:
     def _get_jwt_token_auth(self, token):
         """Tell whether JWT token is ok: return validated user or None."""
         import jwt
+
         try:
             data = jwt.decode(token, self._secret, leeway=self._grace * 60.0,
                               audience=self._realm, issuer=self._issuer, algorithms=[self._algo])
@@ -1066,9 +1100,10 @@ class FlaskSimpleAuth:
 
     def _get_any_token_auth_exp(self, token):
         """Return validated user and expiration, cached."""
-        return \
-            self._get_fsa_token_auth(token) if self._token == "fsa" else \
+        return (
+            self._get_fsa_token_auth(token) if self._token == "fsa" else
             self._get_jwt_token_auth(token)
+        )
 
     def _get_any_token_auth(self, token) -> Optional[str]:
         """Tell whether token is ok: return validated user or None."""
@@ -1096,8 +1131,7 @@ class FlaskSimpleAuth:
                         token = auth[slen:]
                 # else we ignore… maybe it will be resolved later
             elif self._carrier == "cookie":
-                token = request.cookies[self._name] \
-                    if self._name in request.cookies else None
+                token = request.cookies[self._name] if self._name in request.cookies else None
             elif self._carrier == "param":
                 token = self._params().get(self._name, None)
             else:
@@ -1170,7 +1204,10 @@ class FlaskSimpleAuth:
         if self._gen_cache is not None and self._cache is not None:
             log.debug(f"caching: {self._CACHABLE}")
             import CacheToolsUtils as ctu
-            ctu.cacheMethods(cache=self._cache, obj=self, gen=self._gen_cache, **self._CACHABLE)
+
+            ctu.cacheMethods(
+                cache=self._cache, obj=self, gen=self._gen_cache, **self._CACHABLE
+            )
 
     def clear_caches(self):
         """Clear internal shared cache.
@@ -1285,7 +1322,9 @@ class FlaskSimpleAuth:
                         return self._Res(e.message, e.status)
                     except Exception as e:
                         log.error(f"user_in_group failed: {e}")
-                        return self._Res("internal error in user_in_group", self._server_error)
+                        return self._Res(
+                            "internal error in user_in_group", self._server_error
+                        )
                     if not isinstance(ok, bool):
                         log.error(f"type error in user_in_group: {ok}: {type(ok)}, must return a boolean")
                         return self._Res("internal error with user_in_group", self._server_error)
@@ -1315,10 +1354,9 @@ class FlaskSimpleAuth:
 
             # build helpers
             for n, p in sig.parameters.items():
-                sn = n[1:] if n[0] == '_' and len(n) > 1 else n
+                sn = n[1:] if n[0] == "_" and len(n) > 1 else n
                 names[n], names[sn] = sn, n
-                if n not in types and \
-                   p.kind not in (p.VAR_KEYWORD, p.VAR_POSITIONAL):
+                if n not in types and p.kind not in (p.VAR_KEYWORD, p.VAR_POSITIONAL):
                     # guess parameter type
                     t = _typeof(p)
                     types[n] = t
@@ -1343,11 +1381,12 @@ class FlaskSimpleAuth:
                         if pn in params:
                             val = params[pn]
                             is_json = types[p] == JsonData
-                            if is_json and isinstance(val, str) or not is_json and not isinstance(val, types[p]):
+                            if is_json and isinstance(val, str) or \
+                               not is_json and not isinstance(val, types[p]):
                                 try:
                                     kwargs[p] = typing(val)
                                 except Exception as e:
-                                    return self._Res(f"type error on parameter \"{pn}\" ({e})", 400)
+                                    return self._Res(f'type error on parameter "{pn}" ({e})', 400)
                             else:
                                 kwargs[p] = val
                         else:
@@ -1356,14 +1395,14 @@ class FlaskSimpleAuth:
                             elif typing in self._special_parameters:
                                 kwargs[p] = self._special_parameters[typing]()
                             else:
-                                return self._Res(f"missing parameter \"{pn}\"", 400)
+                                return self._Res(f'missing parameter "{pn}"', 400)
                     else:
                         # possibly recast path parameters if needed
                         if not isinstance(kwargs[p], types[p]):
                             try:
                                 kwargs[p] = typing(kwargs[p])
                             except Exception as e:
-                                return self._Res(f"type error on path parameter \"{pn}\": ({e})", 400)
+                                return self._Res(f'type error on path parameter "{pn}": ({e})', 400)
 
                 # possibly add others, without shadowing already provided ones
                 if keywords:
@@ -1462,8 +1501,7 @@ class FlaskSimpleAuth:
         return decorate
 
     # FIXME endpoint?
-    def add_url_rule(self, rule, endpoint=None, view_func=None, authorize=NONE,
-                     auth=None, **options):
+    def add_url_rule(self, rule, endpoint=None, view_func=None, authorize=NONE, auth=None, **options):
         """Route decorator helper method."""
 
         # lazy initialization
@@ -1514,6 +1552,7 @@ class FlaskSimpleAuth:
                 raise self._Bad(f"cannot mix ANY with per-object permissions on {path}")
 
         from uuid import UUID
+
         # add the expected type to path sections, if available
         # flask converters: string (default), int, float, path, uuid
         # NOTE it can be extended (`url_map`), but we are managing through annotations
@@ -1561,8 +1600,7 @@ class FlaskSimpleAuth:
             def r403():
                 return "currently closed route", 403
 
-            return flask.Flask.add_url_rule(self._app, newpath, endpoint=endpoint,
-                                            view_func=r403, **options)
+            return flask.Flask.add_url_rule(self._app, newpath, endpoint=endpoint, view_func=r403, **options)
 
         fun = view_func
 
@@ -1603,7 +1641,7 @@ class FlaskSimpleAuth:
     def route(self, rule, **options):
         """Extended `route` decorator provided by the extension."""
         if "authorize" not in options:
-            log.warning(f"missing authorize on route \"{rule}\" makes it 403 Forbidden")
+            log.warning(f'missing authorize on route "{rule}" makes it 403 Forbidden')
 
         def decorate(fun: Callable):
             return self.add_url_rule(rule, view_func=fun, **options)
