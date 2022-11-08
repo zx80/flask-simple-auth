@@ -2,6 +2,7 @@
 # TEST APP FOR FlaskSimpleAuth
 #
 
+from typing import Optional
 from Auth import user_in_group, get_user_pass
 from Auth import ADMIN, WRITE, READ, GROUPS, UP, UHP
 
@@ -122,7 +123,7 @@ def get_sub(i: int, j: int = 0):
 
 # type tests
 @app.route("/type", methods=["GET"], authorize=[ANY])
-def get_type(f: float = None, i: int = None, b: bool = None, s: str = None):
+def get_type(f: Optional[float] = None, i: Optional[int] = None, b: bool = None, s: str = None):
     if f is not None:
         return f"float {f}", 200
     elif i is not None:
