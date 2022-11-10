@@ -111,6 +111,7 @@ def _typeof(p: inspect.Parameter):
     elif p.kind is inspect.Parameter.VAR_POSITIONAL:
         return list
     elif p.annotation is not inspect._empty:
+        import typing
         a = p.annotation
         # NOTE Optional[?] == Union[?, None]
         # FIXME how to recognize reliably an Optional[?]
