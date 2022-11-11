@@ -111,18 +111,12 @@ def _typeof(p: inspect.Parameter):
     elif p.kind is inspect.Parameter.VAR_POSITIONAL:
         return list
     elif p.annotation is not inspect._empty:
-        import typing
         a = p.annotation
         # NOTE Optional[?] == Union[?, None]
         # FIXME how to recognize reliably an Optional[?]
-        if hasattr(a, "_name") and a._name is not None:  # pragma: no cover
-            if a._name == "Optional":  # Python 3.1[012]
-                return a.__args__[0]
-            elif a.__origin__ == typing.Union and \
-                 len(a.__args__) == 2 and a.__args__[1] is None:
-                return a.__args__[0]
-            else:
-                raise ConfigError(f"unsupported python type hint: {a}")
+        if hasattr(a, "__origin__") and a.__origin__ is Union and len(a.__args__) == 2:
+            # needs 3.10: and isinstance(a.__args__[1], type(None)):
+            return a.__args__[0]
         else:
             return a
     elif p.default and p.default is not inspect._empty:
