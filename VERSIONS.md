@@ -6,6 +6,7 @@ and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 ## 18.1 on 2022-11-10
 
 Handle `Optional` parameters to please `mypy`.
+Add Python 3.12-dev check to CI.
 Improve documentation.
 
 ## 18.0 on 2022-11-07
