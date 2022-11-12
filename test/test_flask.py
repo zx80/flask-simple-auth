@@ -1218,6 +1218,14 @@ def test_authorize_errors():
         assert False, "should detect ANY/other mix"
     except ConfigError as e:
         assert "object" in str(e)
+    try:
+        app.add_group("foo", "bla")
+        @app.get("/bad-group", authorize="no-such-group")
+        def get_bad_group():
+            return "should not get there", 200
+        assert False, "should detect unregistered group"
+    except ConfigError as e:
+        assert "no-such-group" in str(e)
 
 def test_group_errors():
     import AppFact as af

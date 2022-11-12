@@ -549,15 +549,15 @@ There are three special values that can be passed to the `authorize` decorator:
   temporarily. This is the default.
 
 ```Python
-@app.get("/closed", authorize=NONE)
+@app.get("/closed", authorize="NONE")
 def get_closed():
     # nobody can get here
 
-@app.get("/authenticated", authorize=ALL)
+@app.get("/authenticated", authorize="ALL")
 def get_authenticated():
     # ALL authenticated users can get here
 
-@app.get("/opened", authorize=ANY)
+@app.get("/opened", authorize="ANY")
 def get_opened():
     # ANYone can get here, no authentication is required
 ```
@@ -565,6 +565,17 @@ def get_opened():
 Note that this simplistic model does is not enough for non-trivial applications,
 where permissions on objects often depend on the object owner.
 For those, careful per-object and per-operation authorization will still be needed.
+
+Groups *can* be registered with `add_group`.
+If done so, unregistered groups are rejected and result in a configuration error:
+
+```Python
+app.add_group("eleve", "prof")
+
+@app.get("/eleves", authorize="admin")  # ERROR, unregistered group
+def get_eleves():
+    …
+```
 
 #### Object Authorizations
 
@@ -906,9 +917,9 @@ is both shorter (32 vs 40 cloc), elegant and more featureful.
 - should try to reduce "no cover" pragmas
 - coverage should include demo run
 - refactor password manager in a separate class?
-- allow to restrict allowed group for early typo detection?
-- same with oauth scopes?
+- allow to register scopes for oauth?
 - add `issuer` route parameter?
 - make oauth and object\_perms compatible, if needed?
 - document oauth authz in the Authorizations section?
 - how to have several issuers and their signatures?
+- allow required group registration?

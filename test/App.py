@@ -16,6 +16,7 @@ import FlaskSimpleAuth as fsa
 from FlaskSimpleAuth import Flask, jsonify, ANY, ALL, NONE, path, string, \
     Request, Session, Globals, Environ, CurrentUser
 app = Flask("Test", debug=True)
+app.add_group(ADMIN, WRITE, READ)
 
 #
 # AUTH

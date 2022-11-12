@@ -144,7 +144,7 @@ class Flask(flask.Flask):
     - several additional methods are provided: `get_user_pass`,
       `user_in_group`, `check_password`, `hash_password`, `create_token`,
       `get_user`, `current_user`, `clear_caches`, `cast`, `object_perms`,
-      `user_oauth`, `password_quality` and `password_check`.
+      `user_oauth`, `password_quality`, `password_check`, `add_group`.
     """
 
     def __init__(self, *args, debug: Optional[bool] = None, **kwargs):
@@ -161,6 +161,7 @@ class Flask(flask.Flask):
         self.special_parameter = self._fsa.special_parameter
         self.password_quality = self._fsa.password_quality
         self.password_check = self._fsa.password_check
+        self.add_group = self._fsa.add_group
         # forward methods
         self.check_password = self._fsa.check_password
         self.hash_password = self._fsa.hash_password
@@ -257,6 +258,7 @@ class FlaskSimpleAuth:
         self._not_found_error: int = _DEFAULT_NOT_FOUND_ERROR
         self._secure: bool = True
         self._names: Set[str] = set()
+        self._groups: Set[Union[str, int]] = set()
         self._local: Any = None
         # actual main initialization is deferred to `init_app`
         self._initialized = False
@@ -446,6 +448,11 @@ class FlaskSimpleAuth:
     def user_oauth(self, scope):
         """Is scope in the current user scope."""
         return self._local.scopes and scope in self._local.scopes
+
+    def add_group(self, *groups):
+        """Add some groups."""
+        for grp in groups:
+            self._groups.add(grp)
 
     #
     # DEFERRED INITIALIZATIONS
@@ -1301,9 +1308,14 @@ class FlaskSimpleAuth:
     def _group_auth(self, path, *groups):
         """Decorator to authorize user groups."""
 
-        for group in _PREDEFS:
-            if group in groups:
-                raise self._Bad(f"unexpected predefined {group}")
+        for grp in _PREDEFS:
+            if grp in groups:
+                raise self._Bad(f"unexpected predefined {grp}")
+
+        if self._groups:
+            for grp in groups:
+                if grp not in self._groups:
+                    raise self._Bad(f"unexpected group {grp}")
 
         if not self._user_in_group:  # pragma: no cover
             raise self._Bad(f"user_in_group callback needed for group authorization on {path}")
@@ -1317,9 +1329,9 @@ class FlaskSimpleAuth:
                 self._local.need_authorization = False
 
                 # check against all authorized groups/roles
-                for group in groups:
+                for grp in groups:
                     try:
-                        ok = self._user_in_group(self._local.user, group)
+                        ok = self._user_in_group(self._local.user, grp)
                     except ErrorResponse as e:
                         return self._Res(e.message, e.status)
                     except Exception as e:
