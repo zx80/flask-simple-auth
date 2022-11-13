@@ -27,3 +27,4 @@ def init_app(app: Flask):
     app.get_user_pass(get_user_pass)
     app.user_in_group(user_in_group)
     app.object_perms("users", check_user_access)
+    app.add_group("ADMIN")
