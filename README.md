@@ -181,6 +181,8 @@ Once initialized `app` is a standard Flask object with some additions:
   It can also be requested as a parameter with the `CurrentUser` type.
 - `user_scope` to function to check if the current token-authenticated user
   has some authorizations.
+- `add_group` and `add_scope` to register groups or scopes allowed
+  for `authorize`.
 - `hash_password` and `check_password` to hash or check a password.
 - `create_token` to compute a new authentication token for the current user.
 - `clear_caches` to clear internal process caches (probably a bad idea).
