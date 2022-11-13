@@ -932,7 +932,6 @@ is both shorter (32 vs 40 cloc), elegant and more featureful.
   and packages bcrypt, psycopg2, psycopg2cffi, psycopg…
 - thread-local stuff in Reference: what about teardown?
 - what about asyncio?
-- should have explicit tests for psycopg version 2 and 3 drivers
 - password re could use a dict for providing an explanation?
 - should try to reduce "no cover" pragmas
 - coverage should include demo run
