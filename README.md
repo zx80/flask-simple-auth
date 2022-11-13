@@ -937,4 +937,4 @@ is both shorter (32 vs 40 cloc), elegant and more featureful.
 - refactor password manager in a separate class?
 - add `issuer` route parameter?
 - how to have several issuers and their signatures?
-- allow required group registration?
+- allow required group registration? scope?
