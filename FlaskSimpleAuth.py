@@ -69,7 +69,7 @@ class string(str):
 
 # "JsonData = json.loads" would do:-)
 class JsonData:
-    """Magic JSON Type."""
+    """Magic JSON type."""
     pass
 
 
