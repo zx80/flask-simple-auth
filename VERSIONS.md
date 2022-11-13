@@ -10,6 +10,7 @@ and `add_scope` to register scopes allowed for `oauth`.
 Add corresponding `FSA_AUTHZ_GROUPS` and `FSA_AUTHZ_SCOPES`
 directives.
 Rename `user_oauth` as `user_scope` for consistency.
+Improve documentation.
 
 ## 18.1 on 2022-11-11
 

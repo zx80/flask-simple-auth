@@ -501,17 +501,18 @@ headers for authenticating later requests, till it expires.
 
 Authorizations are declared with the `authorize` parameter to
 the `route` decorator (and its per-method shortcuts).
-The modules supports two permission models:
+The modules supports three permission models:
 
 - a group-oriented model
+- a scope OAuth model
 - an object-oriented model
 
-The parameter accepts a list of `str` and `int` for groups, and of
+The parameter accepts a list of `str` and `int` for groups or scopes, and of
 `tuple` for object permissions.  If a scalar is provided, it is assumed
 to be equivalent to a list of one element.
 
 When multiple authorizations are required through a list, they are cumulative,
-that is all conditions must be met.
+that is *all* conditions must be met.
 
 #### Group Authorizations
 
@@ -568,14 +569,16 @@ def get_eleves():
 
 #### OAuth Authorizations
 
-OAuth authorizations are attached to the current authentification performed
-through a token, on routes marked with `auth="oauth"`.
+OAuth authorizations are simular to group authorizations.
+They are attached to the current authentification performed through a token,
+on routes marked with `auth="oauth"`.
 In that case, the `authorize` values are interpreted as *scopes* that must be
 provided by the token.
 
 In order to simplify security implications, *scopes* and *groups*
 (`user_in_group`) authorizations cannot be mixed on a route:
 create distinct routes to handle these.
+Another current limitation is that only one *issuer* is allowed.
 
 ```python
 # /data is only accessible through a trusted JWT token with "read" scope
