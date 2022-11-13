@@ -497,7 +497,7 @@ def test_password_quality():
 def test_authorize():
     assert app._fsa._user_in_group("dad", App.ADMIN)
     assert not app._fsa._user_in_group("hobbes", App.ADMIN)
-    @app._fsa._group_auth("stuff", App.ADMIN)
+    @app._fsa._group_authz("stuff", App.ADMIN)
     def stuff():
         return Response("", 200)
     app._fsa._local.user = "dad"
@@ -507,7 +507,7 @@ def test_authorize():
     res = stuff()
     assert res.status_code == 403
     try:
-        @app._fsa._group_auth("stuff", fsa.ALL, fsa.ANY)
+        @app._fsa._group_authz("stuff", fsa.ALL, fsa.ANY)
         def foo():
             return "foo", 200
         assert False, "cannot mix ALL & ANY in authorize"

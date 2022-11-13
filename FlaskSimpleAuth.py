@@ -1251,11 +1251,11 @@ class FlaskSimpleAuth:
     # INTERNAL DECORATORS
     #
     # _authenticate: set self._user
-    #   _oauth_auth: check OAuth scope authorization
-    #   _group_auth: check group authorization
+    #  _oauth_authz: check OAuth scope authorization
+    #  _group_authz: check group authorization
+    #     _no_authz: validate that no authorization was needed
     #   _parameters: handle HTTP/JSON to python parameter translation
-    #    _perm_auth: check per-object permissions
-    #   _any_noauth: validate that no authorization was needed
+    #   _perm_authz: check per-object permissions
     #
     def _safe_call(self, path, level, fun, *args, **kwargs):
         """Call a route function ensuring a response whatever."""
@@ -1303,7 +1303,7 @@ class FlaskSimpleAuth:
 
         return decorate
 
-    def _oauth_auth(self, path, *scopes):
+    def _oauth_authz(self, path, *scopes):
         """Decorator to authorize OAuth scopes (token-provided authz)."""
 
         if self._scopes:
@@ -1328,7 +1328,7 @@ class FlaskSimpleAuth:
 
         return decorate
 
-    def _group_auth(self, path, *groups):
+    def _group_authz(self, path, *groups):
         """Decorator to authorize user groups."""
 
         for grp in _PREDEFS:
@@ -1368,6 +1368,20 @@ class FlaskSimpleAuth:
 
                 # all groups are ok, proceed to call underlying function
                 return self._safe_call(path, "group authorization", fun, *args, **kwargs)
+
+            return wrapper
+
+        return decorate
+
+    # just to record that no authorization check was needed
+    def _no_authz(self, path, *groups):
+
+        def decorate(fun: Callable):
+
+            @functools.wraps(fun)
+            def wrapper(*args, **kwargs):
+                self._local.need_authorization = False
+                return self._safe_call(path, "no authorization", fun, *args, **kwargs)
 
             return wrapper
 
@@ -1459,7 +1473,7 @@ class FlaskSimpleAuth:
 
         return decorate
 
-    def _perm_auth(self, path, first, *perms):
+    def _perm_authz(self, path, first, *perms):
         """Decorator for per-object permissions."""
         # check perms wrt to recorded per-object checks
 
@@ -1521,20 +1535,6 @@ class FlaskSimpleAuth:
 
         return decorate
 
-    # just to record that no authorization check was needed
-    def _any_noauth(self, path, *groups):
-
-        def decorate(fun: Callable):
-
-            @functools.wraps(fun)
-            def wrapper(*args, **kwargs):
-                self._local.need_authorization = False
-                return self._safe_call(path, "no authorization", fun, *args, **kwargs)
-
-            return wrapper
-
-        return decorate
-
     # FIXME endpoint?
     def add_url_rule(self, rule, endpoint=None, view_func=None, authorize=NONE, auth=None, **options):
         """Route decorator helper method."""
@@ -1577,7 +1577,9 @@ class FlaskSimpleAuth:
             raise self._Bad(f"unexpected authorizations on {rule}: {bads}")
 
         if NONE in predefs:
-            groups, perms = [], []
+            # overwrite all perms, a route is closed just by appending "NONE"
+            # NOTE the handling is performed later to allow for some checks
+            predefs, groups, perms = [NONE], [], []
         elif ANY in predefs:
             if len(predefs) > 1:
                 raise self._Bad(f"cannot mix ANY/ALL predefined groups on {path}")
@@ -1642,27 +1644,32 @@ class FlaskSimpleAuth:
         # else only add needed filters on top of "fun", in reverse order
         need_authenticate = ALL in predefs or groups or perms
         need_parameters = len(fun.__code__.co_varnames) > 0
+        assert len(predefs) <= 1
 
+        # build handling layers in reverse order:
+        # authenticate / (oauth|group|no|) / params / perms / fun
         if perms:
             if not need_parameters:
                 raise self._Bad("permissions require some parameters")
             assert need_authenticate and need_parameters
             first = fun.__code__.co_varnames[0]
-            fun = self._perm_auth(newpath, first, *perms)(fun)
+            fun = self._perm_authz(newpath, first, *perms)(fun)
         if need_parameters:
             fun = self._parameters(newpath)(fun)
         if groups:
             assert need_authenticate
             if auth == "oauth":
-                fun = self._oauth_auth(newpath, *groups)(fun)
+                fun = self._oauth_authz(newpath, *groups)(fun)
             else:
-                fun = self._group_auth(newpath, *groups)(fun)
-        if ANY in predefs:
+                fun = self._group_authz(newpath, *groups)(fun)
+        elif ANY in predefs:
             assert not groups and not perms
-            fun = self._any_noauth(newpath, *groups)(fun)
-        if ALL in predefs:
+            fun = self._no_authz(newpath, *groups)(fun)
+        elif ALL in predefs:
             assert need_authenticate
-            fun = self._any_noauth(newpath, *groups)(fun)
+            fun = self._no_authz(newpath, *groups)(fun)
+        else:  # no authorization at this level
+            assert perms
         if need_authenticate:
             assert perms or groups or ALL in predefs
             fun = self._authenticate(newpath, auth=auth)(fun)
