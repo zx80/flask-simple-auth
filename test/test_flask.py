@@ -1226,6 +1226,16 @@ def test_authorize_errors():
         assert False, "should detect unregistered group"
     except ConfigError as e:
         assert "no-such-group" in str(e)
+    try:
+        app.add_scope("foo", "bla")
+        app._fsa._token = "jwt"
+        app._fsa._issuer = "calvin"
+        @app.get("/bad-scope", authorize="no-such-scope", auth="oauth")
+        def get_bad_scope():
+            return "should not get there", 200
+        assert False, "should detect unregistered scope"
+    except ConfigError as e:
+        assert "no-such-scope" in str(e)
 
 def test_group_errors():
     import AppFact as af

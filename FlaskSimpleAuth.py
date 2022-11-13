@@ -144,7 +144,8 @@ class Flask(flask.Flask):
     - several additional methods are provided: `get_user_pass`,
       `user_in_group`, `check_password`, `hash_password`, `create_token`,
       `get_user`, `current_user`, `clear_caches`, `cast`, `object_perms`,
-      `user_oauth`, `password_quality`, `password_check`, `add_group`.
+      `user_scope`, `password_quality`, `password_check`, `add_group`,
+      `add_scope`.
     """
 
     def __init__(self, *args, debug: Optional[bool] = None, **kwargs):
@@ -156,12 +157,13 @@ class Flask(flask.Flask):
         self.get_user_pass = self._fsa.get_user_pass
         self.user_in_group = self._fsa.user_in_group
         self.object_perms = self._fsa.object_perms
-        self.user_oauth = self._fsa.user_oauth
+        self.user_scope = self._fsa.user_scope
         self.cast = self._fsa.cast
         self.special_parameter = self._fsa.special_parameter
         self.password_quality = self._fsa.password_quality
         self.password_check = self._fsa.password_check
         self.add_group = self._fsa.add_group
+        self.add_scope = self._fsa.add_scope
         # forward methods
         self.check_password = self._fsa.check_password
         self.hash_password = self._fsa.hash_password
@@ -259,6 +261,7 @@ class FlaskSimpleAuth:
         self._secure: bool = True
         self._names: Set[str] = set()
         self._groups: Set[Union[str, int]] = set()
+        self._scopes: Set[str] = set()
         self._local: Any = None
         # actual main initialization is deferred to `init_app`
         self._initialized = False
@@ -445,7 +448,7 @@ class FlaskSimpleAuth:
         assert domain in self._object_perms
         return self._object_perms[domain](user, oid, mode)
 
-    def user_oauth(self, scope):
+    def user_scope(self, scope):
         """Is scope in the current user scope."""
         return self._local.scopes and scope in self._local.scopes
 
@@ -453,6 +456,11 @@ class FlaskSimpleAuth:
         """Add some groups."""
         for grp in groups:
             self._groups.add(grp)
+
+    def add_scope(self, *scopes):
+        """Add some scopes."""
+        for scope in scopes:
+            self._scopes.add(scope)
 
     #
     # DEFERRED INITIALIZATIONS
@@ -1288,6 +1296,11 @@ class FlaskSimpleAuth:
     def _oauth_auth(self, path, *scopes):
         """Decorator to authorize OAuth scopes (token-provided authz)."""
 
+        if self._scopes:
+            for scope in scopes:
+                if scope not in self._scopes:
+                    raise self._Bad(f"unexpected scope {scope}")
+
         def decorate(fun: Callable):
 
             @functools.wraps(fun)
@@ -1296,7 +1309,7 @@ class FlaskSimpleAuth:
                 self._local.need_authorization = False
 
                 for scope in scopes:
-                    if not self.user_oauth(scope):
+                    if not self.user_scope(scope):
                         return self._Res("", 403)
 
                 return self._safe_call(path, "oauth authorization", fun, *args, **kwargs)

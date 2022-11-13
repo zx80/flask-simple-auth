@@ -179,7 +179,7 @@ Once initialized `app` is a standard Flask object with some additions:
 - `get_user` to extract the authenticated user or raise an exception.
 - `current_user` to get the authenticated user if any, or `None`.
   It can also be requested as a parameter with the `CurrentUser` type.
-- `user_oauth` to function to check if the current token-authenticated user
+- `user_scope` to function to check if the current token-authenticated user
   has some authorizations.
 - `hash_password` and `check_password` to hash or check a password.
 - `create_token` to compute a new authentication token for the current user.
@@ -380,23 +380,10 @@ The available authentication schemes are:
 - `oauth`
 
   Synonymous to `token`, but to be used on a route so as to trigger JWT *scope*
-  authorizations on that route: Authorizations are attached to the current
-  authentification performed through a token.
-  In that case, the `authorize` groups are interpreted as scopes that must be
-  provided by the token.
-  In order to simplify security implications, *scopes* and *groups*
-  (`user_in_group`) authorizations cannot be mixed on a route:
-  create distinct routes to handle these.
+  authorizations on that route.
 
-  ```python
-  # /data is only accessible through a trusted JWT token with "read" scope
-  @app.get("/data", authorize="read", auth="oauth"):
-  def get_data():
-      return access_some_data(app.get_user()), 200
-  ```
-
-  Method `user_oauth` allows to check whether the current user can perform
-  some operation.
+  See also [OAuth Authorizations](#oauth-authorizations) below for how to use
+  JWT token scopes.
 
 - `http-token`
 
@@ -576,6 +563,30 @@ app.add_group("eleve", "prof")
 def get_eleves():
     …
 ```
+
+#### OAuth Authorizations
+
+OAuth authorizations are attached to the current authentification performed
+through a token, on routes marked with `auth="oauth"`.
+In that case, the `authorize` values are interpreted as *scopes* that must be
+provided by the token.
+
+In order to simplify security implications, *scopes* and *groups*
+(`user_in_group`) authorizations cannot be mixed on a route:
+create distinct routes to handle these.
+
+```python
+# /data is only accessible through a trusted JWT token with "read" scope
+@app.get("/data", authorize="read", auth="oauth"):
+def get_data(user: CurrentUser):
+    return access_some_data(user), 200
+```
+
+Method `user_scope` allows to check whether the current user can perform
+some operation. It can be used with an object authorization rule.
+
+Method `add_scope` allows to register valid scopes that can be checked
+later. If not set, all scopes are considered valid.
 
 #### Object Authorizations
 
@@ -917,9 +928,6 @@ is both shorter (32 vs 40 cloc), elegant and more featureful.
 - should try to reduce "no cover" pragmas
 - coverage should include demo run
 - refactor password manager in a separate class?
-- allow to register scopes for oauth?
 - add `issuer` route parameter?
-- make oauth and object\_perms compatible, if needed?
-- document oauth authz in the Authorizations section?
 - how to have several issuers and their signatures?
 - allow required group registration?
