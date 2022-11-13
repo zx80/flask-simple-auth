@@ -588,6 +588,13 @@ some operation. It can be used with an object authorization rule.
 Method `add_scope` allows to register valid scopes that can be checked
 later. If not set, all scopes are considered valid.
 
+The *scope* delegated authorization model suggests that the issuer is
+trusted to control accesses with any possible scope.
+This may or may not make sense from a security perspective depending
+on the use case.
+It makes perfect sense if the issuer is providing authorizations for
+accesses to itself, possibly from a third party.
+
 #### Object Authorizations
 
 Non trivial application have access permissions which depend on the data
