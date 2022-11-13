@@ -915,7 +915,7 @@ By contrast, *Flask Simple Auth*:
 - integrates cleanly authentification and authorizations,
   including handling *404* transparently.
 Our [implementation](demo/todos-fsa.py) of the doc [example](demo/todos-frf.py)
-is both shorter (32 vs 40 cloc), elegant and more featureful.
+is both shorter (32 vs 40 cloc), elegant and featureful.
 
 ## TODO
 
