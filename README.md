@@ -560,10 +560,10 @@ Groups *can* be registered with `add_group` or with `FSA_AUTHZ_GROUPS`.
 If done so, unregistered groups are rejected and result in a configuration error:
 
 ```Python
-app.add_group("eleve", "prof")
+app.add_group("student", "professor")
 
-@app.get("/eleves", authorize="admin")  # ERROR, unregistered group
-def get_eleves():
+@app.get("/students", authorize="admin")  # ERROR, unregistered group
+def get_students():
     …
 ```
 
