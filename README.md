@@ -555,7 +555,7 @@ Note that this simplistic model does is not enough for non-trivial applications,
 where permissions on objects often depend on the object owner.
 For those, careful per-object and per-operation authorization will still be needed.
 
-Groups *can* be registered with `add_group`.
+Groups *can* be registered with `add_group` or with `FSA_AUTHZ_GROUPS`.
 If done so, unregistered groups are rejected and result in a configuration error:
 
 ```Python
@@ -587,8 +587,8 @@ def get_data(user: CurrentUser):
 Method `user_scope` allows to check whether the current user can perform
 some operation. It can be used with an object authorization rule.
 
-Method `add_scope` allows to register valid scopes that can be checked
-later. If not set, all scopes are considered valid.
+Method `add_scope` and directive `FSA_AUTHZ_SCOPES` allow to register valid
+scopes that can be checked later. If not set, all scopes are considered valid.
 
 The *scope* delegated authorization model suggests that the issuer is
 trusted to control accesses with any possible scope.
@@ -937,5 +937,5 @@ is both shorter (32 vs 40 cloc), elegant and more featureful.
 - coverage should include demo run
 - refactor password manager in a separate class?
 - add `issuer` route parameter?
-- how to have several issuers and their signatures?
+- how to have several issuers and their signatures schemes?
 - allow required group registration? scope?

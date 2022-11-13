@@ -185,8 +185,6 @@ _DIRECTIVES = {
     "FSA_DEBUG", "FSA_LOGGING_LEVEL",
     # general settings
     "FSA_SECURE", "FSA_SERVER_ERROR", "FSA_NOT_FOUND_ERROR", "FSA_LOCAL",
-    # parameter handing
-    "FSA_REJECT_UNEXPECTED_PARAM",
     # register hooks
     "FSA_GET_USER_PASS", "FSA_USER_IN_GROUP", "FSA_CAST",
     "FSA_OBJECT_PERMS", "FSA_SPECIAL_PARAMETER",
@@ -199,6 +197,10 @@ _DIRECTIVES = {
     "FSA_PASSWORD_SCHEME", "FSA_PASSWORD_OPTS", "FSA_PASSWORD_CHECK",
     "FSA_PASSWORD_LEN", "FSA_PASSWORD_RE", "FSA_PASSWORD_QUALITY",
     "FSA_HTTP_AUTH_OPTS",
+    # authorization
+    "FSA_AUTHZ_GROUPS", "FSA_AUTHZ_SCOPES",
+    # parameter handing
+    "FSA_REJECT_UNEXPECTED_PARAM",
     # internal caching
     "FSA_CACHE", "FSA_CACHE_SIZE", "FSA_CACHE_OPTS", "FSA_CACHE_PREFIX",
     # web-oriented settings
@@ -531,6 +533,11 @@ class FlaskSimpleAuth:
             if a not in self._FSA_AUTH:
                 raise self._Bad(f"unexpected auth: {a}")
         self._local.auth = self._auth  # type: ignore
+        #
+        # authorize
+        #
+        self._groups.update(conf.get("FSA_AUTHZ_GROUPS", []))
+        self._scopes.update(conf.get("FSA_AUTHZ_SCOPES", []))
         #
         # web apps…
         #

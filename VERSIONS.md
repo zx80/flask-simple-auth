@@ -7,6 +7,8 @@ and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 
 Add `add_group` method to register groups allowed for `authorize`,
 and `add_scope` to register scopes allowed for `oauth`.
+Add corresponding `FSA_AUTHZ_GROUPS` and `FSA_AUTHZ_SCOPES`
+directives.
 Rename `user_oauth` as `user_scope` for consistency.
 
 ## 18.1 on 2022-11-11
