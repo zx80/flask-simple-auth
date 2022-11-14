@@ -511,7 +511,6 @@ class FlaskSimpleAuth:
         else:
             raise self._Bad(f"unexpected FSA_LOCAL value: {local}")
         self._local = Local()
-        # NOTE threading.local might not be enough?
         # whether to only allow secure requests
         self._secure = conf.get("FSA_SECURE", True)
         # status code for some errors errors
