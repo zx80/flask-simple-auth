@@ -934,8 +934,6 @@ is both shorter (32 vs 40 cloc), elegant and featureful.
   possibly the id can be passed to perm hooks instead of the login?
   can be managed there as well?
 - reduce sloc?
-- pypy compatibility? issues with date/time fromisoformat
-  and packages bcrypt, psycopg2, psycopg2cffi, psycopg…
 - password re could use a dict for providing an explanation?
 - coverage should include demo run?
 - refactor password manager in a separate class?
