@@ -936,12 +936,9 @@ is both shorter (32 vs 40 cloc), elegant and featureful.
 - reduce sloc?
 - pypy compatibility? issues with date/time fromisoformat
   and packages bcrypt, psycopg2, psycopg2cffi, psycopg…
-- thread-local stuff in Reference: what about teardown?
-- what about asyncio?
 - password re could use a dict for providing an explanation?
-- should try to reduce "no cover" pragmas
-- coverage should include demo run
+- coverage should include demo run?
 - refactor password manager in a separate class?
-- add `issuer` route parameter?
 - how to have several issuers and their signatures schemes?
-- allow required group registration? scope?
+- add `issuer` route parameter?
+- allow requiring group registration? scope? no, because no security implication?
