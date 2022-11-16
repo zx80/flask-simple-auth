@@ -145,6 +145,9 @@ to register helper functions, such as:
 - a function which tells whether a user is in a group or role.
 - functions which define object ownership.
 
+*Flask Simple Auth* configuration directives can also be provided directly
+to the constructor.
+
 ```Python
 from FlaskSimpleAuth import Flask
 app = Flask("acme")

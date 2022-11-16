@@ -152,8 +152,17 @@ class Flask(flask.Flask):
     """
 
     def __init__(self, *args, debug: Optional[bool] = None, **kwargs):
+        # extract FSA-specific directives
+        fsaconf: Dict[str, Any] = {}
+        for key, val in kwargs.items():
+            if key.startswith("FSA_"):
+                fsaconf[key] = val
+        for key in fsaconf:
+            del kwargs[key]
+        # Flask initialization
         super().__init__(*args, **kwargs)
-        self._fsa = FlaskSimpleAuth(self, debug=debug)
+        # FSA initialization
+        self._fsa = FlaskSimpleAuth(self, debug=debug, **fsaconf)
         # overwritten late because called by upper Flask initialization for "static"
         setattr(self, "add_url_rule", self._fsa.add_url_rule)
         # forward hooks
@@ -225,13 +234,14 @@ _DEFAULT_PASSWORD_OPTS = {"bcrypt__default_rounds": 4, "bcrypt__default_ident": 
 class FlaskSimpleAuth:
     """Flask extension for authentication, authorization and parameters."""
 
-    def __init__(self, app: Optional[flask.Flask] = None, debug: Optional[bool] = False):
+    def __init__(self, app: Optional[flask.Flask] = None, debug: Optional[bool] = False, **config):
         """Constructor parameter: flask application to extend."""
         self._debug = debug
         if debug:
             logging.warning("FlaskSimpleAuth running in debug mode")
             log.setLevel(logging.DEBUG)
         self._app = app
+        self._app.config.update(**config)
         # hooks
         self._get_user_pass = None
         self._user_in_group = None
