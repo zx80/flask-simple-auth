@@ -151,7 +151,7 @@ class Flask(flask.Flask):
       `add_scope`.
     """
 
-    def __init__(self, *args, debug: Optional[bool] = None, **kwargs):
+    def __init__(self, *args, debug: bool = False, **kwargs):
         # extract FSA-specific directives
         fsaconf: Dict[str, Any] = {}
         for key, val in kwargs.items():
@@ -234,7 +234,7 @@ _DEFAULT_PASSWORD_OPTS = {"bcrypt__default_rounds": 4, "bcrypt__default_ident": 
 class FlaskSimpleAuth:
     """Flask extension for authentication, authorization and parameters."""
 
-    def __init__(self, app: Optional[flask.Flask] = None, debug: Optional[bool] = False, **config):
+    def __init__(self, app: flask.Flask, debug: bool = False, **config):
         """Constructor parameter: flask application to extend."""
         self._debug = debug
         if debug:
