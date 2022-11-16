@@ -766,7 +766,7 @@ def put_user_pass(_pass: str, _def: str, _import: str):
 ### Utils
 
 Utilities include the `Reference` generic object wrapper class,
-a `ErrorResponse` class to quickly generate error replies and
+an `ErrorResponse` class to quickly generate error replies and
 miscellaneous configuration directives which cover security,
 caching and CORS.
 
@@ -918,7 +918,7 @@ By contrast, *Flask Simple Auth*:
 - integrates cleanly authentification and authorizations,
   including handling *404* transparently.
 Our [implementation](demo/todos-fsa.py) of the doc [example](demo/todos-frf.py)
-is both shorter (32 vs 40 cloc), elegant and featureful.
+is shorter (32 vs 40 cloc), elegant and featureful.
 
 ## TODO
 
