@@ -940,3 +940,4 @@ is shorter (32 vs 40 cloc), elegant and featureful.
 - how to have several issuers and their signatures schemes?
 - add `issuer` route parameter?
 - allow requiring group registration? scope? no, because no security implication?
+- add a `pyproject.toml`?
