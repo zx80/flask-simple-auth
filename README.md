@@ -117,6 +117,12 @@ so the route definition should be a function, avoiding relying on magic globals.
 [**Utils**](#utils) include the convenient `Reference` class which allows to
 share possibly thread-local data for import, and CORS handling.
 
+It makes sense to integrate these capabilities into a Flask wrapper so that only
+one extended decorator is needed on a route, meaning that the security cannot be
+forgotten, compared to an extension which would require additional decorators.
+Also, parameters checks are relevant to security in general and interdependent
+as checking for object ownership requires accessing parameters.
+
 ### Install
 
 Use `pip install FlaskSimpleAuth` to install the module, or whatever
@@ -904,7 +910,7 @@ By contrast, *Flask Simple Auth*:
 - does care about performance by providing an automatic and relevant caching
   mechanism to expensive authentication and authorization checks, including
   relying on external stores such as *redis*.
-- provides simple hooks to extend features, such as adding an
+- provides simple hooks to extend features, such as adding a
   password strength checker or a password alternate verifier.
 - is much smaller (about 1/10th, ignoring dependencies), so probably it does
   less things!
