@@ -35,7 +35,7 @@ jobs:
     # Checks
     - name: Check with mypy
       run: mypy FlaskSimpleAuth.py
-    # FIXME unwanted changes
+    # FIXME unwanted changes, should be filtered with "# fmt:" tags
     # - name: Check with black
     #   run: black --check CacheToolsUtils.py
     - name: Check with flake8
