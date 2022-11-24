@@ -3,6 +3,10 @@
 Sources are available on [GitHub](https://github.com/zx80/flask-simple-auth)
 and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 
+## ? on ?
+
+Improve documentation.
+
 ## 19.0 on 2022-11-16
 
 Add `add_group` method to register groups allowed for `authorize`,
