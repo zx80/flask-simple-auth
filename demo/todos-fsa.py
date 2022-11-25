@@ -26,7 +26,7 @@ def get_todos_tid(tid: str):
 
 @app.put("/todos/<tid>", authorize=("todos",))
 def put_todos_tid(tid: str, task: str):
-    TODOS[tid] = task
+    TODOS[tid] = {"task": task}
     return "", 204
 
 
