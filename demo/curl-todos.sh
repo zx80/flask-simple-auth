@@ -4,11 +4,11 @@
 #
 # NOTE fails with todos-frf because "task" is expected in json
 
-req="curl -i -u calvin:sesame -X"
+req="curl -si -u calvin:sesame -X"
 URL="http://0.0.0.0:5000"
 
 # check for errors
-curl -i -X GET $URL/todos/todo1            # 401
+curl -si -X GET $URL/todos/todo1            # 401
 $req DELETE $URL/todos/todo0               # 404
 $req POST -d stuff="WIP 0" $URL/todos      # 400
 
