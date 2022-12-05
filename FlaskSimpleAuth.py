@@ -344,7 +344,6 @@ class FlaskSimpleAuth:
 
     def _auth_post_check(self, res: Response):
         """After request hook to detect missing authorizations."""
-        log.debug(f"post check: res={res}")
         if not hasattr(self._local, "need_authorization"):  # pragma: no cover
             # may triggered by an early return from a before_request hook
             log.warn(f"external response on {request.method} {request.path}")

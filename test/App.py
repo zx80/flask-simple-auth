@@ -385,11 +385,10 @@ def get_perm_basic_token():
 
 @app.before_request
 def early_return():
-    if fsa.request.path == "/early-return":
-        # FIXME how to get rid of that (for code < 400)
-        # app._fsa._local.need_authorization = False
-        return "early return", 418
+    if fsa.request.path.startswith("/early-return/"):
+        code = int(fsa.request.path[14:])
+        return "early return", code
 
-@app.get("/early-return", authorize=ANY)
-def get_early_return():
+@app.get("/early-return/<code>", authorize=ANY)
+def get_early_return(code: int):
     return "should not get there", 500
