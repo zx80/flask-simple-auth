@@ -382,3 +382,14 @@ def get_perm_token_basic():
 @app.get("/perm/basic-token", authorize=ALL, auth=("basic", "token"))
 def get_perm_basic_token():
     return "basic-token", 200
+
+@app.before_request
+def early_return():
+    if fsa.request.path == "/early-return":
+        # FIXME how to get rid of that?
+        app._fsa._local.need_authorization = False
+        return "early return", 418
+
+@app.get("/early-return", authorize=ANY)
+def get_early_return():
+    return "should not get there", 500

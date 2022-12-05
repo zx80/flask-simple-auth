@@ -338,6 +338,11 @@ class FlaskSimpleAuth:
 
     def _auth_post_check(self, res: Response):
         """After request hook to detect missing authorizations."""
+        log.debug(f"post check: res={res}")
+        if not hasattr(self._local, "need_authorization"):  # pragma: no cover
+            # may triggered by an early return from a before_request hook
+            log.warn(f"external response on {request.method} {request.path}")
+            return res
         if res.status_code < 400 and self._local.need_authorization:
             method, path = request.method, request.path
             if not (self._cors and method == "OPTIONS"):
@@ -358,7 +363,7 @@ class FlaskSimpleAuth:
         return res
 
     def _set_auth_cookie(self, res: Response):
-        """Set a cookie if needed and none was sent."""
+        """After request hook to set a cookie if needed and none was sent."""
         # NOTE thanks to max_age the client should not send stale cookies
         if self._carrier == "cookie":
             assert self._token and self._name

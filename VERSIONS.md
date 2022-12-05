@@ -3,9 +3,11 @@
 Sources are available on [GitHub](https://github.com/zx80/flask-simple-auth)
 and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 
-## ? on ?
+## 19.1 on 2022-12-05
 
-Improve documentation.
+Avoid internal error if a user before request generates an early
+return, in some cases.
+Improve documentation and tests.
 
 ## 19.0 on 2022-11-16
 

@@ -162,6 +162,10 @@ def all_auth(client, user, pswd, check, *args, **kwargs):
     check(client.get(*args, **kwargs))
     pop_auth(app._fsa)
 
+def test_early_return(client):
+    res = check(418, client.get("/early-return"))
+    assert b"early return" in res.data
+
 def test_perms(client):
     check(200, client.get("/any"))  # open route
     check(401, client.get("/login"))  # login without login
