@@ -96,6 +96,11 @@ class CurrentUser:
     pass
 
 
+class CurrentApp:
+    """CurrentApp parameter type."""
+    pass
+
+
 #
 # SPECIAL PREDEFINED GROUP NAMES
 #
@@ -265,6 +270,7 @@ class FlaskSimpleAuth:
             Session: lambda: session,
             Globals: lambda: g,
             CurrentUser: lambda: self.current_user(),
+            CurrentApp: lambda: current_app,
         }
         self._auth: List[str] = []
         self._http_auth = None

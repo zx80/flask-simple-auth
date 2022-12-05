@@ -14,7 +14,7 @@ log = logging.getLogger("app")
 #
 import FlaskSimpleAuth as fsa
 from FlaskSimpleAuth import Flask, jsonify, ANY, ALL, NONE, path, string, \
-    Request, Session, Globals, Environ, CurrentUser
+    Request, Session, Globals, Environ, CurrentUser, CurrentApp
 app = Flask("Test", debug=True, FSA_LOGGING_LEVEL=logging.DEBUG)
 app.add_group(ADMIN, WRITE, READ)
 
@@ -59,7 +59,7 @@ def read_only():
     return "read-only", 200
 
 @app.route("/any", authorize=ANY)
-def any():
+def any(app: CurrentApp):
     assert app._fsa._get_httpd_auth() is None
     return "no-auth", 200
 
