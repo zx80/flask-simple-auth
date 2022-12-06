@@ -961,3 +961,4 @@ By contrast, *Flask Simple Auth*:
 - add `issuer` route parameter?
 - allow requiring group registration? scope? no, because no security implication?
 - add a `pyproject.toml`?
+- should put the detailed documentation in a separate page?

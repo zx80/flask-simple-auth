@@ -6,6 +6,7 @@ and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 ## ? on ?
 
 Add `CurrentApp` special parameter type.
+Improved documentation.
 
 ## 19.1 on 2022-12-05
 
