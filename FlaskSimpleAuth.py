@@ -354,7 +354,7 @@ class FlaskSimpleAuth:
             # may be triggered by an early return from a before_request hook?
             log.warn(f"external response on {request.method} {request.path}")
             return res
-        if self._local.routed and res.status_code < 400 and self._local.need_authorization: # pragma: no cover
+        if self._local.routed and res.status_code < 400 and self._local.need_authorization:  # pragma: no cover
             # this case is really detected when building the app
             method, path = request.method, request.path
             if not (self._cors and method == "OPTIONS"):
