@@ -284,7 +284,12 @@ class FlaskSimpleAuth:
         self._groups: Set[Union[str, int]] = set()
         self._scopes: Set[str] = set()
         self._local: Any = None
-        # actual main initialization is deferred to `init_app`
+        # registered here to avoid being bypassed by user hooks
+        self._app.before_request(self._check_secure)
+        self._app.before_request(self._auth_reset_user)
+        # COLDLY override Flask route decorator…
+        self._app.route = self.route  # type: ignore
+        # actual main initialization is deferred to `_init_app`
         self._initialized = False
 
     def _Res(self, msg: str, code: int):
@@ -336,6 +341,7 @@ class FlaskSimpleAuth:
 
     def _auth_reset_user(self):
         """Before request hook to cleanup authentication and authorization."""
+        self._local.routed = False
         self._local.source = None
         self._local.user = None
         self._local.need_authorization = True
@@ -344,11 +350,12 @@ class FlaskSimpleAuth:
 
     def _auth_post_check(self, res: Response):
         """After request hook to detect missing authorizations."""
-        if not hasattr(self._local, "need_authorization"):  # pragma: no cover
-            # may triggered by an early return from a before_request hook
+        if not hasattr(self._local, "routed"):  # pragma: no cover
+            # may be triggered by an early return from a before_request hook?
             log.warn(f"external response on {request.method} {request.path}")
             return res
-        if res.status_code < 400 and self._local.need_authorization:
+        if self._local.routed and res.status_code < 400 and self._local.need_authorization: # pragma: no cover
+            # this case is really detected when building the app
             method, path = request.method, request.path
             if not (self._cors and method == "OPTIONS"):
                 log.error(f"missing authorization on {method} {path}")
@@ -492,18 +499,18 @@ class FlaskSimpleAuth:
     #
     def initialize(self):
         """Run late initialization on current app."""
-        assert self._app
-        self.init_app(self._app)
+        if not self._initialized:
+            self._init_app()
 
-    def init_app(self, app: flask.Flask):
+    def _init_app(self) -> None:
         """Initialize extension with a Flask application.
 
         The initialization is performed through `FSA_*` configuration
         directives.
         """
         log.info("FSA initialization…")
-        self._app = app
-        conf = app.config
+        assert self._app
+        conf = self._app.config
         # debugging mode
         debug = conf.get("FSA_DEBUG", None)
         if debug is False and self._debug:
@@ -768,14 +775,13 @@ class FlaskSimpleAuth:
         #
         # hooks: before request executed in order, after in reverse
         #
-        app.before_request(self._check_secure)
-        app.before_request(self._auth_reset_user)
-        app.after_request(self._set_www_authenticate)  # always for auth=…
+        # before hooks are registered in __init__
+        self._app.after_request(self._set_www_authenticate)  # always for auth=…
         if self._carrier == "cookie":
-            app.after_request(self._set_auth_cookie)
+            self._app.after_request(self._set_auth_cookie)
         if self._401_redirect:
-            app.after_request(self._possible_redirect)
-        app.after_request(self._auth_post_check)
+            self._app.after_request(self._possible_redirect)
+        self._app.after_request(self._auth_post_check)
         #
         # blueprint hacks
         #
@@ -798,7 +804,6 @@ class FlaskSimpleAuth:
         self._set_caches()
         # done!
         self._initialized = True
-        return
 
     def _init_password_manager(self) -> None:
         """Deferred password manager initialization."""
@@ -1649,11 +1654,12 @@ class FlaskSimpleAuth:
                 # else spec includes a type that we keep…
         newpath = "<".join(splits)
 
-        # special shortcut for NONE
+        # special shortcut for NONE, override the user function
         if NONE in predefs:
 
             @functools.wraps(view_func)
             def r403():
+                self._local.routed = True
                 return "currently closed route", 403
 
             return flask.Flask.add_url_rule(self._app, newpath, endpoint=endpoint, view_func=r403, **options)
@@ -1697,7 +1703,13 @@ class FlaskSimpleAuth:
 
         assert fun != view_func, "some wrapping added"
 
-        return flask.Flask.add_url_rule(self._app, newpath, endpoint=endpoint, view_func=fun, **options)
+        # last wrapper to signal a routed function
+        @functools.wraps(fun)
+        def entry(*args, **kwargs):
+            self._local.routed = True
+            return fun(*args, **kwargs)
+
+        return flask.Flask.add_url_rule(self._app, newpath, endpoint=endpoint, view_func=entry, **options)
 
     def route(self, rule, **options):
         """Extended `route` decorator provided by the extension."""

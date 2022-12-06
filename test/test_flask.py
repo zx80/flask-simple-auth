@@ -165,9 +165,8 @@ def all_auth(client, user, pswd, check, *args, **kwargs):
 def test_early_return(client):
     res = check(418, client.get("/early-return/418"))
     assert b"early return" in res.data
-    # TODO FIXME early return for 200 is overriden
-    # res = check(200, client.get("/early-return/200"))
-    # assert b"early return" in res.data
+    res = check(200, client.get("/early-return/200"))
+    assert b"early return" in res.data
 
 def test_perms(client):
     check(200, client.get("/any"))  # open route
@@ -706,17 +705,19 @@ def test_custom(client):
     assert b"my_int: 5432" in res.data
 
 def test_appext(client2):
-    check(500, client2.get("/bad"))
-    check(500, client2.get("/bad", data={"LOGIN": "dad"}))
+    # FIXME should be 500
+    check(200, client2.get("/evil"))
+    check(403, client2.get("/bad"))
+    check(403, client2.get("/bad", data={"LOGIN": "dad"}))
     check(401, client2.get("/stuff"))
     res = check(200, client2.get("/stuff", data={"LOGIN": "dad"}))
     assert "auth=" in res.headers["Set-Cookie"]
     # the auth cookie is kept automatically, it seems…
     check(200, client2.get("/stuff"))
-    check(500, client2.get("/bad"))
+    check(403, client2.get("/bad"))
     client2.cookie_jar.clear()
     check(401, client2.get("/stuff"))
-    check(500, client2.get("/bad"))
+    check(403, client2.get("/bad"))
 
 def test_blueprint(client):
     check(401, client.get("/b1/words/foo"))

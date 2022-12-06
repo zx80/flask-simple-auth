@@ -30,7 +30,7 @@ check:
 .PHONY: coverage
 coverage:
 	coverage run -m $(PYTEST) $(PYTOPT)
-	coverage html FlaskSimpleAuth.py
+	coverage html ../FlaskSimpleAuth.py
 	coverage report --fail-under=100 --include='*/FlaskSimpleAuth.py'
 
 # not very usefull

@@ -19,6 +19,7 @@ def create_app_digest(**config):
     app = Flask("http-digest-auth")
     app.config.update(FSA_AUTH="http-digest")
     app.get_user_pass(Auth.UP.get)
+    app.user_in_group(lambda _u, _g: True)
     app.user_in_group(None)
     app.config.update(**config)
 

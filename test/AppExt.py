@@ -13,6 +13,11 @@ log = logging.getLogger("app-ext")
 from flask import Flask
 app = Flask("Test")
 
+# bad route decorator actually used!
+@app.route("/evil", methods=["GET"])
+def get_evil():
+    return "evil", 200
+
 # note that FSA initialization is delayed…
 from FlaskSimpleAuth import FlaskSimpleAuth
 fsa = FlaskSimpleAuth(app)
