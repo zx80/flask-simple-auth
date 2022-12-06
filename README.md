@@ -926,6 +926,18 @@ By contrast, *Flask Simple Auth*:
 Our [implementation](demo/todos-fsa.py) of the doc [example](demo/todos-frf.py)
 is shorter (32 vs 40 cloc), elegant and featureful.
 
+[Flask-AppBuilder](https://github.com/dpgaspar/Flask-AppBuilder) is
+yet another Flask web-application framework on top of Flask and
+SQLAlchemy.
+By contrast, *Flask Simple Auth*:
+- does NOT impose an ORM or database model.
+- keeps close to Flask look and feel by simply extending the `route`
+  decorator, instead of adding a handful of function-specific ones.
+- has a simpler and direct yet more powerful parameter management
+  framework based on type declarations instead of additional decorators
+  and specially formatted comments.
+- offers an integrated authorization scheme linked to application objects.
+
 ## TODO
 
 - `FSA_PARAM_STYLE` *any/http/json* to restrict/force parameters?
@@ -939,6 +951,8 @@ is shorter (32 vs 40 cloc), elegant and featureful.
   does it really need to be inside `FlaskSimpleAuth`?
   possibly the id can be passed to perm hooks instead of the login?
   can be managed there as well?
+- demo LDAP auth? One class plus a new `check_password`?
+- `authlib`?
 - reduce sloc?
 - password re could use a dict for providing an explanation?
 - coverage should include demo run?
