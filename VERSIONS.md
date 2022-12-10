@@ -3,6 +3,10 @@
 Sources are available on [GitHub](https://github.com/zx80/flask-simple-auth)
 and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 
+## ? on ?
+
+Split `README.md` with `DOCUMENTATION.md`.
+
 ## 19.3 on 2022-12-06
 
 Fix an uncaught typo.
