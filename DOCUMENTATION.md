@@ -778,7 +778,7 @@ If you like it, feel free to send a postcard to the author.
 
 Sources and issues are on [GitHub](https://github.com/zx80/flask-simple-auth).
 Packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
- 
+
 See [all versions](VERSIONS.md).
 
 ## See Also
