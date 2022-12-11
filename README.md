@@ -26,7 +26,7 @@ mandatory `authorize` parameter.
 Path and HTTP/JSON parameters are type checked and converted automatically
 based on type annotations.
 Basically, you just have to implement a type-annotated Python function and
-most of the crust is managed by Flask and FlaskSimpleAuth.
+most of the crust is managed by `FlaskSimpleAuth`.
 
 ```Python
 from FlaskSimpleAuth import Flask
@@ -57,11 +57,9 @@ FSA_AUTH = "httpd"     # inherit web-serveur authentication
 
 If the `authorize` argument is not supplied, the security first approach
 results in the route to be forbidden (*403*).
-
 Various aspects of the implemented schemes can be configured with other
 directives, with reasonable defaults provided so that not much is really
 needed beyond choosing the authentication scheme.
-
 Look at the [demo application](demo/README.md) for a simple full-featured
 application.
 
@@ -69,22 +67,14 @@ application.
 
 The module provides a wrapper around the `Flask` class which extends its
 capabilities for managing authentication, authorization and parameters.
-
 This is intended for a REST API implementation serving a remote client
 application through HTTP methods called on a path, with HTTP or JSON
 parameters passed in and a JSON result is returned: this help implement
 an authenticated function call over HTTP.
 
-Note that web-oriented flask authentication modules are not really
-relevant in the REST API context, where the server does not care about
-presenting login forms or managing views, for instance.
-However, some provisions are made so that it can *also* be used for a web
-application: CORS, login page redirection…
-
 [**Authentication**](DOCUMENTATION.md#authentication),
-i.e. checking *who* is doing the request, is available through the `get_user`
-function. It is performed on demand when the function is called or when
-checking for permissions.
+i.e. checking *who* is doing the request, is performed whenever an
+authorization is required on a route.
 The module implements inheriting the web-server authentication,
 various password authentication (HTTP Basic, or HTTP/JSON parameters),
 tokens (custom or JWT passed in headers or as a parameter),
@@ -107,7 +97,7 @@ following the [OAuth2](https://oauth.net/2/) approach.
 [**Parameters**](DOCUMENTATION.md#parameters) expected in the request can be
 declared, their presence and type checked, and they are added automatically as
 named parameters to route functions, skipping the burden of checking them in
-typical REST functions.
+typical flask functions.
 In practice, importing Flask's `request` global variable is not necessary anymore.
 The philosophy is that a REST API entry point is a function call through HTTP,
 so the route definition should be a function, avoiding relying on magic globals.
@@ -120,6 +110,12 @@ one extended decorator is needed on a route, meaning that the security cannot be
 forgotten, compared to an extension which would require additional decorators.
 Also, parameters checks are relevant to security in general and interdependent
 as checking for object ownership requires accessing parameters.
+
+Note that web-oriented flask authentication modules are not really
+relevant in the REST API context, where the server does not care about
+presenting login forms or managing views, for instance.
+However, some provisions are made so that it can *also* be used for a web
+application: CORS, login page redirection…
 
 ## Documentation
 
