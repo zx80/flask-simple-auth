@@ -132,8 +132,12 @@ If you like it, feel free to send a postcard to the author.
 
 ## Versions
 
-Sources and issues are on [GitHub](https://github.com/zx80/flask-simple-auth).
-Packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
+[Sources](https://github.com/zx80/flask-simple-auth),
+[documentation](https://zx80.github.io/flask-simple-auth/) and
+[issues](https://github.com/zx80/flask-simple-auth/issues)
+are hosted on [GitHub](https://github.com).
+Install [package](https://pypi.org/project/FlaskSimpleAuth/) from
+[PyPI](https://pypi.org/).
 
 Latest version is *19.3* published on 2022-12-06.
 Initial version was *0.9.0* on 2021-02-21.
