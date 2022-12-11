@@ -28,7 +28,7 @@ based on type annotations.
 Basically, you just have to implement a type-annotated Python function and
 most of the crust is managed by `FlaskSimpleAuth`.
 
-```Python
+```python
 from FlaskSimpleAuth import Flask
 app = Flask("demo")
 app.config.from_envvar("DEMO_CONFIG")
@@ -48,7 +48,7 @@ Authentication is manage from the application flask configuration
 with `FSA_*` (Flask simple authentication) directives from
 the configuration file (`DEMO_CONFIG`):
 
-```Python
+```python
 FSA_AUTH = "httpd"     # inherit web-serveur authentication
 # or others schemes such as: basic, digest, token (eg jwt), param…
 # hooks must be provided for retrieving user's passwords and

@@ -45,7 +45,7 @@ to register helper functions, such as:
 *Flask Simple Auth* configuration directives can also be provided directly
 to the constructor.
 
-```Python
+```python
 from FlaskSimpleAuth import Flask
 app = Flask("acme")
 app.config.from_envvar("ACME_CONFIG")
@@ -374,7 +374,7 @@ This alternate check is used if the primary check failed or is disactivated.
 An opened route for user registration with mandatory parameters
 could look like that:
 
-```Python
+```python
 @app.post("/register", authorize="ANY")
 def post_register(user: str, password: str):
     if user_already_exists(user):
@@ -387,7 +387,7 @@ Because password checks are usually expensive, it is advisable to switch
 to `token` authentication. A token can be created on a path authenticated
 by a password method:
 
-```Python
+```python
 # token creation route for all registered users
 @app.get("/login", authorize="ALL")
 def get_login():
@@ -423,7 +423,7 @@ Because this function is cached by default, the cache expiration must
 be reached so that changes take effect, or the cache must be cleared
 manually, which may impair application performance.
 
-```Python
+```python
 @app.get("/admin-only", authorize="ADMIN")
 def get_admin_only():
     # only authenticated "ADMIN" users can get here!
@@ -438,7 +438,7 @@ There are three special values that can be passed to the `authorize` decorator:
 - `NONE` returns a *403* on all access. It can be used to close a route
   temporarily. This is the default.
 
-```Python
+```python
 @app.get("/closed", authorize="NONE")
 def get_closed():
     # nobody can get here
@@ -459,7 +459,7 @@ For those, careful per-object and per-operation authorization will still be need
 Groups *can* be registered with `add_group` or with `FSA_AUTHZ_GROUPS`.
 If done so, unregistered groups are rejected and result in a configuration error:
 
-```Python
+```python
 app.add_group("student", "professor")
 
 @app.get("/students", authorize="admin")  # ERROR, unregistered group
@@ -513,7 +513,7 @@ a variable in the request (path or HTTP or JSON parameters) which identifies
 an object of the domain, and the operation or level of access necessary for
 this route:
 
-```Python
+```python
 @app.get("/message/<mid>", authorize=("msg", "mid", "read"))
 def get_message_mid(mid: int):
     …
@@ -522,7 +522,7 @@ def get_message_mid(mid: int):
 The system will check whether the current user can access message *mid*
 in *read* mode by calling a per-domain user-supplied function:
 
-```Python
+```python
 @app.object_perms("msg")
 def can_access_message(user: str, mid: int, mode: str) -> bool:
     # can user access message mid for operation mode?
@@ -539,7 +539,7 @@ If `mode` is not supplied, *None* is passed to the check function.
 If `variable` is not supplied, the *first* parameter of the route function
 is taken:
 
-```Python
+```python
 # same as authorize=("msg", "mid", None)
 @app.patch("/message/<mid>", authorize=("msg",))
 def patch_message_mid(mid: int):
@@ -549,7 +549,7 @@ def patch_message_mid(mid: int):
 The `FSA_OBJECT_PERMS` configuration directive can be set as a dictionary
 which maps domains to their access checking functions:
 
-```Python
+```python
 FSA_OBJECT_PERMS = { "msg": can_access_message, "blog": can_access_blog }
 ```
 
@@ -585,7 +585,7 @@ to JSON, expecting a list or a dictionary.
 If one parameter is a dict of keyword arguments, all request parameters are
 provided into it, as shown below:
 
-```Python
+```python
 @app.put("/awesome", authorize="ALL")
 def put_awesome(**kwargs):
     …
@@ -595,7 +595,7 @@ Custom classes can be used as path and HTTP parameter types, provided that
 the constructor accepts a string to convert the parameter value to the
 expected type.
 
-```Python
+```python
 class EmailAddr:
     def __init__(self, addr: str):
         self._addr = addr
@@ -609,7 +609,7 @@ If the constructor does not match, a custom function can be provided
 with the `cast` function/decorator and will be called automatically
 to convert parameters:
 
-```Python
+```python
 class House:
     …
 
@@ -627,7 +627,7 @@ def get_house_h(h: House)
 The `FSA_CAST` directive can also be defined as a dictionary mapping
 types to their conversion functions:
 
-```Python
+```python
 FSA_CAST = { House: strToHouse, … }
 ```
 
@@ -642,7 +642,7 @@ More special parameters can be added with the `special_parameter` app
 function/decorator, by providing a type and a function which returns the
 expected value. For instance, the `Request` definition corresponds to:
 
-```Python
+```python
 app.special_parameter(Request, lambda: request)
 ```
 
@@ -654,7 +654,7 @@ which is ignored when translating HTTP parameters.
 This allows to use python keywords as parameter names, such
 as `pass` or `def`.
 
-```Python
+```python
 @app.put("/user/<pass>", authorize="ALL")
 def put_user_pass(_pass: str, _def: str, _import: str):
     …
