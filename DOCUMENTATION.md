@@ -35,15 +35,38 @@ Depending on options, the following modules should be installed:
 ## Initialization
 
 The module is simply initialize by calling its `Flask` constructor and providing
-a configuration through `FSA_*` directives, or possibly by calling some methods
-to register helper functions, such as:
+a configuration through `FSA_*` directives (from a separate file or directly
+in the constructor).
+Once initialized `app` is a standard Flask object with many additions:
+
+- `route` decorator, an extended version of Flask's own with an `authorize`
+  parameter and transparent management of request parameters.
+- per-method shortcut decorators `post`, `get`, `put`, `patch` and `delete`
+  which support the same extensions.
+- `user_in_group`, `get_user_pass` and `object_perms` functions/decorators to
+  register authentication and authorization helper functions.
+- `get_user` to extract the authenticated user or raise an exception.
+- `current_user` to get the authenticated user if any, or `None`.
+  It can also be requested as a parameter with the `CurrentUser` type.
+- `user_scope` to function to check if the current token-authenticated user
+  has some authorizations.
+- `add_group` and `add_scope` to register groups or scopes allowed
+  for `authorize`.
+- `create_token` to compute a new authentication token for the current user.
+- `cast` a function/decorator to register new str-to-some-type casts for
+  function parameters.
+- `special_parameter` a function/decorator to register new special parameter types.
+- `hash_password` and `check_password` to hash or check a password.
+- `password_quality` a function/decorator to register a function to check for
+  password quality.
+- `password_check` a function/decorator to register a new password checker.
+- `clear_caches` to clear internal process caches (probably a bad idea).
+
+Decorators allow to register helper functions, such as:
 
 - a function to retrieve the password hash from the user name.
 - a function which tells whether a user is in a group or role.
 - functions which define object ownership.
-
-*Flask Simple Auth* configuration directives can also be provided directly
-to the constructor.
 
 ```python
 from FlaskSimpleAuth import Flask
@@ -67,31 +90,6 @@ def user_in_group(user, group):
 def allow_foo_access(user, fooid, mode):
     return …
 ```
-
-Once initialized `app` is a standard Flask object with some additions:
-
-- `route` decorator, an extended version of Flask's own with an `authorize`
-  parameter and transparent management of request parameters.
-- per-method shortcut decorators `post`, `get`, `put`, `patch` and `delete`
-  which support the same extensions.
-- `user_in_group`, `get_user_pass` and `object_perms` functions/decorators to
-  register authentication and authorization helper functions.
-- `get_user` to extract the authenticated user or raise an exception.
-- `current_user` to get the authenticated user if any, or `None`.
-  It can also be requested as a parameter with the `CurrentUser` type.
-- `user_scope` to function to check if the current token-authenticated user
-  has some authorizations.
-- `add_group` and `add_scope` to register groups or scopes allowed
-  for `authorize`.
-- `hash_password` and `check_password` to hash or check a password.
-- `create_token` to compute a new authentication token for the current user.
-- `clear_caches` to clear internal process caches (probably a bad idea).
-- `cast` a function/decorator to register no str to some type casts for
-  parameters.
-- `special_parameter` a function/decorator to register new special parameter types.
-- `password_quality` a function/decorator to register a function to check for
-  password quality.
-- `password_check` a function/decorator to register a new password checker.
 
 ## Authentication
 
@@ -855,3 +853,4 @@ By contrast, *Flask Simple Auth*:
 - allow requiring group registration? scope? no, because no security implication?
 - add a `pyproject.toml`?
 - simpler and more meaningful example in `README.md`
+- rework documentation (again)
