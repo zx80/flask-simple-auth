@@ -6,6 +6,7 @@ and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 ## ? on ?
 
 Split `README.md` with `DOCUMENTATION.md`.
+Improve documentation, published on [github.io](https://zx80.github.io/flask-simple-auth/).
 
 ## 19.3 on 2022-12-06
 
