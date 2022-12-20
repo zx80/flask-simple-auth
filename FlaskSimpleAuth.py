@@ -153,7 +153,7 @@ class Flask(flask.Flask):
       `user_in_group`, `check_password`, `hash_password`, `create_token`,
       `get_user`, `current_user`, `clear_caches`, `cast`, `object_perms`,
       `user_scope`, `password_quality`, `password_check`, `add_group`,
-      `add_scope`.
+      `add_scope`, `error_response`.
     """
 
     def __init__(self, *args, debug: bool = False, **kwargs):
@@ -171,6 +171,7 @@ class Flask(flask.Flask):
         # overwritten late because called by upper Flask initialization for "static"
         setattr(self, "add_url_rule", self._fsa.add_url_rule)
         # forward hooks
+        self.error_response = self._fsa.error_response
         self.get_user_pass = self._fsa.get_user_pass
         self.user_in_group = self._fsa.user_in_group
         self.object_perms = self._fsa.object_perms
@@ -204,7 +205,7 @@ _DIRECTIVES = {
     "FSA_SECURE", "FSA_SERVER_ERROR", "FSA_NOT_FOUND_ERROR", "FSA_LOCAL",
     # register hooks
     "FSA_GET_USER_PASS", "FSA_USER_IN_GROUP", "FSA_CAST",
-    "FSA_OBJECT_PERMS", "FSA_SPECIAL_PARAMETER",
+    "FSA_OBJECT_PERMS", "FSA_SPECIAL_PARAMETER", "FSA_ERROR_RESPONSE",
     # authentication
     "FSA_AUTH", "FSA_REALM",
     "FSA_FAKE_LOGIN", "FSA_PARAM_USER", "FSA_PARAM_PASS",
@@ -231,6 +232,7 @@ _DEFAULT_CACHE_TTL = 600  # seconds, 10 minutes
 _DEFAULT_REJECT_UNEXPECTED_PARAM = True
 _DEFAULT_SERVER_ERROR = 500
 _DEFAULT_NOT_FOUND_ERROR = 404
+_DEFAULT_ERROR_RESPONSE = "plain"
 _DEFAULT_PASSWORD_SCHEME = "bcrypt"
 _DEFAULT_PASSWORD_OPTS = {"bcrypt__default_rounds": 4, "bcrypt__default_ident": "2y"}
 
@@ -248,6 +250,7 @@ class FlaskSimpleAuth:
         self._app = app
         self._app.config.update(**config)
         # hooks
+        self._error_response = None
         self._get_user_pass = None
         self._user_in_group = None
         self._object_perms: Dict[Any, Callable[[str, Any, Optional[str]], bool]] = dict()
@@ -293,13 +296,13 @@ class FlaskSimpleAuth:
         self._initialized = False
 
     def _Res(self, msg: str, code: int):
-        """Generate a text/plain Response with a message."""
+        """Generate a error actual Response with a message."""
         if self._debug:
-            log.debug(f"text response: {code} {msg}")
-        return Response(msg, code, content_type="text/plain")
+            log.debug(f"error response: {code} {msg}")
+        return self._error_response(msg, code)
 
     def _Err(self, msg: str, code: int):
-        """Build and trace an ErrorResponse with a message."""
+        """Build and trace an ErrorResponse exception with a message."""
         if self._debug:
             log.debug(f"error: {code} {msg}")
         return ErrorResponse(msg, code)
@@ -422,7 +425,7 @@ class FlaskSimpleAuth:
             return CombinedMultiDict([MultiDict(d) if not isinstance(d, MultiDict) else d
                                       for d in (request.args, request.form)])
 
-    def get_user_pass(self, gup):
+    def get_user_pass(self, gup: Callable[[str], Optional[str]]):
         """Set `get_user_pass` helper, can be used as a decorator."""
         if self._get_user_pass:
             log.warning("overriding already defined get_user_pass hook")
@@ -430,26 +433,33 @@ class FlaskSimpleAuth:
         self._init_password_manager()
         return gup
 
-    def user_in_group(self, uig):
+    def user_in_group(self, uig: Callable[[str, Union[str, int]], bool]):
         """Set `user_in_group` helper, can be used as a decorator."""
         if self._user_in_group:
             log.warning("overriding already defined user_in_group hook")
         self._user_in_group = uig
         return uig
 
-    def password_quality(self, pqc):
+    def password_quality(self, pqc: Callable[[str], bool]):
         """Set `password_quality` hook."""
         if self._password_quality:
             log.warning("overriding already defined password_quality hook")
         self._password_quality = pqc
         return pqc
 
-    def password_check(self, pwc):
+    def password_check(self, pwc: Callable[[str, str], Optional[bool]]):
         """Set `password_check` hook."""
         if self._password_check:
             log.warning("overriding already defined password_check hook")
         self._password_check = pwc
         return pwc
+
+    def error_response(self, erh: Callable[[str, int], Response]):
+        """Set `error_response` hook."""
+        if self._error_response:
+            log.warning("overriding already defined error_response hook")
+        self._error_response = erh
+        return erh
 
     def _store(self, store: Dict[Any, Any], what: str, key: Any, val: Optional[Callable] = None):
         """Add a function associated to something in a dict."""
@@ -545,6 +555,26 @@ class FlaskSimpleAuth:
         self._not_found_error = conf.get("FSA_NOT_FOUND_ERROR", _DEFAULT_NOT_FOUND_ERROR)
         # whether to error on unexpected parameters
         self._reject_param = conf.get("FSA_REJECT_UNEXPECTED_PARAM", _DEFAULT_REJECT_UNEXPECTED_PARAM)
+        # actual error response generation
+        if self._error_response is None:
+            error = conf.get("FSA_ERROR_RESPONSE", _DEFAULT_ERROR_RESPONSE)
+            if error is None:
+                pass
+            elif callable(error):
+                self._error_response = error
+            elif not isinstance(error, str):
+                pass
+            elif error == "plain":
+                self._error_response = lambda m, c: Response(m, c, content_type="text/plain")
+            elif error == "json":
+                self._error_response = lambda m, c: Response(json.dumps(m), c, content_type="text/json")
+            elif error.startswith("json:"):
+                key = error.split(":", 1)[1]
+                self._error_response = lambda m, c: Response(json.dumps({key: m}), c, content_type="text/json")
+            if self._error_response is None:
+                raise self._Bad(f"unexpected FSA_ERROR_RESPONSE value: {error}")
+        elif "FSA_ERROR_RESPONSE" in conf:
+            log.warning(f"ignoring FSA_ERROR_RESPONSE directive, handler already set")
         #
         # overall auth setup
         #
@@ -773,7 +803,7 @@ class FlaskSimpleAuth:
         else:
             self._http_auth = None
         #
-        # hooks: before request executed in order, after in reverse
+        # request hooks: before request executed in order, after in reverse
         #
         # before hooks are registered in __init__
         self._app.after_request(self._set_www_authenticate)  # always for auth=…

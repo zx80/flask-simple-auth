@@ -45,8 +45,8 @@ Once initialized `app` is a standard Flask object with many additions:
   which support the same extensions.
 - `user_in_group`, `get_user_pass` and `object_perms` functions/decorators to
   register authentication and authorization helper functions.
-- `get_user` to extract the authenticated user or raise an exception.
-- `current_user` to get the authenticated user if any, or `None`.
+- `get_user` to extract the authenticated user or raise an exception,
+  and `current_user` to get the authenticated user if any, or `None`.
   It can also be requested as a parameter with the `CurrentUser` type.
 - `user_scope` to function to check if the current token-authenticated user
   has some authorizations.
@@ -61,6 +61,8 @@ Once initialized `app` is a standard Flask object with many additions:
   password quality.
 - `password_check` a function/decorator to register a new password checker.
 - `clear_caches` to clear internal process caches (probably a bad idea).
+- `error_response` a function/decorator to register a new response generator
+  for errors.
 
 Decorators allow to register helper functions, such as:
 
@@ -716,6 +718,15 @@ Some directives govern various details for this extension internal working.
   (should work with sub-thread level request handling, eg greenlets).
   Default is *thread*.
 
+- `FSA_ERROR_RESPONSE` sets the handler for generating responses on errors.
+  Text values  *plain* or *json* generate a simple `text/plain` or `text/json`
+  responses.
+  Using *json:error* generates a JSON dictionary with key *error* holding
+  the error message.
+  The response generation can be fully overriden by providing a callable
+  which expects the error message and status code as parameters.
+  Default is *plain*.
+
 Some control is available about internal caching features used for user
 authentication (user password access and token validations) and
 authorization (group and per-object permissions):
@@ -854,4 +865,3 @@ By contrast, *Flask Simple Auth*:
 - add a `pyproject.toml`?
 - simpler and more meaningful example in `README.md`
 - rework documentation (again)
-- allow some control on error format: dict json? fn?

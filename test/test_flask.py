@@ -1547,3 +1547,83 @@ def test_jwt_authorization():
     check(401, client.get("/perm/jwt-authz"))
     check(200, client.get("/perm/jwt-authz", headers=[rosalyn_auth]))
     check(403, client.get("/perm/jwt-authz", headers=[moe_auth]))
+
+def test_error_response():
+    import AppFact as af
+    app = af.create_app()
+    # set error_response hook with the decorator
+    @app.error_response
+    def oops(m: str, c: int):
+        return Response(f"OOPS: {m}", c, content_type="text/plain")
+    # override with the function
+    app.error_response(oops)
+    @app.get("/oops", authorize="ANY")
+    def get_oops():
+        raise ErrorResponse("oops!", 499)
+    client = app.test_client()
+    res = check(499, client.get("/oops"))
+    assert b"OOPS: oops!" == res.data
+    # again, with FSA_ERROR_RESPONSE "plain"
+    app = af.create_app(FSA_ERROR_RESPONSE="plain")
+    @app.get("/aaps", authorize="ANY")
+    def get_aaps():
+        raise ErrorResponse("aaps!", 499)
+    client = app.test_client()
+    res = check(499, client.get("/aaps"))
+    assert b"aaps!" == res.data
+    assert res.headers["Content-Type"] == "text/plain"
+    # again, with FSA_ERROR_RESPONSE "json"
+    app = af.create_app(FSA_ERROR_RESPONSE="json")
+    @app.get("/iips", authorize="ANY")
+    def get_iips():
+        raise ErrorResponse("iips!", 499)
+    client = app.test_client()
+    res = check(499, client.get("/iips"))
+    assert res.headers["Content-Type"] == "text/json"
+    assert b'"iips!"' == res.data
+    # again, with FSA_ERROR_RESPONSE "json:*"
+    app = af.create_app(FSA_ERROR_RESPONSE="json:BLA")
+    @app.get("/uups", authorize="ANY")
+    def get_uups():
+        raise ErrorResponse("uups!", 499)
+    client = app.test_client()
+    res = check(499, client.get("/uups"))
+    assert res.headers["Content-Type"] == "text/json"
+    assert b'{"BLA": "uups!"}' == res.data
+    # again, with FSA_ERROR_RESPONSE callable
+    app = af.create_app(FSA_ERROR_RESPONSE=oops)
+    @app.get("/eeps", authorize="ANY")
+    def get_uups():
+        raise ErrorResponse("eeps!", 499)
+    client = app.test_client()
+    res = check(499, client.get("/eeps"))
+    assert res.headers["Content-Type"] == "text/plain"
+    assert b'OOPS: eeps!' == res.data
+    # again, with FSA_ERROR_RESPONSE wrong type
+    try:
+        app = af.create_app(FSA_ERROR_RESPONSE=True)
+        app._fsa.initialize()
+        assert False, "should have raised an exception"
+    except ConfigError as e:
+        assert "unexpected FSA_ERROR_RESPONSE" in str(e)
+    # again, with FSA_ERROR_RESPONSE None
+    try:
+        app = af.create_app(FSA_ERROR_RESPONSE=None)
+        app._fsa.initialize()
+        assert False, "should have raised an exception"
+    except ConfigError as e:
+        assert "unexpected FSA_ERROR_RESPONSE" in str(e)
+    # again, with FSA_ERROR_RESPONSE "bad value"
+    try:
+        app = af.create_app(FSA_ERROR_RESPONSE="bad value")
+        app._fsa.initialize()
+        assert False, "should have raised an exception"
+    except ConfigError as e:
+        assert "unexpected FSA_ERROR_RESPONSE" in str(e)
+    # again, to trigger a warning for coverage
+    def erh(m: str, c: int):
+        return Response(m, c, content_type="text/plain")
+    app = fsa.Flask("trigger warning")
+    app._fsa._error_response = erh
+    app.config.update(FSA_ERROR_RESPONSE="json")
+    app._fsa.initialize()

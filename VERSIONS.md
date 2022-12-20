@@ -7,6 +7,8 @@ and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 
 Split `README.md` with `DOCUMENTATION.md`.
 Improve documentation, published on [github.io](https://zx80.github.io/flask-simple-auth/).
+Add `error_response` decorator and `FSA_ERROR_RESPONSE` directive
+to control generated error responses.
 
 ## 19.3 on 2022-12-06
 
