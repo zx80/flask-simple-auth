@@ -299,6 +299,7 @@ class FlaskSimpleAuth:
         """Generate a error actual Response with a message."""
         if self._debug:
             log.debug(f"error response: {code} {msg}")
+        assert self._error_response is not None
         return self._error_response(msg, code)
 
     def _Err(self, msg: str, code: int):
@@ -550,6 +551,8 @@ class FlaskSimpleAuth:
         self._local = Local()
         # whether to only allow secure requests
         self._secure = conf.get("FSA_SECURE", True)
+        if not self._secure:
+            log.warning("not secure: non local http queries are accepted")
         # status code for some errors errors
         self._server_error = conf.get("FSA_SERVER_ERROR", _DEFAULT_SERVER_ERROR)
         self._not_found_error = conf.get("FSA_NOT_FOUND_ERROR", _DEFAULT_NOT_FOUND_ERROR)

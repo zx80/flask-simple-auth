@@ -1625,5 +1625,5 @@ def test_error_response():
         return Response(m, c, content_type="text/plain")
     app = fsa.Flask("trigger warning")
     app._fsa._error_response = erh
-    app.config.update(FSA_ERROR_RESPONSE="json")
+    app.config.update(FSA_ERROR_RESPONSE="json", FSA_SECURE=False)
     app._fsa.initialize()
