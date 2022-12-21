@@ -10,7 +10,7 @@ This extension helps manage:
 This code is public domain.
 """
 
-from typing import Optional, Callable, Dict, List, Set, Any, Union, MutableMapping
+from typing import Callable, Dict, List, Set, Any, Union, MutableMapping, Optional
 
 import functools
 import inspect
@@ -42,6 +42,17 @@ log = logging.getLogger("fsa")
 # get module version
 import pkg_resources as pkg  # type: ignore
 __version__ = pkg.require("FlaskSimpleAuth")[0].version
+
+# hook function types
+ErrorResponseFun = Callable[[str, int], Response]
+GetUserPassFun = Callable[[str], Optional[str]]
+UserInGroupFun = Callable[[str, Union[str, int]], Optional[bool]]
+ObjectPermsFun = Callable[[str, Any, Optional[str]], bool]
+PasswordCheckFun = Callable[[str, str], Optional[bool]]
+PasswordQualityFun = Callable[[str], bool]
+CastFun = Callable[[str], object]
+SpecialParameterFun = Callable[[], Any]
+HeaderFun = Callable[[Response], Optional[str]]
 
 
 @dataclass
@@ -252,13 +263,13 @@ class FlaskSimpleAuth:
         self._app = app
         self._app.config.update(**config)
         # hooks
-        self._error_response: Optional[Callable[[str, int], Response]] = None
-        self._get_user_pass: Optional[Callable[[str], Optional[str]]] = None
-        self._user_in_group: Optional[Callable[[str, Union[str, int]], Optional[bool]]] = None
-        self._object_perms: Dict[Any, Callable[[str, Any, Optional[str]], bool]] = dict()
-        self._password_check: Optional[Callable[[str, str], Optional[bool]]] = None
-        self._password_quality: Optional[Callable[[str], bool]] = None
-        self._casts: Dict[type, Callable[[str], object]] = {
+        self._error_response: Optional[ErrorResponseFun] = None
+        self._get_user_pass: Optional[GetUserPassFun] = None
+        self._user_in_group: Optional[UserInGroupFun] = None
+        self._object_perms: Dict[Any, ObjectPermsFun] = dict()
+        self._password_check: Optional[PasswordCheckFun] = None
+        self._password_quality: Optional[PasswordQualityFun] = None
+        self._casts: Dict[type, CastFun] = {
             bool: lambda s: None if s is None else s.lower() not in ("", "0", "false", "f"),
             int: lambda s: int(s, base=0) if s else None,
             inspect._empty: str,
@@ -269,7 +280,7 @@ class FlaskSimpleAuth:
             dt.datetime: dt.datetime.fromisoformat,
             JsonData: json.loads,
         }
-        self._special_parameters: Dict[type, Callable[[], Any]] = {
+        self._special_parameters: Dict[type, SpecialParameterFun] = {
             Request: lambda: request,
             Environ: lambda: request.environ,
             Session: lambda: session,
@@ -288,7 +299,7 @@ class FlaskSimpleAuth:
         self._names: Set[str] = set()
         self._groups: Set[Union[str, int]] = set()
         self._scopes: Set[str] = set()
-        self._headers: Dict[str, Union[Callable[[Response], Optional[str]], str]] = {}
+        self._headers: Dict[str, Union[HeaderFun, str]] = {}
         self._local: Any = None
         # registered here to avoid being bypassed by user hooks
         self._app.before_request(self._check_secure)
@@ -437,7 +448,7 @@ class FlaskSimpleAuth:
             return CombinedMultiDict([MultiDict(d) if not isinstance(d, MultiDict) else d
                                       for d in (request.args, request.form)])
 
-    def get_user_pass(self, gup: Callable[[str], Optional[str]]):
+    def get_user_pass(self, gup: GetUserPassFun):
         """Set `get_user_pass` helper, can be used as a decorator."""
         if self._get_user_pass:
             log.warning("overriding already defined get_user_pass hook")
@@ -445,28 +456,28 @@ class FlaskSimpleAuth:
         self._init_password_manager()
         return gup
 
-    def user_in_group(self, uig: Callable[[str, Union[str, int]], bool]):
+    def user_in_group(self, uig: UserInGroupFun):
         """Set `user_in_group` helper, can be used as a decorator."""
         if self._user_in_group:
             log.warning("overriding already defined user_in_group hook")
         self._user_in_group = uig
         return uig
 
-    def password_quality(self, pqc: Callable[[str], bool]):
+    def password_quality(self, pqc: PasswordQualityFun):
         """Set `password_quality` hook."""
         if self._password_quality:
             log.warning("overriding already defined password_quality hook")
         self._password_quality = pqc
         return pqc
 
-    def password_check(self, pwc: Callable[[str, str], Optional[bool]]):
+    def password_check(self, pwc: PasswordCheckFun):
         """Set `password_check` hook."""
         if self._password_check:
             log.warning("overriding already defined password_check hook")
         self._password_check = pwc
         return pwc
 
-    def error_response(self, erh: Callable[[str, int], Response]):
+    def error_response(self, erh: ErrorResponseFun):
         """Set `error_response` hook."""
         if self._error_response:
             log.warning("overriding already defined error_response hook")
@@ -485,15 +496,15 @@ class FlaskSimpleAuth:
                 return fun
             return decorate
 
-    def cast(self, t, cast: Optional[Callable] = None):
+    def cast(self, t, cast: CastFun = None):
         """Add a cast function associated to a type."""
         return self._store(self._casts, "type casting", t, cast)
 
-    def special_parameter(self, t, sp: Optional[Callable] = None):
+    def special_parameter(self, t, sp: SpecialParameterFun = None):
         """Add a special parameter type."""
         return self._store(self._special_parameters, "special parameter", t, sp)
 
-    def object_perms(self, domain: str, checker: Optional[Callable] = None):
+    def object_perms(self, domain: str, checker: ObjectPermsFun = None):
         """Add an object permission helper for a given domain."""
         return self._store(self._object_perms, "object permission checker", domain, checker)
 
@@ -866,7 +877,7 @@ class FlaskSimpleAuth:
         self._password_check = conf.get("FSA_PASSWORD_CHECK", self._password_check)
         # FIXME add _password_hash?
         self._password_len: int = conf.get("FSA_PASSWORD_LEN", 0)
-        self._password_re: List[Callable[[str], bool]] = [
+        self._password_re: List[PasswordQualityFun] = [
             re.compile(r).search for r in conf.get("FSA_PASSWORD_RE", [])
         ]
         self._password_quality = conf.get("FSA_PASSWORD_QUALITY", self._password_quality)
