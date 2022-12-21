@@ -39,7 +39,7 @@ app.config.from_envvar("DEMO_CONFIG")
 # parameters. "some" is mandatory, "stuff" is optional because it has a default.
 # the declared parameter typing is enforced.
 @app.patch("/whatever/<id>", authorize="patcher")
-def patch_whatever(id: int, some: int, stuff: str = "wow"):
+def patch_whatever_id(id: int, some: int, stuff: str = "wow"):
     # ok to do it, with parameters "id", "some" & "stuff"
     return "", 204
 ```
