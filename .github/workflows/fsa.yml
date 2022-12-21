@@ -34,7 +34,7 @@ jobs:
         pip install -r dev-requirements.txt
     # Checks
     - name: Check with mypy
-      run: mypy FlaskSimpleAuth.py
+      run: mypy --implicit-optional FlaskSimpleAuth.py
     # FIXME unwanted changes, should be filtered with "# fmt:" tags
     # - name: Check with black
     #   run: black --check CacheToolsUtils.py

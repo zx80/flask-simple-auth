@@ -252,12 +252,12 @@ class FlaskSimpleAuth:
         self._app = app
         self._app.config.update(**config)
         # hooks
-        self._error_response = None
-        self._get_user_pass = None
-        self._user_in_group = None
+        self._error_response: Optional[Callable[[str, int], Response]] = None
+        self._get_user_pass: Optional[Callable[[str], Optional[str]]] = None
+        self._user_in_group: Optional[Callable[[str, Union[str, int]], Optional[bool]]] = None
         self._object_perms: Dict[Any, Callable[[str, Any, Optional[str]], bool]] = dict()
-        self._password_check = None
-        self._password_quality = None
+        self._password_check: Optional[Callable[[str, str], Optional[bool]]] = None
+        self._password_quality: Optional[Callable[[str], bool]] = None
         self._casts: Dict[type, Callable[[str], object]] = {
             bool: lambda s: None if s is None else s.lower() not in ("", "0", "false", "f"),
             int: lambda s: int(s, base=0) if s else None,
@@ -288,7 +288,7 @@ class FlaskSimpleAuth:
         self._names: Set[str] = set()
         self._groups: Set[Union[str, int]] = set()
         self._scopes: Set[str] = set()
-        self._headers: Dict[str, Union[Callable[[], str], str]] = {}
+        self._headers: Dict[str, Union[Callable[[Response], Optional[str]], str]] = {}
         self._local: Any = None
         # registered here to avoid being bypassed by user hooks
         self._app.before_request(self._check_secure)
@@ -593,7 +593,7 @@ class FlaskSimpleAuth:
             if self._error_response is None:
                 raise self._Bad(f"unexpected FSA_ERROR_RESPONSE value: {error}")
         elif "FSA_ERROR_RESPONSE" in conf:
-            log.warning(f"ignoring FSA_ERROR_RESPONSE directive, handler already set")
+            log.warning("ignoring FSA_ERROR_RESPONSE directive, handler already set")
         #
         # overall authn setup
         #
@@ -625,8 +625,8 @@ class FlaskSimpleAuth:
             from flask_cors import CORS  # type: ignore
 
             CORS(self._app, **self._cors_opts)
-        self._401_redirect = conf.get("FSA_401_REDIRECT", None)
-        self._url_name = conf.get("FSA_URL_NAME", "URL" if self._401_redirect else None)
+        self._401_redirect: Optional[str] = conf.get("FSA_401_REDIRECT", None)
+        self._url_name: Optional[str] = conf.get("FSA_URL_NAME", "URL" if self._401_redirect else None)
         #
         # cache management for passwords, permissions, tokens…
         #
@@ -685,12 +685,12 @@ class FlaskSimpleAuth:
         #
         # token setup
         #
-        self._token = conf.get("FSA_TOKEN_TYPE", "fsa")
+        self._token: str = conf.get("FSA_TOKEN_TYPE", "fsa")
         if self._token not in (None, "fsa", "jwt"):
             raise self._Bad(f"unexpected FSA_TOKEN_TYPE: {self._token}")
         # token carrier
         need_carrier = self._token is not None
-        self._carrier = conf.get("FSA_TOKEN_CARRIER", "bearer" if need_carrier else None)
+        self._carrier: Optional[str] = conf.get("FSA_TOKEN_CARRIER", "bearer" if need_carrier else None)
         if self._carrier not in (None, "bearer", "param", "cookie", "header"):
             raise self._Bad(f"unexpected FSA_TOKEN_CARRIER: {self._carrier}")
         # sanity checks
@@ -703,10 +703,11 @@ class FlaskSimpleAuth:
             "Bearer" if self._carrier == "bearer" else
             "Auth" if self._carrier == "header" else
             None)
-        self._name = conf.get("FSA_TOKEN_NAME", default_name)
+        self._name: Optional[str] = conf.get("FSA_TOKEN_NAME", default_name)
         if need_carrier and not self._name:
             raise self._Bad(f"Token carrier {self._carrier} requires a name")
         if self._carrier == "param":
+            assert isinstance(self._name, str)
             self._names.add(self._name)
         # token realm and possible issuer…
         realm = conf.get("FSA_REALM", self._app.name)
@@ -714,15 +715,15 @@ class FlaskSimpleAuth:
             keep_char = re.compile(r"[-A-Za-z0-9]").match
             realm = "".join(c if keep_char(c) else "-" for c in realm)
             realm = "-".join(filter(lambda s: s != "", realm.split("-")))
-        self._realm = realm
+        self._realm: str = realm
         self._issuer: Optional[str] = conf.get("FSA_TOKEN_ISSUER", None)
         # token expiration in minutes
-        self._delay = conf.get("FSA_TOKEN_DELAY", 60.0)
-        self._grace = conf.get("FSA_TOKEN_GRACE", 0.0)
-        self._renewal = conf.get("FSA_TOKEN_RENEWAL", 0.0)  # ratio of delay, only for cookies
+        self._delay: float = conf.get("FSA_TOKEN_DELAY", 60.0)
+        self._grace: float = conf.get("FSA_TOKEN_GRACE", 0.0)
+        self._renewal: float = conf.get("FSA_TOKEN_RENEWAL", 0.0)  # ratio of delay, only for cookies
         # token signature
         if "FSA_TOKEN_SECRET" in conf:
-            self._secret = conf["FSA_TOKEN_SECRET"]
+            self._secret: str = conf["FSA_TOKEN_SECRET"]
             if self._secret and len(self._secret) < 16:
                 log.warning("token secret is short")
         else:
@@ -735,9 +736,9 @@ class FlaskSimpleAuth:
         if not self._token:  # pragma: no cover
             pass
         elif self._token == "fsa":
-            self._sign = self._secret
-            self._algo = conf.get("FSA_TOKEN_ALGO", "blake2s")
-            self._siglen = conf.get("FSA_TOKEN_LENGTH", 16)
+            self._sign: Optional[str] = self._secret
+            self._algo: str = conf.get("FSA_TOKEN_ALGO", "blake2s")
+            self._siglen: int = conf.get("FSA_TOKEN_LENGTH", 16)
             if "FSA_TOKEN_SIGN" in conf:
                 log.warning("ignoring FSA_TOKEN_SIGN directive for fsa tokens")
         elif self._token == "jwt":
@@ -1232,11 +1233,13 @@ class FlaskSimpleAuth:
             if self._carrier == "bearer":
                 auth = request.headers.get("Authorization", None)
                 if auth:
+                    assert self._name
                     slen = len(self._name) + 1
                     if auth[:slen] == f"{self._name} ":  # FIXME lower case?
                         token = auth[slen:]
                 # else we ignore… maybe it will be resolved later
             elif self._carrier == "cookie":
+                assert self._name
                 token = request.cookies[self._name] if self._name in request.cookies else None
             elif self._carrier == "param":
                 token = self._params().get(self._name, None)
