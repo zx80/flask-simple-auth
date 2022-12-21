@@ -875,3 +875,4 @@ By contrast, *Flask Simple Auth*:
 - add a `pyproject.toml`?
 - simpler and more meaningful example in `README.md`
 - rework documentation (again)
+- add some headers under debug? runtime?
