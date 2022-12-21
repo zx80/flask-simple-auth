@@ -1627,3 +1627,14 @@ def test_error_response():
     app._fsa._error_response = erh
     app.config.update(FSA_ERROR_RESPONSE="json", FSA_SECURE=False)
     app._fsa.initialize()
+
+def test_add_headers():
+    import AppFact as af
+    app = af.create_app(FSA_ADD_HEADERS={"Service": "FSA", "Headers": lambda r: len(r.headers)})
+    @app.get("/heads", authorize="ANY")
+    def get_heads():
+        return "", 200
+    app.add_headers(Now="Maintenant")
+    client = app.test_client()
+    res = check(200, client.get("heads"))
+    assert "Service" in res.headers and "Headers" in res.headers and "Now" in res.headers

@@ -9,6 +9,8 @@ Split `README.md` with `DOCUMENTATION.md`.
 Improve documentation, published on [github.io](https://zx80.github.io/flask-simple-auth/).
 Add `error_response` decorator and `FSA_ERROR_RESPONSE` directive
 to control generated error responses.
+Add `add_headers` function and `FSA_ADD_HEADERS` directive to append
+new headers to the response.
 
 ## 19.3 on 2022-12-06
 

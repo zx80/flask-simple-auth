@@ -73,7 +73,7 @@ stop:
 
 run: app.pid
 	sleep 1  # wait for flask to start
-	curl -i -X GET http://0.0.0.0:5000/now
+	curl -si -X GET http://0.0.0.0:5000/now
 	echo
 
 %.run:

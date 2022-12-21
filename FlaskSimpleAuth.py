@@ -153,7 +153,7 @@ class Flask(flask.Flask):
       `user_in_group`, `check_password`, `hash_password`, `create_token`,
       `get_user`, `current_user`, `clear_caches`, `cast`, `object_perms`,
       `user_scope`, `password_quality`, `password_check`, `add_group`,
-      `add_scope`, `error_response`.
+      `add_scope`, `add_headers`, `error_response`.
     """
 
     def __init__(self, *args, debug: bool = False, **kwargs):
@@ -182,6 +182,7 @@ class Flask(flask.Flask):
         self.password_check = self._fsa.password_check
         self.add_group = self._fsa.add_group
         self.add_scope = self._fsa.add_scope
+        self.add_headers = self._fsa.add_headers
         # forward methods
         self.check_password = self._fsa.check_password
         self.hash_password = self._fsa.hash_password
@@ -206,6 +207,7 @@ _DIRECTIVES = {
     # register hooks
     "FSA_GET_USER_PASS", "FSA_USER_IN_GROUP", "FSA_CAST",
     "FSA_OBJECT_PERMS", "FSA_SPECIAL_PARAMETER", "FSA_ERROR_RESPONSE",
+    "FSA_ADD_HEADERS",
     # authentication
     "FSA_AUTH", "FSA_REALM",
     "FSA_FAKE_LOGIN", "FSA_PARAM_USER", "FSA_PARAM_PASS",
@@ -286,6 +288,7 @@ class FlaskSimpleAuth:
         self._names: Set[str] = set()
         self._groups: Set[Union[str, int]] = set()
         self._scopes: Set[str] = set()
+        self._headers: Dict[str, Union[Callable[[], str], str]] = {}
         self._local: Any = None
         # registered here to avoid being bypassed by user hooks
         self._app.before_request(self._check_secure)
@@ -413,6 +416,14 @@ class FlaskSimpleAuth:
         # else: no need for WWW-Authenticate
         return res
 
+    def _add_headers(self, res: Response):
+        """Add arbitrary headers to response."""
+        for name, value in self._headers.items():
+            val = value(res) if callable(value) else value
+            if val:
+                res.headers[name] = val
+        return res
+
     def _params(self):
         """Get request parameters wherever they are."""
         if request.is_json:
@@ -505,6 +516,11 @@ class FlaskSimpleAuth:
         for scope in scopes:
             self._scopes.add(scope)
 
+    def add_headers(self, **kwargs):
+        """Add some headers."""
+        for k, v in kwargs.items():
+            self._store(self._headers, "header", k, v)
+
     #
     # DEFERRED INITIALIZATIONS
     #
@@ -579,7 +595,7 @@ class FlaskSimpleAuth:
         elif "FSA_ERROR_RESPONSE" in conf:
             log.warning(f"ignoring FSA_ERROR_RESPONSE directive, handler already set")
         #
-        # overall auth setup
+        # overall authn setup
         #
         auth = conf.get("FSA_AUTH", None)
         if not auth:
@@ -805,10 +821,14 @@ class FlaskSimpleAuth:
             # FIXME? error_handler?
         else:
             self._http_auth = None
+        # headers
+        self._headers.update(conf.get("FSA_ADD_HEADERS", {}))
         #
         # request hooks: before request executed in order, after in reverse
+        # (before hooks are registered in __init__)
         #
-        # before hooks are registered in __init__
+        if self._headers:
+            self._app.after_request(self._add_headers)
         self._app.after_request(self._set_www_authenticate)  # always for auth=…
         if self._carrier == "cookie":
             self._app.after_request(self._set_auth_cookie)

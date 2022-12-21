@@ -63,6 +63,7 @@ Once initialized `app` is a standard Flask object with many additions:
 - `clear_caches` to clear internal process caches (probably a bad idea).
 - `error_response` a function/decorator to register a new response generator
   for errors.
+- `add_headers` a function to add new HTTP headers to the response.
 
 Decorators allow to register helper functions, such as:
 
@@ -726,6 +727,15 @@ Some directives govern various details for this extension internal working.
   The response generation can be fully overriden by providing a callable
   which expects the error message and status code as parameters.
   Default is *plain*.
+
+- `FSA_ADD_HEADERS` allows to add headers to the generated response,
+  as a dictionary.
+  Keys are header names and values are either strings, which are used as is,
+  or functions which are called with the response as a parameter to generate
+  a value. *None* returned values are ignored.
+  The corresponding `add_headers` method allows to add headers as keyword
+  arguments.
+  Default is empty.
 
 Some control is available about internal caching features used for user
 authentication (user password access and token validations) and
