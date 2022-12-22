@@ -383,9 +383,6 @@ class FlaskSimpleAuth:
         """Run internal after request hooks."""
         for fun in self._after_requests:
             res = fun(res)
-        # request processing time from the module point of view.
-        if self._debug:
-            res.headers["FSA-Delay"] = dt.datetime.timestamp(dt.datetime.now()) - self._local.start
         return res
 
     def _auth_post_check(self, res: Response):
@@ -438,7 +435,7 @@ class FlaskSimpleAuth:
             auth = self._auth_first()
             if not auth:
                 pass
-            elif auth in ("token", "oauth"):
+            elif auth in ("token", "oauth"):  # prioritize tokens
                 res.headers["WWW-Authenticate"] = f'{self._name} realm="{self._realm}"'
             elif auth in ("basic", "password"):
                 res.headers["WWW-Authenticate"] = f'Basic realm="{self._realm}"'
@@ -455,6 +452,10 @@ class FlaskSimpleAuth:
             val = value(res) if callable(value) else value
             if val:
                 res.headers[name] = val
+        return res
+
+    def _add_delay_header(self, res: Response):
+        res.headers["FSA-Delay"] = dt.datetime.timestamp(dt.datetime.now()) - self._local.start
         return res
 
     def _params(self):
@@ -863,6 +864,8 @@ class FlaskSimpleAuth:
         #
         self._before_requests = conf.get("FSA_BEFORE_REQUEST", [])
         # internal hooks
+        if self._debug:
+            self._app.after_request(self._add_delay_header)
         self._after_requests = conf.get("FSA_AFTER_REQUEST", [])
         if self._after_requests:
             self._app.after_request(self._run_after_requests)
