@@ -30,23 +30,20 @@ most of the crust is managed by `FlaskSimpleAuth`.
 
 ```python
 from FlaskSimpleAuth import Flask
-app = Flask("demo")
-app.config.from_envvar("DEMO_CONFIG")
+app = Flask("acme")
+app.config.from_envvar("ACME_CONFIG")
 
-# users belonging to the "patcher" group can patch "whatever/*"
-# the function gets 3 typed parameters: one integer coming from the path (id)
-# and the remaining two ("some", "stuff") are coming from HTTP or JSON request
-# parameters. "some" is mandatory, "stuff" is optional because it has a default.
-# the declared parameter typing is enforced.
-@app.patch("/whatever/<id>", authorize="patcher")
-def patch_whatever_id(id: int, some: int, stuff: str = "wow"):
-    # ok to do it, with parameters "id", "some" & "stuff"
+@app.patch("/users/<id>", authorize="admin")
+def patch_users_id(id: int, password: str, email: Email = None):
+    # Admins can patch user *id* with a mandatory *password* and
+    # an optional *email* parameter. Type conversions are performed
+    # so that invalid values are rejected with a *400* automatically.
     return "", 204
 ```
 
 Authentication is manage from the application flask configuration
 with `FSA_*` (Flask simple authentication) directives from
-the configuration file (`DEMO_CONFIG`):
+the configuration file (`ACME_CONFIG`):
 
 ```python
 FSA_AUTH = "httpd"     # inherit web-serveur authentication
