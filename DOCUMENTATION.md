@@ -737,6 +737,14 @@ Some directives govern various details for this extension internal working.
   arguments.
   Default is empty.
 
+- `FSA_BEFORE_REQUEST` and `FSA_AFTER_REQUEST` allow to add a list of before
+  and after request hooks from the configuration instead of the actual
+  application code. As a slight deviation from Flask before request hook,
+  before request functions are passed the current request as an argument.
+  The are executed first (just after some internal initializations and before
+  user before request hooks) and last, respetively.
+  Defaults are empty.
+
 Some control is available about internal caching features used for user
 authentication (user password access and token validations) and
 authorization (group and per-object permissions):
@@ -875,4 +883,4 @@ By contrast, *Flask Simple Auth*:
 - add a `pyproject.toml`?
 - simpler and more meaningful example in `README.md`
 - rework documentation (again)
-- add some headers under debug? runtime?
+- check for directive types (dynamically)?

@@ -1638,3 +1638,23 @@ def test_add_headers():
     client = app.test_client()
     res = check(200, client.get("heads"))
     assert "Service" in res.headers and "Headers" in res.headers and "Now" in res.headers
+
+def test_request_hooks():
+    def before_bad(req):
+        return Response("Ooops!", 555)
+    def after_cool(res):
+        res.headers["Cool"] = "Calvin"
+        return res
+    import AppFact as af
+    app = af.create_app(FSA_BEFORE_REQUEST=[], FSA_AFTER_REQUEST=[after_cool])
+    @app.get("/cool", authorize="ANY")
+    def get_cool():
+        return "this is cool!", 200
+    client = app.test_client()
+    res = check(200, client.get("/cool"))
+    assert res.data == b"this is cool!"
+    assert "Cool" in res.headers and res.headers["Cool"] == "Calvin"
+    # add the kill-me before request
+    app._fsa._before_requests = [before_bad]
+    res = check(555, client.get("/cool"))
+    assert res.data == b"Ooops!"

@@ -11,6 +11,8 @@ Add `error_response` decorator and `FSA_ERROR_RESPONSE` directive
 to control generated error responses.
 Add `add_headers` function and `FSA_ADD_HEADERS` directive to append
 new headers to the response.
+Add `FSA_BEFORE_REQUEST` and `FSA_AFTER_REQUEST` directives to add hooks
+directly from the configuration.
 
 ## 19.3 on 2022-12-06
 

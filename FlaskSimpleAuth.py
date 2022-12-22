@@ -53,6 +53,8 @@ PasswordQualityFun = Callable[[str], bool]
 CastFun = Callable[[str], object]
 SpecialParameterFun = Callable[[], Any]
 HeaderFun = Callable[[Response], Optional[str]]
+BeforeRequestFun = Callable[[Request], Optional[Response]]
+AfterRequestFun = Callable[[Response], Response]
 
 
 @dataclass
@@ -218,7 +220,7 @@ _DIRECTIVES = {
     # register hooks
     "FSA_GET_USER_PASS", "FSA_USER_IN_GROUP", "FSA_CAST",
     "FSA_OBJECT_PERMS", "FSA_SPECIAL_PARAMETER", "FSA_ERROR_RESPONSE",
-    "FSA_ADD_HEADERS",
+    "FSA_ADD_HEADERS", "FSA_BEFORE_REQUEST", "FSA_AFTER_REQUEST",
     # authentication
     "FSA_AUTH", "FSA_REALM",
     "FSA_FAKE_LOGIN", "FSA_PARAM_USER", "FSA_PARAM_PASS",
@@ -300,10 +302,13 @@ class FlaskSimpleAuth:
         self._groups: Set[Union[str, int]] = set()
         self._scopes: Set[str] = set()
         self._headers: Dict[str, Union[HeaderFun, str]] = {}
+        self._before_requests: List[BeforeRequestFun] = []
+        self._after_requests: List[AfterRequestFun] = []
         self._local: Any = None
         # registered here to avoid being bypassed by user hooks
-        self._app.before_request(self._check_secure)
         self._app.before_request(self._auth_reset_user)
+        self._app.before_request(self._check_secure)
+        self._app.before_request(self._run_before_requests)
         # COLDLY override Flask route decorator…
         self._app.route = self.route  # type: ignore
         # actual main initialization is deferred to `_init_app`
@@ -365,6 +370,23 @@ class FlaskSimpleAuth:
         self._local.need_authorization = True
         self._local.auth = self._auth
         self._local.scopes = None
+        self._local.start = dt.datetime.timestamp(dt.datetime.now())
+
+    def _run_before_requests(self):
+        """Run internal before request hooks."""
+        for fun in self._before_requests:
+            rep = fun(request)
+            if rep is not None:
+                return rep
+
+    def _run_after_requests(self, res: Response):
+        """Run internal after request hooks."""
+        for fun in self._after_requests:
+            res = fun(res)
+        # request processing time from the module point of view.
+        if self._debug:
+            res.headers["FSA-Delay"] = dt.datetime.timestamp(dt.datetime.now()) - self._local.start
+        return res
 
     def _auth_post_check(self, res: Response):
         """After request hook to detect missing authorizations."""
@@ -837,8 +859,13 @@ class FlaskSimpleAuth:
         self._headers.update(conf.get("FSA_ADD_HEADERS", {}))
         #
         # request hooks: before request executed in order, after in reverse
-        # (before hooks are registered in __init__)
+        # (some before hooks are registered in __init__)
         #
+        self._before_requests = conf.get("FSA_BEFORE_REQUEST", [])
+        # internal hooks
+        self._after_requests = conf.get("FSA_AFTER_REQUEST", [])
+        if self._after_requests:
+            self._app.after_request(self._run_after_requests)
         if self._headers:
             self._app.after_request(self._add_headers)
         self._app.after_request(self._set_www_authenticate)  # always for auth=…
