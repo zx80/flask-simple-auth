@@ -891,9 +891,6 @@ By contrast, *Flask Simple Auth*:
 - refactor password manager in a separate class?
 - how to have several issuers and their signatures schemes?
 - add `issuer` route parameter?
-- allow requiring group registration? scope? no, because no security implication?
 - add a `pyproject.toml`?
-- simpler and more meaningful example in `README.md`
-- rework documentation (again)
 - check for directive types (dynamically)?
 - local should depend on `traitlets`?
