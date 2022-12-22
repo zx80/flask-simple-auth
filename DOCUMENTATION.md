@@ -884,3 +884,4 @@ By contrast, *Flask Simple Auth*:
 - simpler and more meaningful example in `README.md`
 - rework documentation (again)
 - check for directive types (dynamically)?
+- local should depend on `traitlets`?
