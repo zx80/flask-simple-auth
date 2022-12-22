@@ -6,6 +6,7 @@ and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 ## ? on ?
 
 Show request execution time in µs precision under debug.
+Improved documentation.
 
 ## 20.0 on 2022-12-22
 

@@ -41,35 +41,53 @@ Once initialized `app` is a standard Flask object with many additions:
 
 - `route` decorator, an extended version of Flask's own with an `authorize`
   parameter and transparent management of request parameters.
-- per-method shortcut decorators `post`, `get`, `put`, `patch` and `delete`
+  Per-method shortcut decorators `post`, `get`, `put`, `patch` and `delete`
   which support the same extensions.
-- `user_in_group`, `get_user_pass` and `object_perms` functions/decorators to
-  register authentication and authorization helper functions.
+
+  ```python
+  @app.get("/store", authorize="ANY")
+  def get_store(filter: str = None):
+      # return store contents, possibly filtered
+      …
+
+  @app.post("/store", authorize="contributer")
+  def post_store(data: str):
+      # append new data to store, return id
+      …
+
+  @app.get("/store/<id>", authorize="ANY")
+  def get_store_id(id: int):
+      # return data corresponding to id
+      …
+  ```
+
 - `get_user` to extract the authenticated user or raise an exception,
   and `current_user` to get the authenticated user if any, or `None`.
   It can also be requested as a parameter with the `CurrentUser` type.
 - `user_scope` to function to check if the current token-authenticated user
   has some authorizations.
+- `create_token` to compute a new authentication token for the current user.
+- `hash_password` and `check_password` to hash or check a password.
+- `clear_caches` to clear internal process caches (probably a bad idea).
 - `add_group` and `add_scope` to register groups or scopes allowed
   for `authorize`.
-- `create_token` to compute a new authentication token for the current user.
-- `cast` a function/decorator to register new str-to-some-type casts for
-  function parameters.
-- `special_parameter` a function/decorator to register new special parameter types.
-- `hash_password` and `check_password` to hash or check a password.
-- `password_quality` a function/decorator to register a function to check for
-  password quality.
-- `password_check` a function/decorator to register a new password checker.
-- `clear_caches` to clear internal process caches (probably a bad idea).
-- `error_response` a function/decorator to register a new response generator
-  for errors.
 - `add_headers` a function to add new HTTP headers to the response.
 
 Decorators allow to register helper functions, such as:
 
-- a function to retrieve the password hash from the user name.
-- a function which tells whether a user is in a group or role.
-- functions which define object ownership.
+- `user_in_group`, `get_user_pass` and `object_perms` functions/decorators to
+  register authentication and authorization helper functions:
+  - a function to retrieve the password hash from the user name.
+  - a function which tells whether a user is in a group or role.
+  - functions which define object ownership.
+- `password_quality` a function/decorator to register a function to check for
+  password quality.
+- `password_check` a function/decorator to register a new password checker.
+- `cast` a function/decorator to register new str-to-some-type casts for
+  function parameters.
+- `special_parameter` a function/decorator to register new special parameter types.
+- `error_response` a function/decorator to register a new response generator
+  for errors.
 
 ```python
 from FlaskSimpleAuth import Flask
