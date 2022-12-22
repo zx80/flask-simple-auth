@@ -455,7 +455,8 @@ class FlaskSimpleAuth:
         return res
 
     def _add_delay_header(self, res: Response):
-        res.headers["FSA-Delay"] = dt.datetime.timestamp(dt.datetime.now()) - self._local.start
+        delay = dt.datetime.timestamp(dt.datetime.now()) - self._local.start
+        res.headers["FSA-Delay"] = f"{delay:.6f}"
         return res
 
     def _params(self):

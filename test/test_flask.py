@@ -1630,7 +1630,8 @@ def test_error_response():
 
 def test_add_headers():
     import AppFact as af
-    app = af.create_app(FSA_ADD_HEADERS={"Service": "FSA", "Headers": lambda r: len(r.headers)})
+    app = af.create_app(FSA_DEBUG=True,
+                        FSA_ADD_HEADERS={"Service": "FSA", "Headers": lambda r: len(r.headers)})
     @app.get("/heads", authorize="ANY")
     def get_heads():
         return "", 200
@@ -1638,6 +1639,7 @@ def test_add_headers():
     client = app.test_client()
     res = check(200, client.get("heads"))
     assert "Service" in res.headers and "Headers" in res.headers and "Now" in res.headers
+    assert "FSA-Delay" in res.headers and re.match(r"\d+\.\d{6}$", res.headers["FSA-Delay"])
 
 def test_request_hooks():
     def before_bad(req):
