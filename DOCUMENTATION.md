@@ -90,12 +90,6 @@ Decorators allow to register helper functions, such as:
   for errors.
 
 ```python
-from FlaskSimpleAuth import Flask
-app = Flask("acme")
-app.config.from_envvar("ACME_CONFIG")
-
-# register some hooks
-
 # return password hash if any (see with FSA_GET_USER_PASS)
 @app.get_user_pass
 def get_user_pass(user):
