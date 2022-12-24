@@ -37,30 +37,31 @@ Depending on options, the following modules should be installed:
 The module is simply initialize by calling its `Flask` constructor and providing
 a configuration through `FSA_*` directives (from a separate file or directly
 in the constructor).
-Once initialized `app` is a standard Flask object with many additions:
+Once initialized `app` is a standard Flask object with many additions.
 
-- `route` decorator, an extended version of Flask's own with an `authorize`
-  parameter and transparent management of request parameters.
-  Per-method shortcut decorators `post`, `get`, `put`, `patch` and `delete`
-  which support the same extensions.
+The main change is the `route` decorator, an extended version of Flask's own
+with an `authorize` parameter and transparent management of request parameters.
+Per-method shortcut decorators `post`, `get`, `put`, `patch` and `delete`
+which support the same extensions.
 
-  ```python
-  @app.get("/store", authorize="ANY")
-  def get_store(filter: str = None):
-      # return store contents, possibly filtered
-      …
+```python
+@app.get("/store", authorize="ANY")
+def get_store(filter: str = None):
+    # return store contents, possibly filtered
+    …
 
-  @app.post("/store", authorize="contributer")
-  def post_store(data: str):
-      # append new data to store, return id
-      …
+@app.post("/store", authorize="contributer")
+def post_store(data: str):
+    # append new data to store, return id
+    …
 
-  @app.get("/store/<id>", authorize="ANY")
-  def get_store_id(id: int):
-      # return data corresponding to id
-      …
-  ```
+@app.get("/store/<id>", authorize="ANY")
+def get_store_id(id: int):
+    # return data corresponding to id
+    …
+```
 
+Some methods give access to authentication-dependent data:
 - `get_user` to extract the authenticated user or raise an exception,
   and `current_user` to get the authenticated user if any, or `None`.
   It can also be requested as a parameter with the `CurrentUser` type.
@@ -68,10 +69,6 @@ Once initialized `app` is a standard Flask object with many additions:
   has some authorizations.
 - `create_token` to compute a new authentication token for the current user.
 - `hash_password` and `check_password` to hash or check a password.
-- `clear_caches` to clear internal process caches (probably a bad idea).
-- `add_group` and `add_scope` to register groups or scopes allowed
-  for `authorize`.
-- `add_headers` a function to add new HTTP headers to the response.
 
 Decorators allow to register helper functions, such as:
 
@@ -662,16 +659,19 @@ app.special_parameter(Request, lambda: request)
 The `FSA_SPECIAL_PARAMETER` directive can also be defined as a dictionary
 mapping types to their parameter value function.
 
-Finally, python parameter names can be prepended with a `_`,
-which is ignored when translating HTTP parameters.
-This allows to use python keywords as parameter names, such
-as `pass` or `def`.
+Python parameter names can be prepended with a `_`, which is ignored when
+translating HTTP parameters.  This allows to use python keywords as parameter
+names, such as `pass` or `def`.
 
 ```python
 @app.put("/user/<pass>", authorize="ALL")
 def put_user_pass(_pass: str, _def: str, _import: str):
     …
 ```
+
+Finally, configuration directive `FSA_REJECT_UNEXPECTED_PARAM` tells whether to
+reject requests with unexpected parameters.
+Default is *True*.
 
 ## Utils
 
@@ -704,8 +704,15 @@ request.
 
 Some directives govern various details for this extension internal working.
 
+- `FSA_MODE` set module mode, expecting *prod*, *dev* or *debug*.
+  This changes the module verbosity.
+  Default is *prod*.
+
+- `FSA_LOGGING_LEVEL` adjust module internal logging level.
+  Default is *None*.
+
 - `FSA_SECURE` only allows secured requests on non-local connections.
-  Default is *True*
+  Default is *True*.
 
 - `FSA_SERVER_ERROR` controls the status code returned on the module internal
   errors, to help distinguish these from other internal errors which may occur.
@@ -714,16 +721,6 @@ Some directives govern various details for this extension internal working.
 - `FSA_NOT_FOUND_ERROR` controls the status code returned when a permission
   checks returns *None*.
   Default is *404*.
-
-- `FSA_REJECT_UNEXPECTED_PARAM` tells whether to reject requests with
-  unexpected parameters.
-  Default is *True*.
-
-- `FSA_MODE` set module mode, expecting *prod*, *dev* or *debug*.
-  Default is *prod*.
-
-- `FSA_LOGGING_LEVEL` adjust module internal logging level.
-  Default is *None*.
 
 - `FSA_LOCAL` sets the internal object isolation level, must be consistent
   with the module WSGI usage. Possible values are *process*, *thread*
@@ -744,7 +741,7 @@ Some directives govern various details for this extension internal working.
   as a dictionary.
   Keys are header names and values are either strings, which are used as is,
   or functions which are called with the response as a parameter to generate
-  a value. *None* returned values are ignored.
+  a value. *None* returned values are silently ignored.
   The corresponding `add_headers` method allows to add headers as keyword
   arguments.
   Default is empty.
@@ -780,6 +777,9 @@ authorization (group and per-object permissions):
 - `FSA_CACHE_PREFIX` use this application-level prefix, useful for shared
   distributed caches.  A good candidate could be `app.name + "."`.
   Default is *None*, meaning no prefix.
+
+- Method `clear_caches` allows to clear internal process caches.
+  This is a mostly a bad idea, you should wait for the `ttl`.
 
 Web-application oriented features:
 
@@ -892,6 +892,6 @@ By contrast, *Flask Simple Auth*:
 - how to have several issuers and their signatures schemes?
 - add `issuer` route parameter?
 - add a `pyproject.toml`?
-- check for directive types (dynamically)?
+- check for more directive types (dynamically)?
 - local should depend on `traitlets`?
 - check with bad char in parameter names
