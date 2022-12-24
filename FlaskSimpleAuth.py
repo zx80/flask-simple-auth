@@ -41,6 +41,7 @@ import logging
 log = logging.getLogger("fsa")
 
 # get module version
+# TODO update when 3.7 is not supported anymore
 import pkg_resources as pkg  # type: ignore
 __version__ = pkg.require("FlaskSimpleAuth")[0].version
 
