@@ -902,3 +902,4 @@ By contrast, *Flask Simple Auth*:
 - check for more directive types (dynamically)?
 - local should depend on `traitlets`?
 - check with bad char in parameter names
+- add more examples in the documentation
