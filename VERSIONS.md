@@ -5,6 +5,7 @@ and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 
 ## ? on ?
 
+Replace `FSA_DEBUG` by `FSA_MODE`.
 Show request execution time in µs precision under debug.
 Improved documentation.
 

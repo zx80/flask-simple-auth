@@ -68,7 +68,7 @@ def client2():
 @pytest.fixture
 def client3():
     import AppFact as af
-    with af.create_app(FSA_DEBUG=False, FSA_LOGGING_LEVEL=logging.DEBUG).test_client() as c:
+    with af.create_app(FSA_MODE="debug", FSA_LOGGING_LEVEL=logging.DEBUG).test_client() as c:
         yield c
 
 @pytest.fixture
@@ -1107,6 +1107,18 @@ def test_bads():
         assert False, "unknown path parameter converter should fail"
     except ConfigError as e:
         assert "unknown" in str(e)
+    # unexpected parameter
+    app = fsa.Flask("unexpected param", FSA_MODE="debug")
+    @app.get("/youpi", authorize="ANY")
+    def get_youpi(i: int):
+        return str(i), 200
+    client = app.test_client()
+    check(200, client.get("/youpi", data={"i": 5432}))
+    check(200, client.get("/youpi", json={"i": 5432}))
+    res = check(400, client.get("/youpi", data={"i": 5432, "j": "oops!"}))
+    assert b"unexpected parameter j" in res.data
+    res = check(400, client.get("/youpi", json={"i": 5432, "h": "oops!"}))
+    assert b"unexpected parameter h" in res.data
 
 # per-object perms
 def test_object_perms(client):
@@ -1630,7 +1642,7 @@ def test_error_response():
 
 def test_add_headers():
     import AppFact as af
-    app = af.create_app(FSA_DEBUG=True,
+    app = af.create_app(FSA_MODE="debug",
                         FSA_ADD_HEADERS={"Service": "FSA", "Headers": lambda r: len(r.headers)})
     @app.get("/heads", authorize="ANY")
     def get_heads():
@@ -1660,3 +1672,15 @@ def test_request_hooks():
     app._fsa._before_requests = [before_bad]
     res = check(555, client.get("/cool"))
     assert res.data == b"Ooops!"
+
+def test_mode():
+    for debug in (True, False):
+        for mode in ("debug", "dev", "prod"):
+            app = fsa.Flask("mode", debug=debug, FSA_MODE=mode)
+            app = fsa.Flask("mode", FSA_DEBUG=debug, FSA_MODE=mode)
+    try:
+        app = fsa.Flask("mode", FSA_MODE="unexpected")
+        app._fsa.initialize()
+        assert False, "should raise an exception"
+    except ConfigError as e:
+        assert "FSA_MODE" in str(e)

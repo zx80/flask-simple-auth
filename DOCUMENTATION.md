@@ -719,8 +719,8 @@ Some directives govern various details for this extension internal working.
   unexpected parameters.
   Default is *True*.
 
-- `FSA_DEBUG` set module in debug mode, generating excessive traces…
-  Default is *False*.
+- `FSA_MODE` set module mode, expecting *prod*, *dev* or *debug*.
+  Default is *prod*.
 
 - `FSA_LOGGING_LEVEL` adjust module internal logging level.
   Default is *None*.
@@ -894,3 +894,4 @@ By contrast, *Flask Simple Auth*:
 - add a `pyproject.toml`?
 - check for directive types (dynamically)?
 - local should depend on `traitlets`?
+- check with bad char in parameter names

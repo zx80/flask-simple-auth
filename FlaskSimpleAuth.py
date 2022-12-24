@@ -16,6 +16,7 @@ import functools
 import inspect
 import datetime as dt
 from dataclasses import dataclass
+from enum import Enum
 import json
 
 try:
@@ -68,6 +69,20 @@ class ErrorResponse(BaseException):
 class ConfigError(BaseException):
     """FSA Configuration User Error."""
     pass
+
+
+class Mode(Enum):
+    """FSA running modes."""
+    DEBUG = 1
+    DEV = 2
+    PROD = 3
+
+
+_MODES = {
+    "debug": Mode.DEBUG,
+    "dev": Mode.DEV,
+    "prod": Mode.PROD
+}
 
 
 #
@@ -213,8 +228,8 @@ class Flask(flask.Flask):
 
 # all possible flask-simple-auth directives
 _DIRECTIVES = {
-    # debug
-    "FSA_DEBUG", "FSA_LOGGING_LEVEL",
+    # debug mode
+    "FSA_MODE", "FSA_LOGGING_LEVEL",
     # general settings
     "FSA_SECURE", "FSA_SERVER_ERROR", "FSA_NOT_FOUND_ERROR", "FSA_LOCAL",
     # register hooks
@@ -241,6 +256,7 @@ _DIRECTIVES = {
 }
 
 # default settings are centralized here
+_DEFAULT_MODE = "prod"
 _DEFAULT_CACHE = "ttl"
 _DEFAULT_CACHE_SIZE = 262144  # a few MB
 _DEFAULT_CACHE_TTL = 600  # seconds, 10 minutes
@@ -258,10 +274,7 @@ class FlaskSimpleAuth:
 
     def __init__(self, app: flask.Flask, debug: bool = False, **config):
         """Constructor parameter: flask application to extend."""
-        self._debug = debug
-        if debug:
-            logging.warning("FlaskSimpleAuth running in debug mode")
-            log.setLevel(logging.DEBUG)
+        self._mode = Mode.DEBUG if debug else None
         self._app = app
         self._app.config.update(**config)
         # hooks
@@ -316,14 +329,14 @@ class FlaskSimpleAuth:
 
     def _Res(self, msg: str, code: int):
         """Generate a error actual Response with a message."""
-        if self._debug:
+        if self._mode == Mode.DEBUG:
             log.debug(f"error response: {code} {msg}")
         assert self._error_response is not None
         return self._error_response(msg, code)
 
     def _Err(self, msg: str, code: int):
         """Build and trace an ErrorResponse exception with a message."""
-        if self._debug:
+        if self._mode == Mode.DEBUG:
             log.debug(f"error: {code} {msg}")
         return ErrorResponse(msg, code)
 
@@ -573,16 +586,24 @@ class FlaskSimpleAuth:
         log.info("FSA initialization…")
         assert self._app
         conf = self._app.config
-        # debugging mode
-        debug = conf.get("FSA_DEBUG", None)
-        if debug is False and self._debug:
-            log.warning("Resetting debug mode to False because of FSA_DEBUG")
-            self._debug = False
-        elif debug is True and not self._debug:
-            logging.warning("FlaskSimpleAuth running in debug mode")
+        # running mode
+        if "FSA_DEBUG" in conf and conf["FSA_DEBUG"]:  # upward compatibility
+            self._mode = Mode.DEBUG
+            del conf["FSA_DEBUG"]
+        if self._mode and self._mode == Mode.DEBUG and "FSA_MODE" in conf:
+            log.warning("ignoring FSA_MODE because already in debug mode")
+        else:
+            mode = conf.get("FSA_MODE", _DEFAULT_MODE)
+            if mode in _MODES:
+                self._mode = _MODES[mode]
+            else:
+                raise self._Bad(f"unexpected FSA_MODE value: {mode}")
+        if self._mode == Mode.DEBUG:
+            log.warning("FlaskSimpleAuth running in debug mode")
             log.setLevel(logging.DEBUG)
-            self._debug = True
-        if not self._debug and "FSA_LOGGING_LEVEL" in conf:
+            if "FSA_LOGGING_LEVEL" in conf:
+                log.warning("ignoring FSA_LOGGING_LEVEL because already in debug mode")
+        elif "FSA_LOGGING_LEVEL" in conf:
             log.setLevel(conf["FSA_LOGGING_LEVEL"])
         # check directives for typos
         for name in conf:
@@ -865,7 +886,7 @@ class FlaskSimpleAuth:
         #
         self._before_requests = conf.get("FSA_BEFORE_REQUEST", [])
         # internal hooks
-        if self._debug:
+        if self._mode in (Mode.DEBUG, Mode.DEV):
             self._app.after_request(self._add_delay_header)
         self._after_requests = conf.get("FSA_AFTER_REQUEST", [])
         if self._after_requests:
@@ -1580,11 +1601,11 @@ class FlaskSimpleAuth:
                     for p in params:
                         if p not in kwargs:
                             kwargs[p] = params[p]
-                elif self._debug or self._reject_param:
+                elif self._mode == Mode.DEBUG or self._reject_param:
                     # detect unused parameters and warn or reject them
                     for p in params:
                         if p not in names and p not in self._names:
-                            if self._debug:
+                            if self._mode == Mode.DEBUG:
                                 log.debug(f"unexpected parameter {p} on {path}")
                             if self._reject_param:
                                 return self._Res(f"unexpected parameter {p} on {path}", 400)
