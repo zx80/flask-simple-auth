@@ -1,9 +1,9 @@
 # Flask Simple Auth Module Documentation
 
-This modules provides simple
+This modules helps handling
 [authentication](#authentication),
 [authorization](#authorization),
-[parameter checks](#parameters) and
+[parameters](#parameters) and provide other
 [utils](#utils) for [Flask](https://flask.palletsprojects.com/), controled from
 Flask configuration and the extended `route` decorator.
 It is designed to help REST application back-end development.
@@ -37,12 +37,14 @@ Depending on options, the following modules should be installed:
 The module is simply initialize by calling its `Flask` constructor and providing
 a configuration through `FSA_*` directives (from a separate file or directly
 in the constructor).
-Once initialized `app` is a standard Flask object with many additions.
+Once initialized, `app` is a standard Flask object with many additions.
 
 The main change is the `route` decorator, an extended version of Flask's own
 with an `authorize` parameter and transparent management of request parameters.
 Per-method shortcut decorators `post`, `get`, `put`, `patch` and `delete`
 which support the same extensions.
+The security first principle means that if the parameter is missing the route
+is closed with a *403*.
 
 ```python
 @app.get("/store", authorize="ANY")
@@ -61,14 +63,15 @@ def get_store_id(id: int):
     …
 ```
 
-Some methods give access to authentication-dependent data:
+Inside a request handling function, methods give access to
+authentication-dependent data:
 - `get_user` to extract the authenticated user or raise an exception,
   and `current_user` to get the authenticated user if any, or `None`.
   It can also be requested as a parameter with the `CurrentUser` type.
 - `user_scope` to function to check if the current token-authenticated user
   has some authorizations.
-- `create_token` to compute a new authentication token for the current user.
 - `hash_password` and `check_password` to hash or check a password.
+- `create_token` to compute a new authentication token for the current user.
 
 Decorators allow to register helper functions, such as:
 
@@ -79,10 +82,12 @@ Decorators allow to register helper functions, such as:
   - functions which define object ownership.
 - `password_quality` a function/decorator to register a function to check for
   password quality.
-- `password_check` a function/decorator to register a new password checker.
+- `password_check` a function/decorator to register a new password checker,
+  so as to handle recovery codes, for instance.
 - `cast` a function/decorator to register new str-to-some-type casts for
   function parameters.
-- `special_parameter` a function/decorator to register new special parameter types.
+- `special_parameter` a function/decorator to register new special parameter
+  types.
 - `error_response` a function/decorator to register a new response generator
   for errors.
 
@@ -102,6 +107,8 @@ def user_in_group(user, group):
 def allow_foo_access(user, fooid, mode):
     return …
 ```
+
+These hooks allow taking over control of most internal processes, if desired.
 
 ## Authentication
 
@@ -137,7 +144,7 @@ The available authentication schemes are:
 
 - `none`
 
-  Use to disactivate authentication.
+  Deactivate authentication.
 
 - `httpd`
 
@@ -225,8 +232,8 @@ The available authentication schemes are:
   for instance: `comics:calvin:20380119031407:4ee89cd4cc7afe0a86b26bdce6d11126`.
   The time limit is a simple UTC timestamp *YYYYMMDDHHmmSS* that
   can be checked easily by the application client.
-  Compared to `jwt` tokens, they are easy to interpret and compare manually,
-  no decoding is involved.
+  Compared to `jwt` tokens, they are short and easy to interpret and compare
+  manually, no decoding is involved.
   If an issuer is set (`FSA_TOKEN_ISSUER`), the name is appended to the realm
   after a `/`.
 
@@ -237,7 +244,7 @@ The available authentication schemes are:
   - `FSA_TOKEN_CARRIER` how to transport the token: *bearer* (`Authorization`
     HTTP header), *param*, *cookie* or *header*.
     Default is *bearer*.
-  - `FKA_TOKEN_NAME` name of parameter or cookie holding the token, or
+  - `FSA_TOKEN_NAME` name of parameter or cookie holding the token, or
     bearer scheme, or header name.
     Default is `AUTH` for *param* carrier, `auth` for *cookie* carrier,
     `Bearer` for HTTP Authorization header (*bearer* carrier),
@@ -245,6 +252,8 @@ The available authentication schemes are:
   - `FSA_REALM` realm of authentication for token, basic or digest.
     Default is the simplified lower case application name.
     For *jwt*, this is translated as the audience.
+  - `FSA_TOKEN_ISSUER` the issuer of the token.
+    Default is *None*.
   - `FSA_TOKEN_SECRET` secret string used for validating tokens.
     Default is a system-generated random string containing 256 bits.
     This default will only work with itself, as it is not shared
@@ -257,8 +266,6 @@ The available authentication schemes are:
     Default is *60* minutes.
   - `FSA_TOKEN_GRACE` number of minutes of grace time for token validity.
     Default is *0* minutes.
-  - `FSA_TOKEN_ISSUER` the issuer of the token.
-    Default is *None*.
   - `FSA_TOKEN_ALGO` algorithm used to sign the token.
     Default is `blake2s` for `fsa` and `HS256` for *jwt*.
   - `FSA_TOKEN_LENGTH` number of hash bytes kept for token signature.
@@ -302,8 +309,8 @@ The available authentication schemes are:
   Token scheme based on [flask-HTTPAuth](https://pypi.org/project/Flask-HTTPAuth/).
   Carrier is *bearer* or *header*.
 
-  Directive `FSA_HTTP_AUTH_OPTS` allow to pass additional options to the
-  HTTPAuth authentication class, such as `header`, as a dictionary.
+  - `FSA_HTTP_AUTH_OPTS` allows to pass additional options to the
+    HTTPAuth authentication class, such as `header`, as a dictionary.
 
 - `fake`
 

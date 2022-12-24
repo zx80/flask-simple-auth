@@ -3,6 +3,10 @@
 Sources are available on [GitHub](https://github.com/zx80/flask-simple-auth)
 and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 
+## ? on ?
+
+Improved documentation.
+
 ## 20.1 on 2022-12-24
 
 Replace `FSA_DEBUG` by `FSA_MODE`.
