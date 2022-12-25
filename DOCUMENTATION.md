@@ -125,7 +125,8 @@ authentication methods used by the `get_user` function, as described in the
 following sections. Defaut is `httpd`.
 
 If a non-token single scheme is provided, authentication will be `token`
-followed by the provided scheme, i.e. `token` is tried first anyway.
+followed by the provided scheme, i.e. `token` is tried first anyway if
+enabled.
 
 To take full control of authentication scheme, provide an ordered list.
 Note that it does not always make much sense to mix some schemes, e.g.
@@ -170,7 +171,8 @@ The available authentication schemes are:
 
   HTTP Basic password authentication, which rely on the `Authorization`
   HTTP header in the request.
-  Directive `FSA_REALM` provides the authentication realm.
+
+  - `FSA_REALM` provides the authentication realm.
 
   See also [Password Management](#password-management) below for
   how the password is retrieved and checked.
@@ -179,20 +181,18 @@ The available authentication schemes are:
 
   Same as previous based on [flask-HTTPAuth](https://pypi.org/project/Flask-HTTPAuth/).
 
-  Directive `FSA_REALM` provides the authentication realm.
-  Directive `FSA_HTTP_AUTH_OPTS` allow to pass additional options to the
-  HTTPAuth authentication class.
+  - `FSA_REALM` provides the authentication realm.
+  - `FSA_HTTP_AUTH_OPTS` allow to pass additional options to the
+    HTTPAuth authentication class.
 
 - `param`
 
   HTTP or JSON parameter for password authentication.
   User name and password are passed as request parameters.
 
-  The following configuration directives are available:
-
-  - `FSA_PARAM_USER` parameter name for the user name.
+  - `FSA_PARAM_USER` is the parameter used for the user name.
     Default is `USER`.
-  - `FSA_PARAM_PASS` parameter name for the password.
+  - `FSA_PARAM_PASS` is the parameter used for the password.
     Default is `PASS`.
 
   See also [Password Management](#password-management) below for
@@ -214,9 +214,9 @@ The available authentication schemes are:
   but I agree that client-side cookie sessions are strange things best
   avoided if possible.
 
-  Directive `FSA_REALM` provides the authentication realm.
-  Directive `FSA_HTTP_AUTH_OPTS` allow to pass additional options to the
-  HTTPAuth authentication class, such as `use_ha1_pw`, as a dictionary.
+  - `FSA_REALM` provides the authentication realm.
+  - `FSA_HTTP_AUTH_OPTS` allow to pass additional options to the
+    HTTPAuth authentication class, such as `use_ha1_pw`, as a dictionary.
 
   See also [Password Management](#password-management) below for
   how the password is retrieved and checked. Note that password management
@@ -242,8 +242,8 @@ The available authentication schemes are:
   can be checked easily by the application client.
   Compared to `jwt` tokens, they are short and easy to interpret and compare
   manually, no decoding is involved.
-  If an issuer is set (`FSA_TOKEN_ISSUER`), the name is appended to the realm
-  after a `/`.
+  If an issuer is set (see `FSA_TOKEN_ISSUER` below), the name is appended to
+  the realm after a `/`.
 
   The following configuration directives are available:
 
@@ -317,8 +317,8 @@ The available authentication schemes are:
   Token scheme based on [flask-HTTPAuth](https://pypi.org/project/Flask-HTTPAuth/).
   Carrier is *bearer* or *header*.
 
-  - `FSA_HTTP_AUTH_OPTS` allows to pass additional options to the
-    HTTPAuth authentication class, such as `header`, as a dictionary.
+  - `FSA_HTTP_AUTH_OPTS` passes additional options to the HTTPAuth
+    authentication class, such as `header`, as a dictionary.
 
 - `fake`
 
@@ -326,7 +326,7 @@ The available authentication schemes are:
   Only for local tests, obviously.
   This is enforced.
 
-  - `FSA_FAKE_LOGIN` name of parameter holding the user name.
+  - `FSA_FAKE_LOGIN` is the parameter holding the user name.
     Default is `LOGIN`.
 
 ### Password Management
@@ -353,7 +353,7 @@ password checks:
 - `FSA_PASSWORD_SCHEME` password scheme to use for passwords.
   Default is `bcrypt`.
   See [passlib documentation](https://passlib.readthedocs.io/en/stable/lib/passlib.hash.html)
-  for available options.
+  for available options, including the bad *plaintext*.
   Set to `None` to disable internal password checking.
 - `FSA_PASSWORD_OPTS` relevant options (for `passlib.CryptContext`).
   Default is `{'bcrypt__default_rounds': 4, 'bcrypt__default_ident': '2y'}`.
@@ -372,7 +372,7 @@ later).
 As retrieving the stored information is enough to steal the password (plaintext)
 or at least impersonate a user (hash), consider avoiding `digest` altogether.
 HTTP Digest Authentication only makes sense for unencrypted connexions, which
-are a bad practice anyway. It is just provided here for completeness.
+is bad practice anyway. It is just provided here for completeness.
 
 Function `hash_password(pass)` computes the password salted digest compatible
 with the current configuration, and may be used by the application for setting
