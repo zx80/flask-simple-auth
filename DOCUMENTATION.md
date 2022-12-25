@@ -37,8 +37,14 @@ Depending on options, the following modules should be installed:
 The module is simply initialize by calling its `Flask` constructor and providing
 a configuration through `FSA_*` directives (from a separate file or directly
 in the constructor).
-Once initialized, `app` is a standard Flask object with many additions.
 
+```python
+import FlaskSimpleAuth as fsa
+app = fsa.Flask("acme", FSA_MODE="debug")
+app.config.from_envvar("ACME_CONFIG")
+```
+
+Once initialized, `app` is a standard Flask object with many additions.
 The main change is the `route` decorator, an extended version of Flask's own
 with an `authorize` parameter and transparent management of request parameters.
 Per-method shortcut decorators `post`, `get`, `put`, `patch` and `delete`
@@ -63,17 +69,17 @@ def get_store_id(id: int):
     …
 ```
 
-Inside a request handling function, methods give access to
-authentication-dependent data:
-- `get_user` to extract the authenticated user or raise an exception,
-  and `current_user` to get the authenticated user if any, or `None`.
+Inside a request handling function, methods on `app` give access to
+authentication-dependent data, for instance:
+- `get_user` extracts the authenticated user or raise an exception,
+  and `current_user` gets the authenticated user if any, or `None`.
   It can also be requested as a parameter with the `CurrentUser` type.
-- `user_scope` to function to check if the current token-authenticated user
-  has some authorizations.
-- `hash_password` and `check_password` to hash or check a password.
-- `create_token` to compute a new authentication token for the current user.
+- `user_scope` checks if the current token-authenticated user has some
+  authorizations.
+- `hash_password` and `check_password` hash or check a password.
+- `create_token` computes a new authentication token for the current user.
 
-Decorators allow to register helper functions, such as:
+Various decorators/functions allow to register hooks, such as:
 
 - `user_in_group`, `get_user_pass` and `object_perms` functions/decorators to
   register authentication and authorization helper functions:
@@ -93,22 +99,24 @@ Decorators allow to register helper functions, such as:
 
 ```python
 # return password hash if any (see with FSA_GET_USER_PASS)
+# None means that the user does not exists
 @app.get_user_pass
-def get_user_pass(user):
+def get_user_pass(user: str) -> Optional[str]:
     return …
 
 # return whether user is in group (see with FSA_USER_IN_GROUP)
 @app.user_in_group
-def user_in_group(user, group):
+def user_in_group(user: str, group: str) -> bool:
     return …
 
-# return whether user can access the foo object for an operation
+# return whether user can access the `foo` object for an operation
+# None will generates a 404
 @app.object_perms("foo")
-def allow_foo_access(user, fooid, mode):
+def allow_foo_access(user: str, fooid: int, mode: str) -> Optional[bool]:
     return …
 ```
 
-These hooks allow taking over control of most internal processes, if desired.
+These hooks allow taking over control of most internal processes, if needed.
 
 ## Authentication
 
