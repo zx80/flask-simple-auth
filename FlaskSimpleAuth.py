@@ -312,6 +312,7 @@ class FlaskSimpleAuth:
         self._server_error: int = _DEFAULT_SERVER_ERROR
         self._not_found_error: int = _DEFAULT_NOT_FOUND_ERROR
         self._secure: bool = True
+        self._secure_warning = True
         self._names: Set[str] = set()
         self._groups: Set[Union[str, int]] = set()
         self._scopes: Set[str] = set()
@@ -369,13 +370,13 @@ class FlaskSimpleAuth:
         if not request.is_secure and not (
             request.remote_addr.startswith("127.") or request.remote_addr == "::1"
         ):  # pragma: no cover
-            msg = f"insecure HTTP request on {request.remote_addr}, allow with FSA_SECURE=False"
             if self._secure:
-                log.error(msg)
+                log.error("insecure HTTP request, allow with FSA_SECURE=False")
                 return self._Res("insecure HTTP request denied", self._server_error)
-            else:  # at least a warning is issued for each insecure request
-                # FIXME verbosity could depend on self._mode
-                log.warning(msg)
+            else:  # one warning is issued
+                if self._secure_warning:
+                    log.warning(f"insecure HTTP request seen")
+                    self._secure_warning = False
 
     def _auth_reset_user(self):
         """Before request hook to cleanup authentication and authorization."""
