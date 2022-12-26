@@ -911,3 +911,4 @@ By contrast, *Flask Simple Auth*:
 - local should depend on `traitlets`?
 - check with bad char in parameter names
 - add more examples in the documentation
+- authz/authn instead of authorize/auth?

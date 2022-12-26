@@ -374,6 +374,7 @@ class FlaskSimpleAuth:
                 log.error(msg)
                 return self._Res("insecure HTTP request denied", self._server_error)
             else:  # at least a warning is issued for each insecure request
+                # FIXME verbosity could depend on self._mode
                 log.warning(msg)
 
     def _auth_reset_user(self):
