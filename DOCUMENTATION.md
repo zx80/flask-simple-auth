@@ -744,7 +744,7 @@ Some directives govern various details for this extension internal working.
   Default is *thread*.
 
 - `FSA_ERROR_RESPONSE` sets the handler for generating responses on errors.
-  Text values  *plain* or *json* generate a simple `text/plain` or `text/json`
+  Text values  *plain* or *json* generate a simple `text/plain` or `application/json`
   responses.
   Using *json:error* generates a JSON dictionary with key *error* holding
   the error message.

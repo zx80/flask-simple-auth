@@ -1591,7 +1591,7 @@ def test_error_response():
         raise ErrorResponse("iips!", 499)
     client = app.test_client()
     res = check(499, client.get("/iips"))
-    assert res.headers["Content-Type"] == "text/json"
+    assert res.headers["Content-Type"] == "application/json"
     assert b'"iips!"' == res.data
     # again, with FSA_ERROR_RESPONSE "json:*"
     app = af.create_app(FSA_ERROR_RESPONSE="json:BLA")
@@ -1600,7 +1600,7 @@ def test_error_response():
         raise ErrorResponse("uups!", 499)
     client = app.test_client()
     res = check(499, client.get("/uups"))
-    assert res.headers["Content-Type"] == "text/json"
+    assert res.headers["Content-Type"] == "application/json"
     assert b'{"BLA": "uups!"}' == res.data
     # again, with FSA_ERROR_RESPONSE callable
     app = af.create_app(FSA_ERROR_RESPONSE=oops)

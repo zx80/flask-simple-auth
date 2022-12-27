@@ -375,7 +375,7 @@ class FlaskSimpleAuth:
                 return self._Res("insecure HTTP request denied", self._server_error)
             else:  # one warning is issued
                 if self._secure_warning:
-                    log.warning(f"insecure HTTP request seen")
+                    log.warning("insecure HTTP request seen")
                     self._secure_warning = False
 
     def _auth_reset_user(self):
@@ -645,10 +645,10 @@ class FlaskSimpleAuth:
             elif error == "plain":
                 self._error_response = lambda m, c: Response(m, c, content_type="text/plain")
             elif error == "json":
-                self._error_response = lambda m, c: Response(json.dumps(m), c, content_type="text/json")
+                self._error_response = lambda m, c: Response(json.dumps(m), c, content_type="application/json")
             elif error.startswith("json:"):
                 key = error.split(":", 1)[1]
-                self._error_response = lambda m, c: Response(json.dumps({key: m}), c, content_type="text/json")
+                self._error_response = lambda m, c: Response(json.dumps({key: m}), c, content_type="application/json")
             if self._error_response is None:
                 raise self._Bad(f"unexpected FSA_ERROR_RESPONSE value: {error}")
         elif "FSA_ERROR_RESPONSE" in conf:

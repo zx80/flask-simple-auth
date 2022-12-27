@@ -3,8 +3,10 @@
 Sources are available on [GitHub](https://github.com/zx80/flask-simple-auth)
 and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 
-## ? on ?
+## 20.2 on 2022-12-27
 
+Generate `application/json` instead of `text/json`.
+Cleanup a flake8 warning.
 Improved documentation.
 
 ## 20.1 on 2022-12-24
