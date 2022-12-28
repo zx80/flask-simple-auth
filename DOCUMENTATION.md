@@ -576,6 +576,10 @@ Because these functions are cached by default, the cache expiration must
 be reached so that changes take effect, or the cache must be cleared
 manually, which may impair application performance.
 
+In the context of `oauth` authorizations, the per-domain object permission
+function can rely on `user_scope` to check whether some mode is allowed
+by the token.
+
 ## Parameters
 
 Request parameters (HTTP or JSON) are translated automatically to named function
@@ -911,5 +915,3 @@ By contrast, *Flask Simple Auth*:
 - check with bad char in parameter names
 - add more examples in the documentation
 - authz/authn instead of authorize/auth?
-- oauth should have a per-object hook or reuse the existing one?
-  or does it already work? if so, update doc.
