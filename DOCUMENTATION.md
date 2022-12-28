@@ -18,7 +18,6 @@ Look out for the [demo](demo/) application for more fully working examples.
 
 Use `pip install FlaskSimpleAuth` to install the module, or whatever
 other installation method you prefer.
-
 Depending on options, the following modules should be installed:
 
 - [passlib](https://pypi.org/project/passlib/) for password management.
@@ -44,7 +43,7 @@ app = fsa.Flask("acme", FSA_MODE="debug")
 app.config.from_envvar("ACME_CONFIG")
 ```
 
-Once initialized, `app` is a standard Flask object with many additions.
+Once initialized, `app` behaves as a standard Flask object with many additions.
 The main change is the `route` decorator, an extended version of Flask's own
 with an `authorize` parameter and transparent management of request parameters.
 Per-method shortcut decorators `post`, `get`, `put`, `patch` and `delete`
@@ -69,7 +68,7 @@ def get_store_id(id: int):
     …
 ```
 
-Inside a request handling function, methods on `app` give access to
+Inside a request handling function, additional methods on `app` give access to
 authentication-dependent data, for instance:
 - `get_user` extracts the authenticated user or raise an exception,
   and `current_user` gets the authenticated user if any, or `None`.
@@ -85,7 +84,7 @@ Various decorators/functions allow to register hooks, such as:
   register authentication and authorization helper functions:
   - a function to retrieve the password hash from the user name.
   - a function which tells whether a user is in a group or role.
-  - functions which define object ownership.
+  - functions which define object ownership and access permissions.
 - `password_quality` a function/decorator to register a function to check for
   password quality.
 - `password_check` a function/decorator to register a new password checker,
@@ -95,7 +94,7 @@ Various decorators/functions allow to register hooks, such as:
 - `special_parameter` a function/decorator to register new special parameter
   types.
 - `error_response` a function/decorator to register a new response generator
-  for errors.
+  when handling errors.
 
 ```python
 # return password hash if any (see with FSA_GET_USER_PASS)
@@ -124,11 +123,11 @@ The main authentication configuration directive is `FSA_AUTH` which governs the
 authentication methods used by the `get_user` function, as described in the
 following sections. Defaut is `httpd`.
 
-If a non-token single scheme is provided, authentication will be `token`
+If a non-token scheme is provided, authentication will be `token`
 followed by the provided scheme, i.e. `token` is tried first anyway if
 enabled.
 
-To take full control of authentication scheme, provide an ordered list.
+To take full control of authentication schemes, provide an ordered list.
 Note that it does not always make much sense to mix some schemes, e.g.
 *basic* and *digest* password storage assumptions are distinct and should
 not be merged.  Also, only one HTTPAuth-based scheme can be active at a time.
@@ -140,10 +139,7 @@ The authentication scheme attempted on a route can be altered with the `auth`
 parameter added to the `route` decorator.
 This may be used to restrict the authentication scheme to a *subset* if those
 configured globally, and may or may not work otherwise depending on module
-internals.
-This feature is best avoided but in very particular cases because it counters
-a goal of this module which is to remove authentication considerations from the
-code and put them in the configuration only.
+internals, so this is only for special cases.
 A legitimate use for a REST API is to have `FSA_AUTH` defined to *token* and have
 only one *basic* route to obtain the token used by other routes.
 
@@ -163,7 +159,7 @@ The available authentication schemes are:
   There are plenty authentication schemes available in a web server such as
   [Apache](https://httpd.apache.org/) or [Nginx](https://nginx.org/), including
   LDAP or other databases, all of which probably more efficiently implemented
-  than this python code, so it should be the preferred option.
+  than python code, so it should be the preferred option.
   However, it could require significant configuration effort compared to the
   application-side approach.
 
@@ -271,14 +267,14 @@ The available authentication schemes are:
     *jwt* schemes (`R…`, `E…`, `P…`).
     Default is to use the previous secret.
   - `FSA_TOKEN_DELAY` number of minutes of token validity.
-    Default is *60* minutes.
+    Default is *60.0* minutes.
   - `FSA_TOKEN_GRACE` number of minutes of grace time for token validity.
-    Default is *0* minutes.
+    Default is *0.0* minutes.
   - `FSA_TOKEN_ALGO` algorithm used to sign the token.
     Default is `blake2s` for `fsa` and `HS256` for *jwt*.
   - `FSA_TOKEN_LENGTH` number of hash bytes kept for token signature.
     Default is *16* for `fsa`. The directive is ignored for `jwt`.
-  - `FSA_TOKEN_RENEWAL` for cookie token, the fraction of delay under
+  - `FSA_TOKEN_RENEWAL` for cookie tokens, the fraction of delay under
     which the cookie/token is renewed automatically.
     Default is *0.0*, meaning no renewal.
 
@@ -294,14 +290,12 @@ The available authentication schemes are:
   Another benefit of token is that it avoids sending passwords over and over.
   The rational option is to use a password scheme to retrieve a token and then to
   use it till it expires. This can be enforced by setting `FSA_AUTH` to `token`
-  and to only add `auth="basic"` on the login route.
+  and to only add `auth="basic"` on the login route used to retrieve a token.
 
   Token expiration can be understood as a kind of automatic logout, which suggests
   to choose the delay with some care depending on the use case.
-  When the token is carried as a *cookie*, it is automatically updated when 25% of
-  the delay remains, if possible.
 
-  Internally *jwt* token checks are cached so that even with slow public-key schemes
+  Internally token checks are cached so that even with slow JWT public-key schemes
   the performance impact should be low.
 
 - `oauth`
@@ -390,7 +384,7 @@ This function checks the password quality by relying on:
 This application-managed standard password checking can be overridden by
 providing an alternate password checking function with a directive:
 - `FSA_PASSWORD_CHECK` hook function which returns whether user and password
-  provided is acceptable for said user.
+  provided is acceptable.
 This allows to plug a LDAP server or a temporary password recovery scheme or
 other one-time or limited-time passwords sent by SMS or mail, for instance.
 This hook can also be filled with the `password_check` method/decorator.
@@ -425,7 +419,7 @@ headers for authenticating later requests, till it expires.
 ## Authorization
 
 Authorizations are declared with the `authorize` parameter to
-the `route` decorator (and its per-method shortcuts).
+the `route` decorator or its per-method shortcuts.
 The modules supports three permission models:
 
 - a group-oriented model
@@ -452,12 +446,12 @@ manually, which may impair application performance.
 @app.get("/admin-only", authorize="ADMIN")
 def get_admin_only():
     # only authenticated "ADMIN" users can get here!
-    …
 ```
 
 There are three special values that can be passed to the `authorize` decorator:
 
-- `ANY` declares that no authentication is needed on that route.
+- `ANY` declares that no authentication is needed on that route,
+  i.e. *any*one can get in.
 - `ALL` declares that all authenticated user can access this route,
   without group checks.
 - `NONE` returns a *403* on all access. It can be used to close a route
@@ -479,7 +473,7 @@ def get_opened():
 
 Note that this simplistic model does is not enough for non-trivial applications,
 where permissions on objects often depend on the object owner.
-For those, careful per-object and per-operation authorization will still be needed.
+For those, careful per-object and per-operation authorization are needed.
 
 Groups *can* be registered with `add_group` or with `FSA_AUTHZ_GROUPS`.
 If done so, unregistered groups are rejected and result in a configuration error:
@@ -494,9 +488,9 @@ def get_students():
 
 ### OAuth Authorizations
 
-OAuth authorizations are simular to group authorizations.
+OAuth authorizations are similar to group authorizations.
 They are attached to the current authentification performed through a token,
-on routes marked with `auth="oauth"`.
+on routes explicitely marked with `auth="oauth"`.
 In that case, the `authorize` values are interpreted as *scopes* that must be
 provided by the token.
 
@@ -532,7 +526,7 @@ stored by the application. For instance, a user may alter a data because
 they *own* it, or access a data because they are *friends* of the owner.
 
 In order to implement this model, the `authorize` decorator parameter can
-hold a tuple `(domain, variable, mode)` which designates a permission domain
+hold `(domain, variable, mode)` tuples which designate a permission domain
 (eg a table or object or concept name in the application), the name of
 a variable in the request (path or HTTP or JSON parameters) which identifies
 an object of the domain, and the operation or level of access necessary for
@@ -585,7 +579,7 @@ manually, which may impair application performance.
 ## Parameters
 
 Request parameters (HTTP or JSON) are translated automatically to named function
-parameters, by relying on function type annotations.
+parameters by relying on function type annotations.
 Parameters are considered mandatory unless a default value is provided.
 
 ```python
@@ -594,10 +588,11 @@ def get_something_id(id: int, when: date, what: str = "nothing"):
     # `id` is an integer path-parameter
     # `when` is a mandatory date HTTP or JSON parameter
     # `what` is an optional string HTTP or JSON parameter
-    return …
+    …
 ```
 
-Request parameter string values are actually *converted* to the target type.
+Request parameter string values are actually *converted* to the target type,
+and generate a *400* if the configuration fails.
 For `int`, base syntax is accepted for HTTP/JSON parameters, i.e. `0x11`,
 `0o21`, `0b10001` and `17` all mean decimal *17*.
 For `bool`, *False* is an empty string, `0`, `False` or `F`, otherwise
@@ -607,8 +602,8 @@ any path on a route.
 Type `JsonData` is a special type to convert, if necessary, a string value
 to JSON, expecting a list or a dictionary.
 
-If one parameter is a dict of keyword arguments, all request parameters are
-provided into it, as shown below:
+If one parameter is a dict of keyword arguments, all remaining request
+parameters are provided into it, as shown below:
 
 ```python
 @app.put("/awesome", authorize="ALL")
@@ -712,8 +707,7 @@ See the module for a detailed documentation.
 ### `ErrorResponse` class
 
 Raising this exception with a message and status from any user-defined function
-generates a `Response` of this status with the text message contents sent to the
-request.
+generates a `Response` of this status with the text message as contents. 
 
 ### Miscellaneous Configuration Directives
 
@@ -721,6 +715,8 @@ Some directives govern various details for this extension internal working.
 
 - `FSA_MODE` set module mode, expecting *prod*, *dev* or *debug*.
   This changes the module verbosity.
+  Under *dev*, a `FSA-Delay` header is added to show the elapsed time from
+  the application code perspective.
   Default is *prod*.
 
 - `FSA_LOGGING_LEVEL` adjust module internal logging level.
@@ -737,15 +733,16 @@ Some directives govern various details for this extension internal working.
   checks returns *None*.
   Default is *404*.
 
-- `FSA_LOCAL` sets the internal object isolation level, must be consistent
-  with the module WSGI usage. Possible values are *process*, *thread*
-  (several threads can be used by the WSGI server) and *werkzeug*
-  (should work with sub-thread level request handling, eg greenlets).
+- `FSA_LOCAL` sets the internal object isolation level.
+  It must be consistent with the module WSGI usage.
+  Possible values are *process*, *thread* (several threads can be used by the
+  WSGI server) and *werkzeug* (should work with sub-thread level request
+  handling, eg greenlets).
   Default is *thread*.
 
 - `FSA_ERROR_RESPONSE` sets the handler for generating responses on errors.
-  Text values  *plain* or *json* generate a simple `text/plain` or `application/json`
-  responses.
+  Text values  *plain* or *json* generate simple `text/plain` or
+  `application/json` responses.
   Using *json:error* generates a JSON dictionary with key *error* holding
   the error message.
   The response generation can be fully overriden by providing a callable
@@ -763,10 +760,11 @@ Some directives govern various details for this extension internal working.
 
 - `FSA_BEFORE_REQUEST` and `FSA_AFTER_REQUEST` allow to add a list of before
   and after request hooks from the configuration instead of the actual
-  application code. As a slight deviation from Flask before request hook,
-  before request functions are passed the current request as an argument.
+  application code.
+  As a slight deviation from Flask before request hook, before request functions
+  are passed the current request as an argument.
   The are executed first (just after some internal initializations and before
-  user before request hooks) and last, respetively.
+  application-provided before request hooks) and last, respetively.
   Defaults are empty.
 
 Some control is available about internal caching features used for user
@@ -809,9 +807,9 @@ Web-application oriented features:
 - `FSA_CORS` and `FSA_CORS_OPTS` control CORS (Cross Origin Resource Sharing) settings.
 
   [CORS](https://en.wikipedia.org/wiki/Cross-origin_resource_sharing) is a
-  security feature implemented by web browsers to check whether a server
-  accepts requests from a given origin (*i.e.* from JavaScript code
-  provided by some domain).
+  security feature implemented by web browsers to prevent JavaScript injection.
+  It checks whether a server accepts requests from a given origin (*i.e.* from
+  JavaScript code provided by some domain).
 
   CORS request handling is enabled by setting `FSA_CORS` to *True* which
   allows requests from any origin. Default is *False*.
@@ -879,7 +877,8 @@ SQLAlchemy.
 By contrast, *Flask Simple Auth*:
 - does NOT impose an ORM or database model.
 - keeps close to Flask look and feel by simply extending the `route`
-  decorator, instead of adding a handful of function-specific ones.
+  decorator, instead of adding a handful of function-specific ones,
+  which is error-prone as some may be forgotten.
 - has a simpler and direct yet more powerful parameter management
   framework based on type declarations instead of additional decorators
   and specially formatted comments.
@@ -912,3 +911,5 @@ By contrast, *Flask Simple Auth*:
 - check with bad char in parameter names
 - add more examples in the documentation
 - authz/authn instead of authorize/auth?
+- oauth should have a per-object hook or reuse the existing one?
+  or does it already work? if so, update doc.
