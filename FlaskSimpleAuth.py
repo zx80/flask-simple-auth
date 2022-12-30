@@ -1467,7 +1467,7 @@ class FlaskSimpleAuth:
 
                 for scope in scopes:
                     if not self.user_scope(scope):
-                        return self._Res("", 403)
+                        return self._Res(f"missing permission \"{scope}\"", 403)
 
                 return self._safe_call(path, "oauth authorization", fun, *args, **kwargs)
 
@@ -1511,7 +1511,7 @@ class FlaskSimpleAuth:
                         log.error(f"type error in user_in_group: {ok}: {type(ok)}, must return a boolean")
                         return self._Res("internal error with user_in_group", self._server_error)
                     if not ok:
-                        return self._Res("", 403)
+                        return self._Res(f"not in group \"{grp}\"", 403)
 
                 # all groups are ok, proceed to call underlying function
                 return self._safe_call(path, "group authorization", fun, *args, **kwargs)
@@ -1672,7 +1672,7 @@ class FlaskSimpleAuth:
                         log.error(f"type error on on {request.method} {request.path} permission {perm} check: {type(ok)}")
                         return self._Res("internal error with permission check", self._server_error)
                     elif not ok:
-                        return self._Res("", 403)
+                        return self._Res(f"no permission on {domain}/{val} {mode}", 403)
                     # else: all is well, check next!
 
                 # then call the initial function
