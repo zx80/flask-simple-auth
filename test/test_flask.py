@@ -1639,6 +1639,21 @@ def test_error_response():
     app._fsa._error_response = erh
     app.config.update(FSA_ERROR_RESPONSE="json", FSA_SECURE=False)
     app._fsa.initialize()
+    # check that we take control of flask errors
+    app = fsa.Flask("not-implemented", FSA_ERROR_RESPONSE="json:bad")
+    @app.get("/implemented", authorize="ANY")
+    def get_implemented():
+        raise ErrorResponse("oops", 418)
+    with app.test_client() as client:
+        res = check(418, client.get("/implemented"))
+        assert res.content_type == "application/json"
+        assert b'"bad":' in res.data
+        res = check(405, client.post("/implemented"))
+        assert res.content_type == "application/json"
+        assert b'"bad":' in res.data
+        res = check(404, client.get("/not-implemented"))
+        assert res.content_type == "application/json"
+        assert b'"bad":' in res.data
 
 def test_add_headers():
     import AppFact as af

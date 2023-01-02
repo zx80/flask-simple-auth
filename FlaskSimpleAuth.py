@@ -25,6 +25,7 @@ except ModuleNotFoundError:
     import re  # type: ignore
 
 import flask
+import werkzeug.exceptions as exceptions
 import ProxyPatternPool as ppp  # type: ignore
 
 # for local use & forwarding
@@ -62,6 +63,7 @@ AfterRequestFun = Callable[[Response], Response]
 @dataclass
 class ErrorResponse(BaseException):
     """Internal exception class to carry fields for an error Response."""
+    # NOTE this should maybe inherit from exceptions.HTTPException?
 
     message: str
     status: int
@@ -233,6 +235,7 @@ _DIRECTIVES = {
     "FSA_MODE", "FSA_LOGGING_LEVEL",
     # general settings
     "FSA_SECURE", "FSA_SERVER_ERROR", "FSA_NOT_FOUND_ERROR", "FSA_LOCAL",
+    "FSA_HANDLE_ALL_ERRORS",
     # register hooks
     "FSA_GET_USER_PASS", "FSA_USER_IN_GROUP", "FSA_CAST",
     "FSA_OBJECT_PERMS", "FSA_SPECIAL_PARAMETER", "FSA_ERROR_RESPONSE",
@@ -309,6 +312,7 @@ class FlaskSimpleAuth:
         self._pm = None
         self._cache: Optional[MutableMapping[str, str]] = None
         self._gen_cache: Optional[Callable] = None
+        # fsa-generated errors
         self._server_error: int = _DEFAULT_SERVER_ERROR
         self._not_found_error: int = _DEFAULT_NOT_FOUND_ERROR
         self._secure: bool = True
@@ -632,8 +636,6 @@ class FlaskSimpleAuth:
         # status code for some errors errors
         self._server_error = conf.get("FSA_SERVER_ERROR", _DEFAULT_SERVER_ERROR)
         self._not_found_error = conf.get("FSA_NOT_FOUND_ERROR", _DEFAULT_NOT_FOUND_ERROR)
-        # whether to error on unexpected parameters
-        self._reject_param = conf.get("FSA_REJECT_UNEXPECTED_PARAM", _DEFAULT_REJECT_UNEXPECTED_PARAM)
         # actual error response generation
         if self._error_response is None:
             error = conf.get("FSA_ERROR_RESPONSE", _DEFAULT_ERROR_RESPONSE)
@@ -654,6 +656,12 @@ class FlaskSimpleAuth:
                 raise self._Bad(f"unexpected FSA_ERROR_RESPONSE value: {error}")
         elif "FSA_ERROR_RESPONSE" in conf:
             log.warning("ignoring FSA_ERROR_RESPONSE directive, handler already set")
+        # possibly take responsability for handling errors
+        if conf.get("FSA_HANDLE_ALL_ERRORS", True):
+            self._app.register_error_handler(exceptions.HTTPException,
+                                             lambda e: self._Res(e.description, e.code))
+        # whether to error on unexpected parameters
+        self._reject_param = conf.get("FSA_REJECT_UNEXPECTED_PARAM", _DEFAULT_REJECT_UNEXPECTED_PARAM)
         #
         # overall authn setup
         #
@@ -1672,7 +1680,7 @@ class FlaskSimpleAuth:
                         log.error(f"type error on on {request.method} {request.path} permission {perm} check: {type(ok)}")
                         return self._Res("internal error with permission check", self._server_error)
                     elif not ok:
-                        return self._Res(f"no permission on {domain}/{val} {mode}", 403)
+                        return self._Res(f"permission denied on {domain}/{val} {mode}", 403)
                     # else: all is well, check next!
 
                 # then call the initial function

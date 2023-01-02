@@ -751,7 +751,14 @@ Some directives govern various details for this extension internal working.
   the error message.
   The response generation can be fully overriden by providing a callable
   which expects the error message and status code as parameters.
+  This handler can be restricted to apply only to FSA-generated errors,
+  see `FSA_HANDLE_ALL_ERRORS` below.
   Default is *plain*.
+
+- `FSA_HANDLE_ALL_ERRORS` whether to handle all *4xx* and *5xx* errors,
+  i.e. take responsability for generating error responses using FSA
+  internal error handler.
+  Default is *True*.
 
 - `FSA_ADD_HEADERS` allows to add headers to the generated response,
   as a dictionary.

@@ -3,6 +3,11 @@
 Sources are available on [GitHub](https://github.com/zx80/flask-simple-auth)
 and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 
+## 20.3 on 2023-01-02
+
+Add `FSA_HANDLE_ALL_ERRORS` configuration directive.
+Improved documentation.
+
 ## 20.2 on 2022-12-27
 
 Generate `application/json` instead of `text/json`.
