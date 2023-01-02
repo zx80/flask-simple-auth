@@ -711,7 +711,7 @@ See the module for a detailed documentation.
 ### `ErrorResponse` class
 
 Raising this exception with a message and status from any user-defined function
-generates a `Response` of this status with the text message as contents. 
+generates a `Response` of this status with the text message as contents.
 
 ### Miscellaneous Configuration Directives
 
