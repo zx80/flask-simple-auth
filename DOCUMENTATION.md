@@ -908,6 +908,7 @@ By contrast, *Flask Simple Auth*:
   does it really need to be inside `FlaskSimpleAuth`?
   possibly the id can be passed to perm hooks instead of the login?
   can be managed there as well?
+  could be in pre request hooks?
 - demo LDAP auth? One class plus a new `check_password`?
 - `authlib`?
 - reduce sloc?
