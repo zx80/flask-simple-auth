@@ -10,6 +10,7 @@ This extension helps manage:
 This code is public domain.
 """
 
+import sys
 from typing import Callable, Dict, List, Set, Any, Union, MutableMapping, Optional
 import types
 
@@ -153,14 +154,20 @@ def _typeof(p: inspect.Parameter):
     elif p.annotation is not inspect._empty:
         a = p.annotation
         # NOTE Optional[?] == Union[?, None] == ? | None
-        # FIXME how to recognize reliably an Optional[?]
-        if hasattr(a, "__origin__") and a.__origin__ is Union and len(a.__args__) == 2:
+        # FIXME how to recognize reliably an Optional[?] across versions
+        if sys.version_info >= (3, 10):  # pragma: no cover
+            if isinstance(a, types.UnionType) and len(a.__args__) == 2 and a.__args__[1] == type(None):
+                return a.__args__[0]
+            elif hasattr(a, "__name__") and a.__name__ == 'Optional':
+                return a.__args__[0]
+            elif hasattr(a, "__origin__") and a.__origin__ is Union and len(a.__args__) == 2:
+                return a.__args__[0]
+            else:
+                return a
+        elif hasattr(a, "__origin__") and a.__origin__ is Union and len(a.__args__) == 2:  # pragma: no cover
             # needs 3.10: and isinstance(a.__args__[1], type(None)):
             return a.__args__[0]
-        elif isinstance(a, types.UnionType) and len(a.__args__) == 2:
-            # needs 3.10: and isinstance(a.__args__[1], type(None)):
-            return a.__args__[0]
-        else:
+        else:  # pragma: no cover
             return a
     elif p.default and p.default is not inspect._empty:
         return type(p.default)
