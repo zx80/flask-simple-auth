@@ -2,6 +2,7 @@
 # TEST APP FOR FlaskSimpleAuth
 #
 
+import sys
 from typing import Optional, Union
 from Auth import user_in_group, get_user_pass
 from Auth import ADMIN, WRITE, READ, GROUPS, UP, UHP
@@ -121,9 +122,15 @@ def get_div(i: int = None, j: int = None):
 def get_sub(i: int, j: int = 0):
     return str(i - j), 200
 
+# FIXME test depends on version, simpler once >= 3.10
+if sys.version_info >= (3, 10):
+    IntOrNone = int | None
+else:
+    IntOrNone = Union[int, None]
+
 # type tests
 @app.route("/type", methods=["GET"], authorize=[ANY])
-def get_type(f: Optional[float] = None, i: int | None = None, b: Union[bool, None] = None, s: str = None):
+def get_type(f: Optional[float] = None, i: IntOrNone = None, b: Union[bool, None] = None, s: str = None):
     if f is not None:
         return f"float {f}", 200
     elif i is not None:
