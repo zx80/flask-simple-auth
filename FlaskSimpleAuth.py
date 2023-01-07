@@ -11,6 +11,7 @@ This code is public domain.
 """
 
 from typing import Callable, Dict, List, Set, Any, Union, MutableMapping, Optional
+import types
 
 import functools
 import inspect
@@ -145,15 +146,18 @@ _PREDEFS = (ANY, ALL, NONE)
 
 def _typeof(p: inspect.Parameter):
     """Guess parameter type, possibly with some type inference."""
-    if p.kind is inspect.Parameter.VAR_KEYWORD:
+    if p.kind is inspect.Parameter.VAR_KEYWORD:  # **kwargs
         return dict
-    elif p.kind is inspect.Parameter.VAR_POSITIONAL:
+    elif p.kind is inspect.Parameter.VAR_POSITIONAL:  # *args
         return list
     elif p.annotation is not inspect._empty:
         a = p.annotation
-        # NOTE Optional[?] == Union[?, None]
+        # NOTE Optional[?] == Union[?, None] == ? | None
         # FIXME how to recognize reliably an Optional[?]
         if hasattr(a, "__origin__") and a.__origin__ is Union and len(a.__args__) == 2:
+            # needs 3.10: and isinstance(a.__args__[1], type(None)):
+            return a.__args__[0]
+        elif isinstance(a, types.UnionType) and len(a.__args__) == 2:
             # needs 3.10: and isinstance(a.__args__[1], type(None)):
             return a.__args__[0]
         else:
