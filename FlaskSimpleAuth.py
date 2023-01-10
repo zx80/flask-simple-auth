@@ -18,7 +18,7 @@ import functools
 import inspect
 import datetime as dt
 from dataclasses import dataclass
-from enum import Enum
+from enum import IntEnum
 import json
 
 try:
@@ -76,11 +76,12 @@ class ConfigError(BaseException):
     pass
 
 
-class Mode(Enum):
+class Mode(IntEnum):
     """FSA running modes."""
-    DEBUG = 1
+    UNDEF = 0
+    PROD = 1
     DEV = 2
-    PROD = 3
+    DEBUG = 3
 
 
 _MODES = {
@@ -346,14 +347,14 @@ class FlaskSimpleAuth:
 
     def _Res(self, msg: str, code: int):
         """Generate a error actual Response with a message."""
-        if self._mode == Mode.DEBUG:
+        if self._mode >= Mode.DEBUG:
             log.debug(f"error response: {code} {msg}")
         assert self._error_response is not None
         return self._error_response(msg, code)
 
     def _Err(self, msg: str, code: int):
         """Build and trace an ErrorResponse exception with a message."""
-        if self._mode == Mode.DEBUG:
+        if self._mode >= Mode.DEBUG:
             log.debug(f"error: {code} {msg}")
         return ErrorResponse(msg, code)
 
@@ -609,7 +610,7 @@ class FlaskSimpleAuth:
         if "FSA_DEBUG" in conf and conf["FSA_DEBUG"]:  # upward compatibility
             self._mode = Mode.DEBUG
             del conf["FSA_DEBUG"]
-        if self._mode and self._mode == Mode.DEBUG and "FSA_MODE" in conf:
+        if self._mode and self._mode >= Mode.DEBUG and "FSA_MODE" in conf:
             log.warning("ignoring FSA_MODE because already in debug mode")
         else:
             mode = conf.get("FSA_MODE", _DEFAULT_MODE)
@@ -617,7 +618,7 @@ class FlaskSimpleAuth:
                 self._mode = _MODES[mode]
             else:
                 raise self._Bad(f"unexpected FSA_MODE value: {mode}")
-        if self._mode == Mode.DEBUG:
+        if self._mode >= Mode.DEBUG:
             log.warning("FlaskSimpleAuth running in debug mode")
             log.setLevel(logging.DEBUG)
             if "FSA_LOGGING_LEVEL" in conf:
@@ -909,7 +910,7 @@ class FlaskSimpleAuth:
         #
         self._before_requests = conf.get("FSA_BEFORE_REQUEST", [])
         # internal hooks
-        if self._mode in (Mode.DEBUG, Mode.DEV):
+        if self._mode >= Mode.DEV:
             self._app.after_request(self._add_delay_header)
         self._after_requests = conf.get("FSA_AFTER_REQUEST", [])
         if self._after_requests:
@@ -1624,11 +1625,11 @@ class FlaskSimpleAuth:
                     for p in params:
                         if p not in kwargs:
                             kwargs[p] = params[p]
-                elif self._mode == Mode.DEBUG or self._reject_param:
+                elif self._mode >= Mode.DEBUG or self._reject_param:
                     # detect unused parameters and warn or reject them
                     for p in params:
                         if p not in names and p not in self._names:
-                            if self._mode == Mode.DEBUG:
+                            if self._mode >= Mode.DEBUG:
                                 log.debug(f"unexpected parameter {p} on {path}")
                             if self._reject_param:
                                 return self._Res(f"unexpected parameter {p} on {path}", 400)
