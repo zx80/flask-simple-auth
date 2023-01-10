@@ -82,10 +82,12 @@ class Mode(IntEnum):
     PROD = 1
     DEV = 2
     DEBUG = 3
+    DEBUG2 = 4
 
 
 _MODES = {
     "debug": Mode.DEBUG,
+    "debug2": Mode.DEBUG2,
     "dev": Mode.DEV,
     "prod": Mode.PROD
 }
@@ -290,7 +292,7 @@ class FlaskSimpleAuth:
 
     def __init__(self, app: flask.Flask, debug: bool = False, **config):
         """Constructor parameter: flask application to extend."""
-        self._mode = Mode.DEBUG if debug else None
+        self._mode = Mode.DEBUG2 if debug else Mode.UNDEF
         self._app = app
         self._app.config.update(**config)
         # hooks
@@ -1582,6 +1584,13 @@ class FlaskSimpleAuth:
                 if p.kind == p.VAR_KEYWORD:
                     keywords = True
 
+            # debug help
+            def debugParam():
+                params = sorted(self._params().keys())
+                expects = sorted(names.values())
+                mtype = request.headers.get("Content-Type", "?")
+                return f"{fun.__name__}({', '.join(expects)}): got {' '.join(params)} [{mtype}]"
+
             @functools.wraps(fun)
             def wrapper(*args, **kwargs):
                 # NOTE *args and **kwargs are empty before being filled in from HTTP
@@ -1602,7 +1611,7 @@ class FlaskSimpleAuth:
                                 try:
                                     kwargs[p] = typing(val)
                                 except Exception as e:
-                                    return self._Res(f'type error on parameter "{pn}" ({e})', 400)
+                                    return self._Res(f'type error on parameter "{pn}": "{val}" ({e})', 400)
                             else:
                                 kwargs[p] = val
                         else:
@@ -1611,14 +1620,17 @@ class FlaskSimpleAuth:
                             elif typing in self._special_parameters:
                                 kwargs[p] = self._special_parameters[typing]()
                             else:
+                                if self._mode >= Mode.DEBUG:
+                                    log.info(debugParam())
                                 return self._Res(f'missing parameter "{pn}"', 400)
                     else:
                         # possibly recast path parameters if needed
-                        if not isinstance(kwargs[p], types[p]):
+                        val = kwargs[p]
+                        if not isinstance(val, types[p]):
                             try:
-                                kwargs[p] = typing(kwargs[p])
+                                kwargs[p] = typing(val)
                             except Exception as e:
-                                return self._Res(f'type error on path parameter "{pn}": ({e})', 400)
+                                return self._Res(f'type error on path parameter "{pn}": "{val}" ({e})', 400)
 
                 # possibly add others, without shadowing already provided ones
                 if keywords:
@@ -1631,6 +1643,8 @@ class FlaskSimpleAuth:
                         if p not in names and p not in self._names:
                             if self._mode >= Mode.DEBUG:
                                 log.debug(f"unexpected parameter {p} on {path}")
+                                if self._mode >= Mode.DEBUG2:
+                                    log.debug(debugParam())
                             if self._reject_param:
                                 return self._Res(f"unexpected parameter {p} on {path}", 400)
 

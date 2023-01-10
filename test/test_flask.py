@@ -1108,7 +1108,7 @@ def test_bads():
     except ConfigError as e:
         assert "unknown" in str(e)
     # unexpected parameter
-    app = fsa.Flask("unexpected param", FSA_MODE="debug")
+    app = fsa.Flask("unexpected param", FSA_MODE="debug2")
     @app.get("/youpi", authorize="ANY")
     def get_youpi(i: int):
         return str(i), 200
