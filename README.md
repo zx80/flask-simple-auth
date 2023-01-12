@@ -38,7 +38,7 @@ def patch_users_id(id: int, password: str, email: Email = None):
     # Admins can patch user *id* with a mandatory *password* and
     # an optional *email* parameter. Type conversions are performed
     # so that invalid values are rejected with a *400* automatically.
-    return "", 204
+    return f"users {id} updated", 204
 ```
 
 Authentication is manage from the application flask configuration
@@ -47,7 +47,7 @@ the configuration file (`ACME_CONFIG`):
 
 ```python
 FSA_AUTH = "httpd"     # inherit web-serveur authentication
-# or others schemes such as: basic, digest, token (eg jwt), param…
+# or others schemes such as: basic, token (eg jwt)…
 # hooks must be provided for retrieving user's passwords and
 # checking whether a user belongs to a group, if these features are used.
 ```
