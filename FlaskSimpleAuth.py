@@ -481,11 +481,11 @@ class FlaskSimpleAuth:
                 res.headers[name] = val
         return res
 
-    def _add_delay_header(self, res: Response):
-        """Add delay showing elapsed time from module perspective."""
-        delay = dt.datetime.timestamp(dt.datetime.now()) - self._local.start
+    def _add_fsa_headers(self, res: Response):
+        """Add convenient FSA-related headers."""
         res.headers["FSA-Request"] = f"{request.method} {request.path}"
         res.headers["FSA-User"] = self.current_user()
+        delay = dt.datetime.timestamp(dt.datetime.now()) - self._local.start
         res.headers["FSA-Delay"] = f"{delay:.6f}"
         return res
 
@@ -912,7 +912,7 @@ class FlaskSimpleAuth:
         self._before_requests = conf.get("FSA_BEFORE_REQUEST", [])
         # internal hooks
         if self._mode >= Mode.DEV:
-            self._app.after_request(self._add_delay_header)
+            self._app.after_request(self._add_fsa_headers)
         self._after_requests = conf.get("FSA_AFTER_REQUEST", [])
         if self._after_requests:
             self._app.after_request(self._run_after_requests)
