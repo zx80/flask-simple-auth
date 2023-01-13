@@ -924,3 +924,4 @@ By contrast, *Flask Simple Auth*:
 - add more examples in the documentation
 - authz/authn instead of authorize/auth?
 - check multiply defined parameters
+- header `WWW-Authenticate` *could* return several challengers, eg `Bearer` and `Basic`
