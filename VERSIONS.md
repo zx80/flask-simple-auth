@@ -3,7 +3,7 @@
 Sources are available on [GitHub](https://github.com/zx80/flask-simple-auth)
 and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 
-## ? on ?
+## 20.7 on 2023-01-14
 
 Add convenient `FSA-Request` and `FSA-User` headers in `dev` mode.
 Return several challenges with `WWW-Authenticate` if appropriate.
