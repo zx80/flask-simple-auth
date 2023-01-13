@@ -484,9 +484,9 @@ class FlaskSimpleAuth:
     def _add_delay_header(self, res: Response):
         """Add delay showing elapsed time from module perspective."""
         delay = dt.datetime.timestamp(dt.datetime.now()) - self._local.start
-        res.headers["FSA-Delay"] = f"{delay:.6f}"
         res.headers["FSA-Request"] = f"{request.method} {request.path}"
         res.headers["FSA-User"] = self.current_user()
+        res.headers["FSA-Delay"] = f"{delay:.6f}"
         return res
 
     def _params(self):
