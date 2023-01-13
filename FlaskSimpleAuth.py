@@ -1022,6 +1022,8 @@ class FlaskSimpleAuth:
 
     def check_password(self, pwd, ref):
         """Verify whether a password is correct compared to a reference (eg salted hash)."""
+        if not self._pm:
+            self._init_password_manager()
         return self._pm.verify(pwd, ref)
 
     def _check_password_quality(self, pwd):
@@ -1040,6 +1042,8 @@ class FlaskSimpleAuth:
 
     def hash_password(self, pwd, check=True):
         """Hash password according to the current password scheme."""
+        if not self._pm:
+            self._init_password_manager()
         if check:
             self._check_password_quality(pwd)
         return self._pm.hash(pwd)

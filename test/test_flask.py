@@ -371,6 +371,13 @@ def test_invalid_token():
     except fsa.ErrorResponse as e:
         assert e.status == 401
 
+def test_password_lazy_init():
+    app = fsa.Flask("pass-one")
+    ref = app.hash_password("hello world!")
+    assert isinstance(ref, str) and len(ref) >= 40
+    app = fsa.Flask("pass-two")
+    assert app.check_password("hello world!", ref)
+
 def test_password_check(client):
     fsa = app._fsa
     # standard password

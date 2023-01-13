@@ -5,7 +5,7 @@ for [Flask](https://flask.palletsprojects.com/), controled from
 Flask configuration and the extended `route` decorator.
 
 ![Status](https://github.com/zx80/flask-simple-auth/actions/workflows/fsa.yml/badge.svg?branch=master&style=flat)
-![Tests](https://img.shields.io/badge/tests-65%20✓-success)
+![Tests](https://img.shields.io/badge/tests-66%20✓-success)
 ![Coverage](https://img.shields.io/badge/coverage-100%25-success)
 ![Issues](https://img.shields.io/github/issues/zx80/flask-simple-auth?style=flat)
 ![Python](https://img.shields.io/badge/python-3-informational)
@@ -136,7 +136,6 @@ are hosted on [GitHub](https://github.com).
 Install [package](https://pypi.org/project/FlaskSimpleAuth/) from
 [PyPI](https://pypi.org/).
 
-Latest version is *20.5* published on 2023-01-11.
-Initial version was *0.9.0* on 2021-02-21.
+Latest version is *20.6* published on 2023-01-13.
 
 See [all versions](VERSIONS.md).
