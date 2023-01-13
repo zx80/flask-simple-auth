@@ -369,14 +369,6 @@ class FlaskSimpleAuth:
                 return True
         return False
 
-    def _auth_first(self):
-        """Current priority authentication scheme for WWW-Authenticate."""
-        for a in self._local.auth:
-            if a in ("token", "oauth") and self._carrier == "bearer" or \
-               a in ("http-token", "basic", "http-basic", "digest", "http-digest", "password"):
-                return a
-        return None
-
     #
     # HOOKS
     #
@@ -466,16 +458,17 @@ class FlaskSimpleAuth:
     def _set_www_authenticate(self, res: Response):
         """Set WWW-Authenticate response header depending on current scheme."""
         if res.status_code == 401:
-            auth = self._auth_first()
-            if not auth:
-                pass
-            elif auth in ("token", "oauth"):  # prioritize tokens
-                res.headers["WWW-Authenticate"] = f'{self._name} realm="{self._realm}"'
-            elif auth in ("basic", "password"):
-                res.headers["WWW-Authenticate"] = f'Basic realm="{self._realm}"'
-            else:
-                assert self._http_auth
-                res.headers["WWW-Authenticate"] = self._http_auth.authenticate_header()
+            schemes = []
+            for a in self._local.auth:
+                if a in ("token", "oauth") and self._carrier == "bearer":
+                    schemes.append(f'{self._name} realm="{self._realm}"')
+                elif a in ("basic", "password"):
+                    schemes.append(f'Basic realm="{self._realm}"')
+                elif a in ("http-token", "http-basic", "digest", "http-digest"):
+                    assert self._http_auth
+                    schemes.append(self._http_auth.authenticate_header())
+            if schemes:
+                res.headers["WWW-Authenticate"] = ", ".join(schemes)
             # else: scheme does not rely on WWW-Authenticate…
         # else: no need for WWW-Authenticate
         return res

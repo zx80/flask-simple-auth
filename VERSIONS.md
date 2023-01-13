@@ -6,6 +6,7 @@ and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 ## ? on ?
 
 Add convenient `FSA-Request` and `FSA-User` headers in `dev` mode.
+Return several challenges with `WWW-Authenticate` if appropriate.
 
 ## 20.6 on 2023-01-13
 
