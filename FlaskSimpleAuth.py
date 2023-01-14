@@ -458,18 +458,18 @@ class FlaskSimpleAuth:
     def _set_www_authenticate(self, res: Response):
         """Set WWW-Authenticate response header depending on current scheme."""
         if res.status_code == 401:
-            schemes = []
+            schemes = set()
             for a in self._local.auth:
                 if a in ("token", "oauth") and self._carrier == "bearer":
-                    schemes.append(f'{self._name} realm="{self._realm}"')
+                    schemes.add(f'{self._name} realm="{self._realm}"')
                 elif a in ("basic", "password"):
-                    schemes.append(f'Basic realm="{self._realm}"')
+                    schemes.add(f'Basic realm="{self._realm}"')
                 elif a in ("http-token", "http-basic", "digest", "http-digest"):
                     assert self._http_auth
-                    schemes.append(self._http_auth.authenticate_header())
+                    schemes.add(self._http_auth.authenticate_header())
+                # else: scheme does not rely on WWW-Authenticate…
             if schemes:
-                res.headers["WWW-Authenticate"] = ", ".join(schemes)
-            # else: scheme does not rely on WWW-Authenticate…
+                res.headers["WWW-Authenticate"] = ", ".join(sorted(schemes))
         # else: no need for WWW-Authenticate
         return res
 
