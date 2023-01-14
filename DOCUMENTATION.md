@@ -57,7 +57,7 @@ def get_store(filter: str = None):
     # return store contents, possibly filtered
     …
 
-@app.post("/store", authorize="contributer")
+@app.post("/store", authorize="contributor")
 def post_store(data: str):
     # append new data to store, return id
     …
