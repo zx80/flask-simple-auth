@@ -3,7 +3,7 @@
 Sources are available on [GitHub](https://github.com/zx80/flask-simple-auth)
 and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 
-## ?
+## 20.8 on 2023-01-14
 
 Prioritize parameter sources and detect shadowing.
 Improved documentation.
