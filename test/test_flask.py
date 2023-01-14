@@ -447,13 +447,14 @@ def test_password_check(client):
     fsa._pm = pm
 
 def test_password_quality():
-    fsa = app._fsa
+    mode = app._fsa._mode
+    app._fsa._mode = fsa.Mode.DEBUG3
     # password len
-    assert fsa._password_len == 0
+    assert app._fsa._password_len == 0
     assert app.hash_password("") is not None
     assert app.hash_password("c") is not None
     assert app.hash_password("cy") is not None
-    fsa._password_len = 1
+    app._fsa._password_len = 1
     try:
         app.hash_password("")
         assert False, "len must be rejected"
@@ -461,11 +462,11 @@ def test_password_quality():
         assert "too short" in str(e)
     assert app.hash_password("c") is not None
     assert app.hash_password("cy") is not None
-    fsa._password_len = 2
+    app._fsa._password_len = 2
     assert app.hash_password("cy") is not None
     # password re, eg password must contain a lc and uc letter
-    assert len(fsa._password_re) == 0
-    fsa._password_re = [
+    assert len(app._fsa._password_re) == 0
+    app._fsa._password_re = [
         re.compile(r"[a-z]").search,
         re.compile(r"[A-Z]").search,
     ]
@@ -481,7 +482,7 @@ def test_password_quality():
     except ErrorResponse as e:
         assert "A-Z" in str(e)
     # password quality return
-    assert fsa._password_quality is None
+    assert app._fsa._password_quality is None
     def password_quality_checker(pwd):
         if pwd == "G0od!":
             return True
@@ -489,7 +490,7 @@ def test_password_quality():
             return False
         else:
             raise Exception(f"password quality checker is not happy about {pwd}")
-    fsa._password_quality = password_quality_checker
+    app._fsa._password_quality = password_quality_checker
     assert app.hash_password("G0od!") is not None
     try:
         app.hash_password("B@d")
@@ -503,9 +504,10 @@ def test_password_quality():
     except ErrorResponse as e:
         assert "not happy" in str(e)
     # reset password checking rules
-    fsa._password_len = 0
-    fsa._password_re = []
-    fsa.password_quality(None)
+    app._fsa._mode = mode
+    app._fsa._password_len = 0
+    app._fsa._password_re = []
+    app._fsa.password_quality(None)
 
 def test_authorize():
     assert app._fsa._user_in_group("dad", App.ADMIN)
@@ -1697,7 +1699,7 @@ def test_request_hooks():
 
 def test_mode():
     for debug in (True, False):
-        for mode in ("debug", "dev", "prod"):
+        for mode in ("debug3", "debug2", "debug", "dev", "prod"):
             app = fsa.Flask("mode", debug=debug, FSA_MODE=mode)
             app = fsa.Flask("mode", FSA_DEBUG=debug, FSA_MODE=mode)
     try:
