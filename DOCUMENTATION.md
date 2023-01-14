@@ -717,10 +717,11 @@ generates a `Response` of this status with the text message as contents.
 
 Some directives govern various details for this extension internal working.
 
-- `FSA_MODE` set module mode, expecting *prod*, *dev* or *debug*.
+- `FSA_MODE` set module mode, expecting *prod*, *dev*, *debug* or *debug2*.
   This changes the module verbosity.
-  Under *dev*, a `FSA-Delay` header is added to show the elapsed time from
-  the application code perspective.
+  Under *dev* or debug, `FSA-*` headers is added to show informations about
+  the request, the authentication and the elapsed time from the application
+  code perspective.
   Default is *prod*.
 
 - `FSA_LOGGING_LEVEL` adjust module internal logging level.
