@@ -6,6 +6,7 @@ and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 ## 20.9 on 2023-01-14
 
 Reduce verbosity when calling `current_user`.
+Improved documentation.
 
 ## 20.8 on 2023-01-14
 
