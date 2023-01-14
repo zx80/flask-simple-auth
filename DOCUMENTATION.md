@@ -895,6 +895,24 @@ By contrast, *Flask Simple Auth*:
   and specially formatted comments.
 - offers an integrated authorization scheme linked to application objects.
 
+FlaskSimpleAuth is a Flask extension, however:
+- You do not have to use Flask for your back-end!
+  Other HTTP frameworks in the Python ecosystem include:
+  [CherryPy](https://cherrypy.dev/),
+  [Django](https://www.djangoproject.com/),
+  [Falcon](http://falconframework.org/),
+  [FastAPI](https://fastapi.tiangolo.com/),
+  [Pylon](https://pylonsproject.org/),
+  [Pyramid](https://trypyramid.com/)…
+- You do not have to use Python for your back-end!
+  Other languages with more-or-less convenient HTTP frameworks include:
+  [C Ulfius](https://github.com/babelouest/ulfius),
+  [Java Spring](https://spring.io/),
+  [JavaScript Node.js](https://nodejs.org/),
+  [PHP Lumen](https://lumen.laravel.com/),
+  [Ruby Rails](https://rubyonrails.org/),
+  [Rust Rocket](https://rocket.rs/)…
+
 ## TODO
 
 - `FSA_PARAM_STYLE` *any/http/json* to restrict/force parameters?
