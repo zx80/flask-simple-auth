@@ -1706,3 +1706,24 @@ def test_mode():
         assert False, "should raise an exception"
     except ConfigError as e:
         assert "FSA_MODE" in str(e)
+
+def test_shadowing(client):
+    res = check(200, client.get("/shadow/foo"))
+    assert res.data == b"Test: foo Yukon"
+    res = check(400, client.get("/shadow/foo", json={"stuff": "bla"}))
+    assert b'"stuff"' in res.data
+    res = check(400, client.get("/shadow/bla", data={"stuff": "foo"}))
+    assert b'"stuff"' in res.data
+    res = check(400, client.get("/shadow/foo", json={"lapp": "bla"}))
+    assert b'"lapp"' in res.data
+    res = check(400, client.get("/shadow/bla", data={"lapp": "foo"}))
+    assert b'"lapp"' in res.data
+    res = check(200, client.get("/shadow/foo", json={"blup": "Manitoba"}))
+    assert res.data == b"Test: foo Manitoba"
+    res = check(200, client.get("/shadow/bla", data={"blup": "Quebec"}))
+    assert res.data == b"Test: bla Quebec"
+    # repeated parameter handling is unclear because of internal dicts
+    res = check(200, client.get("/shadow/bla?blup=Manitoba", data={"blup": "Quebec"}))
+    assert res.data == b"Test: bla Manitoba"
+    res = check(200, client.get("/shadow/bla?blup=Manitoba&blup=Quebec"))
+    assert res.data == b"Test: bla Manitoba"

@@ -1602,10 +1602,21 @@ class FlaskSimpleAuth:
                 params = self._params()
 
                 for p, typing in typings.items():
-                    # guess which function parameters are request parameters
                     pn = names[p]
-                    if p not in kwargs:
-                        # parameter p not yet encountered
+                    if typing in self._special_parameters:  # force specials
+                        if p in params:
+                            return self._Res(f'unexpected parameter "{pn}"', 400)
+                        kwargs[p] = self._special_parameters[typing]()
+                    elif p in kwargs:  # path parameter, or already seen?
+                        if p in params:
+                            return self._Res(f'unexpected parameter "{pn}"', 400)
+                        val = kwargs[p]
+                        if not isinstance(val, types[p]):
+                            try:
+                                kwargs[p] = typing(val)
+                            except Exception as e:
+                                return self._Res(f'type error on path parameter "{p}": "{val}" ({e})', 400)
+                    else:  # parameter not yet encountered
                         if pn in params:
                             val = params[pn]
                             is_json = types[p] == JsonData
@@ -1620,20 +1631,10 @@ class FlaskSimpleAuth:
                         else:
                             if p in defaults:
                                 kwargs[p] = defaults[p]
-                            elif typing in self._special_parameters:
-                                kwargs[p] = self._special_parameters[typing]()
                             else:
                                 if self._mode >= Mode.DEBUG2:
                                     log.info(debugParam())
                                 return self._Res(f'missing parameter "{pn}"', 400)
-                    else:
-                        # possibly recast path parameters if needed
-                        val = kwargs[p]
-                        if not isinstance(val, types[p]):
-                            try:
-                                kwargs[p] = typing(val)
-                            except Exception as e:
-                                return self._Res(f'type error on path parameter "{pn}": "{val}" ({e})', 400)
 
                 # possibly add others, without shadowing already provided ones
                 if keywords:

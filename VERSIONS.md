@@ -5,6 +5,7 @@ and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 
 ## ?
 
+Prioritize parameter sources and detect shadowing.
 Improved documentation.
 
 ## 20.7 on 2023-01-14

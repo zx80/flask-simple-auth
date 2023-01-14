@@ -399,3 +399,7 @@ def early_return():
 @app.get("/early-return/<code>", authorize=ANY)
 def get_early_return(code: int):
     return "should not get there", 500
+
+@app.get("/shadow/<stuff>", authorize=ANY)
+def get_shadow(stuff: str, lapp: CurrentApp, blup: str = "Yukon"):
+    return f"{lapp.name}: {stuff} {blup}", 200
