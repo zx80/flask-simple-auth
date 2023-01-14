@@ -353,7 +353,7 @@ class FlaskSimpleAuth:
 
     def _Err(self, msg: str, code: int):
         """Build and trace an ErrorResponse exception with a message."""
-        if self._mode >= Mode.DEBUG:
+        if self._mode >= Mode.DEBUG2:
             log.debug(f"error: {code} {msg}")
         return ErrorResponse(msg, code)
 
@@ -1389,7 +1389,7 @@ class FlaskSimpleAuth:
 
     def current_user(self):
         """Return current authenticated user, if any."""
-        return self.get_user(required=False)
+        return self._local.user
 
     # authentication and authorization methods that can/should be cached
     _CACHABLE = {

@@ -37,7 +37,7 @@ def get_now():
 # GET /who: show authenticated user if available
 @app.get("/who", authorize="ANY")
 def get_who():
-    return json(app.current_user()), 200
+    return json(app.get_user(required=False)), 200
 
 #
 # then register some blueprints
