@@ -82,11 +82,13 @@ class Mode(IntEnum):
     DEV = 2
     DEBUG = 3
     DEBUG2 = 4
+    DEBUG3 = 5
 
 
 _MODES = {
     "debug": Mode.DEBUG,
     "debug2": Mode.DEBUG2,
+    "debug3": Mode.DEBUG3,
     "dev": Mode.DEV,
     "prod": Mode.PROD,
 }
@@ -353,7 +355,7 @@ class FlaskSimpleAuth:
 
     def _Err(self, msg: str, code: int):
         """Build and trace an ErrorResponse exception with a message."""
-        if self._mode >= Mode.DEBUG2:
+        if self._mode >= Mode.DEBUG3:
             log.debug(f"error: {code} {msg}")
         return ErrorResponse(msg, code)
 
@@ -1337,6 +1339,7 @@ class FlaskSimpleAuth:
             else:
                 assert self._carrier == "header" and self._name
                 token = request.headers.get(self._name, None)
+            # this raises a missing token 401 if no token
             user = self._get_any_token_auth(token)
         return user
 
