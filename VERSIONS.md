@@ -3,9 +3,9 @@
 Sources are available on [GitHub](https://github.com/zx80/flask-simple-auth)
 and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 
-## ?
+## 20.10 on 2023-01-15
 
-Reduce verbosity by adding a "debug3" mode.
+Reduce verbosity again by adding a "debug3" mode.
 
 ## 20.9 on 2023-01-14
 
