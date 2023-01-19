@@ -943,3 +943,5 @@ By contrast, *Flask Simple Auth*:
 - check with bad char in parameter names
 - add more examples in the documentation
 - authz/authn instead of authorize/auth?
+- checks: mypy vs pyright vs pyanalyze?
+  mypy is way too slow!
