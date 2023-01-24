@@ -945,3 +945,4 @@ By contrast, *Flask Simple Auth*:
 - authz/authn instead of authorize/auth?
 - checks: mypy vs pyright vs pyanalyze?
   mypy is way too slow!
+- param auth parameters should be removed before the call?
