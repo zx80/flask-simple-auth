@@ -353,10 +353,12 @@ class FlaskSimpleAuth:
         assert self._error_response is not None
         return self._error_response(msg, code)
 
-    def _Err(self, msg: str, code: int):
+    def _Err(self, msg: str, code: int, exc: Exception = None):
         """Build and trace an ErrorResponse exception with a message."""
         if self._mode >= Mode.DEBUG3:
             log.debug(f"error: {code} {msg}")
+        if exc:
+            log.info(exc, exc_info=True)
         return ErrorResponse(msg, code)
 
     def _Bad(self, msg: str):
@@ -1035,7 +1037,7 @@ class FlaskSimpleAuth:
                 if not self._password_quality(pwd):
                     raise self._Err("password quality too low", 400)
             except Exception as e:
-                raise self._Err(f"password quality too low: {e}", 400)
+                raise self._Err(f"password quality too low: {e}", 400, e)
 
     def hash_password(self, pwd, check=True):
         """Hash password according to the current password scheme."""
@@ -1053,7 +1055,8 @@ class FlaskSimpleAuth:
             except ErrorResponse as e:
                 raise e
             except Exception as e:
-                log.debug(f"AUTH (hook) failed: {e}")
+                log.info(f"AUTH (hook) failed: {e}")
+                log.info(e, exc_info=True)
                 return False
         return False
 
@@ -1069,7 +1072,7 @@ class FlaskSimpleAuth:
                 raise e
             except Exception as e:
                 log.error(f"get_user_pass failed: {e}")
-                raise self._Err("internal error in get_user_pass", self._server_error)
+                raise self._Err("internal error in get_user_pass", self._server_error, e)
         else:
             ref = None
         if not ref:  # not available, try alternate check
@@ -1128,7 +1131,7 @@ class FlaskSimpleAuth:
             user, pwd = b64.b64decode(auth[6:]).decode().split(":", 1)
         except Exception as e:
             log.debug(f'AUTH (basic): error while decoding auth "{auth}" ({e})')
-            raise self._Err("decoding error on authorization header", 401)
+            raise self._Err("decoding error on authorization header", 401, e)
         return self._check_password(user, pwd)
 
     #
@@ -1263,7 +1266,7 @@ class FlaskSimpleAuth:
             limit = self._from_timestamp(slimit)
         except Exception as e:
             log.debug(f"AUTH (fsa token): malformed timestamp {slimit}: {e}")
-            raise self._Err(f"unexpected limit: {slimit}", 401)
+            raise self._Err(f"unexpected limit: {slimit}", 401, e)
         # check realm
         if self._issuer and realm != f"{self._realm}/{self._issuer}" or \
            not self._issuer and realm != self._realm:
@@ -1297,7 +1300,7 @@ class FlaskSimpleAuth:
             raise self._Err("expired jwt auth token", 401)
         except Exception as e:
             log.debug(f"AUTH (jwt token): invalid token ({e})")
-            raise self._Err("invalid jwt token", 401)
+            raise self._Err("invalid jwt token", 401, e)
 
     def _get_any_token_auth_exp(self, token):
         """Return validated user and expiration, cached."""
@@ -1380,6 +1383,7 @@ class FlaskSimpleAuth:
                 lae = e
             except Exception as e:  # pragma: no cover
                 log.error(f"internal error in {a} authentication: {e}")
+                log.info(e, exc_info=True)
 
         # even if not set, we say that the answer is the right one.
         self._local.source = "none"
@@ -1439,6 +1443,7 @@ class FlaskSimpleAuth:
             return self._Res(e.message, e.status)
         except Exception as e:  # something went really wrong
             log.error(f"internal error on {request.method} {request.path}: {e}")
+            log.info(e, exc_info=True)
             return self._Res(f"internal error caught at {level} on {path}", self._server_error)
 
     def _authenticate(self, path, auth=None):
@@ -1530,6 +1535,7 @@ class FlaskSimpleAuth:
                         return self._Res(e.message, e.status)
                     except Exception as e:
                         log.error(f"user_in_group failed: {e}")
+                        log.info(e, exc_info=True)
                         return self._Res("internal error in user_in_group", self._server_error)
                     if not isinstance(ok, bool):
                         log.error(f"type error in user_in_group: {ok}: {type(ok)}, must return a boolean")
@@ -1618,6 +1624,7 @@ class FlaskSimpleAuth:
                             try:
                                 kwargs[p] = typing(val)
                             except Exception as e:
+                                log.info(e, exc_info=True)
                                 return self._Res(f'type error on path parameter "{p}": "{val}" ({e})', 400)
                     else:  # parameter not yet encountered
                         if pn in params:
@@ -1628,6 +1635,7 @@ class FlaskSimpleAuth:
                                 try:
                                     kwargs[p] = typing(val)
                                 except Exception as e:
+                                    log.info(e, exc_info=True)
                                     return self._Res(f'type error on parameter "{pn}": "{val}" ({e})', 400)
                             else:
                                 kwargs[p] = val
@@ -1705,6 +1713,7 @@ class FlaskSimpleAuth:
                         return self._Res(e.message, e.status)
                     except Exception as e:
                         log.error(f"internal error on {request.method} {request.path} permission {perm} check: {e}")
+                        log.info(e, exc_info=True)
                         return self._Res("internal error in permission check", self._server_error)
 
                     if ok is None:

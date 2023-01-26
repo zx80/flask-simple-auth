@@ -6,6 +6,7 @@ and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 ## 20.11 on ?
 
 Add dependency options to `setup.cfg`.
+Show traces on internal errors.
 
 ## 20.10 on 2023-01-15
 
