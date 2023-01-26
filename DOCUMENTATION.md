@@ -946,3 +946,6 @@ By contrast, *Flask Simple Auth*:
 - checks: mypy vs pyright vs pyanalyze?
   mypy is way too slow!
 - param auth parameters should be removed before the call?
+- file upload with a special parameter?
+- installation options to take into account dependencies
+- log backtrace on internal errors!
