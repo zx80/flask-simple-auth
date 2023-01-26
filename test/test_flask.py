@@ -24,6 +24,8 @@ log = logging.getLogger("tests")
 # app._fsa._initialize()
 
 def check(code, res):
+    if res.status_code != code:
+        log.debug(f"BAD res = {res.data}")
     assert res.status_code == code
     return res
 
@@ -1747,3 +1749,57 @@ def test_user_errors():
     res = check(500, client.get("/oops"))
     # to-the-point fsa-generated message
     assert b"internal error caught at" in res.data
+
+def test_param_params():
+    app = fsa.Flask("pp",
+        FSA_MODE="debug2",
+        FSA_DEBUG_LEVEL=logging.DEBUG,
+        FSA_AUTH="param",
+        FSA_PARAM_USER="login",
+        FSA_PARAM_PASS="password"
+    )
+
+    CALVIN = {"login": "calvin", "password": "hobbes"}
+
+    USERS = {
+        "calvin": app.hash_password("hobbes"),
+        "hobbes": app.hash_password("calvin"),
+    }
+
+    @app.get_user_pass
+    def get_user_pass(login: str):
+        return USERS[login] if login in USERS else None
+
+    # note: "login" and "password" parameters must be ignored
+    @app.post("/log0", authorize="ALL")
+    def post_log0():
+        return f"current user is {app.get_user()}", 200
+
+    # note: "login" and "password" parameters must be ignored
+    @app.post("/log1", authorize="ALL")
+    def post_log1(hello: str):
+        return f"current user is {app.get_user()}", 200
+
+    @app.post("/log2", authorize="ALL")
+    def post_log2(login: fsa.CurrentUser, password: str = "world!"):
+        return f"login={login} hello={password}", 200
+
+    @app.post("/log3", authorize="ALL")
+    def post_log5(login: str, password: str):
+        return f"login={login} password={password}", 200
+
+    client = app.test_client()
+
+    # missing auth parameters
+    res = check(401, client.post("/log0", data={}))
+    res = check(401, client.post("/log0", data={"login": "calvin"}))
+    res = check(401, client.post("/log0", json={"login": "calvin"}))
+    res = check(401, client.post("/log0", data={"password": "hobbes"}))
+    res = check(401, client.post("/log0", json={"password": "hobbes"}))
+    # unexpected "foo" parameter
+    res = check(400, client.post("/log0", data={"login": "calvin", "password": "hobbes", "foo": "bla"}))
+    res = check(400, client.post("/log0", json={"login": "calvin", "password": "hobbes", "foo": "bla"}))
+
+    # OK
+    res = check(200, client.post("/log0", data=CALVIN))
+    assert b"current user is calvin" == res.data

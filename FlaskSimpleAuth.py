@@ -332,7 +332,7 @@ class FlaskSimpleAuth:
         self._keep_user_errors: bool = _DEFAULT_KEEP_USER_ERRORS
         self._secure: bool = True
         self._secure_warning = True
-        self._names: Set[str] = set()
+        self._auth_params: Set[str] = set()
         self._groups: Set[Union[str, int]] = set()
         self._scopes: Set[str] = set()
         self._headers: Dict[str, Union[HeaderFun, str]] = {}
@@ -398,13 +398,17 @@ class FlaskSimpleAuth:
 
     def _auth_reset_user(self):
         """Before request hook to cleanup authentication and authorization."""
-        self._local.routed = False
-        self._local.source = None
-        self._local.user = None
-        self._local.need_authorization = True
-        self._local.auth = self._auth
-        self._local.scopes = None
         self._local.start = dt.datetime.timestamp(dt.datetime.now())
+        # whether some routing has occurred, vs a before_request generated response
+        self._local.routed = False
+        # authentication and authorizations
+        self._local.source = None              # what authn has been used
+        self._local.user = None                # for this user
+        self._local.need_authorization = True  # whether some authz occurred
+        self._local.auth = self._auth          # allowed authn schemes
+        self._local.scopes = None              # current oauth scopes
+        # parameters
+        self._local.params = None              # json|http
 
     def _run_before_requests(self):
         """Run internal before request hooks."""
@@ -503,8 +507,11 @@ class FlaskSimpleAuth:
     def _params(self):
         """Get request parameters wherever they are."""
         if request.is_json:
+            self._local.params = "json"
             return request.json
         else:
+            self._local.params = "http"
+
             # reimplement "request.values" after Flask 2.0 regression
             # the logic of web-targetted HTTP does not make sense for a REST API
             # https://github.com/pallets/werkzeug/pull/2037
@@ -815,7 +822,6 @@ class FlaskSimpleAuth:
             raise self._Bad(f"Token carrier {self._carrier} requires a name")
         if self._carrier == "param":
             assert isinstance(self._name, str)
-            self._names.add(self._name)
         # token realm and possible issuer…
         realm = conf.get("FSA_REALM", self._app.name)
         if self._token == "fsa":  # simplify realm for fsa
@@ -885,7 +891,14 @@ class FlaskSimpleAuth:
         self._login = conf.get("FSA_FAKE_LOGIN", "LOGIN")
         self._userp = conf.get("FSA_PARAM_USER", "USER")
         self._passp = conf.get("FSA_PARAM_PASS", "PASS")
-        self._names.update([self._login, self._userp, self._passp])
+        # parameters used for authn
+        if "param" in self._auth or "password" in self._auth:
+            self._auth_params.add(self._userp)
+            self._auth_params.add(self._passp)
+        if "fake" in self._auth:
+            self._auth_params.add(self._login)
+        if "token" in self._auth and self._carrier == "param":
+            self._auth_params.add(self._name)
         #
         # authentication and authorization hooks
         #
@@ -1257,7 +1270,7 @@ class FlaskSimpleAuth:
         - iss: issuer (the source)
         - aud : audience (the realm)
         - not used: iat (issued at), nbf (not before), jti (jtw id)
-        - scope: optional authorizations (for testing)
+        - scope: optional authorizations
         """
         try:
             import jwt
@@ -1281,7 +1294,7 @@ class FlaskSimpleAuth:
         )
 
     def create_token(self, user: str = None, realm: str = None,
-                     issuer: str = None, delay: float = None):
+                     issuer: str = None, delay: float = None, **kwargs):
         """Create a new token for user depending on the configuration."""
         assert self._token
         user = user or self.get_user()
@@ -1289,8 +1302,8 @@ class FlaskSimpleAuth:
         issuer = issuer or self._issuer
         delay = delay or self._delay
         return (
-            self._get_fsa_token(realm, issuer, user, delay, self._secret) if self._token == "fsa" else
-            self._get_jwt_token(realm, issuer, user, delay, self._sign)
+            self._get_fsa_token(realm, issuer, user, delay, self._secret, **kwargs) if self._token == "fsa" else
+            self._get_jwt_token(realm, issuer, user, delay, self._sign, **kwargs)
         )
 
     def _get_fsa_token_auth(self, token):
@@ -1475,6 +1488,7 @@ class FlaskSimpleAuth:
     #  _group_authz: check group authorization
     #     _no_authz: validate that no authorization was needed
     #   _parameters: handle HTTP/JSON to python parameter translation
+    #     _noparams: just check that no parameters are passed
     #   _perm_authz: check per-object permissions
     #
     def _safe_call(self, path, level, fun, *args, **kwargs):
@@ -1606,6 +1620,25 @@ class FlaskSimpleAuth:
 
         return decorate
 
+    # just check that there are no unused parameters
+    def _noparams(self, path):
+        def decorate(fun: Callable):
+            @functools.wraps(fun)
+            def wrapper(*args, **kwargs):
+                if self._reject_param:
+                    params = self._params()
+                    if params:
+                        sparams = set(params.keys())
+                        if not sparams.issubset(self._auth_params):
+                            bads = ' '.join(sorted(list(sparams - self._auth_params)))
+                            return f"unexpected {self._local.params} parameters: {bads}", 400
+
+                return self._safe_call(path, "no params", fun, *args, **kwargs)
+
+            return wrapper
+
+        return decorate
+
     def _parameters(self, path):
         """Decorator to handle request parameters."""
 
@@ -1658,11 +1691,11 @@ class FlaskSimpleAuth:
                     pn = names[p]
                     if typing in self._special_parameters:  # force specials
                         if p in params:
-                            return self._Res(f'unexpected parameter "{pn}"', 400)
+                            return self._Res(f'unexpected {self.local._params} parameter "{pn}"', 400)
                         kwargs[p] = self._special_parameters[typing]()
                     elif p in kwargs:  # path parameter, or already seen?
                         if p in params:
-                            return self._Res(f'unexpected parameter "{pn}"', 400)
+                            return self._Res(f'unexpected {self.local._params} parameter "{pn}"', 400)
                         val = kwargs[p]
                         if not isinstance(val, types[p]):
                             try:
@@ -1682,7 +1715,7 @@ class FlaskSimpleAuth:
                                 except Exception as e:
                                     if self._Exc(e):  # pragma: no cover
                                         raise
-                                    return self._Res(f'type error on parameter "{pn}": "{val}" ({e})', 400)
+                                    return self._Res(f'type error on {self.local._params} parameter "{pn}": "{val}" ({e})', 400)
                             else:
                                 kwargs[p] = val
                         else:
@@ -1694,20 +1727,21 @@ class FlaskSimpleAuth:
                                 return self._Res(f'missing parameter "{pn}"', 400)
 
                 # possibly add others, without shadowing already provided ones
-                if keywords:
+                if keywords:  # handle **kwargs
                     for p in params:
                         if p not in kwargs:
                             kwargs[p] = params[p]
                 elif self._mode >= Mode.DEBUG or self._reject_param:
                     # detect unused parameters and warn or reject them
                     for p in params:
-                        if p not in names and p not in self._names:
+                        # NOTE we silently ignore special authentication params
+                        if p not in names and p not in self._auth_params:
                             if self._mode >= Mode.DEBUG:
-                                log.debug(f"unexpected parameter {p} on {path}")
+                                log.debug(f"unexpected {self._local.params} parameter {p} on {path}")
                                 if self._mode >= Mode.DEBUG2:
                                     log.debug(debugParam())
                             if self._reject_param:
-                                return self._Res(f"unexpected parameter {p} on {path}", 400)
+                                return self._Res(f"unexpected {self._local.params} parameter {p} on {path}", 400)
 
                 return self._safe_call(path, "parameters", fun, *args, **kwargs)
 
@@ -1902,6 +1936,8 @@ class FlaskSimpleAuth:
             fun = self._perm_authz(newpath, first, *perms)(fun)
         if need_parameters:
             fun = self._parameters(newpath)(fun)
+        else:
+            fun = self._noparams(newpath)(fun)
         if groups:
             assert need_authenticate
             if auth == "oauth":
@@ -1924,7 +1960,7 @@ class FlaskSimpleAuth:
 
         assert fun != view_func, "some wrapping added"
 
-        # last wrapper to signal a routed function
+        # last wrapper to signal a "routed" function
         @functools.wraps(fun)
         def entry(*args, **kwargs):
             self._local.routed = True
