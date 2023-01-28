@@ -263,7 +263,7 @@ def test_fsa_token():
         user = app._fsa._get_any_token_auth("Test:calvin:20201500000000:signature")
         assert False, "expecting a bad timestamp format"
     except fsa.ErrorResponse as e:
-        assert "unexpected limit" in e.message
+        assert "unexpected fsa token limit" in e.message
     # force expiration
     grace = app._fsa._grace
     app._fsa._grace = -1000000
@@ -1127,9 +1127,9 @@ def test_bads():
     check(200, client.get("/youpi", data={"i": 5432}))
     check(200, client.get("/youpi", json={"i": 5432}))
     res = check(400, client.get("/youpi", data={"i": 5432, "j": "oops!"}))
-    assert b"unexpected parameter j" in res.data
+    assert b"unexpected http parameter j" in res.data
     res = check(400, client.get("/youpi", json={"i": 5432, "h": "oops!"}))
-    assert b"unexpected parameter h" in res.data
+    assert b"unexpected json parameter h" in res.data
 
 # per-object perms
 def test_object_perms(client):
