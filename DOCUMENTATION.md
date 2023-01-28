@@ -33,8 +33,11 @@ Depending on options, the following modules should be installed:
   for `http-*` authentication options.
 - [Flask CORS](https://github.com/corydolphin/flask-cors) for CORS handling.
 
-These modules are installed with the corresponding options: `passwords`, `jwt`,
+These modules are installed with the corresponding options: `password`, `jwt`,
 `memcached`, `redis`, `httpauth`, `cors`: `pip install FlaskSimpleAuth[jwt]`.
+
+Sharing and cache-related modules are currently always installed, even if they
+are unused or may be desactivated.
 
 ## Initialization
 
