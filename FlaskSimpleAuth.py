@@ -249,7 +249,7 @@ _DIRECTIVES = {
     "FSA_MODE", "FSA_LOGGING_LEVEL",
     # general settings
     "FSA_SECURE", "FSA_SERVER_ERROR", "FSA_NOT_FOUND_ERROR", "FSA_LOCAL",
-    "FSA_HANDLE_ALL_ERRORS",
+    "FSA_HANDLE_ALL_ERRORS", "FSA_KEEP_USER_ERRORS",
     # register hooks
     "FSA_GET_USER_PASS", "FSA_USER_IN_GROUP", "FSA_CAST", "FSA_OBJECT_PERMS",
     "FSA_SPECIAL_PARAMETER", "FSA_ERROR_RESPONSE", "FSA_ADD_HEADERS",
@@ -280,6 +280,7 @@ _DEFAULT_CACHE_TTL = 600  # seconds, 10 minutes
 _DEFAULT_REJECT_UNEXPECTED_PARAM = True
 _DEFAULT_SERVER_ERROR = 500
 _DEFAULT_NOT_FOUND_ERROR = 404
+_DEFAULT_KEEP_USER_ERRORS = False
 _DEFAULT_ERROR_RESPONSE = "plain"
 _DEFAULT_PASSWORD_SCHEME = "bcrypt"
 _DEFAULT_PASSWORD_OPTS = {"bcrypt__default_rounds": 4, "bcrypt__default_ident": "2y"}
@@ -328,6 +329,7 @@ class FlaskSimpleAuth:
         # fsa-generated errors
         self._server_error: int = _DEFAULT_SERVER_ERROR
         self._not_found_error: int = _DEFAULT_NOT_FOUND_ERROR
+        self._keep_user_errors: bool = _DEFAULT_KEEP_USER_ERRORS
         self._secure: bool = True
         self._secure_warning = True
         self._names: Set[str] = set()
@@ -353,13 +355,18 @@ class FlaskSimpleAuth:
         assert self._error_response is not None
         return self._error_response(msg, code)
 
+    def _Exc(self, exc):
+        """Handle a user error."""
+        if exc and not hasattr(exc, "_fsa_traced"):
+            log.error(exc, exc_info=True)
+            setattr(exc, "_fsa_traced", True)
+        return exc if self._keep_user_errors else None
+
     def _Err(self, msg: str, code: int, exc: Exception = None):
         """Build and trace an ErrorResponse exception with a message."""
         if self._mode >= Mode.DEBUG3:
             log.debug(f"error: {code} {msg}")
-        if exc:
-            log.error(exc, exc_info=True)
-        return ErrorResponse(msg, code)
+        return self._Exc(exc) or ErrorResponse(msg, code)
 
     def _Bad(self, msg: str):
         """Build and trace an exception on a bad configuration."""
@@ -653,7 +660,13 @@ class FlaskSimpleAuth:
         # status code for some errors errors
         self._server_error = conf.get("FSA_SERVER_ERROR", _DEFAULT_SERVER_ERROR)
         self._not_found_error = conf.get("FSA_NOT_FOUND_ERROR", _DEFAULT_NOT_FOUND_ERROR)
-        # actual error response generation
+        # error response generation
+        if conf.get("FSA_HANDLE_ALL_ERRORS", True):
+            # take responsability for handling errors
+            self._app.register_error_handler(exceptions.HTTPException, lambda e: self._Res(e.description, e.code))
+        # override FSA internal error handling user errors
+        self._keep_user_errors = conf.get("FSA_KEEP_USER_ERRORS", False)
+        # how to generate an error response
         if self._error_response is None:
             error = conf.get("FSA_ERROR_RESPONSE", _DEFAULT_ERROR_RESPONSE)
             if error is None:
@@ -673,9 +686,6 @@ class FlaskSimpleAuth:
                 raise self._Bad(f"unexpected FSA_ERROR_RESPONSE value: {error}")
         elif "FSA_ERROR_RESPONSE" in conf:
             log.warning("ignoring FSA_ERROR_RESPONSE directive, handler already set")
-        # possibly take responsability for handling errors
-        if conf.get("FSA_HANDLE_ALL_ERRORS", True):
-            self._app.register_error_handler(exceptions.HTTPException, lambda e: self._Res(e.description, e.code))
         # whether to error on unexpected parameters
         self._reject_param = \
             conf.get("FSA_REJECT_UNEXPECTED_PARAM", _DEFAULT_REJECT_UNEXPECTED_PARAM)
@@ -1078,7 +1088,8 @@ class FlaskSimpleAuth:
                 raise e
             except Exception as e:
                 log.info(f"AUTH (hook) failed: {e}")
-                log.error(e, exc_info=True)
+                if self._Exc(e):  # pragma: no cover
+                    raise
                 return False
         return False
 
@@ -1414,7 +1425,7 @@ class FlaskSimpleAuth:
                 lae = e
             except Exception as e:  # pragma: no cover
                 log.error(f"internal error in {a} authentication: {e}")
-                log.error(e, exc_info=True)
+                self._Exc(e)
 
         # even if not set, we say that the answer is the right one.
         self._local.source = "none"
@@ -1472,9 +1483,10 @@ class FlaskSimpleAuth:
             return fun(*args, **kwargs)
         except ErrorResponse as e:  # something went wrong
             return self._Res(e.message, e.status)
-        except Exception as e:  # something went really wrong
+        except Exception as e:  # something went *really* wrong
             log.error(f"internal error on {request.method} {request.path}: {e}")
-            log.error(e, exc_info=True)
+            if self._Exc(e):
+                raise
             return self._Res(f"internal error caught at {level} on {path}", self._server_error)
 
     def _authenticate(self, path, auth=None):
@@ -1566,7 +1578,8 @@ class FlaskSimpleAuth:
                         return self._Res(e.message, e.status)
                     except Exception as e:
                         log.error(f"user_in_group failed: {e}")
-                        log.error(e, exc_info=True)
+                        if self._Exc(e):  # pragma: no cover
+                            raise
                         return self._Res("internal error in user_in_group", self._server_error)
                     if not isinstance(ok, bool):
                         log.error(f"type error in user_in_group: {ok}: {type(ok)}, must return a boolean")
@@ -1655,7 +1668,8 @@ class FlaskSimpleAuth:
                             try:
                                 kwargs[p] = typing(val)
                             except Exception as e:
-                                log.error(e, exc_info=True)
+                                if self._Exc(e):  # pragma: no cover
+                                    raise
                                 return self._Res(f'type error on path parameter "{p}": "{val}" ({e})', 400)
                     else:  # parameter not yet encountered
                         if pn in params:
@@ -1666,7 +1680,8 @@ class FlaskSimpleAuth:
                                 try:
                                     kwargs[p] = typing(val)
                                 except Exception as e:
-                                    log.error(e, exc_info=True)
+                                    if self._Exc(e):  # pragma: no cover
+                                        raise
                                     return self._Res(f'type error on parameter "{pn}": "{val}" ({e})', 400)
                             else:
                                 kwargs[p] = val
@@ -1744,7 +1759,8 @@ class FlaskSimpleAuth:
                         return self._Res(e.message, e.status)
                     except Exception as e:
                         log.error(f"internal error on {request.method} {request.path} permission {perm} check: {e}")
-                        log.error(e, exc_info=True)
+                        if self._Exc(e):  # pragma: no cover
+                            raise
                         return self._Res("internal error in permission check", self._server_error)
 
                     if ok is None:

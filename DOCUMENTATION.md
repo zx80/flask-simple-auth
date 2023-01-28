@@ -762,9 +762,18 @@ Some directives govern various details for this extension internal working.
   Default is *plain*.
 
 - `FSA_HANDLE_ALL_ERRORS` whether to handle all *4xx* and *5xx* errors,
-  i.e. take responsability for generating error responses using FSA
-  internal error handler.
+  i.e. take full responsability for generating error responses using FSA
+  internal error handler (see `FSA_ERROR_RESPONSE` above).
   Default is *True*.
+  When set to *False*, some errors may generate their own response in
+  any format based on Flask default error response generator.
+
+- `FSA_KEEP_USER_ERRORS` whether to refrain from handling user errors
+  and let them pass to the outer WSGI infrastructure instead.
+  User errors are intercepted anyway, traced and raised again.
+  They may occur from any user-provided functions such as various hooks
+  and route functions.
+  Default is *False*
 
 - `FSA_ADD_HEADERS` allows to add headers to the generated response,
   as a dictionary.

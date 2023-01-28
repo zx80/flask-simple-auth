@@ -1729,3 +1729,21 @@ def test_shadowing(client):
     assert res.data == b"Test: bla Manitoba"
     res = check(200, client.get("/shadow/bla?blup=Manitoba&blup=Quebec"))
     assert res.data == b"Test: bla Manitoba"
+
+def test_user_errors():
+    # check that user errors are raised again under FSA_KEEP_USER_ERRORS
+    class Oops(Exception):
+        pass
+    app = fsa.Flask("user-errors", FSA_KEEP_USER_ERRORS=True)
+    @app.get("/oops", authorize="ANY")
+    def get_oops():
+        raise Oops("internal error in get_oops!")
+    client = app.test_client()
+    res = check(500, client.get("/oops"))
+    # lengthy flask-generated message
+    assert b"The server encountered an internal error" in res.data
+    # without rethrow
+    app._fsa._keep_user_errors = False
+    res = check(500, client.get("/oops"))
+    # to-the-point fsa-generated message
+    assert b"internal error caught at" in res.data

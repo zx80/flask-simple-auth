@@ -5,9 +5,11 @@ and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 
 ## ? in ?
 
+Add `FSA_KEEP_USER_ERRORS` configuration directive to skip handling
+user errors and let them pass to the WSGI infrastructure instead.
+Add convenient messages when missing an optional module.
 Log internal error traces as errors.
 Simplify optional dependencies.
-Add convenient messages when missing an optional module.
 
 ## 20.11 on 2023-01-26
 
