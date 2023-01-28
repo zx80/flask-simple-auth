@@ -1699,11 +1699,11 @@ class FlaskSimpleAuth:
                     pn = names[p]
                     if typing in self._special_parameters:  # force specials
                         if p in params:
-                            return self._Res(f'unexpected {self.local._params} parameter "{pn}"', 400)
+                            return self._Res(f'unexpected {self._local.params} parameter "{pn}"', 400)
                         kwargs[p] = self._special_parameters[typing]()
                     elif p in kwargs:  # path parameter, or already seen?
                         if p in params:
-                            return self._Res(f'unexpected {self.local._params} parameter "{pn}"', 400)
+                            return self._Res(f'unexpected {self._local.params} parameter "{pn}"', 400)
                         val = kwargs[p]
                         if not isinstance(val, types[p]):
                             try:
@@ -1723,7 +1723,7 @@ class FlaskSimpleAuth:
                                 except Exception as e:
                                     if self._Exc(e):  # pragma: no cover
                                         raise
-                                    return self._Res(f'type error on {self.local._params} parameter "{pn}": "{val}" ({e})', 400)
+                                    return self._Res(f'type error on {self._local.params} parameter "{pn}": "{val}" ({e})', 400)
                             else:
                                 kwargs[p] = val
                         else:
