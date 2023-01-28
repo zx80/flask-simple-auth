@@ -1,12 +1,32 @@
 # Flask Simple Auth Module Documentation
 
-This modules helps handling
-[authentication](#authentication),
-[authorization](#authorization),
-[parameters](#parameters) and provide other
-[utils](#utils) for [Flask](https://flask.palletsprojects.com/), controled from
+This modules helps handling *authentication*, *authorizations*,
+*parameters* and provide other *utils* for
+[Flask](https://flask.palletsprojects.com/), controled from
 Flask configuration and the extended `route` decorator.
 It is designed to help REST application back-end development.
+
+Table of Contents:
+
+- [Examples and Features](#examples)
+  - [Install](#install)
+  - [Initialization](#initialization)
+- [Authentication](#authentication)
+  - [Authentication Schemes](#authentication-schemes)
+  - [Password Management](#password-management)
+- [Authorization](#authorization)
+  - [Group Authorizations](#group-authorizations)
+  - [OAuth Authorizations](#oauth-authorizations)
+  - [Object Authorizations](#object-authorizations)
+- [Parameters](#parameters)
+- [Utils](#utils)
+  - [Reference Object Wrapper](#reference)
+  - [ErrorResponse Class](#errorresponse-class)
+  - [Miscellaneous Configuration directives](#miscellaneous)
+- [License](#license)
+- [Versions](#versions)
+- [See Also](#see-also)
+- [TODO](#todo)
 
 ## Examples and Features
 
