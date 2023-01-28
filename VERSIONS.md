@@ -7,6 +7,7 @@ and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 
 Log internal error traces as errors.
 Simplify optional dependencies.
+Add convenient messages when missing an optional module.
 
 ## 20.11 on 2023-01-26
 

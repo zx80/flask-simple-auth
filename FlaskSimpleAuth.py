@@ -707,7 +707,11 @@ class FlaskSimpleAuth:
         self._cors: bool = conf.get("FSA_CORS", False)
         self._cors_opts: Dict[str, Any] = conf.get("FSA_CORS_OPTS", {})
         if self._cors:
-            from flask_cors import CORS  # type: ignore
+            try:
+                from flask_cors import CORS  # type: ignore
+            except ModuleNotFoundError:  # pragma: no cover
+                log.error("missing module: install FlaskSimpleAuth[cors]")
+                raise
             CORS(self._app, **self._cors_opts)
         self._401_redirect: Optional[str] = conf.get("FSA_401_REDIRECT", None)
         self._url_name: Optional[str] = conf.get("FSA_URL_NAME", "URL" if self._401_redirect else None)
@@ -717,6 +721,7 @@ class FlaskSimpleAuth:
         self._cache_opts: Dict[str, Any] = conf.get("FSA_CACHE_OPTS", {})
         cache = conf.get("FSA_CACHE", _DEFAULT_CACHE)
         if cache:
+            # NOTE no try/except because the dependency is mandatory
             import cachetools as ct
             import CacheToolsUtils as ctu  # type: ignore
 
@@ -746,7 +751,11 @@ class FlaskSimpleAuth:
                 self._cache = ctu.StatsCache(rcache)
                 self._gen_cache = ctu.PrefixedCache
             elif cache in ("memcached", "pymemcache"):
-                import pymemcache as pmc  # type: ignore
+                try:
+                    import pymemcache as pmc  # type: ignore
+                except ModuleNotFoundError:  # pragma: no cover
+                    log.error("missing module: install FlaskSimpleAuth[memcached]")
+                    raise
 
                 if "serde" not in self._cache_opts:
                     self._cache_opts.update(serde=ctu.JsonSerde())
@@ -755,7 +764,11 @@ class FlaskSimpleAuth:
                 self._cache = ctu.StatsMemCached(pmc.Client(**self._cache_opts))
                 self._gen_cache = ctu.PrefixedMemCached
             elif cache == "redis":
-                import redis
+                try:
+                    import redis
+                except ModuleNotFoundError:  # pragma: no cover
+                    log.error("missing module: install FlaskSimpleAuth[redis]")
+                    raise
 
                 ttl = self._cache_opts.pop("ttl", _DEFAULT_CACHE_TTL)
                 rc = redis.Redis(**self._cache_opts)
@@ -887,7 +900,11 @@ class FlaskSimpleAuth:
         #
         if self._auth_has("http-basic", "http-digest", "http-token", "digest"):
             opts = conf.get("FSA_HTTP_AUTH_OPTS", {})
-            import flask_httpauth as fha  # type: ignore
+            try:
+                import flask_httpauth as fha  # type: ignore
+            except ModuleNotFoundError:  # pragma: no cover
+                log.error("missing module: install FlaskSimpleAuth[httpauth]")
+                raise
 
             if "http-basic" in self._auth:
                 self._http_auth = fha.HTTPBasicAuth(realm=self._realm, **opts)
@@ -973,7 +990,11 @@ class FlaskSimpleAuth:
             # passlib context is a pain, you have to know the scheme name to set its
             # round. Ident "2y" is same as "2b" but apache compatible.
             options = conf.get("FSA_PASSWORD_OPTS", _DEFAULT_PASSWORD_OPTS)
-            from passlib.context import CryptContext  # type: ignore
+            try:
+                from passlib.context import CryptContext  # type: ignore
+            except ModuleNotFoundError:  # pragma: no cover
+                log.error("missing module: install FlaskSimpleAuth[passwords]")
+                raise
 
             self._pm = CryptContext(schemes=[scheme], **options)
 
@@ -1227,13 +1248,18 @@ class FlaskSimpleAuth:
         - not used: iat (issued at), nbf (not before), jti (jtw id)
         - scope: optional authorizations (for testing)
         """
-        exp = dt.datetime.now(dt.timezone.utc) + dt.timedelta(minutes=delay)
-        import jwt
+        try:
+            import jwt
+        except ModuleNotFoundError:  # pragma: no cover
+            log.error("missing module: install FlaskSimpleAuth[jwt]")
+            raise
 
+        exp = dt.datetime.now(dt.timezone.utc) + dt.timedelta(minutes=delay)
         token = {"exp": exp, "sub": user, "aud": realm}
         if issuer:
             token.update(iss=issuer)
         if scope:
+            # NOTE Why doesn't JWT use a list there?
             token.update(scope=" ".join(scope))
         return jwt.encode(token, secret, algorithm=self._algo)
 
@@ -1288,7 +1314,11 @@ class FlaskSimpleAuth:
 
     def _get_jwt_token_auth(self, token):
         """Tell whether JWT token is ok: return validated user or None."""
-        import jwt
+        try:
+            import jwt
+        except ModuleNotFoundError:  # pragma: no cover
+            log.error("missing module: install FlaskSimpleAuth[jwt]")
+            raise
 
         try:
             data = jwt.decode(token, self._secret, leeway=self._grace * 60.0,
