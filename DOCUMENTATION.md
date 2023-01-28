@@ -20,22 +20,21 @@ Use `pip install FlaskSimpleAuth` to install the module, or whatever
 other installation method you prefer.
 Depending on options, the following modules should be installed:
 
-- [passlib](https://pypi.org/project/passlib/) for password management,
-  [bcrypt](https://pypi.org/project/bcrypt/)  for password hashing (default algorithm).
+- [ProxyPatternPool](https://pypi.org/project/ProxyPatternPool/) for sharing.
 - [cachetools](https://pypi.org/project/cachetools/) and
   [CacheToolsUtils](https://pypi.org/project/cachetoolsutils/) for caching.
   Possibly [pymemcache](https://pypi.org/project/pymemcache/) and
   [redis](https://pypi.org/project/redis/) for external back-ends.
-- [ProxyPatternPool](https://pypi.org/project/ProxyPatternPool/) for sharing.
+- [passlib](https://pypi.org/project/passlib/) for password management,
+  [bcrypt](https://pypi.org/project/bcrypt/)  for password hashing (default algorithm).
 - [PyJWT](https://pypi.org/project/PyJWT/) for JSON Web Token (JWT),
   [cryptography](https://pypi.org/project/cryptography/) for pubkey-signed JWT.
 - [Flask HTTPAuth](https://github.com/miguelgrinberg/Flask-HTTPAuth)
   for `http-*` authentication options.
 - [Flask CORS](https://github.com/corydolphin/flask-cors) for CORS handling.
 
-These modules are installed with the corresponding options: `passlib`, `bcrypt`,
-`jwt`, `jwt_pubkey`, `memcached`, `redis`, `httpauth`, `cors`:
-`pip install FlaskSimpleAuth[jwt]`.
+These modules are installed with the corresponding options: `passwords`, `jwt`,
+`memcached`, `redis`, `httpauth`, `cors`: `pip install FlaskSimpleAuth[jwt]`.
 
 ## Initialization
 
