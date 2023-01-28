@@ -664,11 +664,12 @@ FSA_CAST = { House: strToHouse, … }
 ```
 
 As a special case, the `Request`, `Session`, `Globals`, `Environ`,
-`CurrentApp` and `CurrentUser` types, when used for parameters, result in the
-`request`, `session`, `g` flask special objects, `environ` WSGI parameter and
-the current authenticated user or the current application to be passed as this
-parameter to the function, allowing to keep a functional programming style by
-hidding away these special proxies.
+`CurrentApp`, `CurrentUser` and `FileStorage` types, when used for parameters,
+result in the `request`, `session`, `g` flask special objects, `environ` WSGI
+parameter, the current authenticated user, the current application or a special
+file parameter (for upload) to be passed as this parameter to the function,
+allowing to keep a functional programming style by hidding away these special
+proxies.
 
 More special parameters can be added with the `special_parameter` app
 function/decorator, by providing a type and a function which is given

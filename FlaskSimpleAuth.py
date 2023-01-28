@@ -40,6 +40,8 @@ from flask import (
     stream_template, stream_template_string, stream_with_context,
 )
 
+from werkzeug.datastructures import FileStorage
+
 import logging
 log = logging.getLogger("fsa")
 
@@ -176,6 +178,12 @@ def _typeof(p: inspect.Parameter):
         return type(p.default)
     else:
         return str
+
+
+def _get_file_storage(p: str) -> FileStorage:
+    if p not in request.files:
+        raise ErrorResponse(f"missing file parameter \"{p}\"", 400)
+    return request.files[p]
 
 
 class Reference(ppp.Proxy):
@@ -320,6 +328,7 @@ class FlaskSimpleAuth:
             Globals: lambda _: g,
             CurrentUser: lambda _: self.current_user(),
             CurrentApp: lambda _: current_app,
+            FileStorage: _get_file_storage,
         }
         self._auth: List[str] = []
         self._http_auth = None
@@ -1694,7 +1703,8 @@ class FlaskSimpleAuth:
                 # NOTE *args and **kwargs are empty before being filled in from HTTP
 
                 # translate request parameters to named function parameters
-                params = self._params()
+                params = self._params()  # HTTP or JSON params
+                fparams = request.files  # FILE params
 
                 for p, typing in typings.items():
                     pn = names[p]
@@ -1739,7 +1749,10 @@ class FlaskSimpleAuth:
                 if keywords:  # handle **kwargs
                     for p in params:
                         if p not in kwargs:
-                            kwargs[p] = params[p]
+                            kwargs[p] = params[p]  # FIXME names[p]?
+                    for p in fparams:
+                        if p not in kwargs:
+                            kwargs[p] = fparams[p]  # FIXME?
                 elif self._mode >= Mode.DEBUG or self._reject_param:
                     # detect unused parameters and warn or reject them
                     for p in params:
@@ -1751,6 +1764,14 @@ class FlaskSimpleAuth:
                                     log.debug(debugParam())
                             if self._reject_param:
                                 return self._Res(f"unexpected {self._local.params} parameter {p} on {path}", 400)
+                    for p in fparams:
+                        if p not in names:
+                            if self._mode >= Mode.DEBUG:
+                                log.debug(f"unexpected file parameter \"{p}\" on \"{path}\"")
+                                if self._mode >= Mode.DEBUG2:
+                                    log.debug(debugParam())
+                            if self._reject_param:
+                                return self._Res(f"unexpected file parameter \"{p}\" on \"{path}", 400)
 
                 return self._safe_call(path, "parameters", fun, *args, **kwargs)
 

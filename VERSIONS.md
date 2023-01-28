@@ -12,6 +12,7 @@ Log internal error traces as errors.
 Simplify optional dependencies.
 Extend special parameter functions with a parameter holding
 the name of the expected parameter.
+Add `FileStorage` special parameter to get file uploads.
 
 ## 20.11 on 2023-01-26
 

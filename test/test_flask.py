@@ -3,6 +3,7 @@
 # FIXME tests are not perfectly isolated as they should be…
 #
 
+import io
 import re
 import pytest
 import App
@@ -1805,3 +1806,44 @@ def test_param_params():
     # OK
     res = check(200, client.post("/log0", data=CALVIN))
     assert b"current user is calvin" == res.data
+
+def test_file_storage():
+
+    def bfile(contents: bytes, name: str = "foo.txt", ct: str = "text/plain"):
+        return (io.BytesIO(contents), name, ct)
+
+    app = fsa.Flask("file-storage", FSA_MODE="debug2")
+
+    @app.post("/upload", authorize="ANY")
+    def post_upload(file: fsa.FileStorage):
+        return f"file={file.filename}", 201
+
+    @app.post("/uploads", authorize="ANY")
+    def post_uploads(**kwargs):
+        return " ".join(sorted(kwargs.keys())), 201
+
+    @app.post("/mix", authorize="ANY")
+    def post_mix(data: int, file: fsa.FileStorage):
+        return f"data={data} file={file.filename}", 201
+
+    client = app.test_client()
+
+    # /upload
+    res = check(201, client.post("/upload", data={"file": bfile(b"hello file!\n")}))
+    assert b"file=foo.txt" in res.data
+    res = check(400, client.post("/upload", data={"stuff": bfile(b"hello stuff!\n")}))
+    assert b"missing file parameter \"file\"" in res.data
+    res = check(400, client.post("/upload", data={"file": bfile(b"hello file!\n"), "stuff": bfile(b"hello stuff!\n")}))
+    assert b"unexpected file parameter \"stuff\"" in res.data
+    res = check(400, client.post("/upload", data={"file": "bla.txt"}))
+    assert b"unexpected http parameter \"file\"" in res.data
+
+    # /uploads
+    res = check(201, client.post("/uploads", data={"foo": bfile(b"hello foo!\n"), "bla": bfile(b"hello bla!\n")}))
+    assert b"bla foo" in res.data
+
+    # /mix
+    res = check(201, client.post("/mix", data={"data": 42, "file": bfile(b"hello file!\n")}))
+    assert b"data=42 file=foo.txt" in res.data
+    res = check(400, client.post("/mix", data={"data": bfile(b"hello data!\n"), "file": bfile(b"hello file!\n")}))
+    assert b"missing parameter \"data\"" in res.data
