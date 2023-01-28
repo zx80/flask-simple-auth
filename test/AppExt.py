@@ -36,7 +36,7 @@ app.config.update(
     FSA_GET_USER_PASS = get_user_pass,
     FSA_USER_IN_GROUP = user_in_group,
     FSA_CAST = { list: lambda s: s.split(" ") },
-    FSA_SPECIAL_PARAMETER = { Special: lambda: "special", },
+    FSA_SPECIAL_PARAMETER = { Special: lambda _: "special", },
     FSA_OBJECT_PERMS = { "xyz": lambda d, i, m: False },
     FSA_TOKEN_RENEWAL = 0.25,
 )

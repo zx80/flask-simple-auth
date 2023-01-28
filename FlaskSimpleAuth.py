@@ -56,7 +56,7 @@ ObjectPermsFun = Callable[[str, Any, Optional[str]], bool]
 PasswordCheckFun = Callable[[str, str], Optional[bool]]
 PasswordQualityFun = Callable[[str], bool]
 CastFun = Callable[[str], object]
-SpecialParameterFun = Callable[[], Any]
+SpecialParameterFun = Callable[[str], Any]
 HeaderFun = Callable[[Response], Optional[str]]
 BeforeRequestFun = Callable[[Request], Optional[Response]]
 AfterRequestFun = Callable[[Response], Response]
@@ -314,12 +314,12 @@ class FlaskSimpleAuth:
             JsonData: json.loads,
         }
         self._special_parameters: Dict[type, SpecialParameterFun] = {
-            Request: lambda: request,
-            Environ: lambda: request.environ,
-            Session: lambda: session,
-            Globals: lambda: g,
-            CurrentUser: lambda: self.current_user(),
-            CurrentApp: lambda: current_app,
+            Request: lambda _: request,
+            Environ: lambda _: request.environ,
+            Session: lambda _: session,
+            Globals: lambda _: g,
+            CurrentUser: lambda _: self.current_user(),
+            CurrentApp: lambda _: current_app,
         }
         self._auth: List[str] = []
         self._http_auth = None
@@ -1701,7 +1701,7 @@ class FlaskSimpleAuth:
                     if typing in self._special_parameters:  # force specials
                         if p in params:
                             return self._Res(f'unexpected {self._local.params} parameter "{pn}"', 400)
-                        kwargs[p] = self._special_parameters[typing]()
+                        kwargs[p] = self._special_parameters[typing](pn)
                     elif p in kwargs:  # path parameter, or already seen?
                         if p in params:
                             return self._Res(f'unexpected {self._local.params} parameter "{pn}"', 400)

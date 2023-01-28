@@ -368,14 +368,14 @@ class Foo(str):
     pass
 
 @app.special_parameter(Foo)
-def foo_parameter_value():
+def foo_parameter_value(_: str):
     return "foo"
 
 class Bla(str):
     pass
 
-app.special_parameter(Bla, lambda: "BAD")
-app.special_parameter(Bla, lambda: "bla")
+app.special_parameter(Bla, lambda _: "BAD")
+app.special_parameter(Bla, lambda _: "bla")
 
 @app.get("/special", authorize=ANY)
 def get_special(foo: Foo, bla: Bla):

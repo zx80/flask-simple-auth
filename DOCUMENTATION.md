@@ -671,11 +671,12 @@ parameter to the function, allowing to keep a functional programming style by
 hidding away these special proxies.
 
 More special parameters can be added with the `special_parameter` app
-function/decorator, by providing a type and a function which returns the
+function/decorator, by providing a type and a function which is given
+the parameter name (usually useless, but not always) and returns the
 expected value. For instance, the `Request` definition corresponds to:
 
 ```python
-app.special_parameter(Request, lambda: request)
+app.special_parameter(Request, lambda _: request)
 ```
 
 The `FSA_SPECIAL_PARAMETER` directive can also be defined as a dictionary

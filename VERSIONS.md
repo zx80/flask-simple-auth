@@ -10,6 +10,8 @@ user errors and let them pass to the WSGI infrastructure instead.
 Add convenient messages when missing an optional module.
 Log internal error traces as errors.
 Simplify optional dependencies.
+Extend special parameter functions with a parameter holding
+the name of the expected parameter.
 
 ## 20.11 on 2023-01-26
 
