@@ -960,9 +960,8 @@ By contrast, *Flask Simple Auth*:
 - check with bad char in parameter names
 - add more examples in the documentation
 - authz/authn instead of authorize/auth?
-- checks: mypy vs pyright vs pyanalyze?
-  mypy is way too slow!
+- rename ANY/ALL/NONE so something more intuitive!
+- checks: mypy vs pyright vs pyanalyze?  mypy is way too slow!
 - param auth parameters should be removed before the call?
 - file upload with a special parameter?
-- installation options to take into account dependencies
-- log backtrace on internal errors!
+- cleanly handle file parameters with `FileStorage`? rename?
