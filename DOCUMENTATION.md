@@ -12,13 +12,16 @@ Table of Contents:
   - [Install](#install)
   - [Initialization](#initialization)
 - [Authentication](#authentication)
-  - [Authentication Schemes](#authentication-schemes) (*httpd*, *basic*, *param*, *token*…)
-  - [Password Management](#password-management) schemes, password quality settings…
+  - [Authentication Schemes](#authentication-schemes)
+    *httpd*, *basic*, *param*, *token*…
+  - [Password Management](#password-management)
+    schemes, password quality settings…
 - [Authorization](#authorization)
   - [Group Authorizations](#group-authorizations)
   - [OAuth Authorizations](#oauth-authorizations)
   - [Object Authorizations](#object-authorizations)
 - [Parameters](#parameters)
+  http, json and file params are managed with type hints.
 - [Utils](#utils)
   - [Reference Object Wrapper](#reference-object-wrapper)
   - [ErrorResponse Class](#errorresponse-class)
