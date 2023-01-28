@@ -1042,7 +1042,7 @@ class FlaskSimpleAuth:
         params = self._params()
         user = params.get(self._login, None)
         if not user:
-            raise self._Err(f"missing login parameter: {self._login}", 401)
+            raise self._Err(f"missing fake login parameter: {self._login}", 401)
         return user
 
     #
@@ -1164,16 +1164,15 @@ class FlaskSimpleAuth:
     #
     def _get_basic_auth(self):
         """Get user with basic authentication."""
-        import base64 as b64
-
         auth = request.headers.get("Authorization", None)
         if not auth:
-            log.debug("AUTH (basic): missing authorization header")
+            log.debug("AUTH (basic): missing Authorization header")
             raise self._Err("missing authorization header", 401)
         if not auth.startswith("Basic "):
             log.debug(f'AUTH (basic): unexpected auth "{auth}"')
-            raise self._Err("unexpected authorization header", 401)
+            raise self._Err("unexpected Authorization header", 401)
         try:
+            import base64 as b64
             user, pwd = b64.b64decode(auth[6:]).decode().split(":", 1)
         except Exception as e:
             log.debug(f'AUTH (basic): error while decoding auth "{auth}" ({e})')
@@ -1193,10 +1192,10 @@ class FlaskSimpleAuth:
         params = self._params()
         user = params.get(self._userp, None)
         if not user:
-            raise self._Err(f"missing login parameter: {self._userp}", 401)
+            raise self._Err(f"missing param login parameter: {self._userp}", 401)
         pwd = params.get(self._passp, None)
         if not pwd:
-            raise self._Err(f"missing password parameter: {self._passp}", 401)
+            raise self._Err(f"missing param password parameter: {self._passp}", 401)
         return self._check_password(user, pwd)
 
     #
@@ -1310,29 +1309,34 @@ class FlaskSimpleAuth:
         """Tell whether FSA token is ok: return validated user or None."""
         # token format: "realm[/issuer]:calvin:20380119031407:<signature>"
         if token.count(":") != 3:
-            log.debug(f"AUTH (fsa token): unexpected token {token}")
+            if self._mode >= Mode.DEBUG:
+                log.debug(f"AUTH (fsa token): unexpected token ({token})")
             raise self._Err(f"invalid fsa token: {token}", 401)
         realm, user, slimit, sig = token.split(":", 3)
         try:
             limit = self._from_timestamp(slimit)
         except Exception as e:
-            log.debug(f"AUTH (fsa token): malformed timestamp {slimit}: {e}")
-            raise self._Err(f"unexpected limit: {slimit}", 401, e)
+            if self._mode >= Mode.DEBUG:
+                log.debug(f"AUTH (fsa token): malformed timestamp {slimit} ({token}): {e}")
+            raise self._Err(f"unexpected fsa token limit: {slimit} ({token})", 401, e)
         # check realm
         if self._issuer and realm != f"{self._realm}/{self._issuer}" or \
            not self._issuer and realm != self._realm:
-            log.debug(f"AUTH (fsa token): unexpected realm {realm}")
-            raise self._Err(f"unexpected realm: {realm}", 401)
+            if self._mode >= Mode.DEBUG:
+                log.debug(f"AUTH (fsa token): unexpected realm {realm} ({token})")
+            raise self._Err(f"unexpected fsa token realm: {realm} ({token})", 401)
         # check signature
         ref = self._cmp_sig(f"{realm}:{user}:{slimit}", self._secret)
         if ref != sig:
-            log.debug("AUTH (fsa token): invalid signature")
-            raise self._Err("invalid fsa auth token signature", 401)
+            if self._mode >= Mode.DEBUG:
+                log.debug("AUTH (fsa token): invalid signature ({token})")
+            raise self._Err("invalid fsa auth token signature ({token})", 401)
         # check limit with a grace time
         now = dt.datetime.now(dt.timezone.utc) - dt.timedelta(minutes=self._grace)
         if now > limit:
-            log.debug("AUTH (fsa token): token {token} has expired")
-            raise self._Err("expired fsa auth token", 401)
+            if self._mode >= Mode.DEBUG:
+                log.debug("AUTH (fsa token): token {token} has expired ({token})")
+            raise self._Err("expired fsa auth token ({token})", 401)
         # all is well
         return user, limit, None
 
@@ -1351,11 +1355,13 @@ class FlaskSimpleAuth:
             scopes = data["scope"].split(" ") if "scope" in data else None
             return data["sub"], exp, scopes
         except jwt.ExpiredSignatureError:
-            log.debug(f"AUTH (jwt token): token {token} has expired")
-            raise self._Err("expired jwt auth token", 401)
+            if self._mode >= Mode.DEBUG:
+                log.debug(f"AUTH (jwt token): token has expired ({token})")
+            raise self._Err("expired jwt auth token: {token}", 401)
         except Exception as e:
-            log.debug(f"AUTH (jwt token): invalid token ({e})")
-            raise self._Err("invalid jwt token", 401, e)
+            if self._mode >= Mode.DEBUG:
+                log.debug(f"AUTH (jwt token): invalid token {token}: {e}")
+            raise self._Err("invalid jwt token: {token}", 401, e)
 
     def _get_any_token_auth_exp(self, token):
         """Return validated user and expiration, cached."""
@@ -1370,8 +1376,9 @@ class FlaskSimpleAuth:
         # must recheck token expiration
         now = dt.datetime.now(dt.timezone.utc) - dt.timedelta(minutes=self._grace)
         if now > exp:
-            log.debug(f"AUTH (token): token {token} has expired")
-            raise self._Err("expired auth token", 401)
+            if self._mode >= Mode.DEBUG:
+                log.debug(f"AUTH (token): token has expired ({token})")
+            raise self._Err("expired auth token: {token}", 401)
         self._local.scopes = scopes
         return user
 
@@ -1445,6 +1452,7 @@ class FlaskSimpleAuth:
 
         # rethrow last auth exception on failure
         if required and not self._local.user:
+            # we do not leak allowed authentication schemes
             raise lae or self._Err("missing authentication", 401)
 
         return self._local.user
