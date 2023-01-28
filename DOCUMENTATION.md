@@ -12,8 +12,8 @@ Table of Contents:
   - [Install](#install)
   - [Initialization](#initialization)
 - [Authentication](#authentication)
-  - [Authentication Schemes](#authentication-schemes)
-  - [Password Management](#password-management)
+  - [Authentication Schemes](#authentication-schemes) (*httpd*, *basic*, *param*, *token*…)
+  - [Password Management](#password-management) schemes, password quality settings…
 - [Authorization](#authorization)
   - [Group Authorizations](#group-authorizations)
   - [OAuth Authorizations](#oauth-authorizations)
