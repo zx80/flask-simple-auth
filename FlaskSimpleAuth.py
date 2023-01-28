@@ -358,7 +358,7 @@ class FlaskSimpleAuth:
         if self._mode >= Mode.DEBUG3:
             log.debug(f"error: {code} {msg}")
         if exc:
-            log.info(exc, exc_info=True)
+            log.error(exc, exc_info=True)
         return ErrorResponse(msg, code)
 
     def _Bad(self, msg: str):
@@ -1056,7 +1056,7 @@ class FlaskSimpleAuth:
                 raise e
             except Exception as e:
                 log.info(f"AUTH (hook) failed: {e}")
-                log.info(e, exc_info=True)
+                log.error(e, exc_info=True)
                 return False
         return False
 
@@ -1383,7 +1383,7 @@ class FlaskSimpleAuth:
                 lae = e
             except Exception as e:  # pragma: no cover
                 log.error(f"internal error in {a} authentication: {e}")
-                log.info(e, exc_info=True)
+                log.error(e, exc_info=True)
 
         # even if not set, we say that the answer is the right one.
         self._local.source = "none"
@@ -1443,7 +1443,7 @@ class FlaskSimpleAuth:
             return self._Res(e.message, e.status)
         except Exception as e:  # something went really wrong
             log.error(f"internal error on {request.method} {request.path}: {e}")
-            log.info(e, exc_info=True)
+            log.error(e, exc_info=True)
             return self._Res(f"internal error caught at {level} on {path}", self._server_error)
 
     def _authenticate(self, path, auth=None):
@@ -1535,7 +1535,7 @@ class FlaskSimpleAuth:
                         return self._Res(e.message, e.status)
                     except Exception as e:
                         log.error(f"user_in_group failed: {e}")
-                        log.info(e, exc_info=True)
+                        log.error(e, exc_info=True)
                         return self._Res("internal error in user_in_group", self._server_error)
                     if not isinstance(ok, bool):
                         log.error(f"type error in user_in_group: {ok}: {type(ok)}, must return a boolean")
@@ -1624,7 +1624,7 @@ class FlaskSimpleAuth:
                             try:
                                 kwargs[p] = typing(val)
                             except Exception as e:
-                                log.info(e, exc_info=True)
+                                log.error(e, exc_info=True)
                                 return self._Res(f'type error on path parameter "{p}": "{val}" ({e})', 400)
                     else:  # parameter not yet encountered
                         if pn in params:
@@ -1635,7 +1635,7 @@ class FlaskSimpleAuth:
                                 try:
                                     kwargs[p] = typing(val)
                                 except Exception as e:
-                                    log.info(e, exc_info=True)
+                                    log.error(e, exc_info=True)
                                     return self._Res(f'type error on parameter "{pn}": "{val}" ({e})', 400)
                             else:
                                 kwargs[p] = val
@@ -1713,7 +1713,7 @@ class FlaskSimpleAuth:
                         return self._Res(e.message, e.status)
                     except Exception as e:
                         log.error(f"internal error on {request.method} {request.path} permission {perm} check: {e}")
-                        log.info(e, exc_info=True)
+                        log.error(e, exc_info=True)
                         return self._Res("internal error in permission check", self._server_error)
 
                     if ok is None:
