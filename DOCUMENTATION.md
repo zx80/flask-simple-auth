@@ -8,7 +8,7 @@ It is designed to help REST application back-end development.
 
 Table of Contents:
 
-- [Examples and Features](#examples)
+- [Examples and Features](#examples-and-features)
   - [Install](#install)
   - [Initialization](#initialization)
 - [Authentication](#authentication)
@@ -20,9 +20,9 @@ Table of Contents:
   - [Object Authorizations](#object-authorizations)
 - [Parameters](#parameters)
 - [Utils](#utils)
-  - [Reference Object Wrapper](#reference)
+  - [Reference Object Wrapper](#reference-object-wrapper)
   - [ErrorResponse Class](#errorresponse-class)
-  - [Miscellaneous Configuration directives](#miscellaneous)
+  - [Miscellaneous Configuration directives](#miscellaneous-configuration-directives)
 - [License](#license)
 - [Versions](#versions)
 - [See Also](#see-also)
