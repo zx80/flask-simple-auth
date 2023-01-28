@@ -1130,9 +1130,9 @@ def test_bads():
     check(200, client.get("/youpi", data={"i": 5432}))
     check(200, client.get("/youpi", json={"i": 5432}))
     res = check(400, client.get("/youpi", data={"i": 5432, "j": "oops!"}))
-    assert b"unexpected http parameter j" in res.data
+    assert b"unexpected http parameter \"j\"" in res.data
     res = check(400, client.get("/youpi", json={"i": 5432, "h": "oops!"}))
-    assert b"unexpected json parameter h" in res.data
+    assert b"unexpected json parameter \"h\"" in res.data
 
 # per-object perms
 def test_object_perms(client):

@@ -1759,11 +1759,11 @@ class FlaskSimpleAuth:
                         # NOTE we silently ignore special authentication params
                         if p not in names and p not in self._auth_params:
                             if self._mode >= Mode.DEBUG:
-                                log.debug(f"unexpected {self._local.params} parameter {p} on {path}")
+                                log.debug(f"unexpected {self._local.params} parameter \"{p}\" on \"{path}\"")
                                 if self._mode >= Mode.DEBUG2:
                                     log.debug(debugParam())
                             if self._reject_param:
-                                return self._Res(f"unexpected {self._local.params} parameter {p} on {path}", 400)
+                                return self._Res(f"unexpected {self._local.params} parameter \"{p}\" on \"{path}\"", 400)
                     for p in fparams:
                         if p not in names:
                             if self._mode >= Mode.DEBUG:
