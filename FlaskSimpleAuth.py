@@ -641,6 +641,7 @@ class FlaskSimpleAuth:
         elif local == "thread":
             from threading import local as Local  # type: ignore
         elif local == "werkzeug":
+            # FIXME should handle various *let stuff
             from werkzeug.local import Local  # type: ignore
         else:
             raise self._Bad(f"unexpected FSA_LOCAL value: {local}")
