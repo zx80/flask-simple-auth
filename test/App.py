@@ -16,14 +16,22 @@ log = logging.getLogger("app")
 import FlaskSimpleAuth as fsa
 from FlaskSimpleAuth import Flask, jsonify, ANY, ALL, NONE, path, string, \
     Request, Session, Globals, Environ, CurrentUser, CurrentApp
-app = Flask("Test", debug=True, FSA_LOGGING_LEVEL=logging.DEBUG)
+
+app = Flask(
+    "Test",
+    debug=True,
+    FSA_MODE="debug2",
+    FSA_LOGGING_LEVEL=logging.DEBUG
+)
 app.add_group(ADMIN, WRITE, READ)
 
 #
 # AUTH
 #
 app.config.update(
-    FSA_AUTH = "fake",
+    # FSA_AUTH = "fake",
+    FSA_AUTH=["token", "fake", "basic", "param"],
+    # FSA_TOKEN_CARRIER="param",
     FSA_GET_USER_PASS = get_user_pass,
     FSA_USER_IN_GROUP = user_in_group,
 )

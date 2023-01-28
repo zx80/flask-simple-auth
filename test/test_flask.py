@@ -89,6 +89,7 @@ def push_auth(app, auth, token = None, carrier = None, name = None):
     app_saved_auth.update(a = app._auth, t = app._token, c = app._carrier, n = app._name)
     app._auth = [auth] if isinstance(auth, str) else auth
     app._token, app._carrier, app._name = token, carrier, name
+    app._auth_params.add(name)
 
 def pop_auth(app):
     d = app_saved_auth
@@ -433,7 +434,7 @@ def test_password_check(client):
     res = check(401, client.get("/read", data={"USER": "dad", "PASS": "bad-dad-password"}))
     assert b"invalid password for" in res.data
     res = check(401, client.get("/read", data={"USER": "dad"}))
-    assert b"missing password parameter" in res.data
+    assert b"missing param password parameter" in res.data
     pop_auth(fsa)
     # basic, through requests
     push_auth(fsa, ["basic"])
@@ -891,6 +892,7 @@ def test_per_route(client):
     PARAM = {"USER": "calvin", "PASS": App.UP["calvin"]}
     FAKE = {"LOGIN": "calvin"}
     token = app.create_token("calvin")
+    log.debug(f"calvin token: {token}")
     TOKEN = {"Authorization": f"Bearer {token}"}
     # basic
     log.debug("trying: basic")
@@ -1092,7 +1094,7 @@ def bad4():
 def test_bad_4(bad4):
     check(200, bad4.get("/ok"))
     res = check(500, bad4.get("/any"))
-    assert b"internal error caught at no authorization on /any" == res.data
+    assert b"internal error caught at no params on /any" == res.data
     check(404, bad4.get("/no-such-route"))
 
 
@@ -1651,7 +1653,7 @@ def test_error_response():
     app.config.update(FSA_ERROR_RESPONSE="json", FSA_SECURE=False)
     app._fsa.initialize()
     # check that we take control of flask errors
-    app = fsa.Flask("not-implemented", FSA_ERROR_RESPONSE="json:bad")
+    app = fsa.Flask("not-implemented", FSA_LOGGING_LEVEL=logging.INFO, FSA_ERROR_RESPONSE="json:bad")
     @app.get("/implemented", authorize="ANY")
     def get_implemented():
         raise ErrorResponse("oops", 418)

@@ -898,6 +898,7 @@ class FlaskSimpleAuth:
         if "fake" in self._auth:
             self._auth_params.add(self._login)
         if "token" in self._auth and self._carrier == "param":
+            assert isinstance(self._name, str)
             self._auth_params.add(self._name)
         #
         # authentication and authorization hooks
