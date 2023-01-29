@@ -97,7 +97,7 @@ following the [OAuth2](https://oauth.net/2/) approach.
 [**Parameters**](DOCUMENTATION.md#parameters) expected in the request can be
 declared, their presence and type checked, and they are added automatically as
 named parameters to route functions, skipping the burden of checking them in
-typical flask functions.
+typical flask functions. The module manages *http*, *json* and *files*.
 In practice, importing Flask's `request` global variable is not necessary anymore.
 The philosophy is that a REST API entry point is a function call through HTTP,
 so the route definition should be a function, avoiding relying on magic globals.
