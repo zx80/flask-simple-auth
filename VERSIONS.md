@@ -3,6 +3,10 @@
 Sources are available on [GitHub](https://github.com/zx80/flask-simple-auth)
 and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 
+## ?
+
+Improve `demo` with an upload example.
+
 ## 21.0 on 2023-01-29
 
 Add `FSA_KEEP_USER_ERRORS` configuration directive to skip handling

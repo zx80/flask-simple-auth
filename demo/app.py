@@ -1,5 +1,6 @@
 # FlaskSimpleAuth Demo
 
+import uuid
 import logging
 logging.basicConfig()
 
@@ -39,10 +40,18 @@ def get_now():
 def get_who():
     return json(app.get_user(required=False)), 200
 
+
+# POST /upload (file): upload a file!
+@app.post("/upload", authorize="ALL")
+def post_upload(file: fsa.FileStorage):
+    filename = str(uuid.uuid1()) + ".tmp"
+    file.save(app.config["UPLOAD_DIR"] + "/" + filename)
+    return f"{file.filename} saved as {filename}", 201
+
+
 #
 # then register some blueprints
 #
-
 
 # stuff management by users
 from stuff import stuff

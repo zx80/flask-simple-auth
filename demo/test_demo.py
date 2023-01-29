@@ -8,6 +8,7 @@ from app import app
 import base64
 import json
 import jwt
+import re
 
 import logging
 
@@ -312,3 +313,9 @@ def test_jwt_oauth(client):
     check(403, client.delete("/oauth", headers=CALVIN_RW))
     # final request detroys test user "calvin"
     check(204, client.delete("/oauth", headers=CALVIN_RWD))
+
+
+def test_upload(client):
+    import io
+    res = check(201, client.post("/upload", data={"file": (io.BytesIO(b"Hello World!\n"), "hello.txt")}, headers=FOO_BASIC))
+    assert re.search(r" [0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}\.tmp", str(res.data))

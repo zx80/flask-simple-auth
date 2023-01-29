@@ -9,6 +9,7 @@ DB	= db
 
 .PHONY: clean clean.venv
 clean: stop
+	$(RM) *.tmp
 	$(RM) -r __pycache__ .mypy_cache
 	$(RM) stuff.db stuff.pg app.pid app.log users.sql
 	pkill flask || true
