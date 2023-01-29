@@ -20,10 +20,10 @@ Table of Contents:
   [Objects](#object-authorizations)…
 - [Parameters](#parameters)
   *http*, *json* and *file* parameters are managed with type hints.
-- [Utils](#utils)
-  - [`Reference` Object Wrapper](#reference-object-wrapper)
-  - [`ErrorResponse` Class](#errorresponse-class)
-  - [Miscellaneous directives](#miscellaneous-configuration-directives)
+- [Utils](#utils) such as
+  [`Reference` Wrapper](#reference-object-wrapper),
+  [`ErrorResponse` Class](#errorresponse-class) and
+  [Miscellaneous directives](#miscellaneous-configuration-directives)
 - [License](#license)
 - [Versions](#versions)
 - [See Also](#see-also)
