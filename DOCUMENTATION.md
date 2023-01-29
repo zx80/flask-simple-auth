@@ -6,7 +6,7 @@ This modules helps handling *authentication*, *authorizations*,
 Flask configuration and the extended `route` decorator.
 It is designed to help REST application back-end development.
 
-Table of Contents:
+**Table of Contents**
 
 - [Examples and Features](#examples-and-features),
   [Installation](#install) and
