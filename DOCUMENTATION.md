@@ -16,10 +16,10 @@ Table of Contents:
     *httpd*, *basic*, *param*, *token*…
   - [Password Management](#password-management)
     schemes, password quality settings…
-- [Authorization](#authorization)
-  - [Group Authorizations](#group-authorizations)
-  - [OAuth Authorizations](#oauth-authorizations)
-  - [Object Authorizations](#object-authorizations)
+- [Authorization](#authorization) with
+  [Groups](#group-authorizations),
+  [OAuth](#oauth-authorizations) and about
+  [Objects](#object-authorizations)…
 - [Parameters](#parameters)
   http, json and file params are managed with type hints.
 - [Utils](#utils)
