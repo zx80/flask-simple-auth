@@ -23,15 +23,13 @@ Table of Contents:
 - [Utils](#utils) such as
   [`Reference` Wrapper](#reference-object-wrapper),
   [`ErrorResponse` Class](#errorresponse-class) and
-  [Miscellaneous directives](#miscellaneous-configuration-directives)
-- [License](#license)
-- [Versions](#versions)
+  [Miscellaneous directives](#miscellaneous-configuration-directives).
 - [See Also](#see-also)
   [Flask-Security](#flask-security),
   [Flask-RESTful](#flask-restful),
   [Flask-AppBuilder](#flask-appbuilder) and
-  [others](#others)
-- [TODO](#todo)
+  [others](#others).
+- [License](#license), [Versions](#versions), [TODO](#todo).
 
 ## Examples and Features
 
@@ -874,25 +872,6 @@ Web-application oriented features:
   [`flask_cors`](https://pypi.org/project/Flask-Cors/) Flask extension
   which must be available if the feature is enabled.
 
-## License
-
-This software is *public domain*.
-
-All software has bug, this is software, hence…
-Beware that you may lose your hairs or your friends because of it.
-If you like it, feel free to send a postcard to the author.
-
-## Versions
-
-[Sources](https://github.com/zx80/flask-simple-auth),
-[documentation](https://zx80.github.io/flask-simple-auth/) and
-[issues](https://github.com/zx80/flask-simple-auth/issues)
-are hosted on [GitHub](https://github.com).
-Install [package](https://pypi.org/project/FlaskSimpleAuth/) from
-[PyPI](https://pypi.org/).
-
-See [all versions](VERSIONS.md).
-
 ## See Also
 
 ### Flask-Security
@@ -970,6 +949,25 @@ By contrast, *Flask Simple Auth*:
   [Ruby Rails](https://rubyonrails.org/),
   [Rust Rocket](https://rocket.rs/),
   [Scala Play](https://www.playframework.com/)…
+
+## License
+
+This software is *public domain*.
+
+All software has bug, this is software, hence…
+Beware that you may lose your hairs or your friends because of it.
+If you like it, feel free to send a postcard to the author.
+
+## Versions
+
+[Sources](https://github.com/zx80/flask-simple-auth),
+[documentation](https://zx80.github.io/flask-simple-auth/) and
+[issues](https://github.com/zx80/flask-simple-auth/issues)
+are hosted on [GitHub](https://github.com).
+Install [package](https://pypi.org/project/FlaskSimpleAuth/) from
+[PyPI](https://pypi.org/).
+
+See [all versions](VERSIONS.md).
 
 ## TODO
 
