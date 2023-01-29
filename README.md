@@ -13,8 +13,8 @@ Flask configuration and the extended `route` decorator.
 ![Badges](https://img.shields.io/badge/badges-8-informational)
 ![License](https://img.shields.io/pypi/l/flasksimpleauth?style=flat)
 
-**Contents:** [Example](#example), [Features](#features), [Documentation](#documentation)
-[License](#license), [Versions](#versions).
+**Contents:** [Example](#example), [Features](#features),
+[Documentation](#documentation), [License](#license), [Versions](#versions).
 
 ## Example
 
