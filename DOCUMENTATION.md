@@ -9,11 +9,11 @@ It is designed to help REST application back-end development.
 Table of Contents:
 
 - [Examples and Features](#examples-and-features)
-  - [Install](#install)
-  - [Initialization](#initialization)
+  [Installation](#install) and
+  [Initialization](#initialization)
 - [Authentication](#authentication)
-  - [Schemes](#authentication-schemes) such as *httpd*, *basic*, *param*, *token*…
-  - [Password Management](#password-management) schemes, password quality settings…
+  [Schemes](#authentication-schemes) (*basic*, *param*, *token*…) and
+  [Password Management](#password-management)
 - [Authorizations](#authorization) with
   [Groups](#group-authorizations),
   [OAuth](#oauth-authorizations) and about
