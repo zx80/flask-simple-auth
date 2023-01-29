@@ -21,8 +21,8 @@ Table of Contents:
 - [Parameters](#parameters)
   *http*, *json* and *file* parameters are managed with type hints.
 - [Utils](#utils) such as
-  [`Reference` Wrapper](#reference-object-wrapper),
-  [`ErrorResponse` Class](#errorresponse-class) and
+  [`Reference` wrapper](#reference-object-wrapper),
+  [`ErrorResponse` class](#errorresponse-class) and
   [Miscellaneous directives](#miscellaneous-configuration-directives).
 - [See Also](#see-also)
   [Flask-Security](#flask-security),
