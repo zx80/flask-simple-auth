@@ -66,7 +66,6 @@ clean.venv: clean
 venv:
 	$(PYTHON) -m venv venv
 	$(PIP) install -U pip
-	$(PIP) install -e .
 	$(PIP) install -r dev-requirements.txt
 
 .PHONY: venv.dev

@@ -1,3 +1,5 @@
+-e file:.
+#
 wheel
 # tools
 mypy
