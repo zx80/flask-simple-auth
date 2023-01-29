@@ -8,7 +8,7 @@ It is designed to help REST application back-end development.
 
 Table of Contents:
 
-- [Examples and Features](#examples-and-features)
+- [Examples and Features](#examples-and-features),
   [Installation](#install) and
   [Initialization](#initialization)
 - [Authentication](#authentication)
