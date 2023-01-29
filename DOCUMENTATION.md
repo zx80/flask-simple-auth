@@ -1,4 +1,4 @@
-# Flask Simple Auth Module Documentation
+# FlaskSimpleAuth Module Documentation
 
 This modules helps handling *authentication*, *authorizations*,
 *parameters* and provide other *utils* for
