@@ -1826,6 +1826,10 @@ def test_file_storage():
     def post_mix(data: int, file: fsa.FileStorage):
         return f"data={data} file={file.filename}", 201
 
+    @app.post("/empty", authorize="ANY")
+    def post_empty():
+        return "nothing", 200
+
     client = app.test_client()
 
     # /upload
@@ -1847,3 +1851,9 @@ def test_file_storage():
     assert b"data=42 file=foo.txt" in res.data
     res = check(400, client.post("/mix", data={"data": bfile(b"hello data!\n"), "file": bfile(b"hello file!\n")}))
     assert b"missing parameter \"data\"" in res.data
+
+    # /empty
+    res = check(200, client.post("/empty"))
+    assert b"nothing" in res.data
+    res = check(400, client.post("/empty", data={"foo": bfile(b"hello foo!\n"), "bla": bfile(b"hello bla!\n")}))
+    assert b"unexpected file parameters: bla foo" in res.data

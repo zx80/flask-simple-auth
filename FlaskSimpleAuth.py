@@ -1650,6 +1650,9 @@ class FlaskSimpleAuth:
                         if not sparams.issubset(self._auth_params):
                             bads = ' '.join(sorted(list(sparams - self._auth_params)))
                             return f"unexpected {self._local.params} parameters: {bads}", 400
+                    fparams = request.files
+                    if fparams:
+                        return f"unexpected file parameters: {' '.join(sorted(fparams.keys()))}", 400
 
                 return self._safe_call(path, "no params", fun, *args, **kwargs)
 
