@@ -13,6 +13,7 @@ Simplify optional dependencies.
 Extend special parameter functions with a parameter holding
 the name of the expected parameter.
 Add `FileStorage` special parameter to get file uploads.
+Add *manual* table of contents to `README.md` and `DOCUMENTATION.md`.
 
 ## 20.11 on 2023-01-26
 
