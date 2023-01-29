@@ -45,7 +45,7 @@ def get_who():
 @app.post("/upload", authorize="ALL")
 def post_upload(file: fsa.FileStorage):
     filename = str(uuid.uuid1()) + ".tmp"
-    file.save(app.config["UPLOAD_DIR"] + "/" + filename)
+    file.save(app.config["APP_UPLOAD_DIR"] + "/" + filename)
     return f"{file.filename} saved as {filename}", 201
 
 
