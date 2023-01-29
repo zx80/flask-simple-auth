@@ -10,10 +10,10 @@ Table of Contents:
 
 - [Examples and Features](#examples-and-features),
   [Installation](#install) and
-  [Initialization](#initialization)
+  [Initialization](#initialization).
 - [Authentication](#authentication)
   [Schemes](#authentication-schemes) (*basic*, *param*, *token*…) and
-  [Password Management](#password-management)
+  [Password Management](#password-management).
 - [Authorizations](#authorization) with
   [Groups](#group-authorizations),
   [OAuth](#oauth-authorizations) and about
