@@ -12,23 +12,25 @@ Table of Contents:
   - [Install](#install)
   - [Initialization](#initialization)
 - [Authentication](#authentication)
-  - [Authentication Schemes](#authentication-schemes)
-    *httpd*, *basic*, *param*, *token*…
-  - [Password Management](#password-management)
-    schemes, password quality settings…
-- [Authorization](#authorization) with
+  - [Schemes](#authentication-schemes) such as *httpd*, *basic*, *param*, *token*…
+  - [Password Management](#password-management) schemes, password quality settings…
+- [Authorizations](#authorization) with
   [Groups](#group-authorizations),
   [OAuth](#oauth-authorizations) and about
   [Objects](#object-authorizations)…
 - [Parameters](#parameters)
-  http, json and file params are managed with type hints.
+  *http*, *json* and *file* parameters are managed with type hints.
 - [Utils](#utils)
-  - [Reference Object Wrapper](#reference-object-wrapper)
-  - [ErrorResponse Class](#errorresponse-class)
-  - [Miscellaneous Configuration directives](#miscellaneous-configuration-directives)
+  - [`Reference` Object Wrapper](#reference-object-wrapper)
+  - [`ErrorResponse` Class](#errorresponse-class)
+  - [Miscellaneous directives](#miscellaneous-configuration-directives)
 - [License](#license)
 - [Versions](#versions)
 - [See Also](#see-also)
+  [Flask-Security](#flask-security),
+  [Flask-RESTful](#flask-restful),
+  [Flask-AppBuilder](#flask-appbuilder) and
+  [others](#others)
 - [TODO](#todo)
 
 ## Examples and Features
@@ -893,6 +895,8 @@ See [all versions](VERSIONS.md).
 
 ## See Also
 
+### Flask-Security
+
 [Flask-Security](https://github.com/Flask-Middleware/flask-security/) is a
 feature-full web-oriented authentication and authorization framework based on
 an ORM.
@@ -914,6 +918,8 @@ By contrast, *Flask Simple Auth*:
 - is much smaller (about 1/10th, ignoring dependencies), so probably it does
   less things!
 
+### Flask-RESTful
+
 [Flask-RESTful](https://github.com/flask-restful/flask-restful) is a
 Flask extension designed to ease developping a REST API by associating
 classes to routes, with class methods to handle each HTTP method.
@@ -924,6 +930,8 @@ By contrast, *Flask Simple Auth*:
   including handling *404* transparently.
 Our [implementation](demo/todos-fsa.py) of the doc [example](demo/todos-frf.py)
 is shorter (32 vs 40 cloc), elegant and featureful.
+
+### Flask-AppBuilder
 
 [Flask-AppBuilder](https://github.com/dpgaspar/Flask-AppBuilder) is
 yet another Flask web-application framework on top of Flask and
@@ -938,10 +946,12 @@ By contrast, *Flask Simple Auth*:
   and specially formatted comments.
 - offers an integrated authorization scheme linked to application objects.
 
+### Others
+
 [FlaskSimpleAuth](https://github.com/zx80/flask-simple-auth) is a
 [Flask](https://flask.palletsprojects.com/) extension, however:
 - you do not have to use Flask for your back-end!
-  Other HTTP frameworks in the Python ecosystem include:
+  Other (less popular) HTTP frameworks in the Python ecosystem include:
   [CherryPy](https://cherrypy.dev/),
   [Django](https://www.djangoproject.com/),
   [Falcon](http://falconframework.org/),
@@ -951,11 +961,15 @@ By contrast, *Flask Simple Auth*:
 - you do not have to use Python for your back-end!
   Other languages with more-or-less convenient HTTP frameworks include:
   [C Ulfius](https://github.com/babelouest/ulfius),
+  [C++ Oat++](https://oatpp.io/),
+  [C# ASP.NET](https://dotnet.microsoft.com/apps/aspnet),
   [Java Spring](https://spring.io/),
   [JavaScript Node.js](https://nodejs.org/),
+  [Perl Dancer2](https://github.com/PerlDancer/Dancer2/),
   [PHP Lumen](https://lumen.laravel.com/),
   [Ruby Rails](https://rubyonrails.org/),
-  [Rust Rocket](https://rocket.rs/)…
+  [Rust Rocket](https://rocket.rs/),
+  [Scala Play](https://www.playframework.com/)…
 
 ## TODO
 
