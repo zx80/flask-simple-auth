@@ -897,46 +897,74 @@ def test_per_route(client):
     TOKEN = {"Authorization": f"Bearer {token}"}
     # basic
     log.debug("trying: basic")
-    check(200, client.get("/auth/basic", headers=BASIC))
+    res = check(200, client.get("/auth/basic", headers=BASIC))
+    assert "basic auth: calvin" in res.text
+    assert "calvin (basic)" in res.headers["FSA-User"]
     check(401, client.get("/auth/basic", headers=TOKEN))
     check(401, client.get("/auth/basic", data=PARAM))
     check(401, client.get("/auth/basic", json=PARAM))
     check(401, client.get("/auth/basic", data=FAKE))
     check(401, client.get("/auth/basic", json=FAKE))
     # param
-    check(200, client.get("/auth/param", data=PARAM))
-    check(200, client.get("/auth/param", json=PARAM))
+    res = check(200, client.get("/auth/param", data=PARAM))
+    assert "param auth: calvin" in res.text
+    assert "calvin (param)" in res.headers["FSA-User"]
+    res = check(200, client.get("/auth/param", json=PARAM))
+    assert "param auth: calvin" in res.text
+    assert "calvin (param)" in res.headers["FSA-User"]
     check(401, client.get("/auth/param", headers=BASIC))
     check(401, client.get("/auth/param", headers=TOKEN))
     check(401, client.get("/auth/param", data=FAKE))
     check(401, client.get("/auth/param", json=FAKE))
     # password
-    check(200, client.get("/auth/password", headers=BASIC))
-    check(200, client.get("/auth/password", data=PARAM))
-    check(200, client.get("/auth/password", json=PARAM))
+    res = check(200, client.get("/auth/password", headers=BASIC))
+    assert "password auth: calvin" in res.text
+    assert "calvin (password)" in res.headers["FSA-User"]
+    res = check(200, client.get("/auth/password", data=PARAM))
+    assert "password auth: calvin" in res.text
+    assert "calvin (password)" in res.headers["FSA-User"]
+    res = check(200, client.get("/auth/password", json=PARAM))
+    assert "password auth: calvin" in res.text
+    assert "calvin (password)" in res.headers["FSA-User"]
     check(401, client.get("/auth/password", headers=TOKEN))
     check(401, client.get("/auth/password", data=FAKE))
     check(401, client.get("/auth/password", json=FAKE))
     # token
-    check(200, client.get("/auth/token", headers=TOKEN))
+    res = check(200, client.get("/auth/token", headers=TOKEN))
+    assert "token auth: calvin" in res.text
+    assert "calvin (token)" in res.headers["FSA-User"]
     check(401, client.get("/auth/token", data=PARAM))
     check(401, client.get("/auth/token", json=PARAM))
     check(401, client.get("/auth/token", headers=BASIC))
     check(401, client.get("/auth/token", data=FAKE))
     check(401, client.get("/auth/token", json=FAKE))
     # fake
-    check(200, client.get("/auth/fake", data=FAKE))
-    check(200, client.get("/auth/fake", json=FAKE))
+    res = check(200, client.get("/auth/fake", data=FAKE))
+    assert "fake auth: calvin" in res.text
+    assert "calvin (fake)" in res.headers["FSA-User"]
+    res = check(200, client.get("/auth/fake", json=FAKE))
+    assert "fake auth: calvin" in res.text
+    assert "calvin (fake)" in res.headers["FSA-User"]
     check(401, client.get("/auth/fake", headers=TOKEN))
     check(401, client.get("/auth/fake", data=PARAM))
     check(401, client.get("/auth/fake", json=PARAM))
     check(401, client.get("/auth/fake", headers=BASIC))
     # fake, token, param
-    check(200, client.get("/auth/ftp", data=FAKE))
-    check(200, client.get("/auth/ftp", json=FAKE))
-    check(200, client.get("/auth/ftp", headers=TOKEN))
-    check(200, client.get("/auth/ftp", data=PARAM))
-    check(200, client.get("/auth/ftp", json=PARAM))
+    res = check(200, client.get("/auth/ftp", data=FAKE))
+    assert "ftp auth: calvin" in res.text
+    assert "calvin (fake)" in res.headers["FSA-User"]
+    res = check(200, client.get("/auth/ftp", json=FAKE))
+    assert "ftp auth: calvin" in res.text
+    assert "calvin (fake)" in res.headers["FSA-User"]
+    res = check(200, client.get("/auth/ftp", headers=TOKEN))
+    assert "ftp auth: calvin" in res.text
+    assert "calvin (token)" in res.headers["FSA-User"]
+    res = check(200, client.get("/auth/ftp", data=PARAM))
+    assert "ftp auth: calvin" in res.text
+    assert "calvin (param)" in res.headers["FSA-User"]
+    res = check(200, client.get("/auth/ftp", json=PARAM))
+    assert "ftp auth: calvin" in res.text
+    assert "calvin (param)" in res.headers["FSA-User"]
     check(401, client.get("/auth/ftp", headers=BASIC))
 
 def test_bad_app():

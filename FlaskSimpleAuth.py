@@ -1458,7 +1458,8 @@ class FlaskSimpleAuth:
                 self._Exc(e)
 
         # even if not set, we say that the answer is the right one.
-        self._local.source = "none"
+        if not self._local.source:
+            self._local.source = "none"
 
         # rethrow last auth exception on failure
         if required and not self._local.user:
