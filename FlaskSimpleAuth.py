@@ -508,7 +508,7 @@ class FlaskSimpleAuth:
     def _add_fsa_headers(self, res: Response):
         """Add convenient FSA-related headers."""
         res.headers["FSA-Request"] = f"{request.method} {request.path}"
-        res.headers["FSA-User"] = self.current_user()
+        res.headers["FSA-User"] = f"{self.current_user()} (self._local.source)"
         delay = dt.datetime.timestamp(dt.datetime.now()) - self._local.start
         res.headers["FSA-Delay"] = f"{delay:.6f}"
         return res
