@@ -942,6 +942,7 @@ By contrast, *Flask Simple Auth*:
   [C Ulfius](https://github.com/babelouest/ulfius),
   [C++ Oat++](https://oatpp.io/),
   [C# ASP.NET](https://dotnet.microsoft.com/apps/aspnet),
+  [Go Gin](https://github.com/gin-gonic/gin),
   [Java Spring](https://spring.io/),
   [JavaScript Node.js](https://nodejs.org/),
   [Perl Dancer2](https://github.com/PerlDancer/Dancer2/),
