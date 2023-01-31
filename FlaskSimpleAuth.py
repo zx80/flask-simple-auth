@@ -1693,7 +1693,7 @@ class FlaskSimpleAuth:
                         isinstance("", t)
                     except TypeError as e:
                         raise self._Bad(f"parameter {n} type {t} is not (yet) supported: {e}", where)
-                    except Exception:  # pragma: no cover
+                    except Exception as e:  # pragma: no cover
                         raise self._Bad(f"parameter {n} type {t} is not (yet) supported: {e}", where)
                     if not callable(typings[n]) or typings[n].__module__ == "typing":
                         raise self._Bad(f"parameter {n} type cast {typings[n]} is not callable", where)
