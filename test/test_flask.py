@@ -5,6 +5,8 @@
 
 import io
 import re
+from typing import List
+
 import pytest
 import App
 from App import app
@@ -1885,3 +1887,23 @@ def test_file_storage():
     assert b"nothing" in res.data
     res = check(400, client.post("/empty", data={"foo": bfile(b"hello foo!\n"), "bla": bfile(b"hello bla!\n")}))
     assert b"unexpected file parameters: bla foo" in res.data
+
+
+def test_param_types():
+    app = fsa.Flask("param-types", FSA_MODE="debug")
+
+    try:
+        @app.post("/list-str", authorize="ANY")
+        def post_list_str(ls: List[str]):
+            return json(len(ls)), 201
+        assert False, "should raise a config error"
+    except ConfigError as e:
+        assert "not (yet) supported" in str(e)
+
+    try:
+        @app.post("/list", authorize="ANY")
+        def post_list(l: List):
+            return json(len(l)), 201
+        assert False, "should raise a config error"
+    except ConfigError as e:
+        assert "is not callable" in str(e)

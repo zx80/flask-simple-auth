@@ -3,9 +3,11 @@
 Sources are available on [GitHub](https://github.com/zx80/flask-simple-auth)
 and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 
-## ?
+## ? on ?
 
 Improve `demo` with an upload example.
+Fix display of authentication source in `dev` mode.
+Better check parameter types.
 
 ## 21.0 on 2023-01-29
 

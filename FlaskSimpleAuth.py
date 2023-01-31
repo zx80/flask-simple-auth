@@ -377,8 +377,10 @@ class FlaskSimpleAuth:
             log.debug(f"error: {code} {msg}")
         return self._Exc(exc) or ErrorResponse(msg, code)
 
-    def _Bad(self, msg: str):
+    def _Bad(self, msg: str, misc: str = None):
         """Build and trace an exception on a bad configuration."""
+        if misc:
+            msg += "\n" + misc
         log.critical(msg)
         return ConfigError(msg)
 
@@ -1506,7 +1508,7 @@ class FlaskSimpleAuth:
     #  _oauth_authz: check OAuth scope authorization
     #  _group_authz: check group authorization
     #     _no_authz: validate that no authorization was needed
-    #   _parameters: handle HTTP/JSON to python parameter translation
+    #   _parameters: handle HTTP/JSON/FILE to python parameter translation
     #     _noparams: just check that no parameters are passed
     #   _perm_authz: check per-object permissions
     #
@@ -1675,6 +1677,8 @@ class FlaskSimpleAuth:
             # parameters types/casts and defaults taken from signature
             sig, keywords = inspect.signature(fun), False
 
+            where = f"{fun.__name__}() at {fun.__code__.co_filename}:{fun.__code__.co_firstlineno}"
+
             # build helpers
             for n, p in sig.parameters.items():
                 sn = n[1:] if n[0] == "_" and len(n) > 1 else n
@@ -1684,6 +1688,15 @@ class FlaskSimpleAuth:
                     t = _typeof(p)
                     types[n] = t
                     typings[n] = self._casts.get(t, t)
+                    # check that type can be isinstance and is castable
+                    try:
+                        isinstance("", t)
+                    except TypeError as e:
+                        raise self._Bad(f"parameter {n} type {t} is not (yet) supported: {e}", where)
+                    except Exception:  # pragma: no cover
+                        raise self._Bad(f"parameter {n} type {t} is not (yet) supported: {e}", where)
+                    if not callable(typings[n]) or typings[n].__module__ == "typing":
+                        raise self._Bad(f"parameter {n} type cast {typings[n]} is not callable", where)
                 if p.default != inspect._empty:
                     defaults[n] = p.default
                 if p.kind == p.VAR_KEYWORD:
@@ -1698,6 +1711,7 @@ class FlaskSimpleAuth:
             signature = f"{fun.__name__}({', '.join(mandatory)}, [{', '.join(optional)}])"
 
             def debugParam():
+                # FIXME params = sorted(self._params().keys() + request.files.keys())
                 params = sorted(self._params().keys())
                 mtype = request.headers.get("Content-Type", "?")
                 return f"{signature}: {' '.join(params)} [{mtype}]"
