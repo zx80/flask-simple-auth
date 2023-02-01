@@ -1000,3 +1000,5 @@ See [all versions](VERSIONS.md).
 - authz/authn instead of authorize/auth?
 - rename ANY/ALL/NONE so something more intuitive!
 - checks: mypy vs pyright vs pyanalyze?  mypy is way too slow!
+- clear cache per type? entry??
+- debug4 show full request
