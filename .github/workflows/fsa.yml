@@ -38,7 +38,7 @@ jobs:
     # - name: Check with black
     #   run: black --check CacheToolsUtils.py
     - name: Check with flake8
-      run: flake8 --ignore=E127,E501,E721,F401,E402 FlaskSimpleAuth.py
+      run: flake8 --ignore=E127,E501,E721,F401,E402,W504 FlaskSimpleAuth.py
     - name: Check with pytest
       run: pytest test/
     - name: Check with coverage
