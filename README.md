@@ -139,6 +139,6 @@ are hosted on [GitHub](https://github.com).
 Install [package](https://pypi.org/project/FlaskSimpleAuth/) from
 [PyPI](https://pypi.org/).
 
-Latest version is *21.1* published on 2023-01-31.
+Latest version is *21.2* published on 2023-02-02.
 
 See [all versions](VERSIONS.md).
