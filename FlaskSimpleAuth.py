@@ -535,8 +535,8 @@ class FlaskSimpleAuth:
         if self._mode >= Mode.DEBUG4:
             # FIXME there is no decent response prettyprinter
             r = res
-            rpp = f"{r}\n\tHTTP/? {r.status} \n\t" + \
-                "\n\t".join(f"{k}: {v}" for k, v in r.headers.items()) + "\n"
+            rpp = (f"{r}\n\tHTTP/? {r.status}\n\t" +
+                   "\n\t".join(f"{k}: {v}" for k, v in r.headers.items()) + "\n")
             log.debug(rpp)
         return res
 
