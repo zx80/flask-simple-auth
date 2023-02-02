@@ -1001,3 +1001,4 @@ See [all versions](VERSIONS.md).
 - rename ANY/ALL/NONE so something more intuitive!
 - checks: mypy vs pyright vs pyanalyze?  mypy is way too slow!
 - clear cache per type? entry??
+- also show various parameters on debug4?
