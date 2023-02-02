@@ -83,14 +83,18 @@ class Mode(IntEnum):
     PROD = 1
     DEV = 2
     DEBUG = 3
+    DEBUG1 = 3
     DEBUG2 = 4
     DEBUG3 = 5
+    DEBUG4 = 6
 
 
 _MODES = {
     "debug": Mode.DEBUG,
+    "debug1": Mode.DEBUG1,
     "debug2": Mode.DEBUG2,
     "debug3": Mode.DEBUG3,
+    "debug4": Mode.DEBUG4,
     "dev": Mode.DEV,
     "prod": Mode.PROD,
 }
@@ -349,6 +353,8 @@ class FlaskSimpleAuth:
         self._after_requests: List[AfterRequestFun] = []
         self._local: Any = None
         # registered here to avoid being bypassed by user hooks
+        # FIXME not always?
+        self._app.before_request(self._show_request)
         self._app.before_request(self._auth_reset_user)
         self._app.before_request(self._check_secure)
         self._app.before_request(self._run_before_requests)
@@ -406,6 +412,15 @@ class FlaskSimpleAuth:
                 if self._secure_warning:
                     log.warning("insecure HTTP request seen")
                     self._secure_warning = False
+
+    def _show_request(self):
+        """Show request."""
+        if self._mode >= Mode.DEBUG4:
+            # FIXME there is no decent request prettyprinter
+            r = request
+            rpp = f"{r}\n\t{r.method} {r.path} HTTP/?\n\t" + \
+                "\n\t".join(f"{k}: {v}" for k, v in r.headers.items()) + "\n"
+            log.debug(rpp)
 
     def _auth_reset_user(self):
         """Before request hook to cleanup authentication and authorization."""
@@ -513,6 +528,16 @@ class FlaskSimpleAuth:
         res.headers["FSA-User"] = f"{self.current_user()} ({self._local.source})"
         delay = dt.datetime.timestamp(dt.datetime.now()) - self._local.start
         res.headers["FSA-Delay"] = f"{delay:.6f}"
+        return res
+
+    def _show_response(self, res: Response):
+        """Show response."""
+        if self._mode >= Mode.DEBUG4:
+            # FIXME there is no decent response prettyprinter
+            r = res
+            rpp = f"{r}\n\tHTTP/? {r.status} \n\t" + \
+                "\n\t".join(f"{k}: {v}" for k, v in r.headers.items()) + "\n"
+            log.debug(rpp)
         return res
 
     def _params(self):
@@ -968,6 +993,8 @@ class FlaskSimpleAuth:
         #
         self._before_requests = conf.get("FSA_BEFORE_REQUEST", [])
         # internal hooks
+        if self._mode >= Mode.DEBUG4:
+            self._app.after_request(self._show_response)
         if self._mode >= Mode.DEV:
             self._app.after_request(self._add_fsa_headers)
         self._after_requests = conf.get("FSA_AFTER_REQUEST", [])

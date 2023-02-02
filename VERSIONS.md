@@ -3,6 +3,11 @@
 Sources are available on [GitHub](https://github.com/zx80/flask-simple-auth)
 and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 
+## 21.2 on ?
+
+Add `debug4` verbosity to show request and response headers.
+To intercept the body, consider using `tcpdump`.
+
 ## 21.1 on 2023-01-31
 
 Improve `demo` with an upload example.

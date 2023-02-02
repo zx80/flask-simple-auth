@@ -1785,7 +1785,7 @@ def test_user_errors():
 
 def test_param_params():
     app = fsa.Flask("pp",
-        FSA_MODE="debug2",
+        FSA_MODE="debug4",
         FSA_DEBUG_LEVEL=logging.DEBUG,
         FSA_AUTH="param",
         FSA_PARAM_USER="login",

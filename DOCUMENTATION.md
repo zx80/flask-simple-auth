@@ -750,7 +750,7 @@ generates a `Response` of this status with the text message as contents.
 
 Some directives govern various details for this extension internal working.
 
-- `FSA_MODE` set module mode, expecting *prod*, *dev*, *debug* or *debug2*.
+- `FSA_MODE` set module mode, expecting *prod*, *dev*, *debug* to *debug4*.
   This changes the module verbosity.
   Under *dev* or debug, `FSA-*` headers is added to show informations about
   the request, the authentication and the elapsed time from the application
@@ -1001,4 +1001,3 @@ See [all versions](VERSIONS.md).
 - rename ANY/ALL/NONE so something more intuitive!
 - checks: mypy vs pyright vs pyanalyze?  mypy is way too slow!
 - clear cache per type? entry??
-- debug4 show full request
