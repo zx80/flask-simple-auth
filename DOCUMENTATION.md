@@ -1001,3 +1001,6 @@ See [all versions](VERSIONS.md).
 - rename ANY/ALL/NONE so something more intuitive!
 - checks: mypy vs pyright vs pyanalyze?  mypy is way too slow!
 - clear cache per type? entry??
+- how to add a timeout?
+- how to ensure that shared/pooled resources are returned even on errors?
+  is an `after_request` hook enough?
