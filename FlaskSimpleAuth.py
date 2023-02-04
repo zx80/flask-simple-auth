@@ -82,19 +82,19 @@ class Mode(IntEnum):
     UNDEF = 0
     PROD = 1
     DEV = 2
-    DEBUG = 3
     DEBUG1 = 3
     DEBUG2 = 4
     DEBUG3 = 5
     DEBUG4 = 6
+    DEBUG = 3
 
 
 _MODES = {
-    "debug": Mode.DEBUG,
     "debug1": Mode.DEBUG1,
     "debug2": Mode.DEBUG2,
     "debug3": Mode.DEBUG3,
     "debug4": Mode.DEBUG4,
+    "debug": Mode.DEBUG,
     "dev": Mode.DEV,
     "prod": Mode.PROD,
 }
@@ -418,7 +418,15 @@ class FlaskSimpleAuth:
         if self._mode >= Mode.DEBUG4:
             # FIXME there is no decent request prettyprinter
             r = request
-            rpp = f"{r}\n\t{r.method} {r.path} HTTP/?\n\t" + \
+            rpp = f"{r}\n"
+            params = self._params()
+            if params:
+                rpp += " - params: " + ", ".join(sorted(params.keys())) + "\n"
+            if request.files:
+                rpp += " - files: " + ", ".join(sorted(request.files.keys())) + "\n"
+            if not params and not request.files:
+                rpp += " - no params, no files\n"
+            rpp += "\t{r.method} {r.path} HTTP/?\n\t" + \
                 "\n\t".join(f"{k}: {v}" for k, v in r.headers.items()) + "\n"
             log.debug(rpp)
 

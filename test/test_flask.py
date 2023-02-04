@@ -1732,11 +1732,26 @@ def test_request_hooks():
     res = check(555, client.get("/cool"))
     assert res.data == b"Ooops!"
 
+def hello(app: fsa.Flask):
+    @app.get("/hello", authorize="ANY")
+    def get_hello(name: str):
+        return f"Hello {name}!", 200
+    with app.test_client() as c:
+        res = check(200, c.get("/hello", data={"name": "Calvin"}))
+        assert res.data == b"Hello Calvin!"
+        check(400, c.get("/hello", data={"nom": "Calvin"}))
+        check(400, c.get("/hello", data={"name": "Calvin", "nom": "Hobbes"}))
+        res = check(200, c.get("/hello", json={"name": "Hobbes"}))
+        assert res.data == b"Hello Hobbes!"
+        check(400, c.get("/hello", json={"nom": "Hobbes"}))
+        check(400, c.get("/hello", json={"nom": "Calvin", "name": "Hobbes"}))
+
 def test_mode():
+    # combine all debug/modes
     for debug in (True, False):
-        for mode in ("debug3", "debug2", "debug", "dev", "prod"):
-            app = fsa.Flask("mode", debug=debug, FSA_MODE=mode)
-            app = fsa.Flask("mode", FSA_DEBUG=debug, FSA_MODE=mode)
+        for mode in ("debug4", "debug3", "debug2", "debug1", "debug", "dev", "prod"):
+            hello(fsa.Flask("mode", debug=debug, FSA_MODE=mode))
+            hello(fsa.Flask("mode", FSA_DEBUG=debug, FSA_MODE=mode))
     try:
         app = fsa.Flask("mode", FSA_MODE="unexpected")
         app._fsa.initialize()
@@ -1842,7 +1857,7 @@ def test_file_storage():
     def bfile(contents: bytes, name: str = "foo.txt", ct: str = "text/plain"):
         return (io.BytesIO(contents), name, ct)
 
-    app = fsa.Flask("file-storage", FSA_MODE="debug2")
+    app = fsa.Flask("file-storage", FSA_MODE="debug4")
 
     @app.post("/upload", authorize="ANY")
     def post_upload(file: fsa.FileStorage):
