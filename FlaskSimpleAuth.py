@@ -426,7 +426,7 @@ class FlaskSimpleAuth:
                 rpp += " - files: " + ", ".join(sorted(request.files.keys())) + "\n"
             if not params and not request.files:
                 rpp += " - no params, no files\n"
-            rpp += "\t{r.method} {r.path} HTTP/?\n\t" + \
+            rpp += f"\t{r.method} {r.path} HTTP/?\n\t" + \
                 "\n\t".join(f"{k}: {v}" for k, v in r.headers.items()) + "\n"
             log.debug(rpp)
 
