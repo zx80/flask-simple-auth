@@ -33,7 +33,7 @@ import ProxyPatternPool as ppp  # type: ignore
 # for local use & forwarding
 # NOTE the only missing should be "Flask"
 from flask import (
-    Response, Request, request, session, jsonify, Blueprint, make_response,
+    Response, Request, request, session, Blueprint, make_response,
     abort, redirect, url_for, after_this_request, send_file, current_app, g,
     send_from_directory, escape, Markup, render_template, get_flashed_messages,
     has_app_context, has_request_context, render_template_string,
@@ -188,6 +188,15 @@ def _get_file_storage(p: str) -> FileStorage:
     if p not in request.files:
         raise ErrorResponse(f"missing file parameter \"{p}\"", 400)
     return request.files[p]
+
+
+def jsonify(a: Any):
+    """Jsonify something, including generators."""
+    # FIXME how to detect a generator?
+    if inspect.isgenerator(a) or type(a) in (map, filter, range):
+        return flask.jsonify(list(a))
+    else:
+        return flask.jsonify(a)
 
 
 class Reference(ppp.Proxy):

@@ -1922,3 +1922,31 @@ def test_param_types():
         assert False, "should raise a config error"
     except ConfigError as e:
         assert "is not callable" in str(e)
+
+
+def test_jsonify_with_generators():
+    def gen(i: int):
+        for i in range(i):
+            yield i
+    app = fsa.Flask("json-gen")
+    @app.get("/json", authorize="ANY")
+    def get_json(what: str):
+        l = [0, 1, 2]
+        res = (l if what == "list" else
+               map(lambda i: i+1, l) if what == "map" else
+               filter(lambda i: i>0, l) if what == "filter" else
+               range(2, 3) if what == "range" else
+               gen(2) if what == "gen" else
+               None)
+        return fsa.jsonify(res), 200
+    with app.test_client() as c:
+        res = check(200, c.get("/json", data={"what": "list"}))
+        assert res.data == b"[0,1,2]\n"
+        res = check(200, c.get("/json", data={"what": "map"}))
+        assert res.data == b"[1,2,3]\n"
+        res = check(200, c.get("/json", data={"what": "filter"}))
+        assert res.data == b"[1,2]\n"
+        res = check(200, c.get("/json", data={"what": "range"}))
+        assert res.data == b"[2]\n"
+        res = check(200, c.get("/json", data={"what": "gen"}))
+        assert res.data == b"[0,1]\n"
