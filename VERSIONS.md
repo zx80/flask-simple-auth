@@ -6,6 +6,7 @@ and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 ## 21.4 on ?
 
 Make `jsonify` work with generators, maps, filters and ranges.
+Ensure upward compatibility with next `ProxyPatternPool` release.
 Fix `debug4` request formatting.
 
 ## 21.3 on 2023-02-04
