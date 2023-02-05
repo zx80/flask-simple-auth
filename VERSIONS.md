@@ -3,6 +3,10 @@
 Sources are available on [GitHub](https://github.com/zx80/flask-simple-auth)
 and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 
+## 21.5 on 2023-02-05
+
+Remove badly thought upward compatibility attempt.
+
 ## 21.4 on 2023-02-05
 
 Make `jsonify` work with generators, maps, filters and ranges.

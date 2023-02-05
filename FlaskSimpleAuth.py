@@ -202,11 +202,11 @@ def jsonify(a: Any):
 class Reference(ppp.Proxy):
     """Convenient object wrapper class."""
 
-    def __init__(self, *args, close: Optional[str] = "close", max_delay: float = None, **kwargs):
+    def __init__(self, *args, close: Optional[str] = "close", **kwargs):
         # NOTE max_delay is just here for backward compatibility
         # TODO remove at some point
-        if max_delay is not None and ppp.__version__ >= (4, 0):  # pragma: no cover
-            kwargs["max_avail_delay"] = max_delay
+        # if max_delay is not None and ppp.__version__ >= (4, 0):  # pragma: no cover
+        #    kwargs["max_avail_delay"] = max_delay
         super().__init__(*args, close=close, **kwargs)
 
 
