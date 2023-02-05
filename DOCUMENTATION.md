@@ -703,6 +703,21 @@ expected value. For instance, the `Request` definition corresponds to:
 app.special_parameter(Request, lambda _: request)
 ```
 
+An example use-case is to make user-related data easily available
+through such a special type:
+
+```python
+class User:
+    def __init__(self, login: str):
+        self.firstname, self.lastname = db.get_user_data(login=login)
+
+app.special_parameter(User, lambda _: User(app.current_user()))
+
+@app.get("/hello", authorize="ALL")
+def get_hello(user: User):
+    return f"Hello {user.firstname} {user.lastname}!", 200
+```
+
 The `FSA_SPECIAL_PARAMETER` directive can also be defined as a dictionary
 mapping types to their parameter value function.
 
