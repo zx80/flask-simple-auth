@@ -925,6 +925,18 @@ By contrast, *Flask Simple Auth*:
   and specially formatted comments.
 - offers an integrated authorization scheme linked to application objects.
 
+### Flask-Login
+
+[Flask-Login](https://github.com/maxcountryman/flask-login) is
+yet another web-oriented Flask helper to manage logins and logouts using Flask
+session management. It does not help much with actual authentication though,
+and does nothing about authorizations.
+By contrast, *Flask Simple Auth*:
+- does NOT impose a user model.
+- does NOT require an additional decorator to protect routes.
+- does actually provide a consistent authentication, authorization
+  and parameter management framework.
+
 ### Others
 
 [FlaskSimpleAuth](https://github.com/zx80/flask-simple-auth) is a
