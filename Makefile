@@ -53,13 +53,13 @@ check: venv
 
 .PHONY: clean clean.venv
 clean:
-	$(RM) -r __pycache__ */__pycache__ *.egg-info dist build .mypy_cache .pytest_cache
+	$(RM) -r __pycache__ */__pycache__ dist build .mypy_cache .pytest_cache
 	$(RM) $(F.pdf)
 	$(MAKE) -C test clean
 	$(MAKE) -C demo clean
 
 clean.venv: clean
-	$(RM) -r venv
+	$(RM) -r venv *.egg-info
 	$(MAKE) -C demo clean.venv
 
 # for local testing
