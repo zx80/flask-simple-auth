@@ -27,7 +27,8 @@ It is designed to help REST application back-end development.
 - [See Also](#see-also)
   [Flask-Security](#flask-security),
   [Flask-RESTful](#flask-restful),
-  [Flask-AppBuilder](#flask-appbuilder) and
+  [Flask-AppBuilder](#flask-appbuilder),
+  [Flask-Login](#flask-login) and
   [others](#others).
 - [License](#license), [Versions](#versions), [TODO](#todo).
 
