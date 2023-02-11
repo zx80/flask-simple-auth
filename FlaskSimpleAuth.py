@@ -1759,10 +1759,10 @@ class FlaskSimpleAuth:
             signature = f"{fun.__name__}({', '.join(mandatory)}, [{', '.join(optional)}])"
 
             def debugParam():
-                # FIXME params = sorted(self._params().keys() + request.files.keys())
                 params = sorted(self._params().keys())
+                files = sorted(request.files.keys())
                 mtype = request.headers.get("Content-Type", "?")
-                return f"{signature}: {' '.join(params)} [{mtype}]"
+                return f"{signature}: {' '.join(params)}/{' '.join(files)} [{mtype}]"
 
             @functools.wraps(fun)
             def wrapper(*args, **kwargs):

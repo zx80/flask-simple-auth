@@ -1032,3 +1032,6 @@ See [all versions](VERSIONS.md).
 - how to add a timeout?
 - how to ensure that shared/pooled resources are returned even on errors?
   is an `after_request` hook enough?
+- add example for `ErrorResponse`.
+- add `FileStorage` definition example.
+- add more examples…
