@@ -647,9 +647,28 @@ def put_awesome(**kwargs):
     …
 ```
 
-Custom classes can be used as path and HTTP parameter types, provided that
-the constructor accepts a string to convert the parameter value to the
-expected type.
+[Pydantic](https://pydantic.dev)-generated classes and dataclasses work out of
+the box both with HTTP and JSON parameters.
+
+```python
+class Search(pydantic.BaseModel):
+    words: list[str]
+    limit: int
+
+# or
+@dataclass
+class Search:
+    words: list[str]
+    limit: int
+
+@app.get("/search", authorize="ANY")
+def get_search(q: Search):
+    …
+```
+
+Custom classes can be used as parameter types, provided that the constructor
+accepts a string (for HTTP parameters) or whatever value provided (for JSON)
+to build the expected type.
 
 ```python
 class EmailAddr:

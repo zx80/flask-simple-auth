@@ -16,6 +16,7 @@ pyjwt
 cryptography
 flask_httpauth
 flask_cors
+pydantic
 # dependencies for demo/
 anodb
 psycopg

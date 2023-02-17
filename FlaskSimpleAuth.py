@@ -373,6 +373,12 @@ class FlaskSimpleAuth:
         self._app.before_request(self._run_before_requests)
         # COLDLY override Flask route decorator…
         self._app.route = self.route  # type: ignore
+        # pydantic generated class support
+        try:
+            import pydantic
+            self._pydantic_base_model = pydantic.BaseModel  # type: ignore
+        except ModuleNotFoundError:  # pragma: no cover
+            self._pydantic_base_model = None  # type: ignore
         # actual main initialization is deferred to `_init_app`
         self._initialized = False
 
@@ -1735,7 +1741,20 @@ class FlaskSimpleAuth:
                     # guess parameter type
                     t = _typeof(p)
                     types[n] = t
-                    typings[n] = self._casts.get(t, t)
+                    if (self._pydantic_base_model is not None and isinstance(t, type) and
+                        issubclass(t, self._pydantic_base_model) or
+                        hasattr(t, "__dataclass_fields__")):
+                        # create a convenient cast for pydantic classes or dataclasses
+                        # we assume that named-parameters are passed
+                        def datacast(val):
+                            if isinstance(val, str):  # HTTP parameters
+                                val = json.loads(val)
+                            if not isinstance(val, dict):  # JSON parameters
+                                raise self._Err(f"unexpected value {val} for dict", 400)
+                            return t(**val)
+                        typings[n] = datacast
+                    else:
+                        typings[n] = self._casts.get(t, t)
                     # check that type can be isinstance and is castable
                     try:
                         isinstance("", t)

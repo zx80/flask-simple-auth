@@ -3,6 +3,10 @@
 Sources are available on [GitHub](https://github.com/zx80/flask-simple-auth)
 and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 
+## ? on ?
+
+Add support for data classes and [pydantic](https://pydantic.dev/) classes.
+
 ## 21.5 on 2023-02-05
 
 Remove badly thought upward compatibility attempt.

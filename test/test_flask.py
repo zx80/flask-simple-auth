@@ -1950,3 +1950,77 @@ def test_jsonify_with_generators():
         assert res.data == b"[2]\n"
         res = check(200, c.get("/json", data={"what": "gen"}))
         assert res.data == b"[0,1]\n"
+
+def test_pydantic_models():
+    import pydantic
+    app = fsa.Flask("pyda-1")
+    # pydantic class
+    class Foo(pydantic.BaseModel):
+        f0: str
+        f1: list[int]
+        f2: tuple[str, float]
+    # JSON-like values
+    FOO_OK = {"f0": "ok", "f1": [1, 2], "f2": ["hello", 1.0]}
+    FOO_KO = {"f0": "ok", "f1": [1, 2]}  # missing f2
+    # foo test route
+    @app.post("/foo", authorize="ANY")
+    def post_foo(f: Foo):
+         return {"f": str(f)}, 201
+    # pydantic dataclass
+    @pydantic.dataclasses.dataclass
+    class Bla:
+        b0: list[str]
+        b1: int
+    BLA_OK = {"b0": ["hello", "world"], "b1": 5432}
+    BLA_KO = {"b0": [], "b1": "forty-two"}  # bad b1
+    # bla test route
+    @app.post("/bla", authorize="ANY")
+    def post_bla(b: Bla):
+        return {"n": len(b.b0) + b.b1}, 201
+    # standard dataclass
+    # NOTE validatioj nis very weak
+    import dataclasses
+    @dataclasses.dataclass
+    class Dim:
+        d0: tuple[str, int]
+        d1: int
+    # dim values
+    DIM_OK = {"d0": ("Calvin", 6), "d1": 5432}
+    DIM_KO = {"d0": {"Calvin": 6}, "d1": 1234}  # bad d0, not detected
+    # dim test route
+    @app.post("/dim", authorize="ANY")
+    def post_dim(d: Dim):
+        return {"n": d.d0[1] + d.d1}, 201
+    # tests
+    with app.test_client() as c:
+        # Foo
+        r = check(201, c.post("/foo", json={"f": FOO_OK}))
+        r = check(400, c.post("/foo", json={"f": FOO_KO}))
+        assert b"type error on json parameter" in r.data
+        r = check(400, c.post("/foo", json={"f": 5432}))
+        assert b"unexpected value 5432 for dict" in r.data
+        r = check(201, c.post("/foo", data={"f": json.dumps(FOO_OK)}))
+        r = check(400, c.post("/foo", data={"f": json.dumps(FOO_KO)}))
+        assert b"type error on http parameter" in r.data
+        r = check(400, c.post("/foo", data={"f": 1234}))
+        assert b"unexpected value 1234 for dict" in r.data
+        # Bla
+        r = check(201, c.post("/bla", json={"b": BLA_OK}))
+        r = check(400, c.post("/bla", json={"b": BLA_KO}))
+        assert b"type error on json parameter" in r.data
+        r = check(400, c.post("/bla", json={"b": True}))
+        assert b"unexpected value True for dict" in r.data
+        r = check(201, c.post("/bla", data={"b": json.dumps(BLA_OK)}))
+        r = check(400, c.post("/bla", data={"b": json.dumps(BLA_KO)}))
+        r = check(400, c.post("/bla", json={"b": False}))
+        assert b"unexpected value False for dict" in r.data
+        # Dim
+        r = check(201, c.post("/dim", json={"d": DIM_OK}))
+        # r = check(400, c.post("/dim", json={"d": DIM_KO}))
+        # assert b"type error on json parameter" in r.data
+        r = check(400, c.post("/dim", json={"d": 3.14159}))
+        # assert b" for dict" in r.data
+        r = check(201, c.post("/dim", data={"d": json.dumps(DIM_OK)}))
+        # r = check(400, c.post("/dim", data={"d": json.dumps(DIM_KO)}))
+        r = check(400, c.post("/dim", json={"d": 2.78}))
+        # assert b" for dict" in r.data
