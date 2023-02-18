@@ -5,7 +5,9 @@
 
 import io
 import re
-from typing import List
+
+# TODO drop once min version is 3.9
+from typing import List, Tuple
 
 import pytest
 import App
@@ -1957,8 +1959,8 @@ def test_pydantic_models():
     # pydantic class
     class Foo(pydantic.BaseModel):
         f0: str
-        f1: list[int]
-        f2: tuple[str, float]
+        f1: List[int]
+        f2: Tuple[str, float]
     # JSON-like values
     FOO_OK = {"f0": "ok", "f1": [1, 2], "f2": ["hello", 1.0]}
     FOO_KO = {"f0": "ok", "f1": [1, 2]}  # missing f2
@@ -1969,7 +1971,7 @@ def test_pydantic_models():
     # pydantic dataclass
     @pydantic.dataclasses.dataclass
     class Bla:
-        b0: list[str]
+        b0: List[str]
         b1: int
     BLA_OK = {"b0": ["hello", "world"], "b1": 5432}
     BLA_KO = {"b0": [], "b1": "forty-two"}  # bad b1
@@ -1982,7 +1984,7 @@ def test_pydantic_models():
     import dataclasses
     @dataclasses.dataclass
     class Dim:
-        d0: tuple[str, int]
+        d0: Tuple[str, int]
         d1: int
     # dim values
     DIM_OK = {"d0": ("Calvin", 6), "d1": 5432}
