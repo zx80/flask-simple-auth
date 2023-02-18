@@ -1743,7 +1743,7 @@ class FlaskSimpleAuth:
                     types[n] = t
                     if (self._pydantic_base_model is not None and isinstance(t, type) and
                         issubclass(t, self._pydantic_base_model) or
-                        hasattr(t, "__dataclass_fields__")):
+                       hasattr(t, "__dataclass_fields__")):
                         # create a convenient cast for pydantic classes or dataclasses
                         # we assume that named-parameters are passed
                         def datacast(val):
