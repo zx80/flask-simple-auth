@@ -964,7 +964,7 @@ By contrast, *Flask Simple Auth*:
 
 [Flask-Login](https://github.com/maxcountryman/flask-login) is
 yet another web-oriented Flask helper to manage logins and logouts using Flask
-an underlying session management. It does not help much with actual
+and an underlying session management. It does not help much with actual
 authentication though, and does nothing about authorizations.
 By contrast, *Flask Simple Auth*:
 - does NOT impose a user model.
