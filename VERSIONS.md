@@ -6,6 +6,7 @@ and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 ## ? on ?
 
 Add support for data classes and [pydantic](https://pydantic.dev/) classes.
+Improved documentation.
 
 ## 21.5 on 2023-02-05
 
