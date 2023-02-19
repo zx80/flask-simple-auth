@@ -1055,3 +1055,4 @@ See [all versions](VERSIONS.md).
 - add example for `ErrorResponse`.
 - add `FileStorage` definition example.
 - add more examples…
+- how to limit token validity? provide some additional hooks?
