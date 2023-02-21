@@ -1791,15 +1791,36 @@ class FlaskSimpleAuth:
                 params = self._params()  # HTTP or JSON params
                 fparams = request.files  # FILE params
 
+                # detect all possible 400 errors before returning
+                error_400 = []
+                e400 = error_400.append
+
+                # process all expected "standard" parameters
                 for p, typing in typings.items():
                     pn = names[p]
                     if typing in self._special_parameters:  # force specials
                         if p in params:
-                            return self._Res(f'unexpected {self._local.params} parameter "{pn}"', 400)
-                        kwargs[p] = self._special_parameters[typing](pn)
+                            e400(f'unexpected {self._local.params} parameter "{pn}"')
+                            continue
+                        try:
+                            kwargs[p] = self._special_parameters[typing](pn)
+                        except ErrorResponse as e:
+                            if e.status == 400:
+                                e400(f"error when retrieving special parameter \"{pn}\": {e.message}")
+                                continue
+                            else:  # pragma: no cover
+                                raise  # rethrow?
+                        except Exception as e:
+                            if self._Exc(e):  # pragma: no cover
+                                raise
+                            return self._Res(f"unexpected error when retrieving special parameter \"{pn}\" ({e})",
+                                             self._server_error)
+                            continue
+                        # other exception would pass through
                     elif p in kwargs:  # path parameter, or already seen?
                         if p in params:
-                            return self._Res(f'unexpected {self._local.params} parameter "{pn}"', 400)
+                            e400(f'unexpected {self._local.params} parameter "{pn}"')
+                            continue
                         val = kwargs[p]
                         if not isinstance(val, types[p]):
                             try:
@@ -1807,7 +1828,8 @@ class FlaskSimpleAuth:
                             except Exception as e:
                                 if self._Exc(e):  # pragma: no cover
                                     raise
-                                return self._Res(f'type error on path parameter "{p}": "{val}" ({e})', 400)
+                                e400(f'type error on path parameter "{p}": "{val}" ({e})')
+                                continue
                     else:  # parameter not yet encountered
                         if pn in params:
                             val = params[pn]
@@ -1819,7 +1841,8 @@ class FlaskSimpleAuth:
                                 except Exception as e:
                                     if self._Exc(e):  # pragma: no cover
                                         raise
-                                    return self._Res(f'type error on {self._local.params} parameter "{pn}": "{val}" ({e})', 400)
+                                    e400(f'type error on {self._local.params} parameter "{pn}": "{val}" ({e})')
+                                    continue
                             else:
                                 kwargs[p] = val
                         else:
@@ -1828,7 +1851,8 @@ class FlaskSimpleAuth:
                             else:
                                 if self._mode >= Mode.DEBUG2:
                                     log.info(debugParam())
-                                return self._Res(f'missing parameter "{pn}"', 400)
+                                e400(f'missing parameter "{pn}"')
+                                continue
 
                 # possibly add others, without shadowing already provided ones
                 if keywords:  # handle **kwargs
@@ -1844,19 +1868,24 @@ class FlaskSimpleAuth:
                         # NOTE we silently ignore special authentication params
                         if p not in names and p not in self._auth_params:
                             if self._mode >= Mode.DEBUG:
-                                log.debug(f"unexpected {self._local.params} parameter \"{p}\" on \"{path}\"")
+                                log.debug(f"unexpected {self._local.params} parameter \"{p}\"")
                                 if self._mode >= Mode.DEBUG2:
                                     log.debug(debugParam())
                             if self._reject_param:
-                                return self._Res(f"unexpected {self._local.params} parameter \"{p}\" on \"{path}\"", 400)
+                                e400(f"unexpected {self._local.params} parameter \"{p}\"")
+                                continue
                     for p in fparams:
                         if p not in names:
                             if self._mode >= Mode.DEBUG:
-                                log.debug(f"unexpected file parameter \"{p}\" on \"{path}\"")
+                                log.debug(f"unexpected file parameter \"{p}\"")
                                 if self._mode >= Mode.DEBUG2:
                                     log.debug(debugParam())
                             if self._reject_param:
-                                return self._Res(f"unexpected file parameter \"{p}\" on \"{path}", 400)
+                                e400(f"unexpected file parameter \"{p}\"")
+                                continue
+
+                if error_400:
+                    return self._Res("\n".join(error_400), 400)
 
                 return self._safe_call(path, "parameters", fun, *args, **kwargs)
 

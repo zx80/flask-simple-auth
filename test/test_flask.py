@@ -2026,3 +2026,37 @@ def test_pydantic_models():
         # r = check(400, c.post("/dim", data={"d": json.dumps(DIM_KO)}))
         r = check(400, c.post("/dim", json={"d": 2.78}))
         # assert b" for dict" in r.data
+
+def test_multi_400():
+    app = fsa.Flask("400")
+
+    # special parameter errors
+    def throwAny():
+        raise Exception("some internal error")
+    def throw400():
+        raise fsa.ErrorResponse("oops!", 400)
+    class ParamAny:
+        pass
+    class Param400:
+        pass
+    app.special_parameter(ParamAny, lambda _: throwAny())
+    app.special_parameter(Param400, lambda _: throw400())
+    # missing stuff
+    @app.get("/400", authorize="ANY")
+    def get_400(i: int, j: int, f: fsa.FileStorage, p: Param400):
+        return "oops 400", 200
+    @app.get("/oops", authorize="ANY")
+    def get_oops(q: ParamAny):
+        return "oops any", 200
+
+    with app.test_client() as c:
+        res = check(400, c.get("/400", json={"i": "one", "k": 42}))
+        # bad i, missing j and f, unexpected k, bad p
+        assert b'"i"' in res.data
+        assert b'"j"' in res.data
+        assert b'"k"' in res.data
+        assert b'"f"' in res.data
+        assert b'"p"' in res.data
+        # q will fail
+        res = check(500, c.get("/oops"))
+        assert b'"q"' in res.data

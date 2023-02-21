@@ -1056,4 +1056,3 @@ See [all versions](VERSIONS.md).
 - add `FileStorage` definition example.
 - add more examples…
 - how to limit token validity? provide some additional hooks?
-- report all 400 errors instead of the first one.
