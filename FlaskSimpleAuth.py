@@ -1813,9 +1813,9 @@ class FlaskSimpleAuth:
                         except Exception as e:
                             if self._Exc(e):  # pragma: no cover
                                 raise
+                            # this is some unexpected internal error
                             return self._Res(f"unexpected error when retrieving special parameter \"{pn}\" ({e})",
                                              self._server_error)
-                            continue
                         # other exception would pass through
                     elif p in kwargs:  # path parameter, or already seen?
                         if p in params:
