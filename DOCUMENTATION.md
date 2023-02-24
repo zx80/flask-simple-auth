@@ -1057,3 +1057,4 @@ See [all versions](VERSIONS.md).
 - add more examples…
 - how to limit token validity? provide some additional hooks?
 - add a post auth/pre exec hook to return resources after auth (n and z)
+- add/suggest how to add constraints on parameters?
