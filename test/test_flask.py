@@ -2060,3 +2060,24 @@ def test_multi_400():
         # q will fail
         res = check(500, c.get("/oops"))
         assert b'"q"' in res.data
+
+def test_before_exec():
+    app = fsa.Flask("after-auth", FSA_MODE="debug2", FSA_AUTH="fake")
+    @app.before_exec
+    def before_exec(req, login, auth):
+        if login == "error":
+            raise Exception("we have an error!")
+        if login == "susie":
+            return Response("susie triggers a teapot", 418)
+        log.debug(f"before_exec: {login} by {auth}")
+        return
+    @app.get("/be", authorize="ALL")
+    def get_be():
+        return f"get_be for {app.get_user()}", 200
+    with app.test_client() as c:
+        res = check(200, c.get("/be", data={"LOGIN": "calvin"}))
+        assert b"calvin" in res.data
+        res = check(500, c.get("/be", data={"LOGIN": "error"}))
+        assert b"internal error" in res.data
+        res = check(418, c.get("/be", data={"LOGIN": "susie"}))
+        assert b"teapot" in res.data

@@ -117,6 +117,9 @@ Various decorators/functions allow to register hooks, such as:
   - a function to retrieve the password hash from the user name.
   - a function which tells whether a user is in a group or role.
   - functions which define object ownership and access permissions.
+- `before_exec` a function/decorator to register a hook called after
+  authentication, authorizations and parameters and before the actuall
+  route function execution.
 - `password_quality` a function/decorator to register a function to check for
   password quality.
 - `password_check` a function/decorator to register a new password checker,
@@ -853,7 +856,15 @@ Some directives govern various details for this extension internal working.
   As a slight deviation from Flask before request hook, before request functions
   are passed the current request as an argument.
   The are executed first (just after some internal initializations and before
-  application-provided before request hooks) and last, respetively.
+  application-provided before request hooks) and last, respectively.
+  Defaults are empty.
+
+- `FSA_BEFORE_EXEC` allows to add a list of functions called after all
+  preprocessing and just before the actual execution of the route function.
+  The hooks are passed the request, the login and the authentication scheme.
+  It may return a response to shortcut the route function.
+  Such functions can also be register with the `before_exec`
+  function/decorator.
   Defaults are empty.
 
 Some control is available about internal caching features used for user
@@ -1056,5 +1067,4 @@ See [all versions](VERSIONS.md).
 - add `FileStorage` definition example.
 - add more examples…
 - how to limit token validity? provide some additional hooks?
-- add a post auth/pre exec hook to return resources after auth (n and z)
 - add/suggest how to add constraints on parameters?

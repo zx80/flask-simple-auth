@@ -51,16 +51,29 @@ import pkg_resources as pkg  # type: ignore
 __version__ = pkg.require("FlaskSimpleAuth")[0].version
 
 # hook function types
+# generate an error response for message and status
 ErrorResponseFun = Callable[[str, int], Response]
+# get password from user login, None if unknown
 GetUserPassFun = Callable[[str], Optional[str]]
+# is user login in group (str or int): yes, no, unknown
 UserInGroupFun = Callable[[str, Union[str, int]], Optional[bool]]
+# check object access in domain, for parameter, in mode
 ObjectPermsFun = Callable[[str, Any, Optional[str]], bool]
+# low level check login/password validity
 PasswordCheckFun = Callable[[str, str], Optional[bool]]
+# is this password quality suitable?
 PasswordQualityFun = Callable[[str], bool]
-CastFun = Callable[[str], object]
+# cast parameter value to some object
+CastFun = Callable[[Union[str, Any]], object]
+# generate a "special" parameter, with the parameter name
 SpecialParameterFun = Callable[[str], Any]
+# add a header to the current response
 HeaderFun = Callable[[Response], Optional[str]]
+# before request hook, with request provided
 BeforeRequestFun = Callable[[Request], Optional[Response]]
+# after authentication and right before exec
+BeforeExecFun = Callable[[Request, str, str], Optional[Response]]
+# after request hook
 AfterRequestFun = Callable[[Response], Response]
 
 
@@ -253,6 +266,7 @@ class Flask(flask.Flask):
         self.add_group = self._fsa.add_group
         self.add_scope = self._fsa.add_scope
         self.add_headers = self._fsa.add_headers
+        self.before_exec = self._fsa.before_exec
         # forward methods
         self.check_password = self._fsa.check_password
         self.hash_password = self._fsa.hash_password
@@ -278,7 +292,7 @@ _DIRECTIVES = {
     # register hooks
     "FSA_GET_USER_PASS", "FSA_USER_IN_GROUP", "FSA_CAST", "FSA_OBJECT_PERMS",
     "FSA_SPECIAL_PARAMETER", "FSA_ERROR_RESPONSE", "FSA_ADD_HEADERS",
-    "FSA_BEFORE_REQUEST", "FSA_AFTER_REQUEST",
+    "FSA_BEFORE_REQUEST", "FSA_BEFORE_EXEC", "FSA_AFTER_REQUEST",
     # authentication
     "FSA_AUTH", "FSA_REALM", "FSA_FAKE_LOGIN", "FSA_PARAM_USER",
     "FSA_PARAM_PASS", "FSA_TOKEN_TYPE", "FSA_TOKEN_ALGO", "FSA_TOKEN_CARRIER",
@@ -363,6 +377,7 @@ class FlaskSimpleAuth:
         self._scopes: Set[str] = set()
         self._headers: Dict[str, Union[HeaderFun, str]] = {}
         self._before_requests: List[BeforeRequestFun] = []
+        self._before_exec_hooks: List[BeforeExecFun] = []
         self._after_requests: List[AfterRequestFun] = []
         self._local: Any = None
         # registered here to avoid being bypassed by user hooks
@@ -390,7 +405,7 @@ class FlaskSimpleAuth:
         return self._error_response(msg, code)
 
     def _Exc(self, exc):
-        """Handle a user error."""
+        """Handle an internal error."""
         if exc and not hasattr(exc, "_fsa_traced"):
             log.error(exc, exc_info=True)
             setattr(exc, "_fsa_traced", True)
@@ -584,6 +599,9 @@ class FlaskSimpleAuth:
             return CombinedMultiDict([MultiDict(d) if not isinstance(d, MultiDict) else d
                                       for d in (request.args, request.form)])
 
+    #
+    # REGISTER HOOKS
+    #
     def get_user_pass(self, gup: GetUserPassFun):
         """Set `get_user_pass` helper, can be used as a decorator."""
         if self._get_user_pass:
@@ -669,6 +687,10 @@ class FlaskSimpleAuth:
         """Add some headers."""
         for k, v in kwargs.items():
             self._store(self._headers, "header", k, v)
+
+    def before_exec(self, hook: BeforeExecFun):
+        """Add an after auth hook."""
+        self._before_exec_hooks.append(hook)
 
     #
     # DEFERRED INITIALIZATIONS
@@ -1019,6 +1041,7 @@ class FlaskSimpleAuth:
         # (some before hooks are registered in __init__)
         #
         self._before_requests = conf.get("FSA_BEFORE_REQUEST", [])
+        self._before_exec_hooks += conf.get("FSA_BEFORE_EXEC", [])
         # internal hooks
         if self._mode >= Mode.DEBUG4:
             self._app.after_request(self._show_response)
@@ -1565,6 +1588,7 @@ class FlaskSimpleAuth:
     #   _parameters: handle HTTP/JSON/FILE to python parameter translation
     #     _noparams: just check that no parameters are passed
     #   _perm_authz: check per-object permissions
+    #  _before_exec: as told
     #
     def _safe_call(self, path, level, fun, *args, **kwargs):
         """Call a route function ensuring a response whatever."""
@@ -1958,6 +1982,37 @@ class FlaskSimpleAuth:
 
         return decorate
 
+    # run any hook after auth and before exec
+    def _before_exec(self, path):
+
+        def decorate(fun: Callable):
+
+            @functools.wraps(fun)
+            def wrapper(*args, **kwargs):
+
+                login = self.current_user()  # may be None
+                auth = self._local.auth
+
+                # apply all hooks
+                for hook in self._before_exec_hooks:
+                    try:
+                        res = hook(request, login, auth)
+                        if res:
+                            if self._mode >= Mode.DEBUG2:
+                                log.debug(f"returning on {request.method} {request.path} before exec hook")
+                            return res
+                    except Exception as e:
+                        if self._Exc(e):  # pragma: no cover
+                            raise
+                        return self._Res("internal error with before exec hook", self._server_error)
+
+                # then call the initial function
+                return self._safe_call(path, "before exec hook", fun, *args, **kwargs)
+
+            return wrapper
+
+        return decorate
+
     # FIXME endpoint?
     def add_url_rule(self, rule, endpoint=None, view_func=None, authorize=NONE, auth=None, **options):
         """Route decorator helper method."""
@@ -2071,7 +2126,9 @@ class FlaskSimpleAuth:
         assert len(predefs) <= 1
 
         # build handling layers in reverse order:
-        # authenticate / (oauth|group|no|) / params / perms / fun
+        # hooks / authenticate / (oauth|group|no|) / params / perms / fun
+        if self._before_exec_hooks:
+            fun = self._before_exec(newpath)(fun)
         if perms:
             if not need_parameters:
                 raise self._Bad("permissions require some parameters")
