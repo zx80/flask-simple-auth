@@ -20,8 +20,7 @@ log.setLevel(logging.DEBUG)
 # authentication for tests
 def basic(login, upass):
     return {
-        "Authorization": b"Basic "
-        + base64.b64encode(bytes(login, "utf-8") + b":" + bytes(upass, "utf-8"))
+        "Authorization": b"Basic " + base64.b64encode(bytes(login, "utf-8") + b":" + bytes(upass, "utf-8"))
     }
 
 
@@ -131,7 +130,7 @@ def test_stuff(client):
     assert sn is not None
     res = check(200, client.get(f"/stuff/{sn}", headers=FOO_BASIC))
     assert b"STUFF" in res.data
-    check(404, client.get(f"/stuff/0", headers=FOO_BASIC))
+    check(404, client.get("/stuff/0", headers=FOO_BASIC))
     check(204, client.delete(f"/stuff/{sn}", headers=FOO_BASIC))
     res = check(200, client.get("/stuff", headers=FOO_BASIC))
     assert b"STUFF" not in res.data
@@ -283,6 +282,16 @@ def test_types(client):
     assert b"list: [True, 2, 3.0, 'Four']" in res.data
     res = check(200, client.get("/types/json", json={"j": {"ff": 0xFF}}))
     assert b"dict: {'ff': 255}" in res.data
+    res = check(200, client.get("/types/nat", json={"i": 17, "j": 25}))
+    assert res.data == b"42\n"
+    res = check(400, client.get("/types/nat", json={"i": -17, "j": -25}))
+    assert b"-17" in res.data and b"-25" in res.data
+    CALVIN = {"name": "Calvin", "age": 6}
+    ERROR = {"name": "Error", "age": "twelve"}
+    res = check(201, client.post("/types/char", json={"char": CALVIN}))
+    assert b"Calvin" in res.data
+    res = check(400, client.post("/types/char", json={"char": ERROR}))
+    assert b"value is not a valid integer" in res.data
 
 
 def test_jwt_oauth(client):

@@ -13,8 +13,9 @@ TODOS = {
     "todo3": {"task": "profit!"},
 }
 
+
 @app.object_perms("todos")
-def check_todos_access(login: str, tid: str, mode = None):
+def check_todos_access(login: str, tid: str, mode=None):
     # NOTE returning None triggers a 404
     return True if tid in TODOS else None
 
