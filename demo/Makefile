@@ -112,37 +112,44 @@ log.pg2:
 # TESTS
 #
 
+F.py	= $(wildcard *.py)
 PYTEST  = pytest --log-level=debug --capture=tee-sys
 PYTOPT	=
 
-.PHONY: check.mypy check.flake8 check check.db check.pg check.pg2 check.all check.pgall
+.PHONY: check
+check: check.pytest
 
-check: stuff.$(DB)
+.PHONY: check.pytest
+check.pytest: stuff.$(DB)
 	export FLASK_APP=app.py FLASK_DEBUG=1 APP_CONFIG=app-$(DB).conf
 	$(PYTEST) $(PYTOPT) test_demo.py
 
-# source files
-F.py	= $(wildcard *.py)
-
+.PHONY: check.mypy
 check.mypy:
 	mypy --ignore-missing-imports $(F.py)
 
+.PHONY: check.flake8
 check.flake8:
 	flake8 --ignore=E402,E501 $(F.py)
 
+.PHONY: check.pg
 check.pg:
 	$(MAKE) DB=pg check
 
+.PHONY: check.pg2
 check.pg2:
 	$(MAKE) DB=pg2 check
 
+.PHONY: check.db
 check.db:
 	$(MAKE) DB=db check
 
-check.all:
-	$(MAKE) check.db
-	$(MAKE) check.pgall
-
+.PHONY: check.pgall
 check.pgall:
 	$(MAKE) check.pg
 	$(MAKE) check.pg2
+
+.PHONY: check.all
+check.all:
+	$(MAKE) check.db
+	$(MAKE) check.pgall
