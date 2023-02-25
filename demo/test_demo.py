@@ -264,6 +264,7 @@ def test_users(client):
 
 
 def test_types(client):
+    # scalars
     res = check(200, client.get("/types/scalars", data={"i": 1}))
     assert b"i=1," in res.data
     res = check(200, client.get("/types/scalars", json={"i": 1}))
@@ -276,21 +277,29 @@ def test_types(client):
     assert b"b=True," in res.data
     res = check(200, client.get("/types/scalars", json={"b": True}))
     assert b"b=True," in res.data
+    # json stuff
     res = check(200, client.get("/types/json", data={"j": '[false, 1, 2.0, "Three"]'}))
     assert b"list: [False, 1, 2.0, 'Three']" in res.data
     res = check(200, client.get("/types/json", json={"j": [True, 0x2, 3.00, "Four"]}))
     assert b"list: [True, 2, 3.0, 'Four']" in res.data
     res = check(200, client.get("/types/json", json={"j": {"ff": 0xFF}}))
     assert b"dict: {'ff': 255}" in res.data
+    # constrained type
     res = check(200, client.get("/types/nat", json={"i": 17, "j": 25}))
     assert res.data == b"42\n"
     res = check(400, client.get("/types/nat", json={"i": -17, "j": -25}))
     assert b"-17" in res.data and b"-25" in res.data
+    # pydantic model
     CALVIN = {"name": "Calvin", "age": 6}
     ERROR = {"name": "Error", "age": "twelve"}
     res = check(201, client.post("/types/char", json={"char": CALVIN}))
     assert b"Calvin" in res.data
     res = check(400, client.post("/types/char", json={"char": ERROR}))
+    assert b"value is not a valid integer" in res.data
+    # pydantic dataclass
+    res = check(201, client.post("/types/pers", json={"pers": CALVIN}))
+    assert b"Calvin" in res.data
+    res = check(400, client.post("/types/pers", json={"pers": ERROR}))
     assert b"value is not a valid integer" in res.data
 
 

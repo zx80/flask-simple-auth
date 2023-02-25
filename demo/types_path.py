@@ -2,7 +2,7 @@
 # Types demo
 #
 from FlaskSimpleAuth import Blueprint, JsonData, jsonify as json
-from pydantic import BaseModel
+import pydantic as pyda
 
 types = Blueprint("types", __name__)
 
@@ -30,11 +30,23 @@ def get_nat(i: nat, j: nat):
     return json(i + j), 200
 
 
-class Character(BaseModel):
+class Character(pyda.BaseModel):
     name: str
+    age: int
+
+
+@pyda.dataclasses.dataclass
+class Personnage:
+    name: str
+    # age: nat  # DOES NOT WORK
     age: int
 
 
 @types.post("/char", authorize="ANY")
 def post_char(char: Character):
     return {"name": char.name, "age": char.age}, 201
+
+
+@types.post("/pers", authorize="ANY")
+def post_pers(pers: Personnage):
+    return {"name": pers.name, "age": pers.age}, 201
