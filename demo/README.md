@@ -166,7 +166,7 @@ with `psycopg` driver version 2 and 3.
  - `make DB=pg log` runs and tails logs.
  - `make stop` stops the application.
  - `make clean` cleans generated files.
- - `make clean-venv` removes the virtual environment.
+ - `make clean.venv` removes the virtual environment.
 
 See example `curl` commands in [curl-demo.sh](curl-demo.sh).
 
