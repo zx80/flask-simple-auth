@@ -683,6 +683,22 @@ def get_mail_addr(addr: EmailAddr):
     …
 ```
 
+Defining new types can be used to factor out some parameter checks,
+for instance requiring a positive integer:
+
+```python
+class nat(int):
+    def __new__(cls, val):
+        if val < 0:
+            raise ValueError(f"nat value must be positive: {val}")
+        return super().__new__(cls, val)
+
+@app.get("/pos", authorize="ANY")
+def get_pos(i: nat, j: nat):
+    # i and j are positive integers
+    …
+```
+
 If the constructor does not match, a custom function can be provided
 with the `cast` function/decorator and will be called automatically
 to convert parameters:
@@ -1067,4 +1083,3 @@ See [all versions](VERSIONS.md).
 - add `FileStorage` definition example.
 - add more examples…
 - how to limit token validity? provide some additional hooks?
-- add/suggest how to add constraints on parameters?
