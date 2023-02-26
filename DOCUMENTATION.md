@@ -152,19 +152,12 @@ Various decorators/functions allow to register hooks, such as:
   - a function to retrieve the password hash from the user name.
   - a function which tells whether a user is in a group or role.
   - functions which define object ownership and access permissions.
-- `before_exec` a function/decorator to register a hook called after
-  authentication, authorizations and parameters and before the actuall
-  route function execution.
 - `password_quality` a function/decorator to register a function to check for
   password quality.
 - `password_check` a function/decorator to register a new password checker,
   so as to handle recovery codes, for instance.
 - `cast` a function/decorator to register new str-to-some-type casts for
   function parameters.
-- `special_parameter` a function/decorator to register new special parameter
-  types.
-- `error_response` a function/decorator to register a new response generator
-  when handling errors.
 
 ```python
 # return password hash if any (see with FSA_GET_USER_PASS)
