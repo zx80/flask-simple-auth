@@ -43,7 +43,8 @@ Flask lack of helpfulness and wrong style, such as:
   in connection to application data, which requires some kind of
   integration;
 - not providing a clean mean to put authentication in the configuration
-  only, where it belongs;
+  only, where it belongs, and taking account of password management best
+  practices.
 - not providing any real help with handling parameters, which
   is demonstrated by the fact that the user must find them
   in different dictionaries depending on where there come from,
