@@ -4,7 +4,37 @@ This modules helps handling *authentication*, *authorizations*,
 *parameters* and provide other *utils* for
 [Flask](https://flask.palletsprojects.com/), controled from
 Flask configuration and the extended `route` decorator.
-It is designed to help REST application back-end development.
+
+It is designed to help an application REST API back-end development.
+The features provided in this module point at fixing what I deem
+Flask lack of helpfulness and wrong style, such as:
+- not providing a simple and effective declarative security layer,
+  which must address both authentication and authorization possibly
+  in connection to application data, which requires some kind of
+  integration;
+- not providing a clean mean to put authentication in the configuration
+  only, where it belongs;
+- not providing any real help with handling parameters, which
+  is demonstrated by the fact that the user must find them
+  in different dictionaries depending on where there come from,
+  and having to access them through *ugly* global proxies such
+  as `request`.
+
+The resulting module allows clean application development which only has to
+focus on handling routes depending on cleanly typed parameters, with
+declarative security on each one, reducing both line counts and code
+complexity.
+An emphasis is also put on performance by providing caching where it matters.
+
+Many hooks are provided to be able to take full control of various
+features, with reasonable defaults which make this less a necessity.
+Many key features rely on proven third-party packages such as `passlib`,
+`jwt` or `flask_cors`.
+
+This module does not care much about web and application oriented features:
+it is a Flask framework extension which aims at better handling HTTP-related
+features. It could be used as a cleaner layer for other Flask
+application-oriented extensions such as Flask-Security.
 
 ## Table of Contents
 
