@@ -60,7 +60,7 @@ so this is not only about style.
 Many hooks are provided to be able to take full control of various
 features, with reasonable defaults which make this less a necessity.
 Many key features rely on proven third-party packages such as `passlib`,
-`jwt` or `flask_cors`.
+`PyJWT` or `flask-cors`.
 
 This module does not care much about web and application oriented features:
 it is a Flask framework extension which aims at better handling HTTP-related
