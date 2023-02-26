@@ -726,7 +726,9 @@ FSA_CAST = { House: strToHouse, … }
 ```
 
 As a special case, the `Request`, `Session`, `Globals`, `Environ`,
-`CurrentApp`, `CurrentUser` and `FileStorage` types, when used for parameters,
+`CurrentApp`, `CurrentUser` and
+[`FileStorage`](https://werkzeug.palletsprojects.com/en/2.2.x/datastructures/#werkzeug.datastructures.FileStorage)
+types, when used for parameters,
 result in the `request`, `session`, `g` flask special objects, `environ` WSGI
 parameter, the current authenticated user, the current application or a special
 file parameter (for upload) to be passed as this parameter to the function,
@@ -734,12 +736,13 @@ allowing to keep a functional programming style by hidding away these special
 proxies.
 
 More special parameters can be added with the `special_parameter` app
-function/decorator, by providing a type and a function which is given
-the parameter name (usually useless, but not always) and returns the
-expected value. For instance, the `Request` definition corresponds to:
+function/decorator, by providing a type and a function which is given the
+parameter name (usually useless, but not always) and returns the expected value.
+For instance, the `Request` and `FileStorage` definitions roughly correspond to:
 
 ```python
 app.special_parameter(Request, lambda _: request)
+app.special_parameter(FileStorage, lambda p: request.files[p])
 ```
 
 An example use-case is to make user-related data easily available
@@ -1106,6 +1109,5 @@ See [all versions](VERSIONS.md).
 - how to add a timeout?
 - how to ensure that shared/pooled resources are returned even on errors?
   is an `after_request` hook enough?
-- add `FileStorage` definition example.
 - add more examples…
 - how to limit token validity? provide some additional hooks?
