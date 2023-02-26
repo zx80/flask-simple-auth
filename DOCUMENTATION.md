@@ -22,8 +22,8 @@ It is designed to help REST application back-end development.
   *http*, *json* and *file* parameters are managed with type hints.
 - [Utils](#utils) such as
   [`Reference` wrapper](#reference-object-wrapper),
-  [`ErrorResponse` class](#errorresponse-class) and
-  [Miscellaneous directives](#miscellaneous-configuration-directives).
+  [Error Mandling](#error-handling) and
+  [Miscellaneous Directives](#miscellaneous-configuration-directives).
 - [See Also](#see-also)
   [Flask-Security](#flask-security),
   [Flask-RESTful](#flask-restful),
@@ -777,7 +777,7 @@ Default is *True*.
 ## Utils
 
 Utilities include the `Reference` generic object wrapper class,
-an `ErrorResponse` class to quickly generate error replies and
+error handling utilities and
 miscellaneous configuration directives which cover security,
 caching and CORS.
 
@@ -795,45 +795,17 @@ behaves like the wrapped object itself.
 
 See the module for a detailed documentation.
 
-### `ErrorResponse` class
+### Error Handling
 
-Raising this exception with a message and status from any user-defined function
-generates a `Response` of this status with the text message as contents.
+Raising the `ErrorResponse` exception with a message and status from any
+user-defined function generates a `Response` of this status with the text
+message as contents.
 
-### Miscellaneous Configuration Directives
+The following directives provide convenient configuration about error
+handling:
 
-Some directives govern various details for this extension internal working.
-
-- `FSA_MODE` set module mode, expecting *prod*, *dev*, *debug* to *debug4*.
-  This changes the module verbosity.
-  Under *dev* or debug, `FSA-*` headers is added to show informations about
-  the request, the authentication and the elapsed time from the application
-  code perspective.
-  Default is *prod*.
-
-- `FSA_LOGGING_LEVEL` adjust module internal logging level.
-  Default is *None*.
-
-- `FSA_SECURE` only allows secured requests on non-local connections.
-  Default is *True*.
-
-- `FSA_SERVER_ERROR` controls the status code returned on the module internal
-  errors, to help distinguish these from other internal errors which may occur.
-  Default is *500*.
-
-- `FSA_NOT_FOUND_ERROR` controls the status code returned when a permission
-  checks returns *None*.
-  Default is *404*.
-
-- `FSA_LOCAL` sets the internal object isolation level.
-  It must be consistent with the module WSGI usage.
-  Possible values are *process*, *thread* (several threads can be used by the
-  WSGI server) and *werkzeug* (should work with sub-thread level request
-  handling, eg greenlets).
-  Default is *thread*.
-
-- `FSA_ERROR_RESPONSE` sets the handler for generating responses on errors.
-  Text values  *plain* or *json* generate simple `text/plain` or
+- `FSA_ERROR_RESPONSE` sets the handler for generating actual responses on
+  errors.  Text values  *plain* or *json* generate simple `text/plain` or
   `application/json` responses.
   Using *json:error* generates a JSON dictionary with key *error* holding
   the error message.
@@ -856,6 +828,58 @@ Some directives govern various details for this extension internal working.
   They may occur from any user-provided functions such as various hooks
   and route functions.
   Default is *False*
+
+- `FSA_SERVER_ERROR` controls the status code returned on the module internal
+  errors, to help distinguish these from other internal errors which may occur.
+  Default is *500*.
+
+- `FSA_NOT_FOUND_ERROR` controls the status code returned when a permission
+  checks returns *None*.
+  Default is *404*.
+
+A possible pattern is to put checks, say about parameters, in a function
+which raises the `ErrorResponse` exception to control client-facing results,
+and to call this function for checking these parameters:
+
+```python
+def check_foo_param(foo):
+    if db_has_no_foo(foo):
+        raise ErrorResponse(f"no such foo: {foo}", 404)
+    if this_foo_is_confidential(foo, app.current_user()):
+        raise ErrorResponse(f"no way", 403)
+
+@app.get("/foo/<fid>", authorize="ALL")
+def get_foo_fid(fid: int):
+    check_foo_param(fid)
+    …
+```
+
+Such checks can also be performed in an object constructor, with the
+inconvenience that the objects become specific to the HTTP context.
+
+### Miscellaneous Configuration Directives
+
+Some directives govern various details for this extension internal working.
+
+- `FSA_MODE` set module mode, expecting *prod*, *dev*, *debug* to *debug4*.
+  This changes the module verbosity.
+  Under *dev* or debug, `FSA-*` headers is added to show informations about
+  the request, the authentication and the elapsed time from the application
+  code perspective.
+  Default is *prod*.
+
+- `FSA_LOGGING_LEVEL` adjust module internal logging level.
+  Default is *None*.
+
+- `FSA_SECURE` only allows secured requests on non-local connections.
+  Default is *True*.
+
+- `FSA_LOCAL` sets the internal object isolation level.
+  It must be consistent with the module WSGI usage.
+  Possible values are *process*, *thread* (several threads can be used by the
+  WSGI server) and *werkzeug* (should work with sub-thread level request
+  handling, eg greenlets).
+  Default is *thread*.
 
 - `FSA_ADD_HEADERS` allows to add headers to the generated response,
   as a dictionary.
@@ -930,11 +954,14 @@ Web-application oriented features:
   CORS request handling is enabled by setting `FSA_CORS` to *True* which
   allows requests from any origin. Default is *False*.
   Additional options are controled with `FSA_CORS_OPTS`.
-  The implementation is delegated to the
+  The implementation is simply delegated to the
   [`flask_cors`](https://pypi.org/project/Flask-Cors/) Flask extension
   which must be available if the feature is enabled.
 
 ## See Also
+
+The following links point to alternative to *FlaskSimpleAuth*, which may be a
+better match depending on the use case.
 
 ### Flask-Security
 
@@ -1079,7 +1106,6 @@ See [all versions](VERSIONS.md).
 - how to add a timeout?
 - how to ensure that shared/pooled resources are returned even on errors?
   is an `after_request` hook enough?
-- add example for `ErrorResponse`.
 - add `FileStorage` definition example.
 - add more examples…
 - how to limit token validity? provide some additional hooks?
