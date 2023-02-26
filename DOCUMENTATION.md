@@ -1136,9 +1136,6 @@ Todo or not todo…
 
 ### Software Engineering
 
-- add a `pyproject.toml`?
-  this seems like a pooly thought file format.
-  it is unclear whether it allows to get read of `setup.cfg` and `setup.py`.
 - reduce sloc?
 - separate classes/projects?
 - coverage should include demo run?
