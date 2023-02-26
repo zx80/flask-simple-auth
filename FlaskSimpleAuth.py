@@ -198,6 +198,7 @@ def _typeof(p: inspect.Parameter):
 
 
 def _get_file_storage(p: str) -> FileStorage:
+    """Extract file parameter from request, or generate 400."""
     if p not in request.files:
         raise ErrorResponse(f"missing file parameter \"{p}\"", 400)
     return request.files[p]
