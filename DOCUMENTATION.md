@@ -1124,7 +1124,7 @@ Todo or not todo…
 - ability to add an authentication scheme?
   eg send a mail with a link, or code with a SMS, or trigger some app…
 
-### Parameters
+### Params
 
 - `FSA_PARAM_STYLE` *any/http/json* to restrict/force parameters?
 - check for bad char in parameter names
