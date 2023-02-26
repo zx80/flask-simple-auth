@@ -1077,37 +1077,46 @@ See [all versions](VERSIONS.md).
 
 ## TODO
 
-- `FSA_PARAM_STYLE` *any/http/json* to restrict/force parameters?
-- test `FSA_HTTP_AUTH_OPTS`?
-- add `any` token scheme?
-- add app.log?
-- on-demand supplied user data?
-  `get\_identity(user: str) -> Any` which is to be cached
-  registered with `app.identity(get_identity)`
-  then `id = app.get_identity(user: str = app.get_user())`
-  does it really need to be inside `FlaskSimpleAuth`?
-  possibly the id can be passed to perm hooks instead of the login?
-  can be managed there as well?
-  could be in pre request hooks?
+Todo or not todo…
+
+### Authentication
+
 - demo LDAP auth? One class plus a new `check_password`?
-- `authlib`?
-- reduce sloc?
+- add `any` token scheme?
+- use `authlib`?
+- test `FSA_HTTP_AUTH_OPTS`?
 - password re could use a dict for providing an explanation?
-- coverage should include demo run?
 - refactor password manager in a separate class?
 - how to have several issuers and their signatures schemes?
 - add `issuer` route parameter?
-- add a `pyproject.toml`?
-- check for more directive types (dynamically)?
-- local should depend on `traitlets`?
-- check with bad char in parameter names
-- add more examples in the documentation
 - authz/authn instead of authorize/auth?
 - rename ANY/ALL/NONE so something more intuitive!
-- checks: mypy vs pyright vs pyanalyze?  mypy is way too slow!
+
+### Parameters
+
+- `FSA_PARAM_STYLE` *any/http/json* to restrict/force parameters?
+- check for bad char in parameter names
+
+### Features
+
 - clear cache per type? entry??
 - how to add a timeout?
+
+### Software Engineering
+
+- add a `pyproject.toml`?
+  this seems like a pooly thought file format.
+  it is unclear whether it allows to get read of `setup.cfg` and `setup.py`.
+- reduce sloc?
+- separate classes/projects?
+- coverage should include demo run?
+- check for more directive types (dynamically)?
+- `local` should depend on `traitlets` and others?
+- add app.log?
+- type checks: mypy vs pyright vs pyanalyze?  mypy is way too slow!
 - how to ensure that shared/pooled resources are returned even on errors?
   is an `after_request` hook enough?
-- add more examples…
-- how to limit token validity? provide some additional hooks?
+- add more examples in the documentation
+- drop `List Tuple Dict Optional…` for `list tuple dict |None` when possible
+  minimum version support is 3.9.
+- take advantage of `TypedDict`?
