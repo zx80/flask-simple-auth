@@ -1121,6 +1121,8 @@ Todo or not todo…
 - authz/authn instead of authorize/auth?
 - rename ANY/ALL/NONE so something more intuitive!
 - how to do multi-factor authentication?
+- ability to add an authentication scheme?
+  eg send a mail with a link, or code with a SMS, or trigger some app…
 
 ### Parameters
 
