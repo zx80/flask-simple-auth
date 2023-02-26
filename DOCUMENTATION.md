@@ -1120,6 +1120,7 @@ Todo or not todo…
 - add `issuer` route parameter?
 - authz/authn instead of authorize/auth?
 - rename ANY/ALL/NONE so something more intuitive!
+- how to do multi-factor authentication?
 
 ### Parameters
 
