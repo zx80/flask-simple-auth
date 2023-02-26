@@ -5,6 +5,7 @@ and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 
 ## 22.0 on ?
 
+Add a minimal `pyproject.toml`, yet another useless file.
 Add support for data classes and [pydantic](https://pydantic.dev/) classes.
 Add an after auth/before exec hook, executed just before actually calling
 the route function.
