@@ -1136,6 +1136,7 @@ Todo or not todo…
 
 ### Software Engineering
 
+- rename `master` to `main`
 - reduce sloc?
 - separate classes/projects?
 - coverage should include demo run?
