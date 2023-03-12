@@ -878,7 +878,7 @@ def check_foo_param(foo):
     if db_has_no_foo(foo):
         raise ErrorResponse(f"no such foo: {foo}", 404)
     if this_foo_is_confidential(foo, app.current_user()):
-        raise ErrorResponse(f"no way", 403)
+        raise ErrorResponse(f"no way foo: {foo}", 403)
 
 @app.get("/foo/<fid>", authorize="ALL")
 def get_foo_fid(fid: int):
