@@ -22,7 +22,7 @@ Flask configuration and the extended `route` decorator.
   *http*, *json* and *file* parameters are managed with type hints.
 - [Utils](#utils) such as
   [`Reference` wrapper](#reference-object-wrapper),
-  [Error Mandling](#error-handling) and
+  [Error Handling](#error-handling) and
   [Miscellaneous Directives](#miscellaneous-configuration-directives).
 - [See Also](#see-also)
   [Flask-Security](#flask-security),

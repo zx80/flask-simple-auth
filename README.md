@@ -103,7 +103,7 @@ The philosophy is that a REST API entry point is a function call through HTTP,
 so the route definition should be a function, avoiding relying on magic globals.
 
 [**Utils**](DOCUMENTATION.md#utils) include the convenient `Reference` class which
-allows to share possibly thread-local data for import, and CORS handling.
+allows to share possibly thread-local data for import, error and CORS handling.
 
 It makes sense to integrate these capabilities into a Flask wrapper so that only
 one extended decorator is needed on a route, meaning that the security cannot be
