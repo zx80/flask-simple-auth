@@ -2127,7 +2127,7 @@ class FlaskSimpleAuth:
         assert len(predefs) <= 1
 
         # build handling layers in reverse order:
-        # hooks / authenticate / (oauth|group|no|) / params / perms / fun
+        # routed / authenticate / (oauth|group|no|) / params / perms / hooks / fun
         if self._before_exec_hooks:
             fun = self._before_exec(newpath)(fun)
         if perms:
