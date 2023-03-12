@@ -3,14 +3,17 @@
 Sources are available on [GitHub](https://github.com/zx80/flask-simple-auth)
 and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 
-## 22.0 on ?
+## 22.0 on 2023-03-12
 
-Add a minimal `pyproject.toml`, yet another useless file.
-Add support for data classes and [pydantic](https://pydantic.dev/) classes.
+Add a minimal `pyproject.toml`: yet another useless file, which would be a
+good thing if it *replaced* other files, alas the two `setup.*` files are still
+required.
+Add support for data classes and [pydantic](https://pydantic.dev/) classes
+as parameter types.
 Add an after auth/before exec hook, executed just before actually calling
 the route function.
-Report all possible 400 instead of stopping on the first issue.
-Improved documentation.
+Report all possible *400* instead of stopping on the first issue.
+Improve documentation.
 
 ## 21.5 on 2023-02-05
 

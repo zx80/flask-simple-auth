@@ -40,14 +40,14 @@ The features provided in this module point at fixing what I deem
 Flask lack of helpfulness and wrong style, such as:
 - not providing a simple and effective declarative security layer,
   which must address both authentication and authorization possibly
-  in connection to application data, which requires some kind of
+  in connection to application data, thus requires some kind of
   integration;
-- not providing a clean mean to put authentication in the configuration
-  only, where it belongs, and taking account of password management best
+- not providing a clean way to put authentication in the configuration only,
+  where it belongs, and taking into account password management best
   practices.
 - not providing any real help with handling parameters, which
   is demonstrated by the fact that the user must find them
-  in different dictionaries depending on where there come from,
+  in different dictionaries depending on where they come from,
   and having to access them through *ugly* global proxies such
   as `request`.
 
@@ -57,7 +57,7 @@ declarative security on each one, reducing both line counts and code
 complexity.
 
 An emphasis is also put on performance by providing caching where it matters,
-so this is not only about style.
+so this is not only about style:
 Many hooks are provided to be able to take full control of various
 features, with reasonable defaults which make this less a necessity.
 Many key features rely on proven third-party packages such as `passlib`,
