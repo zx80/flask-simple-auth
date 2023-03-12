@@ -4,7 +4,7 @@
 # not a clean REST API because "scare" is relative to the current user…
 #
 
-from FlaskSimpleAuth import Blueprint, jsonify as json, current_app as app
+from FlaskSimpleAuth import Blueprint, CurrentUser jsonify as json, current_app as app
 from database import db
 
 scare = Blueprint("scare", __name__)
@@ -20,6 +20,14 @@ def get_scare():
 @scare.get("/scare/token", authorize="ALL", auth="basic")
 def get_scare_token():
     return json(app.create_token()), 200
+
+
+# GET /scare/token2: MFA token for current user, basic + code
+@scare.get("/scare/token2", authorize="ALL", auth="basic")
+def get_scare_token2(code: str, user: fsa.CurrentUser):
+    if code != user + ":42":
+        return f"invalid validation code for {user}", 400
+    return json(app.create_token(user)), 200
 
 
 # POST /scare (login, pass): register a new user, or 500 if already exists
