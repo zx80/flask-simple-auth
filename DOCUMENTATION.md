@@ -1121,6 +1121,8 @@ Todo or not todo…
 - authz/authn instead of authorize/auth?
 - rename ANY/ALL/NONE so something more intuitive!
 - how to do multi-factor authentication?
+  - allow several realms, beyond the `FSA_REALM` default
+  - realm can be set on a route by auth: `auth="token:phase-one"`
 - ability to add an authentication scheme?
   eg send a mail with a link, or code with a SMS, or trigger some app…
 
