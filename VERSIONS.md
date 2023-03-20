@@ -3,6 +3,10 @@
 Sources are available on [GitHub](https://github.com/zx80/flask-simple-auth)
 and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 
+## ? on ?
+
+Rename `master` to `main`.
+
 ## 22.0 on 2023-03-12
 
 Add a minimal `pyproject.toml`: yet another useless file, which would be a

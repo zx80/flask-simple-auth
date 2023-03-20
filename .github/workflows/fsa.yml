@@ -2,7 +2,7 @@ name: FlaskSimpleAuth Package
 
 on:
   push:
-    branches: [ master ]
+    branches: [ main ]
   # push_request: ?
 
 jobs:
