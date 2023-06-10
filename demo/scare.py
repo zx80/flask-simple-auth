@@ -4,7 +4,8 @@
 # not a clean REST API because "scare" is relative to the current user…
 #
 
-from FlaskSimpleAuth import Blueprint, CurrentUser jsonify as json, current_app as app
+import FlaskSimpleAuth as fsa
+from FlaskSimpleAuth import Blueprint, CurrentUser, jsonify as json, current_app as app
 from database import db
 
 scare = Blueprint("scare", __name__)
