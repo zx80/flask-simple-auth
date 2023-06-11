@@ -1,6 +1,55 @@
-# for now, just specify "setuptools" as the build system
 [build-system]
 requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
-# it is unclear whether toml can support both "setup.cfg" and "setup.py"
+[project]
+name = "FlaskSimpleAuth"
+version = "23.0"
+authors = [ { name = "Fabien Coelho", email = "flask.auth@coelho.net" } ]
+description = "Simple authentication, authorization and parameters for Flask, emphasizing configurability"
+readme = "README.md"
+license = { text = "CC0" }
+# Flask 2.3 requires Python 3.9
+requires-python = ">=3.9"
+dependencies = [
+  "flask >= 2.2",
+  "ProxyPatternPool >= 1.0",
+  # NOTE although caching can be desactivated, it is definitely
+  # useful so make the dependency mandatory.
+  "CacheToolsUtils >= 4.0"
+]
+classifiers = [
+  "Development Status :: 5 - Production/Stable",
+  "Intended Audience :: Developers",
+  "License :: CC0 1.0 Universal (CC0 1.0) Public Domain Dedication",
+  "Programming Language :: Python",
+  "Environment :: Web Environment",
+  "Framework :: Flask",
+  "Topic :: Software Development :: Libraries :: Python Modules"
+]
+
+[project.urls]
+repository = "https://github.com/zx80/flask-simple-auth"
+documentation = "https://zx80.github.io/flask-simple-auth/"
+issues = "https://github.com/zx80/flask-simple-auth/issues"
+package = "https://pypi.org/project/FlaskSimpleAuth/"
+
+[project.optional-dependencies]
+# dev
+dev = [ "mypy", "flake8", "black", "pytest", "coverage", "pymarkdownlnt" ]
+# NOTE also: password jwt cors httpauth
+tests = [ "requests", "pydantic" ]
+demo = [ "anodb", "psycopg", "psycopg2", "pymemcache", "redis", "types-redis", "types-cachetools" ]
+# password management
+password = [ "passlib", "bcrypt",  ]
+# cache options
+redis = [ "redis" ]
+memcached = [ "pymemcache" ]
+# JWT support
+jwt = [ "pyjwt", "cryptography" ]
+# web utils
+cors = [ "flask_cors" ]
+httpauth = [ "flask_httpauth" ]
+
+[tool.setuptools]
+py-modules = [ "FlaskSimpleAuth" ]

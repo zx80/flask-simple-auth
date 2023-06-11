@@ -1133,14 +1133,13 @@ Todo or not todo…
 
 ### Features
 
+- fixes for Flask 2.3
 - clear cache per type? entry??
 - how to add a timeout?
 - how to manage automatic return?
 
 ### Software Engineering
 
-- switch to `pyproject.toml`
-- rename `master` to `main`
 - reduce sloc?
 - separate classes/projects?
 - coverage should include demo run?
