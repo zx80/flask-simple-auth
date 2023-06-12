@@ -275,6 +275,8 @@ class Flask(flask.Flask):
         self.check_password = self._fsa.check_password
         self.hash_password = self._fsa.hash_password
         self.create_token = self._fsa.create_token
+        self.get_token = self._fsa.get_token
+        self.check_token = self._fsa.check_token
         self.get_user = self._fsa.get_user
         self.current_user = self._fsa.current_user
         self.clear_caches = self._fsa.clear_caches
@@ -1385,27 +1387,30 @@ class FlaskSimpleAuth:
             self._token == "jwt" and self._algo[0] in ("R", "E", "P") and not self._sign
         )
 
-    def create_token(self, user: str = None, realm: str = None,
-                     issuer: str = None, delay: float = None, **kwargs):
+    def create_token(self, user: str = None, realm: str = None, issuer: str = None,
+                     delay: float = None, secret: str = None, **kwargs):
         """Create a new token for user depending on the configuration."""
         assert self._token
         user = user or self.get_user()
         realm = realm or self._realm
         issuer = issuer or self._issuer
         delay = delay or self._delay
+        secret = secret or (self._secret if self._token == "fsa" else self._sign)
         return (
-            self._get_fsa_token(realm, issuer, user, delay, self._secret, **kwargs) if self._token == "fsa" else
-            self._get_jwt_token(realm, issuer, user, delay, self._sign, **kwargs)
+            self._get_fsa_token(realm, issuer, user, delay, secret, **kwargs) if self._token == "fsa" else
+            self._get_jwt_token(realm, issuer, user, delay, secret, **kwargs)
         )
 
-    def _get_fsa_token_auth(self, token):
-        """Tell whether FSA token is ok: return validated user or None."""
+    # internal function to check a fsa token
+    def _check_fsa_token(self, token: str, realm: str, issuer: str|None, secret: str, grace: float) \
+            -> tuple[str, str, list[str]|None]:
+        """Check FSA token validity against a configuration."""
         # token format: "realm[/issuer]:calvin:20380119031407:<signature>"
         if token.count(":") != 3:
             if self._mode >= Mode.DEBUG:
                 log.debug(f"AUTH (fsa token): unexpected token ({token})")
             raise self._Err(f"invalid fsa token: {token}", 401)
-        realm, user, slimit, sig = token.split(":", 3)
+        trealm, user, slimit, sig = token.split(":", 3)
         try:
             limit = self._from_timestamp(slimit)
         except Exception as e:
@@ -1413,13 +1418,13 @@ class FlaskSimpleAuth:
                 log.debug(f"AUTH (fsa token): malformed timestamp {slimit} ({token}): {e}")
             raise self._Err(f"unexpected fsa token limit: {slimit} ({token})", 401, e)
         # check realm
-        if self._issuer and realm != f"{self._realm}/{self._issuer}" or \
-           not self._issuer and realm != self._realm:
+        if issuer and trealm != f"{realm}/{issuer}" or \
+           not issuer and trealm != realm:
             if self._mode >= Mode.DEBUG:
-                log.debug(f"AUTH (fsa token): unexpected realm {realm} ({token})")
-            raise self._Err(f"unexpected fsa token realm: {realm} ({token})", 401)
+                log.debug(f"AUTH (fsa token): unexpected realm {trealm} ({token})")
+            raise self._Err(f"unexpected fsa token realm: {trealm} ({token})", 401)
         # check signature
-        ref = self._cmp_sig(f"{realm}:{user}:{slimit}", self._secret)
+        ref = self._cmp_sig(f"{trealm}:{user}:{slimit}", secret)
         if ref != sig:
             if self._mode >= Mode.DEBUG:
                 log.debug("AUTH (fsa token): invalid signature ({token})")
@@ -1430,8 +1435,21 @@ class FlaskSimpleAuth:
             if self._mode >= Mode.DEBUG:
                 log.debug("AUTH (fsa token): token {token} has expired ({token})")
             raise self._Err("expired fsa auth token ({token})", 401)
-        # all is well
         return user, limit, None
+
+    # function suitable for the internal authentication API
+    def _get_fsa_token_auth(self, token):
+        """Tell whether FSA token is ok: return validated user or None."""
+        return self._check_fsa_token(token, self._realm, self._issuer, self._secret, self._grace)
+
+    # this function reuses the automatic token checking infra to check a custom internal token.
+    def check_token(self, token: str, realm: str, secret: str) -> str|None:
+        """Check a simple FSA token from user-land."""
+        try:
+            user = self._check_fsa_token(self, token, realm, None, secret, self._grace)[0]
+        except ErrorMessage:
+            user = None
+        return user
 
     def _get_jwt_token_auth(self, token):
         """Tell whether JWT token is ok: return validated user or None."""
@@ -1475,28 +1493,33 @@ class FlaskSimpleAuth:
         self._local.scopes = scopes
         return user
 
-    def _get_token_auth(self) -> str|None:
+    def get_token(self) -> str|None:
         """Get authentication from token."""
+        token: str|None = None
+        if self._carrier == "bearer":
+            auth = request.headers.get("Authorization", None)
+            if auth:
+                assert self._name
+                slen = len(self._name) + 1
+                if auth[:slen] == f"{self._name} ":  # FIXME lower case?
+                    token = auth[slen:]
+            # else we ignore… maybe it will be resolved later
+        elif self._carrier == "cookie":
+            assert self._name
+            token = (request.cookies[self._name] if self._name in request.cookies else
+                     None)
+        elif self._carrier == "param":
+            token = self._params().get(self._name, None)
+        else:
+            assert self._carrier == "header" and self._name
+            token = request.headers.get(self._name, None)
+        return token
+
+    def _get_token_auth(self) -> str|None:
+        """Authenticate with current token."""
         user = None
         if self._token:
-            token: str|None = None
-            if self._carrier == "bearer":
-                auth = request.headers.get("Authorization", None)
-                if auth:
-                    assert self._name
-                    slen = len(self._name) + 1
-                    if auth[:slen] == f"{self._name} ":  # FIXME lower case?
-                        token = auth[slen:]
-                # else we ignore… maybe it will be resolved later
-            elif self._carrier == "cookie":
-                assert self._name
-                token = (request.cookies[self._name] if self._name in request.cookies else
-                         None)
-            elif self._carrier == "param":
-                token = self._params().get(self._name, None)
-            else:
-                assert self._carrier == "header" and self._name
-                token = request.headers.get(self._name, None)
+            token = self.get_token()
             # this raises a missing token 401 if no token
             user = self._get_any_token_auth(token)
         return user
