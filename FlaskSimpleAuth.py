@@ -11,7 +11,8 @@ This code is public domain.
 """
 
 import sys
-from typing import Callable, Dict, List, Set, Any, Union, MutableMapping, Optional
+from typing import Callable, MutableMapping, Any
+import typing
 import types
 
 import functools
@@ -57,25 +58,25 @@ __version__ = pkg_version("FlaskSimpleAuth")
 # generate an error response for message and status
 ErrorResponseFun = Callable[[str, int], Response]
 # get password from user login, None if unknown
-GetUserPassFun = Callable[[str], Optional[str]]
+GetUserPassFun = Callable[[str], str|None]
 # is user login in group (str or int): yes, no, unknown
-UserInGroupFun = Callable[[str, Union[str, int]], Optional[bool]]
+UserInGroupFun = Callable[[str, str|int], bool|None]
 # check object access in domain, for parameter, in mode
-ObjectPermsFun = Callable[[str, Any, Optional[str]], bool]
+ObjectPermsFun = Callable[[str, Any, str|None], bool]
 # low level check login/password validity
-PasswordCheckFun = Callable[[str, str], Optional[bool]]
+PasswordCheckFun = Callable[[str, str], bool|None]
 # is this password quality suitable?
 PasswordQualityFun = Callable[[str], bool]
 # cast parameter value to some object
-CastFun = Callable[[Union[str, Any]], object]
+CastFun = Callable[[str|Any], object]
 # generate a "special" parameter, with the parameter name
 SpecialParameterFun = Callable[[str], Any]
 # add a header to the current response
-HeaderFun = Callable[[Response], Optional[str]]
+HeaderFun = Callable[[Response], str|None]
 # before request hook, with request provided
-BeforeRequestFun = Callable[[Request], Optional[Response]]
+BeforeRequestFun = Callable[[Request], Response|None]
 # after authentication and right before exec
-BeforeExecFun = Callable[[Request, str, str], Optional[Response]]
+BeforeExecFun = Callable[[Request, str, str], Response|None]
 # after request hook
 AfterRequestFun = Callable[[Response], Response]
 
@@ -179,18 +180,17 @@ def _typeof(p: inspect.Parameter):
         return list
     elif p.annotation is not inspect._empty:
         a = p.annotation
-        # NOTE Optional[?] == Union[?, None] == ? | None
         # FIXME how to recognize reliably an Optional[?] across versions
         if sys.version_info >= (3, 10):  # pragma: no cover
             if isinstance(a, types.UnionType) and len(a.__args__) == 2 and a.__args__[1] == type(None):
                 return a.__args__[0]
             elif hasattr(a, "__name__") and a.__name__ == "Optional":
                 return a.__args__[0]
-            elif hasattr(a, "__origin__") and a.__origin__ is Union and len(a.__args__) == 2:
+            elif hasattr(a, "__origin__") and a.__origin__ is typing.Union and len(a.__args__) == 2:
                 return a.__args__[0]
             else:
                 return a
-        elif hasattr(a, "__origin__") and a.__origin__ is Union and len(a.__args__) == 2:  # pragma: no cover
+        elif hasattr(a, "__origin__") and a.__origin__ is typing.Union and len(a.__args__) == 2:  # pragma: no cover
             return a.__args__[0]
         else:  # pragma: no cover
             return a
@@ -219,7 +219,7 @@ def jsonify(a: Any):
 class Reference(ppp.Proxy):
     """Convenient object wrapper class."""
 
-    def __init__(self, *args, close: Optional[str] = "close", **kwargs):
+    def __init__(self, *args, close: str|None = "close", **kwargs):
         # NOTE max_delay is just here for backward compatibility
         # TODO remove at some point
         # if max_delay is not None and ppp.__version__ >= (4, 0):  # pragma: no cover
@@ -245,7 +245,7 @@ class Flask(flask.Flask):
 
     def __init__(self, *args, debug: bool = False, **kwargs):
         # extract FSA-specific directives
-        fsaconf: Dict[str, Any] = {}
+        fsaconf: dict[str, Any] = {}
         for key, val in kwargs.items():
             if key.startswith("FSA_"):
                 fsaconf[key] = val
@@ -339,13 +339,13 @@ class FlaskSimpleAuth:
         self._app = app
         self._app.config.update(**config)
         # hooks
-        self._error_response: Optional[ErrorResponseFun] = None
-        self._get_user_pass: Optional[GetUserPassFun] = None
-        self._user_in_group: Optional[UserInGroupFun] = None
-        self._object_perms: Dict[Any, ObjectPermsFun] = dict()
-        self._password_check: Optional[PasswordCheckFun] = None
-        self._password_quality: Optional[PasswordQualityFun] = None
-        self._casts: Dict[type, CastFun] = {
+        self._error_response: ErrorResponseFun|None = None
+        self._get_user_pass: GetUserPassFun|None = None
+        self._user_in_group: UserInGroupFun|None = None
+        self._object_perms: dict[Any, ObjectPermsFun] = dict()
+        self._password_check: PasswordCheckFun|None = None
+        self._password_quality: PasswordQualityFun|None = None
+        self._casts: dict[type, CastFun] = {
             bool: lambda s: None if s is None else s.lower() not in ("", "0", "false", "f"),
             int: lambda s: int(s, base=0) if s else None,
             inspect._empty: str,
@@ -356,7 +356,7 @@ class FlaskSimpleAuth:
             dt.datetime: dt.datetime.fromisoformat,
             JsonData: json.loads,
         }
-        self._special_parameters: Dict[type, SpecialParameterFun] = {
+        self._special_parameters: dict[type, SpecialParameterFun] = {
             Request: lambda _: request,
             Environ: lambda _: request.environ,
             Session: lambda _: session,
@@ -365,24 +365,24 @@ class FlaskSimpleAuth:
             CurrentApp: lambda _: current_app,
             FileStorage: _get_file_storage,
         }
-        self._auth: List[str] = []
+        self._auth: list[str] = []
         self._http_auth = None
         self._pm = None
-        self._cache: Optional[MutableMapping[str, str]] = None
-        self._gen_cache: Optional[Callable] = None
+        self._cache: MutableMapping[str, str]|None = None
+        self._gen_cache: Callable|None = None
         # fsa-generated errors
         self._server_error: int = _DEFAULT_SERVER_ERROR
         self._not_found_error: int = _DEFAULT_NOT_FOUND_ERROR
         self._keep_user_errors: bool = _DEFAULT_KEEP_USER_ERRORS
         self._secure: bool = True
         self._secure_warning = True
-        self._auth_params: Set[str] = set()
-        self._groups: Set[Union[str, int]] = set()
-        self._scopes: Set[str] = set()
-        self._headers: Dict[str, Union[HeaderFun, str]] = {}
-        self._before_requests: List[BeforeRequestFun] = []
-        self._before_exec_hooks: List[BeforeExecFun] = []
-        self._after_requests: List[AfterRequestFun] = []
+        self._auth_params: set[str] = set()
+        self._groups: set[str|int] = set()
+        self._scopes: set[str] = set()
+        self._headers: dict[str, HeaderFun|str] = {}
+        self._before_requests: list[BeforeRequestFun] = []
+        self._before_exec_hooks: list[BeforeExecFun] = []
+        self._after_requests: list[AfterRequestFun] = []
         self._local: Any = None
         # registered here to avoid being bypassed by user hooks
         # FIXME not always?
@@ -642,7 +642,7 @@ class FlaskSimpleAuth:
         self._error_response = erh
         return erh
 
-    def _store(self, store: Dict[Any, Any], what: str, key: Any, val: Optional[Callable] = None):
+    def _store(self, store: dict[Any, Any], what: str, key: Any, val: Callable|None = None):
         """Add a function associated to something in a dict."""
         if key in store:
             log.warning(f"overriding {what} function for {key}")
@@ -811,7 +811,7 @@ class FlaskSimpleAuth:
         # web apps…
         #
         self._cors: bool = conf.get("FSA_CORS", False)
-        self._cors_opts: Dict[str, Any] = conf.get("FSA_CORS_OPTS", {})
+        self._cors_opts: dict[str, Any] = conf.get("FSA_CORS_OPTS", {})
         if self._cors:
             try:
                 from flask_cors import CORS  # type: ignore
@@ -819,12 +819,12 @@ class FlaskSimpleAuth:
                 log.error("missing module: install FlaskSimpleAuth[cors]")
                 raise
             CORS(self._app, **self._cors_opts)
-        self._401_redirect: Optional[str] = conf.get("FSA_401_REDIRECT", None)
-        self._url_name: Optional[str] = conf.get("FSA_URL_NAME", "URL" if self._401_redirect else None)
+        self._401_redirect: str|None = conf.get("FSA_401_REDIRECT", None)
+        self._url_name: str|None = conf.get("FSA_URL_NAME", "URL" if self._401_redirect else None)
         #
         # cache management for passwords, permissions, tokens…
         #
-        self._cache_opts: Dict[str, Any] = conf.get("FSA_CACHE_OPTS", {})
+        self._cache_opts: dict[str, Any] = conf.get("FSA_CACHE_OPTS", {})
         cache = conf.get("FSA_CACHE", _DEFAULT_CACHE)
         if cache:
             # NOTE no try/except because the dependency is mandatory
@@ -893,20 +893,20 @@ class FlaskSimpleAuth:
             raise self._Bad(f"unexpected FSA_TOKEN_TYPE: {self._token}")
         # token carrier
         need_carrier = self._token is not None
-        self._carrier: Optional[str] = conf.get("FSA_TOKEN_CARRIER", "bearer" if need_carrier else None)
+        self._carrier: str|None = conf.get("FSA_TOKEN_CARRIER", "bearer" if need_carrier else None)
         if self._carrier not in (None, "bearer", "param", "cookie", "header"):
             raise self._Bad(f"unexpected FSA_TOKEN_CARRIER: {self._carrier}")
         # sanity checks
         if need_carrier and not self._carrier:
             raise self._Bad(f"Token type {self._token} requires a carrier")
         # name of token for cookie or param, Authentication scheme, or other header
-        default_name: Optional[str] = (
+        default_name: str|None = (
             "AUTH" if self._carrier == "param" else
             "auth" if self._carrier == "cookie" else
             "Bearer" if self._carrier == "bearer" else
             "Auth" if self._carrier == "header" else
             None)
-        self._name: Optional[str] = conf.get("FSA_TOKEN_NAME", default_name)
+        self._name: str|None = conf.get("FSA_TOKEN_NAME", default_name)
         if need_carrier and not self._name:
             raise self._Bad(f"Token carrier {self._carrier} requires a name")
         if self._carrier == "param":
@@ -918,7 +918,7 @@ class FlaskSimpleAuth:
             realm = "".join(c if keep_char(c) else "-" for c in realm)
             realm = "-".join(filter(lambda s: s != "", realm.split("-")))
         self._realm: str = realm
-        self._issuer: Optional[str] = conf.get("FSA_TOKEN_ISSUER", None)
+        self._issuer: str|None = conf.get("FSA_TOKEN_ISSUER", None)
         # token expiration in minutes
         self._delay: float = conf.get("FSA_TOKEN_DELAY", 60.0)
         self._grace: float = conf.get("FSA_TOKEN_GRACE", 0.0)
@@ -939,7 +939,7 @@ class FlaskSimpleAuth:
         if not self._token:  # pragma: no cover
             pass
         elif self._token == "fsa":
-            self._sign: Optional[str] = self._secret
+            self._sign: str|None = self._secret
             self._algo: str = conf.get("FSA_TOKEN_ALGO", "blake2s")
             self._siglen: int = conf.get("FSA_TOKEN_LENGTH", 16)
             if "FSA_TOKEN_SIGN" in conf:
@@ -1092,7 +1092,7 @@ class FlaskSimpleAuth:
         self._password_check = conf.get("FSA_PASSWORD_CHECK", self._password_check)
         # FIXME add _password_hash?
         self._password_len: int = conf.get("FSA_PASSWORD_LEN", 0)
-        self._password_re: List[PasswordQualityFun] = [
+        self._password_re: list[PasswordQualityFun] = [
             re.compile(r).search for r in conf.get("FSA_PASSWORD_RE", [])
         ]
         self._password_quality = \
@@ -1117,7 +1117,7 @@ class FlaskSimpleAuth:
     #
     # INHERITED HTTP AUTH
     #
-    def _get_httpd_auth(self) -> Optional[str]:
+    def _get_httpd_auth(self) -> str|None:
         """Inherit HTTP server authentication."""
         return request.remote_user
 
@@ -1353,8 +1353,8 @@ class FlaskSimpleAuth:
         sig = self._cmp_sig(data, secret)
         return f"{data}:{sig}"
 
-    def _get_jwt_token(self, realm: str, issuer: Optional[str], user, delay: float,
-                       secret, scope: Optional[List[str]] = None):
+    def _get_jwt_token(self, realm: str, issuer: str|None, user, delay: float,
+                       secret, scope: list[str]|None = None):
         """Json Web Token (JWT) generation.
 
         - exp: expiration
@@ -1461,7 +1461,7 @@ class FlaskSimpleAuth:
         return (self._get_fsa_token_auth(token) if self._token == "fsa" else
                 self._get_jwt_token_auth(token))
 
-    def _get_any_token_auth(self, token) -> Optional[str]:
+    def _get_any_token_auth(self, token) -> str|None:
         """Tell whether token is ok: return validated user or None."""
         if not token:
             raise self._Err("missing token", 401)
@@ -1475,11 +1475,11 @@ class FlaskSimpleAuth:
         self._local.scopes = scopes
         return user
 
-    def _get_token_auth(self) -> Optional[str]:
+    def _get_token_auth(self) -> str|None:
         """Get authentication from token."""
         user = None
         if self._token:
-            token: Optional[str] = None
+            token: str|None = None
             if self._carrier == "bearer":
                 auth = request.headers.get("Authorization", None)
                 if auth:
@@ -1502,7 +1502,7 @@ class FlaskSimpleAuth:
         return user
 
     # map auth types to their functions
-    _FSA_AUTH: Dict[str, Callable[[Any], Optional[str]]] = {
+    _FSA_AUTH: dict[str, Callable[[Any], str|None]] = {
         "none": lambda s: None,
         "httpd": _get_httpd_auth,
         "token": _get_token_auth,
@@ -1517,7 +1517,7 @@ class FlaskSimpleAuth:
         "http-token": _get_httpauth,
     }
 
-    def get_user(self, required=True) -> Optional[str]:
+    def get_user(self, required=True) -> str|None:
         """Authenticate user or throw exception."""
 
         # safe because _user is reset before requests
@@ -1751,10 +1751,10 @@ class FlaskSimpleAuth:
         def decorate(fun: Callable):
 
             # for each parameter name: type, cast, default value, http param name
-            types: Dict[str, type] = {}
-            typings: Dict[str, Callable[[str], Any]] = {}
-            defaults: Dict[str, Any] = {}
-            names: Dict[str, str] = {}
+            types: dict[str, type] = {}
+            typings: dict[str, Callable[[str], Any]] = {}
+            defaults: dict[str, Any] = {}
+            names: dict[str, str] = {}
 
             # parameters types/casts and defaults taken from signature
             sig, keywords = inspect.signature(fun), False
