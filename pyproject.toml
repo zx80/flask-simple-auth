@@ -10,7 +10,8 @@ description = "Simple authentication, authorization and parameters for Flask, em
 readme = "README.md"
 license = { text = "CC0" }
 # Flask 2.3 requires Python 3.9
-requires-python = ">=3.9"
+# I'm tired of verbose type hints such as Optional[foo]
+requires-python = ">=3.10"
 dependencies = [
   "flask >= 2.2",
   "ProxyPatternPool >= 1.0",
