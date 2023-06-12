@@ -5,7 +5,7 @@
 #
 
 import FlaskSimpleAuth as fsa
-from FlaskSimpleAuth import Blueprint, CurrentUser, jsonify as json, current_app as app
+from FlaskSimpleAuth import Blueprint, jsonify as json, current_app as app
 from database import db
 
 scare = Blueprint("scare", __name__)

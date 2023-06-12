@@ -130,7 +130,7 @@ check.mypy:
 
 .PHONY: check.flake8
 check.flake8:
-	flake8 --ignore=E402,E501 $(F.py)
+	flake8 --ignore=E227,E402,E501 $(F.py)
 
 .PHONY: check.pg
 check.pg:

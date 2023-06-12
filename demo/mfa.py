@@ -21,13 +21,15 @@ mfa = fsa.Blueprint("mfa", __name__)
 REALM = "mfa"
 SECRET = "mfa-intermediate-token-secret"
 
+
 @mfa.get("/login1", authorize="ALL", auth="basic")
 def get_login1(user: CurrentUser):
     token = app.create_token(user, REALM, secret=SECRET)
     return json(token), 200
 
+
 # NOTE this route is falsely open, the intermediate token is checked manually
-@mfa.get("/login2", authorize="ANY") 
+@mfa.get("/login2", authorize="ANY")
 def get_login2(code: str = None):
     # NOTE get_token may raise an error?
     token = app.get_token()
@@ -41,6 +43,7 @@ def get_login2(code: str = None):
     else:
         # YES! generate 2nd level token
         return json(app.create_token(user)), 200
+
 
 @mfa.get("/test", authorize="ALL")
 def get_test(user: CurrentUser):
