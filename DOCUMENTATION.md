@@ -1129,14 +1129,14 @@ Todo or not todo…
 ### Params
 
 - `FSA_PARAM_STYLE` *any/http/json* to restrict/force parameters?
+  being lazy is not too bad?
 - check for bad char in parameter names
 
 ### Features
 
-- fixes for Flask 2.3
 - clear cache per type? entry??
 - how to add a timeout?
-- how to manage automatic return?
+- how to manage automatic return of ressources?
 
 ### Software Engineering
 
@@ -1150,6 +1150,4 @@ Todo or not todo…
 - how to ensure that shared/pooled resources are returned even on errors?
   is an `after_request` hook enough?
 - add more examples in the documentation
-- drop `List Tuple Dict Optional…` for `list tuple dict |None` when possible
-  minimum version support is 3.9.
 - take advantage of `TypedDict`?
