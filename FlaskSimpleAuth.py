@@ -1824,14 +1824,14 @@ class FlaskSimpleAuth:
                 e400 = error_400.append
 
                 # process all expected "standard" parameters
-                for p, typing in typings.items():
+                for p, tf in typings.items():
                     pn = names[p]
-                    if typing in self._special_parameters:  # force specials
+                    if tf in self._special_parameters:  # force specials
                         if p in params:
                             e400(f'unexpected {self._local.params} parameter "{pn}"')
                             continue
                         try:
-                            kwargs[p] = self._special_parameters[typing](pn)
+                            kwargs[p] = self._special_parameters[tf](pn)
                         except ErrorResponse as e:
                             if e.status == 400:
                                 e400(f"error when retrieving special parameter \"{pn}\": {e.message}")
@@ -1852,7 +1852,7 @@ class FlaskSimpleAuth:
                         val = kwargs[p]
                         if not isinstance(val, types[p]):
                             try:
-                                kwargs[p] = typing(val)
+                                kwargs[p] = tf(val)
                             except Exception as e:
                                 if self._Exc(e):  # pragma: no cover
                                     raise
@@ -1865,7 +1865,7 @@ class FlaskSimpleAuth:
                             if is_json and isinstance(val, str) or \
                                not is_json and not isinstance(val, types[p]):
                                 try:
-                                    kwargs[p] = typing(val)
+                                    kwargs[p] = tf(val)
                                 except Exception as e:
                                     if self._Exc(e):  # pragma: no cover
                                         raise
