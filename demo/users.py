@@ -2,7 +2,6 @@
 # AUTH management for ADMIN
 #
 
-from typing import Optional
 from FlaskSimpleAuth import Blueprint, current_app as app, jsonify as json
 from database import db
 
@@ -33,8 +32,8 @@ def post_users(login: str, email: str, _pass: str, admin: bool = False):
 
 # PATCH /users/<login> (pass?, email? admin?): update user data
 @users.patch("/users/<login>", authorize="ADMIN")
-def patch_users_login(login: str, email: Optional[str] = None,
-                      _pass: Optional[str] = None, admin: Optional[bool] = None):
+def patch_users_login(login: str, email: str|None = None,
+                      _pass: str|None = None, admin: bool|None = None):
     if _pass is not None:
         db.upd_user_password(login=login, upass=app.hash_password(_pass))
     if email is not None:

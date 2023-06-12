@@ -2,12 +2,11 @@
 # AUTHENTICATION AND AUTHORIZATION HOOKS
 #
 
-from typing import Optional
 from FlaskSimpleAuth import Flask
 from database import db
 
 
-def get_user_pass(login: str) -> Optional[str]:
+def get_user_pass(login: str) -> str|None:
     res = db.get_user_data(login=login)
     return res[2] if res else None
 

@@ -2,7 +2,6 @@
 # STUFF are managed by ALL authenticated users
 #
 
-from typing import Optional
 from FlaskSimpleAuth import Blueprint, jsonify as json
 from database import db
 
@@ -11,7 +10,7 @@ stuff = Blueprint("stuff", __name__)
 
 # GET /stuff: get all stuff
 @stuff.get("/stuff", authorize="ALL")
-def get_stuff(pattern: Optional[str] = None):
+def get_stuff(pattern: str|None = None):
     res = db.get_stuff_like(pattern=pattern) if pattern else db.get_stuff_all()
     return json(res), 200
 
