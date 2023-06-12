@@ -296,6 +296,11 @@ def test_fsa_token():
     except fsa.ErrorResponse as e:
         assert e.status == 401
     app._fsa._grace = grace
+    # test  with check_token
+    token = app.create_token("foo", "royaume", secret="SECRET")
+    assert token.startswith("royaume:foo:")
+    assert app.check_token(token, "royaume", secret="SECRET") == "foo"
+    assert app.check_token(token, "royaume", secret="bad") is None
 
 RSA_TEST_PUB_KEY = """
 -----BEGIN PUBLIC KEY-----
