@@ -7,8 +7,8 @@
 # GET /login1 (basic)
 # - returns an intermediate token
 #
-# GET /login2?secret (intermediate token)
-# - returns a valid application token if the 2nd authentication is ok
+# GET /login2?code (intermediate token)
+# - returns a valid application token if the 2nd authentication (code) is ok
 #
 # GET /test (token)
 # - check successful 2-level authentication
@@ -18,6 +18,7 @@ from FlaskSimpleAuth import jsonify as json, current_app as app, CurrentUser
 
 mfa = fsa.Blueprint("mfa", __name__)
 
+# should rather be in the configuration, obviously
 REALM = "mfa"
 SECRET = "mfa-intermediate-token-secret"
 
@@ -47,4 +48,4 @@ def get_login2(code: str = None):
 
 @mfa.get("/test", authorize="ALL")
 def get_test(user: CurrentUser):
-    return f"MFA succeded for {user}", 200
+    return f"MFA succeeded for {user}", 200
