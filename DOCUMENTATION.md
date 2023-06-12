@@ -480,6 +480,15 @@ def get_login():
 The client application will return the token as a parameter or in
 headers for authenticating later requests, till it expires.
 
+Although this is not directly supported by the framework, a multi-factor
+authentication can be implemented with little effort, with two routes, as
+illustrated in the [demo](demo/mfa.py):
+
+- a first password-authenticated route returns an intermediate token
+- which is checked *manually* in a second route, together with the second
+  authentication (eg a code received by SMS), allowing to generate the
+  final token.
+
 ## Authorization
 
 Authorizations are declared with the `authorize` parameter to
@@ -1120,9 +1129,6 @@ Todo or not todo…
 - add `issuer` route parameter?
 - authz/authn instead of authorize/auth?
 - rename ANY/ALL/NONE so something more intuitive!
-- how to do multi-factor authentication?
-  - allow several realms, beyond the `FSA_REALM` default
-  - realm can be set on a route by auth: `auth="token:phase-one"`
 - ability to add an authentication scheme?
   eg send a mail with a link, or code with a SMS, or trigger some app…
 
