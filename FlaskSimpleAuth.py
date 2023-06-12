@@ -35,10 +35,14 @@ import ProxyPatternPool as ppp  # type: ignore
 from flask import (
     Response, Request, request, session, Blueprint, make_response,
     abort, redirect, url_for, after_this_request, send_file, current_app, g,
-    send_from_directory, escape, Markup, render_template, get_flashed_messages,
+    send_from_directory, render_template, get_flashed_messages,
     has_app_context, has_request_context, render_template_string,
     stream_template, stream_template_string, stream_with_context,
 )
+
+if flask.__version__.startswith("2.2."):
+    from flask import escape, Markup
+# 2.3: they are in markupsafe
 
 from werkzeug.datastructures import FileStorage
 
@@ -46,9 +50,8 @@ import logging
 log = logging.getLogger("fsa")
 
 # get module version
-# TODO update when 3.7 is not supported anymore
-import pkg_resources as pkg  # type: ignore
-__version__ = pkg.require("FlaskSimpleAuth")[0].version
+from importlib.metadata import version as pkg_version
+__version__ = pkg_version("FlaskSimpleAuth")
 
 # hook function types
 # generate an error response for message and status

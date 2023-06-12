@@ -160,13 +160,13 @@ def all_auth(client, user, pswd, check, *args, **kwargs):
     check(client.get(*args, **kwargs, headers=youpi(token_basic)))
     pop_auth(app._fsa)
     push_auth(app._fsa, "token", "fsa", "cookie", "auth")
-    client.set_cookie("localhost", "auth", token_fake)
+    client.set_cookie(domain="localhost", key="auth", value=token_fake)
     check(client.get(*args, **kwargs))
-    client.cookie_jar.clear()
-    client.set_cookie("localhost", "auth", token_param)
+    client.delete_cookie(domain="localhost", key="auth")
+    client.set_cookie(domain="localhost", key="auth", value=token_param)
     check(client.get(*args, **kwargs))
-    client.cookie_jar.clear()
-    client.set_cookie("localhost", "auth", token_basic)
+    client.delete_cookie(domain="localhost", key="auth")
+    client.set_cookie(domain="localhost", key="auth", value=token_basic)
     check(client.get(*args, **kwargs))
     pop_auth(app._fsa)
 
@@ -732,7 +732,7 @@ def test_appext(client2):
     # the auth cookie is kept automatically, it seems…
     check(200, client2.get("/stuff"))
     check(403, client2.get("/bad"))
-    client2.cookie_jar.clear()
+    client2.delete_cookie(key="auth")
     check(401, client2.get("/stuff"))
     check(403, client2.get("/bad"))
 
@@ -825,18 +825,18 @@ def test_www_authenticate(client):
     pop_auth(app._fsa)
     push_auth(app._fsa, "basic")
     res = check(401, client.get("/admin"))
-    log.debug(f"res auth = {res.www_authenticate.keys()}")
-    assert res.www_authenticate.get("__auth_type__", None) == "basic"
+    # log.debug(f"res auth = {res.www_authenticate.keys()}")
+    assert "Basic" in str(res.www_authenticate)
     assert "realm" in res.www_authenticate
     pop_auth(app._fsa)
     push_auth(app._fsa, "password")
     res = check(401, client.get("/admin"))
-    assert res.www_authenticate.get("__auth_type__", None) == "basic"
+    assert "Basic" in str(res.www_authenticate)
     assert "realm" in res.www_authenticate
     pop_auth(app._fsa)
     push_auth(app._fsa, "token", "fsa", "bearer", "Hello")
     res = check(401, client.get("/admin"))
-    assert res.www_authenticate.get("__auth_type__", None) == "hello"
+    assert "Hello" in str(res.www_authenticate)
     assert "realm" in res.www_authenticate
     pop_auth(app._fsa)
 
