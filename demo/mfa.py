@@ -12,6 +12,13 @@
 #
 # GET /test (token)
 # - check successful 2-level authentication
+#
+# NOTE
+#
+# A better integration would avoid checking the intermediate round-1 token
+# manually. This could be done by allowing to specify another realm on a
+# route. Should the second route use a common secret?
+#
 
 import FlaskSimpleAuth as fsa
 from FlaskSimpleAuth import jsonify as json, current_app as app, CurrentUser
