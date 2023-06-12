@@ -30,7 +30,7 @@ jobs:
     - name: Install Python Dependencies
       run: |
         pip install -U pip
-        pip install -r dev-requirements.txt
+        pip install -e .[dev,tests,demo,password,jwt,cors,httpauth,redis,memcache]
     # Checks
     - name: Check with mypy
       run: mypy --implicit-optional FlaskSimpleAuth.py
