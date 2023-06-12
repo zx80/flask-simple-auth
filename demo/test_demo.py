@@ -337,3 +337,24 @@ def test_upload(client):
     import io
     res = check(201, client.post("/upload", data={"file": (io.BytesIO(b"Hello World!\n"), "hello.txt")}, headers=FOO_BASIC))
     assert re.search(r" [0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}\.tmp", str(res.data))
+
+
+def test_mfa(client):
+    if not app._fsa._token == "fsa":
+        pytest.skip("test needs fsa tokens")
+    check(401, client.get("/mfa/login1"))
+    # FIRST PASS
+    res = check(200, client.get("/mfa/login1", headers=FOO_BASIC))
+    token1 = json.loads(res.data)
+    assert token1.startswith("mfa:foo:")
+    # SECOND PASS (FSA token with "param" carrier)
+    check(401, client.get("/mfa/login2"))
+    check(401, client.get("/mfa/login2", headers=FOO_BASIC))
+    check(401, client.get("/mfa/login2", data={"AUTH": "mfa:foo:20210101010101000:deadbeef"}))
+    check(401, client.get("/mfa/login2", data={"AUTH": token1}))
+    check(401, client.get("/mfa/login2", data={"AUTH": token1, "code": "bla-code"}))
+    res = check(200, client.get("/mfa/login2", data={"AUTH": token1, "code": "foo-code"}))
+    token2 = json.loads(res.data)
+    assert token2.startswith("demo:foo:")
+    check(401, client.get("/mfa/test", data={"AUTH": token1}))
+    res = check(200, client.get("/mfa/test", data={"AUTH": token2}))

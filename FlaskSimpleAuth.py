@@ -1446,8 +1446,8 @@ class FlaskSimpleAuth:
     def check_token(self, token: str, realm: str, secret: str) -> str|None:
         """Check a simple FSA token from user-land."""
         try:
-            user = self._check_fsa_token(self, token, realm, None, secret, self._grace)[0]
-        except ErrorMessage:
+            user = self._check_fsa_token(token, realm, None, secret, self._grace)[0]
+        except ErrorResponse:
             user = None
         return user
 
