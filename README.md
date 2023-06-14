@@ -102,6 +102,8 @@ typical flask functions. The module manages *http*, *json* and *files*.
 In practice, importing Flask's `request` global variable is not necessary.
 The philosophy is that a REST API entry point is a function call through HTTP,
 so the route definition should be a function, avoiding relying on magic globals.
+The parameter handling based on type hints was inspired and is an extension of
+[fastapi](https://fastapi.tiangolo.com/lo/) approach.
 
 [**Utils**](DOCUMENTATION.md#utils) include the convenient `Reference` class which
 allows to share possibly thread-local data for import, error and CORS handling.
