@@ -76,7 +76,7 @@ $(MODULE).egg-info: venv
 
 # generate source and built distribution
 dist:
-	$(PYTHON) setup.py sdist bdist_wheel
+	$(PYTHON) -m build
 
 .PHONY: publish
 publish: dist
