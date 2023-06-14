@@ -246,6 +246,7 @@ def test_fsa_token():
     tsave, hsave = app._fsa._token, app._fsa._algo
     app._fsa._token, app._fsa._algo = "fsa", "blake2s"
     app._fsa._issuer = "self"
+    app._fsa._local.realm = app._fsa._realm
     foo_token = app.create_token("foo")
     assert foo_token.startswith("Test/self:foo:")
     assert app._fsa._get_any_token_auth(foo_token) == "foo"
@@ -296,11 +297,7 @@ def test_fsa_token():
     except fsa.ErrorResponse as e:
         assert e.status == 401
     app._fsa._grace = grace
-    # test  with check_token
-    token = app.create_token("foo", "royaume", secret="SECRET")
-    assert token.startswith("royaume:foo:")
-    assert app.check_token(token, "royaume", secret="SECRET") == "foo"
-    assert app.check_token(token, "royaume", secret="bad") is None
+
 
 RSA_TEST_PUB_KEY = """
 -----BEGIN PUBLIC KEY-----
@@ -367,19 +364,19 @@ def test_jwt_token():
 
 def test_invalid_token():
     # bad token
-    susie_token = app.create_token("susie")
+    susie_token = app.create_token("susie", app._fsa._realm)
     susie_token = susie_token[:-1] + "z"
     try:
-        user = app._fsa._get_any_token_auth(susie_token)
+        user = app._fsa._get_any_token_auth(susie_token, app._fsa._realm)
         assert False, "token should be invalid"
     except fsa.ErrorResponse as e:
         assert e.status == 401
     # wrong token
     realm, app._fsa._realm = app._fsa._realm, "elsewhere"
-    moe_token = app.create_token("moe")
+    moe_token = app.create_token("moe", app._fsa._realm)
     app._fsa._realm = realm
     try:
-        user = app._fsa._get_any_token_auth(moe_token)
+        user = app._fsa._get_any_token_auth(moe_token, app._fsa._realm)
         assert False, "token should be invalid"
     except fsa.ErrorResponse as e:
         assert e.status == 401

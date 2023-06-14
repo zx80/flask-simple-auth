@@ -320,6 +320,7 @@ The available authentication schemes are:
   - `FSA_REALM` realm of authentication for token, basic or digest.
     Default is the simplified lower case application name.
     For *jwt*, this is translated as the audience.
+    The application realm may be overriden on a route for creating MFA stages.
   - `FSA_TOKEN_ISSUER` the issuer of the token.
     Default is *None*.
   - `FSA_TOKEN_SECRET` secret string used for validating tokens.
@@ -480,14 +481,38 @@ def get_login():
 The client application will return the token as a parameter or in
 headers for authenticating later requests, till it expires.
 
-Although this is not directly supported by the framework, a multi-factor
-authentication can be implemented with little effort, with two routes, as
-illustrated in the [demo](demo/mfa.py):
+Multi-factor authentication is supported by generating intermediate tokens on
+distinct *realms* at different stages, as illustrated in the [demo](demo/mfa.py)
+and below:
 
-- a first password-authenticated route returns an intermediate token
-- which is checked *manually* in a second route, together with the second
-  authentication (eg a code received by SMS), allowing to generate the
-  final token.
+- a first password-authenticated route returns an intermediate short-lived token
+- required on a second route which generates a final token if a second
+  authentication (eg code received by SMS or mail) is validated.
+- giving final access to the application.
+
+```python
+# Stage 1: check password, return token1
+@app.get("/login1", authorize="ALL", auth="basic")
+def get_login1(user: CurrentUser):
+    generate_and_send_code_to_user(user)
+    return json(app.create_token(user, "stage1", delay=1.0)), 200
+
+# Stage 2: check token1 and code, return token2
+@app.get("/login2", authorize="ALL", auth="token", realm="stage1")
+def get_login2(user: CurrentUser, code: str):
+    if not is_valid_for(code, user):
+        return f"invalid code for {user}", 401
+    # return token generated from default settings
+    return json(app.create_token()), 200
+
+@app.get("/logged", authorize="ALL", auth="token")
+def get_logged(user: CurrentUser):
+    return f"Hello {user}!", 200
+```
+
+Note that route-dependent realms do **not** work with `http-*` authentications
+because the realm is frozen by the external implementation in this case.
+Also, The same shared secret is used to validate all realms.
 
 ## Authorization
 

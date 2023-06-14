@@ -275,8 +275,6 @@ class Flask(flask.Flask):
         self.check_password = self._fsa.check_password
         self.hash_password = self._fsa.hash_password
         self.create_token = self._fsa.create_token
-        self.get_token = self._fsa.get_token
-        self.check_token = self._fsa.check_token
         self.get_user = self._fsa.get_user
         self.current_user = self._fsa.current_user
         self.clear_caches = self._fsa.clear_caches
@@ -480,6 +478,7 @@ class FlaskSimpleAuth:
         self._local.user = None                # for this user
         self._local.need_authorization = True  # whether some authz occurred
         self._local.auth = self._auth          # allowed authn schemes
+        self._local.realm = self._realm        # authn realm
         self._local.scopes = None              # current oauth scopes
         # parameters
         self._local.params = None              # json|http
@@ -532,7 +531,7 @@ class FlaskSimpleAuth:
             if self._local.user and self._can_create_token():
                 if self._name in request.cookies and self._renewal:
                     # renew token when closing expiration
-                    user, exp, _ = self._get_any_token_auth_exp(request.cookies[self._name])
+                    user, exp, _ = self._get_any_token_auth_exp(request.cookies[self._name], self._local.realm)
                     limit = dt.datetime.now(dt.timezone.utc) + \
                         self._renewal * dt.timedelta(minutes=self._delay)
                     set_cookie = exp < limit
@@ -550,9 +549,9 @@ class FlaskSimpleAuth:
             schemes = set()
             for a in self._local.auth:
                 if a in ("token", "oauth") and self._carrier == "bearer":
-                    schemes.add(f'{self._name} realm="{self._realm}"')
+                    schemes.add(f'{self._name} realm="{self._local.realm}"')
                 elif a in ("basic", "password"):
-                    schemes.add(f'Basic realm="{self._realm}"')
+                    schemes.add(f'Basic realm="{self._local.realm}"')
                 elif a in ("http-token", "http-basic", "digest", "http-digest"):
                     assert self._http_auth
                     schemes.add(self._http_auth.authenticate_header())
@@ -1030,11 +1029,12 @@ class FlaskSimpleAuth:
                 assert self._http_auth is not None  # for pleasing mypy
                 # FIXME? nonce & opaque callbacks? session??
             elif "http-token" in self._auth:
+                # NOTE incompatible with local realm
                 if self._carrier == "header" and "header" not in opts and self._name:
                     opts["header"] = self._name
                 self._http_auth = fha.HTTPTokenAuth(scheme=self._name, realm=self._realm, **opts)
                 assert self._http_auth is not None  # for pleasing mypy
-                self._http_auth.verify_token(self._get_any_token_auth)
+                self._http_auth.verify_token(lambda t: self._get_any_token_auth(t, self._realm))
             assert self._http_auth is not None  # for pleasing mypy
             self._http_auth.get_password(self._get_user_pass)
             # FIXME? error_handler?
@@ -1392,7 +1392,7 @@ class FlaskSimpleAuth:
         """Create a new token for user depending on the configuration."""
         assert self._token
         user = user or self.get_user()
-        realm = realm or self._realm
+        realm = realm or self._local.realm
         issuer = issuer or self._issuer
         delay = delay or self._delay
         secret = secret or (self._secret if self._token == "fsa" else self._sign)
@@ -1438,20 +1438,11 @@ class FlaskSimpleAuth:
         return user, limit, None
 
     # function suitable for the internal authentication API
-    def _get_fsa_token_auth(self, token):
+    def _get_fsa_token_auth(self, token: str, realm: str):
         """Tell whether FSA token is ok: return validated user or None."""
-        return self._check_fsa_token(token, self._realm, self._issuer, self._secret, self._grace)
+        return self._check_fsa_token(token, realm, self._issuer, self._secret, self._grace)
 
-    # this function reuses the automatic token checking infra to check a custom internal token.
-    def check_token(self, token: str, realm: str, secret: str) -> str|None:
-        """Check a simple FSA token from user-land."""
-        try:
-            user = self._check_fsa_token(token, realm, None, secret, self._grace)[0]
-        except ErrorResponse:
-            user = None
-        return user
-
-    def _get_jwt_token_auth(self, token):
+    def _get_jwt_token_auth(self, token: str, realm: str):
         """Tell whether JWT token is ok: return validated user or None."""
         try:
             import jwt
@@ -1461,7 +1452,7 @@ class FlaskSimpleAuth:
 
         try:
             data = jwt.decode(token, self._secret, leeway=self._grace * 60.0,
-                              audience=self._realm, issuer=self._issuer, algorithms=[self._algo])
+                              audience=realm, issuer=self._issuer, algorithms=[self._algo])
             exp = dt.datetime.fromtimestamp(data["exp"], tz=dt.timezone.utc)
             scopes = data["scope"].split(" ") if "scope" in data else None
             return data["sub"], exp, scopes
@@ -1474,16 +1465,18 @@ class FlaskSimpleAuth:
                 log.debug(f"AUTH (jwt token): invalid token {token}: {e}")
             raise self._Err("invalid jwt token: {token}", 401, e)
 
-    def _get_any_token_auth_exp(self, token):
+    # NOTE as the realm can be route-dependent, cached validations include the realm.
+    def _get_any_token_auth_exp(self, token: str, realm: str):
         """Return validated user and expiration, cached."""
-        return (self._get_fsa_token_auth(token) if self._token == "fsa" else
-                self._get_jwt_token_auth(token))
+        return (self._get_fsa_token_auth(token, realm) if self._token == "fsa" else
+                self._get_jwt_token_auth(token, realm))
 
-    def _get_any_token_auth(self, token) -> str|None:
-        """Tell whether token is ok: return validated user or None."""
+    # NOTE the realm parameter is really only for testing purposes
+    def _get_any_token_auth(self, token: str|None, realm: str|None = None) -> str|None:
+        """Tell whether token is ok: return validated user or None, may raise 401."""
         if not token:
             raise self._Err("missing token", 401)
-        user, exp, scopes = self._get_any_token_auth_exp(token)
+        user, exp, scopes = self._get_any_token_auth_exp(token, realm or self._local.realm)
         # must recheck token expiration
         now = dt.datetime.now(dt.timezone.utc) - dt.timedelta(minutes=self._grace)
         if now > exp:
@@ -1493,7 +1486,7 @@ class FlaskSimpleAuth:
         self._local.scopes = scopes
         return user
 
-    def get_token(self) -> str|None:
+    def _get_token(self) -> str|None:
         """Get authentication from token."""
         token: str|None = None
         if self._carrier == "bearer":
@@ -1519,9 +1512,8 @@ class FlaskSimpleAuth:
         """Authenticate with current token."""
         user = None
         if self._token:
-            token = self.get_token()
             # this raises a missing token 401 if no token
-            user = self._get_any_token_auth(token)
+            user = self._get_any_token_auth(self._get_token())
         return user
 
     # map auth types to their functions
@@ -1629,7 +1621,7 @@ class FlaskSimpleAuth:
                 raise
             return self._Res(f"internal error caught at {level} on {path}", self._server_error)
 
-    def _authenticate(self, path, auth=None):
+    def _authenticate(self, path, auth=None, realm=None):
         """Decorator to authenticate current user."""
         # check auth parameter
         if auth:
@@ -1640,6 +1632,7 @@ class FlaskSimpleAuth:
                     raise self._Bad(f"unexpected authentication scheme {auth} on {path}")
 
         def decorate(fun: Callable):
+
             @functools.wraps(fun)
             def wrapper(*args, **kwargs):
 
@@ -1648,6 +1641,8 @@ class FlaskSimpleAuth:
                     # possibly overwrite the authentication scheme
                     # NOTE this may or may not work because other settings may
                     #   not be compatible with the provided scheme…
+                    if realm:
+                        self._local.realm = realm
                     if auth:
                         self._local.auth = auth
                     try:
@@ -2041,7 +2036,7 @@ class FlaskSimpleAuth:
         return decorate
 
     # FIXME endpoint?
-    def add_url_rule(self, rule, endpoint=None, view_func=None, authorize=NONE, auth=None, **options):
+    def add_url_rule(self, rule, endpoint=None, view_func=None, authorize=NONE, auth=None, realm=None, **options):
         """Route decorator helper method."""
 
         # lazy initialization
@@ -2182,7 +2177,7 @@ class FlaskSimpleAuth:
             assert perms
         if need_authenticate:
             assert perms or groups or ALL in predefs
-            fun = self._authenticate(newpath, auth=auth)(fun)
+            fun = self._authenticate(newpath, auth=auth, realm=realm)(fun)
         else:  # "ANY" case deserves a warning
             log.warning(f"no authenticate on {newpath}")
 
