@@ -85,6 +85,7 @@ For registration, support functions allow to hash new passwords consistently
 with password checks.
 Alternate password checking schemes (eg temporary code, external LDAP server)
 can be plug in easily through a hook.
+Multi-factor authentication can be implemented easily thanks to per-route *realms*.
 
 [**Authorizations**](DOCUMENTATION.md#authorization),
 i.e. checking whether the above who can perform a request, are managed by
@@ -98,7 +99,7 @@ following the [OAuth2](https://oauth.net/2/) approach.
 declared, their presence and type checked, and they are added automatically as
 named parameters to route functions, skipping the burden of checking them in
 typical flask functions. The module manages *http*, *json* and *files*.
-In practice, importing Flask's `request` global variable is not necessary anymore.
+In practice, importing Flask's `request` global variable is not necessary.
 The philosophy is that a REST API entry point is a function call through HTTP,
 so the route definition should be a function, avoiding relying on magic globals.
 
