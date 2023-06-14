@@ -1156,6 +1156,16 @@ Todo or not todo…
 - rename ANY/ALL/NONE so something more intuitive!
 - ability to add an authentication scheme?
   eg send a mail with a link, or code with a SMS, or trigger some app…
+  ```python
+  def code_check_fun(app, request, ...) -> str:
+      …
+
+  app.register_auth_scheme("code", code_check_fun)
+
+  @app.get("/code-protected", authorize="ALL", auth="code")
+  def get_code_protected(…):
+      …
+  ```
 
 ### Params
 
