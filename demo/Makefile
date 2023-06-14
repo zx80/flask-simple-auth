@@ -124,6 +124,11 @@ check.pytest: stuff.$(DB)
 	export FLASK_APP=app.py FLASK_DEBUG=1 APP_CONFIG=app-$(DB).conf
 	$(PYTEST) $(PYTOPT) test_demo.py
 
+.PHONY: check.coverage
+check.coverage: stuff.$(DB)
+	export FLASK_APP=app.py FLASK_DEBUG=1 APP_CONFIG=app-$(DB).conf
+	coverage run -a --data-file=../test/.coverage -m $(PYTEST) $(PYTOPT) test_demo.py
+
 .PHONY: check.mypy
 check.mypy:
 	mypy --ignore-missing-imports $(F.py)
