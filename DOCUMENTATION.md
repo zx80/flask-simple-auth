@@ -1151,7 +1151,7 @@ Todo or not todo…
 - password re could use a dict for providing an explanation?
 - refactor password manager in a separate class?
 - how to have several issuers and their signatures schemes?
-- add `issuer` route parameter?
+- add `issuer` route parameter? see `realm`.
 - authz/authn instead of authorize/auth?
 - rename ANY/ALL/NONE so something more intuitive!
 - ability to add an authentication scheme?
@@ -1166,14 +1166,13 @@ Todo or not todo…
 ### Features
 
 - clear cache per type? entry??
-- how to add a timeout?
+- how to add a timeout? or manage an outside one?
 - how to manage automatic return of ressources?
 
 ### Software Engineering
 
 - reduce sloc?
 - separate classes/projects?
-- coverage should include demo run?
 - check for more directive types (dynamically)?
 - `local` should depend on `traitlets` and others?
 - add app.log?
