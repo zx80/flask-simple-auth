@@ -81,7 +81,7 @@ dist:
 .PHONY: publish
 publish: dist
 	# provide pypi login/pw or token somewhere…
-	echo twine upload --repository $(MODULE) dist/*
+	echo twine upload dist/*
 
 # generate pdf doc
 MD2PDF  = pandoc -f markdown -t latex -V papersize:a4 -V geometry:hmargin=2.5cm -V geometry:vmargin=3cm
