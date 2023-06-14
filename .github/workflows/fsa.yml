@@ -45,10 +45,7 @@ jobs:
     - name: Check with coverage
       run: |
         coverage run -m pytest --log-level=debug --capture=tee-sys test/
-        cd demo
-        export APP_CONFIG=app-db.conf
-        coverage run -a --data-file=../.coverage -m pytest --log-level=debug --capture=tee-sys test_demo.py
-        cd ..
+        make -C demo COVER_DATA=../.coverage check.coverage
         coverage report --fail-under=100 --include=FlaskSimpleAuth.py
     - name: Check with pymarkdown
       run: pymarkdown scan *.md
