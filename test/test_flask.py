@@ -1784,6 +1784,11 @@ def test_shadowing(client):
     res = check(200, client.get("/shadow/bla?blup=Manitoba&blup=Quebec"))
     assert res.data == b"Test: bla Manitoba"
 
+def test_cookie(client):
+    client.set_cookie("foo", "bla")
+    res = check(200, client.get("/cookie/foo"))
+    assert res.data == b"cookie foo: bla"
+
 def test_user_errors():
     # check that user errors are raised again under FSA_KEEP_USER_ERRORS
     class Oops(Exception):

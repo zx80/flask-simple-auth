@@ -789,12 +789,12 @@ FSA_CAST = { House: strToHouse, … }
 ```
 
 As a special case, the `Request`, `Session`, `Globals`, `Environ`,
-`CurrentApp`, `CurrentUser` and
+`CurrentApp`, `CurrentUser`, `Cookie` and
 [`FileStorage`](https://werkzeug.palletsprojects.com/en/2.2.x/datastructures/#werkzeug.datastructures.FileStorage)
 types, when used for parameters,
 result in the `request`, `session`, `g` flask special objects, `environ` WSGI
-parameter, the current authenticated user, the current application or a special
-file parameter (for upload) to be passed as this parameter to the function,
+parameter, the current authenticated user, the current application, the cookie value
+or a special file parameter (for upload) to be passed as this parameter to the function,
 allowing to keep a functional programming style by hidding away these special
 proxies.
 
@@ -1173,7 +1173,6 @@ Todo or not todo…
 - `FSA_PARAM_STYLE` *any/http/json* to restrict/force parameters?
   being lazy is not too bad?
 - check for bad char in parameter names
-- access Cookies as parameters?
 - access Headers as parameters?
 
 ### Features

@@ -161,6 +161,11 @@ class CurrentApp:
     pass
 
 
+class Cookie:
+    """Application Cookie type."""
+    pass
+
+
 #
 # SPECIAL PREDEFINED GROUP NAMES
 #
@@ -364,6 +369,7 @@ class FlaskSimpleAuth:
             CurrentUser: lambda _: self.current_user(),
             CurrentApp: lambda _: current_app,
             FileStorage: _get_file_storage,
+            Cookie: lambda p: request.cookies[p],
         }
         self._auth: list[str] = []
         self._http_auth = None
