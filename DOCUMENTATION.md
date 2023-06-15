@@ -1173,6 +1173,8 @@ Todo or not todo…
 - `FSA_PARAM_STYLE` *any/http/json* to restrict/force parameters?
   being lazy is not too bad?
 - check for bad char in parameter names
+- access Cookies as parameters?
+- access Headers as parameters?
 
 ### Features
 
