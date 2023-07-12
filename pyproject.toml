@@ -54,3 +54,7 @@ httpauth = [ "flask_httpauth" ]
 
 [tool.setuptools]
 py-modules = [ "FlaskSimpleAuth" ]
+
+[tool.black]
+line-length = 100
+target-version = ["py310"]
