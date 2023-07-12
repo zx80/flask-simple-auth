@@ -1174,6 +1174,8 @@ Todo or not todo…
   being lazy is not too bad?
 - check for bad char in parameter names
 - access Headers as parameters?
+  issue: how to name the variable for `User-Agent`?
+  header names are/should be case insensitive?
 
 ### Features
 
