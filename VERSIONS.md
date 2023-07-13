@@ -14,6 +14,7 @@ Fix demo tests.
 Rename branch `master` to `main`.
 Switch to full `pyproject.toml`.
 Fix and improve demo curl tests.
+Add support for MFA with per-route `realm`, see demo.
 
 ## 22.0 on 2023-03-12
 

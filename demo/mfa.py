@@ -2,10 +2,12 @@
 # Multi-Factor Authentication
 #
 # GET /login1 (basic)
-# - returns an intermediate short-lived token
+# - returns an intermediate short-lived token in realm "mfa"
 #
 # GET /login2?code (intermediate token)
 # - returns a valid application token if the 2nd authentication (code) is ok
+# - the route requires the mfa-token returned by the previous route
+# - note: the expected code is just the name of the user with -code appended…
 #
 # GET /test (token)
 # - check successful 2-level authentication
