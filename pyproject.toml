@@ -37,9 +37,9 @@ package = "https://pypi.org/project/FlaskSimpleAuth/"
 
 [project.optional-dependencies]
 # dev
-dev = [ "mypy", "flake8", "black", "pytest", "coverage", "pymarkdownlnt", "build", "twine", "wheel" ]
+dev = [ "mypy", "flake8", "black", "pytest", "coverage", "pymarkdownlnt!=0.9.5", "build", "twine", "wheel" ]
 # NOTE also: password jwt cors httpauth
-tests = [ "requests", "pydantic" ]
+tests = [ "requests", "pydantic>=2.0" ]
 demo = [ "anodb", "psycopg", "psycopg2", "pymemcache", "redis", "types-redis", "types-cachetools" ]
 # password management
 password = [ "passlib", "bcrypt",  ]
