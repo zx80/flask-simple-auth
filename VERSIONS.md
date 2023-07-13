@@ -3,6 +3,10 @@
 Sources are available on [GitHub](https://github.com/zx80/flask-simple-auth)
 and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 
+## ? on ?
+
+Better documentation.
+
 ## 23.1 on 2023-07-13
 
 Add `Cookie` and `Header` special parameters.
