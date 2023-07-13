@@ -1,4 +1,7 @@
+SHELL   = /bin/bash
 .ONESHELL:
+
+PYTHON  = python3
 
 # switch to pg or pg2 to test with postgres and psycopg
 DB	= db
@@ -23,10 +26,10 @@ clean.venv: clean
 #
 
 venv:
-	python3 -m venv venv
-	. venv/bin/activate
-	pip install -e ..
-	pip install passlib bcrypt anodb psycopg psycopg2
+	$(PYTHON) -m venv venv
+	source venv/bin/activate
+	pip install -e ..[password,tests,jwt]
+	pip install anodb psycopg psycopg2
 	pip install pytest
 
 #

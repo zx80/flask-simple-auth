@@ -295,12 +295,12 @@ def test_types(client):
     res = check(201, client.post("/types/char", json={"char": CALVIN}))
     assert b"Calvin" in res.data
     res = check(400, client.post("/types/char", json={"char": ERROR}))
-    assert b"value is not a valid integer" in res.data
+    assert b"type error on json parameter \"char\"" in res.data
     # pydantic dataclass
     res = check(201, client.post("/types/pers", json={"pers": CALVIN}))
     assert b"Calvin" in res.data
     res = check(400, client.post("/types/pers", json={"pers": ERROR}))
-    assert b"value is not a valid integer" in res.data
+    assert b"type error on json parameter \"pers\"" in res.data
 
 
 def test_jwt_oauth(client):
