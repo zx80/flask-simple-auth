@@ -1789,6 +1789,11 @@ def test_cookie(client):
     res = check(200, client.get("/cookie/foo"))
     assert res.data == b"cookie foo: bla"
 
+def test_headers(client):
+    res = check(200, client.get("/headers", headers={"HELLO": "World!"}))
+    assert res.json["Hello"] == "World!"
+    assert "User-Agent" in res.json
+
 def test_user_errors():
     # check that user errors are raised again under FSA_KEEP_USER_ERRORS
     class Oops(Exception):

@@ -166,6 +166,11 @@ class Cookie:
     pass
 
 
+class Header:
+    """Request Header type."""
+    pass
+
+
 #
 # SPECIAL PREDEFINED GROUP NAMES
 #
@@ -370,6 +375,7 @@ class FlaskSimpleAuth:
             CurrentApp: lambda _: current_app,
             FileStorage: _get_file_storage,
             Cookie: lambda p: request.cookies[p],
+            Header: lambda p: request.headers[p],
         }
         self._auth: list[str] = []
         self._http_auth = None

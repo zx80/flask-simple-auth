@@ -15,7 +15,7 @@ log = logging.getLogger("app")
 #
 import FlaskSimpleAuth as fsa
 from FlaskSimpleAuth import Flask, jsonify, ANY, ALL, NONE, path, string, \
-    Request, Session, Globals, Environ, CurrentUser, CurrentApp, Cookie
+    Request, Session, Globals, Environ, CurrentUser, CurrentApp, Cookie, Header
 
 app = Flask(
     "Test",
@@ -415,3 +415,7 @@ def get_shadow(stuff: str, lapp: CurrentApp, blup: str = "Yukon"):
 @app.get("/cookie/foo", authorize=ANY)
 def get_cookie_foo(foo: Cookie):
     return f"cookie foo: {foo}", 200
+
+@app.get("/headers", authorize=ANY)
+def get_headers(user_agent: Header, hello: Header):
+    return { "User-Agent": user_agent, "Hello": hello }, 200

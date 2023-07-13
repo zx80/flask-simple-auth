@@ -3,9 +3,13 @@
 Sources are available on [GitHub](https://github.com/zx80/flask-simple-auth)
 and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 
+## ? on ?
+
+Add `Cookie` and `Header` special parameters.
+
 ## 23.0 on 2023-06-14
 
-Rename `master` to `main`.
+Rename branch `master` to `main`.
 Switch to full `pyproject.toml`.
 Fix and improve demo curl tests.
 

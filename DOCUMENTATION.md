@@ -789,14 +789,14 @@ FSA_CAST = { House: strToHouse, … }
 ```
 
 As a special case, the `Request`, `Session`, `Globals`, `Environ`,
-`CurrentApp`, `CurrentUser`, `Cookie` and
+`CurrentApp`, `CurrentUser`, `Cookie`, `Header` and
 [`FileStorage`](https://werkzeug.palletsprojects.com/en/2.2.x/datastructures/#werkzeug.datastructures.FileStorage)
 types, when used for parameters,
 result in the `request`, `session`, `g` flask special objects, `environ` WSGI
-parameter, the current authenticated user, the current application, the cookie value
-or a special file parameter (for upload) to be passed as this parameter to the function,
-allowing to keep a functional programming style by hidding away these special
-proxies.
+parameter, the current authenticated user, the current application, the cookie value,
+the header value or a special file parameter (for upload) to be passed as this
+parameter to the function, allowing to keep a functional programming style by
+hidding away these special proxies.
 
 More special parameters can be added with the `special_parameter` app
 function/decorator, by providing a type and a function which is given the
