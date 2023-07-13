@@ -481,9 +481,9 @@ def get_login():
 The client application will return the token as a parameter or in
 headers for authenticating later requests, till it expires.
 
-Multi-factor authentication is supported by generating intermediate tokens on
-distinct *realms* at different stages, as illustrated in the [demo](demo/mfa.py)
-and below:
+Multi-factor authentication (MFA) is supported by generating intermediate tokens
+on distinct *realms* at different stages, as illustrated in the
+[demo](demo/mfa.py) and below:
 
 - a first password-authenticated route returns an intermediate short-lived token
 - required on a second route which generates a final token if a second
@@ -497,10 +497,10 @@ def get_login1(user: CurrentUser):
     generate_and_send_code_to_user(user)
     return json(app.create_token(user, "stage1", delay=1.0)), 200
 
-# Stage 2: check token1 and code, return token2
+# Stage 2: check token1 and code parameter, return token2
 @app.get("/login2", authorize="ALL", auth="token", realm="stage1")
 def get_login2(user: CurrentUser, code: str):
-    if not is_valid_for(code, user):
+    if not user_code_is_valid(user, code):
         return f"invalid code for {user}", 401
     # return token generated from default settings
     return json(app.create_token()), 200
