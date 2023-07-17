@@ -18,9 +18,10 @@ Flask configuration and the extended `route` decorator.
 
 ## Example
 
-The application code below performs authentication, authorization and
-parameter type checks triggered by the extended `route` decorator,
-or per-method shortcut decorators (`get`, `patch`, `post`…).
+The application code (yes, the **6** lines of code, plus arguably some
+configurations) below performs *authentication*, *authorization* and
+*parameter* type checks triggered by the extended `route` decorator, or
+per-method shortcut decorators (`get`, `patch`, `post`…).
 There is no clue in the source about what kind of authentication is used,
 which is the point: authentication is managed in the configuration,
 not in the application code.
@@ -85,13 +86,14 @@ For registration, support functions allow to hash new passwords consistently
 with password checks.
 Alternate password checking schemes (eg temporary code, external LDAP server)
 can be plug in easily through a hook.
-Multi-factor authentication can be implemented easily thanks to per-route *realms*.
+Multi-factor authentication can be implemented easily thanks to per-route
+*realms*.
 
 [**Authorizations**](DOCUMENTATION.md#authorization),
-i.e. checking whether the above who can perform a request, are managed by
+i.e. checking whether the above *who* can perform a request, are managed by
 mandatory permission declaration on a route (eg a role name, or an object
 access), and relies on supplied functions to check whether a user has this role
-or can access an object.
+or can access a particular object.
 Authorization can also be provided from a third party through JWT tokens
 following the [OAuth2](https://oauth.net/2/) approach.
 
