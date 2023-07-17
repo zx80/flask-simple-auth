@@ -164,7 +164,7 @@ Various decorators/functions allow to register hooks, such as:
 # return password hash if any (see with FSA_GET_USER_PASS)
 # None means that the user does not exists
 @app.get_user_pass
-def get_user_pass(user: str) -> Optional[str]:
+def get_user_pass(user: str) -> str|None:
     return …
 
 # return whether user is in group (see with FSA_USER_IN_GROUP)
@@ -175,7 +175,7 @@ def user_in_group(user: str, group: str) -> bool:
 # return whether user can access the `foo` object for an operation
 # None will generates a 404
 @app.object_perms("foo")
-def allow_foo_access(user: str, fooid: int, mode: str) -> Optional[bool]:
+def allow_foo_access(user: str, fooid: int, mode: str) -> bool|None:
     return …
 ```
 
@@ -641,7 +641,7 @@ in *read* mode by calling a per-domain user-supplied function:
 
 ```python
 @app.object_perms("msg")
-def can_access_message(user: str, mid: int, mode: str) -> Optional[bool]:
+def can_access_message(user: str, mid: int, mode: str) -> bool|None:
     # can user access message mid for operation mode?
     return …
 
