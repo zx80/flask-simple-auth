@@ -5,7 +5,7 @@
 from FlaskSimpleAuth import Flask, jsonify as json
 
 app = Flask("todos")
-app.config.from_envvar("TODOS_CONFIG")
+app.config.from_envvar("DEMO_CONFIG")
 
 TODOS = {
     "todo1": {"task": "build an API"},

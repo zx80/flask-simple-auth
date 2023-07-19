@@ -2,6 +2,7 @@ SHELL   = /bin/bash
 .ONESHELL:
 
 PYTHON  = python3
+VENV    = venv
 
 # switch to pg or pg2 to test with postgres and psycopg
 DB	= db
@@ -29,7 +30,7 @@ venv:
 	$(PYTHON) -m venv venv
 	source venv/bin/activate
 	pip install -e ..[password,tests,jwt]
-	pip install anodb psycopg psycopg2
+	pip install anodb psycopg psycopg2 pydantic
 	pip install pytest
 
 #
@@ -66,7 +67,8 @@ APP	= app
 .PHONY: stop run run.db run.pg run.pg2 log log.db log.pg log.pg2
 
 app.pid: stuff.$(DB)
-	export APP_CONFIG=$(APP)-$(DB).conf TODOS_CONFIG=todos.conf
+	[ "$(ENV)" ] && source $(VENV)/bin/activate
+	export APP_CONFIG=$(APP)-$(DB).conf
 	type flask || exit 1
 	flask --app=$(APP).py --debug run > app.log 2>&1 &
 	echo $$! > $@
@@ -85,9 +87,12 @@ run: app.pid
 
 # make flask-restful-todos-init.demo
 # make flask-restful-todos-fsa.demo
-%.demo:
+%.demo: $(VENV)
+	demo=$*
+	demo=$${demo/-fsa/}
+	export DEMO_CONFIG=$*.conf
 	$(MAKE) $*.run
-	./curl-todos.sh
+	./$$demo-curl.sh
 
 # NOTE colortail could be nice here
 log: run

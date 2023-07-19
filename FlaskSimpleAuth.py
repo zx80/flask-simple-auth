@@ -218,9 +218,10 @@ def _get_file_storage(p: str) -> FileStorage:
 
 
 def jsonify(a: Any):
-    """Jsonify something, including generators."""
-    # FIXME how to detect a generator?
-    if inspect.isgenerator(a) or type(a) in (map, filter, range):
+    """Jsonify something, including generators and pydantic stuff."""
+    if hasattr(a, "model_dump"):
+        return a.model_dump()
+    elif inspect.isgenerator(a) or type(a) in (map, filter, range):
         return flask.jsonify(list(a))
     else:
         return flask.jsonify(a)
