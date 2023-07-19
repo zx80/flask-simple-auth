@@ -1980,6 +1980,9 @@ def test_pydantic_models():
     @app.post("/foo", authorize="ANY")
     def post_foo(f: Foo):
          return {"f": str(f)}, 201
+    @app.get("/foo", authorize="ANY")
+    def get_foo():
+        return fsa.jsonify(Foo(**FOO_OK)), 200
     # pydantic dataclass
     @pydantic.dataclasses.dataclass
     class Bla:
@@ -1991,9 +1994,6 @@ def test_pydantic_models():
     @app.post("/bla", authorize="ANY")
     def post_bla(b: Bla):
         return {"n": len(b.b0) + b.b1}, 201
-    @app.get("/bla", authorize="ANY")
-    def get_bla():
-        return fsa.jsonify(BLA_OK), 200
     # standard dataclass
     # NOTE validatioj nis very weak
     import dataclasses
@@ -2021,6 +2021,8 @@ def test_pydantic_models():
         assert b"type error on http parameter" in r.data
         r = check(400, c.post("/foo", data={"f": 1234}))
         assert b"unexpected value 1234 for dict" in r.data
+        r = check(200, c.get("/foo"))
+        assert r.json == FOO_OK
         # Bla
         r = check(201, c.post("/bla", json={"b": BLA_OK}))
         r = check(400, c.post("/bla", json={"b": BLA_KO}))
@@ -2031,8 +2033,6 @@ def test_pydantic_models():
         r = check(400, c.post("/bla", data={"b": json.dumps(BLA_KO)}))
         r = check(400, c.post("/bla", json={"b": False}))
         assert b"unexpected value False for dict" in r.data
-        r = check(200, c.get("/bla"))
-        assert r.json == BLA_OK
         # Dim
         r = check(201, c.post("/dim", json={"d": DIM_OK}))
         # r = check(400, c.post("/dim", json={"d": DIM_KO}))
