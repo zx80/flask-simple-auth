@@ -16,6 +16,7 @@ log = logging.getLogger("demo")
 app = fsa.Flask("demo")
 app.config.from_envvar("DEMO_CONFIG")
 
+# user db: johndoe:secret
 fake_users_db = {
     "johndoe": {
         "username": "johndoe",
@@ -54,6 +55,7 @@ def user_in_group(login: str, group: str):
     return False
 
 # from a REST perspective, it should be GET…
+# however OAuth seems to prescribe parameters "username" and "password"
 @app.post("/token", authorize="ALL", auth="param")
 def post_token(user: fsa.CurrentUser):
     return {"access_token": app.create_token(user), "token_type": "bearer"}, 200

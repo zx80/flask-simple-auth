@@ -1186,7 +1186,8 @@ Todo or not todo…
 - how to manage automatic return of ressources?
 - `logging` default behavior is a *pain* and the maintainer is self satisfied.
   how to ensure that logging is initialized?
-- is it ok to have only token auth and add basic/param on a route?
+- is it always ok to have only token auth and add basic/param on a route?
+  ok with token & param, see `demo/fastapi-oauth2-jwt`
 
 ### Software Engineering
 
