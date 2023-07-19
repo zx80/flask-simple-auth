@@ -1991,6 +1991,9 @@ def test_pydantic_models():
     @app.post("/bla", authorize="ANY")
     def post_bla(b: Bla):
         return {"n": len(b.b0) + b.b1}, 201
+    @app.get("/bla", authorize="ANY")
+    def get_bla():
+        return fsa.jsonify(BLA_OK), 200
     # standard dataclass
     # NOTE validatioj nis very weak
     import dataclasses
@@ -2028,6 +2031,8 @@ def test_pydantic_models():
         r = check(400, c.post("/bla", data={"b": json.dumps(BLA_KO)}))
         r = check(400, c.post("/bla", json={"b": False}))
         assert b"unexpected value False for dict" in r.data
+        r = check(200, c.get("/bla"))
+        assert r.json == BLA_OK
         # Dim
         r = check(201, c.post("/dim", json={"d": DIM_OK}))
         # r = check(400, c.post("/dim", json={"d": DIM_KO}))

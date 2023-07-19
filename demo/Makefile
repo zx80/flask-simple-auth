@@ -91,8 +91,10 @@ run: app.pid
 	demo=$*
 	demo=$${demo/-fsa/}
 	export DEMO_CONFIG=$*.conf
+	export DEMO_SECRET="09d25e094faa6ca2556c818166b7a9563b93f7099f6f0f4caa6cf63b88e8d3e7"
 	$(MAKE) $*.run
-	./$$demo-curl.sh
+	script="./$$demo-curl.sh"
+	[ -x $$script ] && $$script
 
 # NOTE colortail could be nice here
 log: run
