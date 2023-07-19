@@ -1179,6 +1179,7 @@ Todo or not todo…
 
 ### Features
 
+- improve pydantic integration wrt returning JSON data on objects
 - clear cache per type? entry??
 - how to add a timeout? or manage an outside one?
 - how to manage automatic return of ressources?
