@@ -1188,6 +1188,8 @@ Todo or not todo…
   how to ensure that logging is initialized?
 - is it ok to have only token auth and add basic/param on a route?
   *not* ok with token & param, see `demo/fastapi-oauth2-jwt`
+- the doc and implementation should clarify exception handling,
+  and possible overrides.
 
 ### Software Engineering
 
