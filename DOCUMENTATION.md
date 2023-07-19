@@ -1186,6 +1186,7 @@ Todo or not todo…
 - how to manage automatic return of ressources?
 - `logging` default behavior is a *pain* and the maintainer is self satisfied.
   how to ensure that logging is initialized?
+- is it ok to have only token auth and add basic/param on a route?
 
 ### Software Engineering
 
