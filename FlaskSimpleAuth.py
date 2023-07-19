@@ -658,7 +658,7 @@ class FlaskSimpleAuth:
 
     def _store(self, store: dict[Any, Any], what: str, key: Any, val: Callable|None = None):
         """Add a function associated to something in a dict."""
-        if self._mode >= Mode.DEBUG4:
+        if self._mode >= Mode.DEBUG2:
             log.debug(f"registering {what} for {key} ({val})")
         if key in store:
             log.warning(f"overriding {what} function for {key}")
