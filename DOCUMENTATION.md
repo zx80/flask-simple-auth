@@ -1208,3 +1208,4 @@ Todo or not todo…
 
 - Tutorial? Recipee?
 - comparisons with other frameworks
+- build and link API doc?
