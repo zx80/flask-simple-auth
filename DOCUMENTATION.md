@@ -1203,3 +1203,8 @@ Todo or not todo…
   is an `after_request` hook enough?
 - add more examples in the documentation
 - take advantage of `TypedDict`?
+
+### Documentation
+
+- Tutorial? Recipee?
+- comparisons with other frameworks
