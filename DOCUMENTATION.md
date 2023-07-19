@@ -752,7 +752,7 @@ Defining new types can be used to factor out some parameter checks,
 for instance requiring a positive integer:
 
 ```python
-class nat(int):
+class nat(int):  # this demonstrate Python simplicity…
     def __new__(cls, val):
         if val < 0:
             raise ValueError(f"nat value must be positive: {val}")
@@ -764,9 +764,9 @@ def get_pos(i: nat, j: nat):
     …
 ```
 
-If the constructor does not match, a custom function can be provided
-with the `cast` function/decorator and will be called automatically
-to convert parameters:
+If the constructor does not match, a custom function can be provided with the
+`cast` function/decorator and will be called automatically to convert
+parameters:
 
 ```python
 class House:
