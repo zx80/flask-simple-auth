@@ -1807,8 +1807,8 @@ class FlaskSimpleAuth:
                         # this is really managed elsewhere
                         typings[n] = t
                     elif (self._pydantic_base_model is not None and isinstance(t, type) and
-                        issubclass(t, self._pydantic_base_model) or
-                       hasattr(t, "__dataclass_fields__")):
+                          issubclass(t, self._pydantic_base_model) or
+                          hasattr(t, "__dataclass_fields__")):
                         # create a convenient cast for pydantic classes or dataclasses
                         # we assume that named-parameters are passed
                         def datacast(val):
