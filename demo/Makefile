@@ -83,8 +83,8 @@ run: app.pid
 %.run:
 	$(MAKE) APP=$* run
 
-# make todos-fsa.demo
-# make todos-frf.demo
+# make flask-restful-todos-init.demo
+# make flask-restful-todos-fsa.demo
 %.demo:
 	$(MAKE) $*.run
 	./curl-todos.sh
