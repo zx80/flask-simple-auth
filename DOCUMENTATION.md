@@ -1180,9 +1180,12 @@ Todo or not todo…
 ### Features
 
 - improve pydantic integration wrt returning JSON data on objects
+  works for `BaseModel`, what about `dataclass`?
 - clear cache per type? entry??
 - how to add a timeout? or manage an outside one?
 - how to manage automatic return of ressources?
+- `logging` default behavior is a *pain* and the maintainer is self satisfied.
+  how to ensure that logging is initialized?
 
 ### Software Engineering
 

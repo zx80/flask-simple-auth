@@ -1995,7 +1995,7 @@ def test_pydantic_models():
     def post_bla(b: Bla):
         return {"n": len(b.b0) + b.b1}, 201
     # standard dataclass
-    # NOTE validatioj nis very weak
+    # NOTE validation is very weak
     import dataclasses
     @dataclasses.dataclass
     class Dim:
@@ -2008,6 +2008,15 @@ def test_pydantic_models():
     @app.post("/dim", authorize="ANY")
     def post_dim(d: Dim):
         return {"n": d.d0[1] + d.d1}, 201
+    # pydantic special parameter
+    class Doom(pydantic.BaseModel):
+        i: int = 0
+        f: float = 0.0
+    DOOM = {"i": 1, "f": 1.0}
+    app.special_parameter(Doom, lambda _: Doom(**DOOM))
+    @app.get("/doom", authorize="ANY")
+    def get_doom(d: Doom):
+        return fsa.jsonify(d), 200
     # tests
     with app.test_client() as c:
         # Foo
@@ -2043,6 +2052,9 @@ def test_pydantic_models():
         # r = check(400, c.post("/dim", data={"d": json.dumps(DIM_KO)}))
         r = check(400, c.post("/dim", json={"d": 2.78}))
         # assert b" for dict" in r.data
+        # Doom
+        r = check(200, c.get("/doom"))
+        assert r.json == DOOM
 
 def test_multi_400():
     app = fsa.Flask("400")

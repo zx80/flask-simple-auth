@@ -658,6 +658,8 @@ class FlaskSimpleAuth:
 
     def _store(self, store: dict[Any, Any], what: str, key: Any, val: Callable|None = None):
         """Add a function associated to something in a dict."""
+        if self._mode >= Mode.DEBUG4:
+            log.debug(f"registering {what} for {key} ({val})")
         if key in store:
             log.warning(f"overriding {what} function for {key}")
         if val:  # direct
@@ -1472,11 +1474,11 @@ class FlaskSimpleAuth:
         except jwt.ExpiredSignatureError:
             if self._mode >= Mode.DEBUG:
                 log.debug(f"AUTH (jwt token): token has expired ({token})")
-            raise self._Err("expired jwt auth token: {token}", 401)
+            raise self._Err(f"expired jwt auth token: {token}", 401)
         except Exception as e:
             if self._mode >= Mode.DEBUG:
                 log.debug(f"AUTH (jwt token): invalid token {token}: {e}")
-            raise self._Err("invalid jwt token: {token}", 401, e)
+            raise self._Err(f"invalid jwt token: {token}", 401, e)
 
     # NOTE as the realm can be route-dependent, cached validations include the realm.
     def _get_any_token_auth_exp(self, token: str, realm: str):
@@ -1495,7 +1497,7 @@ class FlaskSimpleAuth:
         if now > exp:
             if self._mode >= Mode.DEBUG:
                 log.debug(f"AUTH (token): token has expired ({token})")
-            raise self._Err("expired auth token: {token}", 401)
+            raise self._Err(f"expired auth token: {token}", 401)
         self._local.scopes = scopes
         return user
 
@@ -1797,10 +1799,14 @@ class FlaskSimpleAuth:
                 sn = n[1:] if n[0] == "_" and len(n) > 1 else n
                 names[n], names[sn] = sn, n
                 if n not in types and p.kind not in (p.VAR_KEYWORD, p.VAR_POSITIONAL):
-                    # guess parameter type
+                    # guess and store parameter type
                     t = _typeof(p)
                     types[n] = t
-                    if (self._pydantic_base_model is not None and isinstance(t, type) and
+                    # typings: how to actually build the parameter
+                    if t in self._special_parameters:
+                        # this is really managed elsewhere
+                        typings[n] = t
+                    elif (self._pydantic_base_model is not None and isinstance(t, type) and
                         issubclass(t, self._pydantic_base_model) or
                        hasattr(t, "__dataclass_fields__")):
                         # create a convenient cast for pydantic classes or dataclasses

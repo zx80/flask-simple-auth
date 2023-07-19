@@ -6,6 +6,8 @@ and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 ## ? on ?
 
 Improve `jsonify` to deal with pydantic-generated classes.
+Fix some debug message formatting.
+Fix handling of `pydantic` classes as custom *special parameters*.
 Better documentation.
 
 ## 23.1 on 2023-07-13
