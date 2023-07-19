@@ -345,6 +345,8 @@ The available authentication schemes are:
 
   Function `create_token(user)` creates a token for the user depending
   on the current scheme. If `user` is not given, the current user is taken.
+  Other parameters can be overriden, such as `realm`, `delay`, `issuer`,
+  `secret`… to allow full control if necessary, eg for MFA.
 
   Token authentication is always attempted unless the secret is empty.
   Setting `FSA_AUTH` to `token` results in *only* token authentication to be used.
