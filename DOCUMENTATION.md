@@ -391,6 +391,25 @@ The available authentication schemes are:
   - `FSA_FAKE_LOGIN` is the parameter holding the user name.
     Default is `LOGIN`.
 
+Other authentication schemes can be added by registering a new hook which:
+
+- is passed the application and request
+- returns the authenticated login as a str, or None
+- may raise an `ErrorResponse` if unhappy, eg to generate a 401
+
+```python
+@app.authentication("code")
+def code_authentication(app: Flask, req: Request) -> str|None:
+    …
+
+@app.get("/code-authentication", authorization="ALL", auth="code")
+def get_code_authentication(user: CurrentUser):
+    return f"Hello code-authenticated {user}!", 200
+```
+
+The `FSA_AUTHENTICATION` configuration directive is a dictionary which can be
+used for the same purpose.
+
 ### Password Management
 
 Password authentication is performed for the following authentication schemes:
@@ -866,9 +885,9 @@ See the module for a detailed documentation.
 
 ### Error Handling
 
-Raising the `ErrorResponse` exception with a message and status from any
-user-defined function generates a `Response` of this status with the text
-message as contents.
+Raising the `ErrorResponse` exception with a message, status, and possibly
+headers and content type from any user-defined function generates a `Response`
+of this status with the text message as contents.
 
 The following directives provide convenient configuration about error
 handling:
@@ -878,8 +897,8 @@ handling:
   `application/json` responses.
   Using *json:error* generates a JSON dictionary with key *error* holding
   the error message.
-  The response generation can be fully overriden by providing a callable
-  which expects the error message and status code as parameters.
+  The response generation can be fully overriden by providing a callable which
+  expects the error message, status code, headers and content type as parameters.
   This handler can be restricted to apply only to FSA-generated errors,
   see `FSA_HANDLE_ALL_ERRORS` below.
   Default is *plain*.

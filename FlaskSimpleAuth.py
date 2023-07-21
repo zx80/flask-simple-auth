@@ -10,6 +10,8 @@ This extension helps manage:
 This code is public domain.
 """
 
+# FIXME this code is rather monolithic…
+
 import sys
 from typing import Callable, MutableMapping, Any
 import typing
@@ -54,9 +56,11 @@ log = logging.getLogger("fsa")
 from importlib.metadata import version as pkg_version
 __version__ = pkg_version("FlaskSimpleAuth")
 
+
 # hook function types
 # generate an error response for message and status
-ErrorResponseFun = Callable[[str, int], Response]
+# mimics flask.Response("message", status, headers, content_type)
+ErrorResponseFun = Callable[[str, int, dict[str, str]|None, str|None], Response]
 # get password from user login, None if unknown
 GetUserPassFun = Callable[[str], str|None]
 # is user login in group (str or int): yes, no, unknown
@@ -79,6 +83,9 @@ BeforeRequestFun = Callable[[Request], Response|None]
 BeforeExecFun = Callable[[Request, str, str], Response|None]
 # after request hook
 AfterRequestFun = Callable[[Response], Response]
+# authentication hook
+# FIXME Any is really FlaskSimpleAuth, but python lacks forward declarations
+AuthenticationFun = Callable[[Any, Request], str|None]
 
 
 @dataclasses.dataclass
@@ -87,6 +94,8 @@ class ErrorResponse(BaseException):
     # NOTE this should maybe inherit from exceptions.HTTPException?
     message: str
     status: int
+    headers: dict[str, str]|None = None
+    content_type: str|None = None
 
 
 class ConfigError(BaseException):
@@ -286,6 +295,7 @@ class Flask(flask.Flask):
         self.add_scope = self._fsa.add_scope
         self.add_headers = self._fsa.add_headers
         self.before_exec = self._fsa.before_exec
+        self.authentication = self._fsa.authentication
         # forward methods
         self.check_password = self._fsa.check_password
         self.hash_password = self._fsa.hash_password
@@ -312,6 +322,7 @@ _DIRECTIVES = {
     "FSA_GET_USER_PASS", "FSA_USER_IN_GROUP", "FSA_CAST", "FSA_OBJECT_PERMS",
     "FSA_SPECIAL_PARAMETER", "FSA_ERROR_RESPONSE", "FSA_ADD_HEADERS",
     "FSA_BEFORE_REQUEST", "FSA_BEFORE_EXEC", "FSA_AFTER_REQUEST",
+    "FSA_AUTHENTICATION",
     # authentication
     "FSA_AUTH", "FSA_REALM", "FSA_FAKE_LOGIN", "FSA_PARAM_USER",
     "FSA_PARAM_PASS", "FSA_TOKEN_TYPE", "FSA_TOKEN_ALGO", "FSA_TOKEN_CARRIER",
@@ -371,6 +382,7 @@ class FlaskSimpleAuth:
             dt.datetime: dt.datetime.fromisoformat,
             JsonData: json.loads,
         }
+        # predefined special parameter types, extend with special_parameter
         self._special_parameters: dict[type, SpecialParameterFun] = {
             Request: lambda _: request,
             Environ: lambda _: request.environ,
@@ -386,6 +398,21 @@ class FlaskSimpleAuth:
         self._all_auth: set[str] = set()     # all authentication methods
         self._http_auth = None               # possibly flask_httpauth instance, if needed
         self._pm = None                      # password manager instance, if needed
+        # map auth to their hooks
+        self._authentication: dict[str, AuthenticationFun] = {
+            "none": lambda _a, _r: None,
+            "httpd": self._get_httpd_auth,
+            "token": self._get_token_auth,
+            "oauth": self._get_token_auth,
+            "fake": self._get_fake_auth,
+            "basic": self._get_basic_auth,
+            "digest": self._get_httpauth,
+            "param": self._get_param_auth,
+            "password": self._get_password_auth,
+            "http-basic": self._get_httpauth,
+            "http-digest": self._get_httpauth,
+            "http-token": self._get_httpauth,
+        }
         # cache management
         self._cache: MutableMapping[str, str]|None = None
         self._gen_cache: Callable|None = None
@@ -421,13 +448,12 @@ class FlaskSimpleAuth:
         # actual main initialization is deferred to `_init_app`
         self._initialized = False
 
-    def _Res(self, msg: str, code: int):
-        """Generate a actual error Response with a message."""
-        # FIXME what about headers and content_type?
+    def _Res(self, msg: str, code: int, headers: dict[str, str]|None = None, content_type: str|None = None):
+        """Generate a error actual Response with a message."""
         if self._mode >= Mode.DEBUG:
             log.debug(f"error response: {code} {msg}")
         assert self._error_response is not None
-        return self._error_response(msg, code)
+        return self._error_response(msg, code, headers, content_type)
 
     def _Exc(self, exc):
         """Handle an internal error."""
@@ -669,14 +695,15 @@ class FlaskSimpleAuth:
         """Add a function associated to something in a dict."""
         if self._mode >= Mode.DEBUG2:
             log.debug(f"registering {what} for {key} ({val})")
-        if key in store:
-            log.warning(f"overriding {what} function for {key}")
         if val:  # direct
+            if key in store:
+                log.warning(f"overriding {what} function for {key}")
             store[key] = val
         else:
 
             def decorate(fun: Callable):
-                store[key] = fun
+                assert fun is not None
+                self._store(store, what, key, fun)
                 return fun
 
             return decorate
@@ -692,6 +719,11 @@ class FlaskSimpleAuth:
     def object_perms(self, domain: str, checker: ObjectPermsFun = None):
         """Add an object permission helper for a given domain."""
         return self._store(self._object_perms, "object permission checker", domain, checker)
+
+    def authentication(self, auth: str, hook: AuthenticationFun|None = None):
+        """Add new authentication hook."""
+        self._add_auth(auth)
+        return self._store(self._authentication, "authentication", auth, hook)
 
     def _check_object_perms(self, user, domain, oid, mode):
         """Can user access object oid in domain for mode, cached."""
@@ -797,12 +829,15 @@ class FlaskSimpleAuth:
             elif not isinstance(error, str):
                 pass
             elif error == "plain":
-                self._error_response = lambda m, c: Response(m, c, content_type="text/plain")
+                self._error_response = \
+                    lambda m, c, h, _m: Response(m, c, h, content_type="text/plain")
             elif error == "json":
-                self._error_response = lambda m, c: Response(json.dumps(m), c, content_type="application/json")
+                self._error_response = \
+                    lambda m, c, h, _m: Response(json.dumps(m), c, h, content_type="application/json")
             elif error.startswith("json:"):
                 key = error.split(":", 1)[1]
-                self._error_response = lambda m, c: Response(json.dumps({key: m}), c, content_type="application/json")
+                self._error_response = \
+                    lambda m, c, h, _m: Response(json.dumps({key: m}), c, h, content_type="application/json")
             if self._error_response is None:
                 raise self._Bad(f"unexpected FSA_ERROR_RESPONSE value: {error}")
         elif "FSA_ERROR_RESPONSE" in conf:
@@ -1009,7 +1044,7 @@ class FlaskSimpleAuth:
         # authentication checks are delayed here because we may need params
         #
         for a in self._auth:
-            if a not in self._FSA_AUTH:
+            if a not in self._authentication:
                 raise self._Bad(f"unexpected auth: {a}")
             self._add_auth(a)
         #
@@ -1031,6 +1066,7 @@ class FlaskSimpleAuth:
         _set_hooks("FSA_CAST", self.cast)
         _set_hooks("FSA_OBJECT_PERMS", self.object_perms)
         _set_hooks("FSA_SPECIAL_PARAMETER", self.special_parameter)
+        _set_hooks("FSA_AUTHENTICATION", self.authentication)
         #
         # http auth setup
         #
@@ -1158,9 +1194,9 @@ class FlaskSimpleAuth:
     #
     # INHERITED HTTP AUTH
     #
-    def _get_httpd_auth(self) -> str|None:
+    def _get_httpd_auth(self, app, req) -> str|None:
         """Inherit HTTP server authentication."""
-        return request.remote_user
+        return req.remote_user
 
     #
     # HTTP FAKE AUTH
@@ -1169,9 +1205,9 @@ class FlaskSimpleAuth:
     #
     # FSA_FAKE_LOGIN: name of parameter holding the login ("LOGIN")
     #
-    def _get_fake_auth(self):
+    def _get_fake_auth(self, app, req):
         """Return fake user. Only for local tests."""
-        assert request.remote_addr.startswith("127.") or request.remote_addr == "::1", \
+        assert req.remote_addr.startswith("127.") or req.remote_addr == "::1", \
             "fake auth only on localhost"
         params = self._params()
         user = params.get(self._login, None)
@@ -1277,7 +1313,7 @@ class FlaskSimpleAuth:
     #
     # FLASK HTTP AUTH (BASIC, DIGEST, TOKEN)
     #
-    def _get_httpauth(self):
+    def _get_httpauth(self, app, req):
         """Delegate user authentication to HTTPAuth."""
         assert self._http_auth
         auth = self._http_auth.get_auth()
@@ -1296,9 +1332,9 @@ class FlaskSimpleAuth:
     #
     # HTTP BASIC AUTH
     #
-    def _get_basic_auth(self):
+    def _get_basic_auth(self, app, req):
         """Get user with basic authentication."""
-        auth = request.headers.get("Authorization", None)
+        auth = req.headers.get("Authorization", None)
         if not auth:
             log.debug("AUTH (basic): missing Authorization header")
             raise self._Err("missing authorization header", 401)
@@ -1321,7 +1357,7 @@ class FlaskSimpleAuth:
     # FSA_PARAM_USER: parameter name for login ("USER")
     # FSA_PARAM_PASS: parameter name for password ("PASS")
     #
-    def _get_param_auth(self):
+    def _get_param_auth(self, app, req):
         """Get user with parameter authentication."""
         params = self._params()
         user = params.get(self._userp, None)
@@ -1335,12 +1371,12 @@ class FlaskSimpleAuth:
     #
     # HTTP BASIC OR PARAM AUTH
     #
-    def _get_password_auth(self):
+    def _get_password_auth(self, app, req):
         """Get user from basic or param authentication."""
         try:
-            return self._get_basic_auth()
+            return self._get_basic_auth(app, req)
         except ErrorResponse:  # failed, let's try param
-            return self._get_param_auth()
+            return self._get_param_auth(app, req)
 
     #
     # TOKEN AUTH
@@ -1547,29 +1583,13 @@ class FlaskSimpleAuth:
             token = request.headers.get(self._name, None)
         return token
 
-    def _get_token_auth(self) -> str|None:
+    def _get_token_auth(self, app, req) -> str|None:
         """Authenticate with current token."""
         user = None
         if self._token:
             # this raises a missing token 401 if no token
             user = self._get_any_token_auth(self._get_token())
         return user
-
-    # map auth types to their functions
-    _FSA_AUTH: dict[str, Callable[[Any], str|None]] = {
-        "none": lambda s: None,
-        "httpd": _get_httpd_auth,
-        "token": _get_token_auth,
-        "oauth": _get_token_auth,
-        "fake": _get_fake_auth,
-        "basic": _get_basic_auth,
-        "digest": _get_httpauth,
-        "param": _get_param_auth,
-        "password": _get_password_auth,
-        "http-basic": _get_httpauth,
-        "http-digest": _get_httpauth,
-        "http-token": _get_httpauth,
-    }
 
     def get_user(self, required=True) -> str|None:
         """Authenticate user or throw exception."""
@@ -1584,7 +1604,7 @@ class FlaskSimpleAuth:
         lae = None
         for a in self._local.auth:
             try:
-                self._local.user = self._FSA_AUTH[a](self)
+                self._local.user = self._authentication[a](self, request)
                 if self._local.user:
                     self._local.source = a
                     break
@@ -1653,7 +1673,7 @@ class FlaskSimpleAuth:
         try:  # the actual call
             return fun(*args, **kwargs)
         except ErrorResponse as e:  # something went wrong
-            return self._Res(e.message, e.status)
+            return self._Res(e.message, e.status, e.headers, e.content_type)
         except Exception as e:  # something went *really* wrong
             log.error(f"internal error on {request.method} {request.path}: {e}")
             if self._Exc(e):
@@ -1667,7 +1687,7 @@ class FlaskSimpleAuth:
             if isinstance(auth, str):
                 auth = [auth]
             for a in auth:
-                if a not in self._FSA_AUTH:
+                if a not in self._authentication:
                     raise self._Bad(f"unexpected authentication scheme {auth} on {path}")
 
         def decorate(fun: Callable):
@@ -1687,7 +1707,7 @@ class FlaskSimpleAuth:
                     try:
                         self.get_user()
                     except ErrorResponse as e:
-                        return self._Res(e.message, e.status)
+                        return self._Res(e.message, e.status, e.headers, e.content_type)
 
                 if not self._local.user:  # pragma no cover
                     return self._Res("no auth", 401)
@@ -1749,7 +1769,7 @@ class FlaskSimpleAuth:
                     try:
                         ok = self._user_in_group(self._local.user, grp)
                     except ErrorResponse as e:
-                        return self._Res(e.message, e.status)
+                        return self._Res(e.message, e.status, e.headers, e.content_type)
                     except Exception as e:
                         log.error(f"user_in_group failed: {e}")
                         if self._Exc(e):  # pragma: no cover
@@ -2024,7 +2044,7 @@ class FlaskSimpleAuth:
                     try:
                         ok = self._check_object_perms(self._local.user, domain, val, mode)
                     except ErrorResponse as e:
-                        return self._Res(e.message, e.status)
+                        return self._Res(e.message, e.status, e.headers, e.content_type)
                     except Exception as e:
                         log.error(f"internal error on {request.method} {request.path} permission {perm} check: {e}")
                         if self._Exc(e):  # pragma: no cover

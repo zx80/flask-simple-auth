@@ -68,8 +68,8 @@ def read_only():
     return "read-only", 200
 
 @app.route("/any", authorize=ANY)
-def any(app: CurrentApp):
-    assert app._fsa._get_httpd_auth() is None
+def any(app: CurrentApp, req: Request):
+    assert app._fsa._get_httpd_auth(app, req) is None
     return "no-auth", 200
 
 # change password in self-care with set_login

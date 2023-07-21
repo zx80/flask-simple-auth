@@ -1632,7 +1632,7 @@ def test_error_response():
     app = af.create_app()
     # set error_response hook with the decorator
     @app.error_response
-    def oops(m: str, c: int):
+    def oops(m: str, c: int, _h = None, _m = None):
         return Response(f"OOPS: {m}", c, content_type="text/plain")
     # override with the function
     app.error_response(oops)
@@ -2132,3 +2132,22 @@ def test_before_exec():
         assert b"internal error" in res.data
         res = check(418, c.get("/be", data={"LOGIN": "susie"}))
         assert b"teapot" in res.data
+
+def test_custom_authentication():
+    app = fsa.Flask("code-auth", FSA_ERROR_RESPONSE="json:oops", FSA_AUTH=["code"])
+    # powerful new authentication scheme
+    @app.authentication("code")
+    def code_authentication(app, req):
+        if "Code" not in req.headers:
+            raise fsa.ErrorResponse("Missing Code authentication header", 401, headers={"Oops": "missing Code"})
+        return req.headers["Code"]
+    @app.get("/hello", authorize="ALL")
+    def get_hello(user: fsa.CurrentUser):
+        return fsa.jsonify(user), 200
+    # tests
+    with app.test_client() as c:
+        res = check(401, c.get("/hello"))
+        assert res.json["oops"] == "Missing Code authentication header"
+        assert res.headers["Oops"] == "missing Code"
+        res = check(200, c.get("/hello", headers={"Code": "hobbes"}))
+        assert res.json == "hobbes"

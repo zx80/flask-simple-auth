@@ -3,6 +3,11 @@
 Sources are available on [GitHub](https://github.com/zx80/flask-simple-auth)
 and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 
+## ? on ?
+
+Add support for custom authentication.
+Extend `ErrorResponse` with headers and content type.
+
 ## 23.2 on 2023-07-23
 
 Improve `jsonify` to deal with pydantic-generated classes.
