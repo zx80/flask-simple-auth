@@ -18,7 +18,7 @@ import types
 import functools
 import inspect
 import datetime as dt
-from dataclasses import dataclass
+import dataclasses
 from enum import IntEnum
 import json
 
@@ -81,7 +81,7 @@ BeforeExecFun = Callable[[Request, str, str], Response|None]
 AfterRequestFun = Callable[[Response], Response]
 
 
-@dataclass
+@dataclasses.dataclass
 class ErrorResponse(BaseException):
     """Internal exception class to carry fields for an error Response."""
     # NOTE this should maybe inherit from exceptions.HTTPException?
