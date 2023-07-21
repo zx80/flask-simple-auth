@@ -2002,12 +2002,13 @@ def test_pydantic_models():
         d0: Tuple[str, int]
         d1: int
     # dim values, with a tuple and dict
-    DIM_OK = {"d0": ("Calvin", 6), "d1": 5432}
+    DIM_OK = {"d0": ["Calvin", 6], "d1": 5432}
+    DIM_OK2 = {"d0": ("Calvin", 6), "d1": 5432}
     DIM_KO = {"d0": {"Calvin": 6}, "d1": 1234}  # bad d0, not detected
     # dim test route
     @app.post("/dim", authorize="ANY")
     def post_dim(d: Dim):
-        return {"n": d.d0[1] + d.d1}, 201
+        return fsa.jsonify(d), 201
     # pydantic special parameter
     class Doom(pydantic.BaseModel):
         i: int = 0
@@ -2044,7 +2045,8 @@ def test_pydantic_models():
         r = check(400, c.post("/bla", json={"b": False}))
         assert b"unexpected value False for dict" in r.data
         # Dim
-        r = check(201, c.post("/dim", json={"d": DIM_OK}))
+        r = check(201, c.post("/dim", json={"d": DIM_OK2}))
+        assert r.json == DIM_OK
         # r = check(400, c.post("/dim", json={"d": DIM_KO}))
         # assert b"type error on json parameter" in r.data
         r = check(400, c.post("/dim", json={"d": 3.14159}))

@@ -219,10 +219,12 @@ def _get_file_storage(p: str) -> FileStorage:
 
 def jsonify(a: Any):
     """Jsonify something, including generators and pydantic stuff."""
-    if hasattr(a, "model_dump"):  # ok for BaseModel
+    if hasattr(a, "model_dump"):  # Pydantic BaseModel
         return a.model_dump()
-    elif hasattr(a, "__pydantic_model__"):
-        return json.dumps(dataclasses.asdict(a))
+    elif hasattr(a, "__pydantic_fields__"):  # Pydantic dataclass
+        return dataclasses.asdict(a)
+    elif hasattr(a, "__dataclass_fields__"):  # standard dataclass
+        return dataclasses.asdict(a)
     elif inspect.isgenerator(a) or type(a) in (map, filter, range):
         return flask.jsonify(list(a))
     else:
