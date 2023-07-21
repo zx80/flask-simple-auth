@@ -219,8 +219,10 @@ def _get_file_storage(p: str) -> FileStorage:
 
 def jsonify(a: Any):
     """Jsonify something, including generators and pydantic stuff."""
-    if hasattr(a, "model_dump"):
+    if hasattr(a, "model_dump"):  # ok for BaseModel
         return a.model_dump()
+    elif hasattr(a, "__pydantic_model__"):
+        return json.dumps(dataclasses.asdict(a))
     elif inspect.isgenerator(a) or type(a) in (map, filter, range):
         return flask.jsonify(list(a))
     else:
@@ -1806,7 +1808,8 @@ class FlaskSimpleAuth:
                     if t in self._special_parameters:
                         # this is really managed elsewhere
                         typings[n] = t
-                    elif (self._pydantic_base_model is not None and isinstance(t, type) and
+                    elif (self._pydantic_base_model is not None and
+                          isinstance(t, type) and
                           issubclass(t, self._pydantic_base_model) or
                           hasattr(t, "__dataclass_fields__")):
                         # create a convenient cast for pydantic classes or dataclasses

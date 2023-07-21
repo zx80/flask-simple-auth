@@ -1993,7 +1993,7 @@ def test_pydantic_models():
     # bla test route
     @app.post("/bla", authorize="ANY")
     def post_bla(b: Bla):
-        return {"n": len(b.b0) + b.b1}, 201
+        return fsa.jsonify(b), 201
     # standard dataclass
     # NOTE validation is very weak
     import dataclasses
@@ -2001,7 +2001,7 @@ def test_pydantic_models():
     class Dim:
         d0: Tuple[str, int]
         d1: int
-    # dim values
+    # dim values, with a tuple and dict
     DIM_OK = {"d0": ("Calvin", 6), "d1": 5432}
     DIM_KO = {"d0": {"Calvin": 6}, "d1": 1234}  # bad d0, not detected
     # dim test route
@@ -2034,6 +2034,7 @@ def test_pydantic_models():
         assert r.json == FOO_OK
         # Bla
         r = check(201, c.post("/bla", json={"b": BLA_OK}))
+        assert r.json == BLA_OK
         r = check(400, c.post("/bla", json={"b": BLA_KO}))
         assert b"type error on json parameter" in r.data
         r = check(400, c.post("/bla", json={"b": True}))
