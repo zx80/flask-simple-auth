@@ -55,7 +55,7 @@ def user_in_group(login: str, group: str):
     return False
 
 # from a REST perspective, it should be GET…
-# however OAuth seems to prescribe parameters "username" and "password"
+# however OAuth seems to prescribe POST on "username" and "password"
 @app.post("/token", authorize="ALL", auth="param")
 def post_token(user: fsa.CurrentUser):
     return {"access_token": app.create_token(user), "token_type": "bearer"}, 200
