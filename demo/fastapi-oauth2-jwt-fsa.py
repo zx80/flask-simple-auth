@@ -17,6 +17,7 @@ app = fsa.Flask("demo")
 app.config.from_envvar("DEMO_CONFIG")
 
 # user db: johndoe:secret
+# NOTE 12 implies X00 ms computation on the server, you probably should not want that!
 fake_users_db = {
     "johndoe": {
         "username": "johndoe",
@@ -35,7 +36,7 @@ class User(BaseModel):
     disabled: bool|None = None
 
 
-def get_user(db, username: str):
+def get_user(db, username: str) -> User|None:
     if username in db:
         return User(**db[username])
 
@@ -46,16 +47,14 @@ app.special_parameter(User, lambda _: get_user(fake_users_db, app.current_user()
 def get_user_pass(login: str):
     if login in fake_users_db:
        return fake_users_db[login]["hashed_password"]
-    # else None, 401
+    # else None, implies 401
 
 @app.user_in_group
 def user_in_group(login: str, group: str):
-    if login in fake_users_db and group == "ENABLED":
-       return not fake_users_db[login]["disabled"]
-    return False
+    return group == "ENABLED" and login in fake_users_db and not fake_users_db[login]["disabled"]
 
-# from a REST perspective, it should be GET…
-# however OAuth seems to prescribe POST on "username" and "password"
+# from a REST perspective, it should really be GET…
+# however OAuth web-oriented view prescribes POST on "username" and "password"
 @app.post("/token", authorize="ALL", auth="param")
 def post_token(user: fsa.CurrentUser):
     return {"access_token": app.create_token(user), "token_type": "bearer"}, 200

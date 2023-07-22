@@ -6,6 +6,7 @@ and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 ## ? on ?
 
 Improve `jsonify` to deal with pydantic-generated classes.
+Allow using some auth only on some routes, not in default list.
 Fix some debug message formatting.
 Fix handling of `pydantic` classes as custom *special parameters*.
 Better documentation.

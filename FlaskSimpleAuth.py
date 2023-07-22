@@ -382,9 +382,11 @@ class FlaskSimpleAuth:
             Cookie: lambda p: request.cookies[p],
             Header: lambda p: request.headers[p],
         }
-        self._auth: list[str] = []
-        self._http_auth = None
-        self._pm = None
+        self._auth: list[str] = []           # order default authentications
+        self._all_auth: set[str] = set()     # all authentication methods
+        self._http_auth = None               # possibly flask_httpauth instance, if needed
+        self._pm = None                      # password manager instance, if needed
+        # cache management
         self._cache: MutableMapping[str, str]|None = None
         self._gen_cache: Callable|None = None
         # fsa-generated errors
@@ -393,14 +395,15 @@ class FlaskSimpleAuth:
         self._keep_user_errors: bool = _DEFAULT_KEEP_USER_ERRORS
         self._secure: bool = True
         self._secure_warning = True
-        self._auth_params: set[str] = set()
-        self._groups: set[str|int] = set()
-        self._scopes: set[str] = set()
-        self._headers: dict[str, HeaderFun|str] = {}
+        # misc
+        self._auth_params: set[str] = set()  # authentication parameters to ignore
+        self._groups: set[str|int] = set()   # predeclared groups, error if not there
+        self._scopes: set[str] = set()       # idem for scopes
+        self._headers: dict[str, HeaderFun|str] = {}  # response headers
         self._before_requests: list[BeforeRequestFun] = []
         self._before_exec_hooks: list[BeforeExecFun] = []
         self._after_requests: list[AfterRequestFun] = []
-        self._local: Any = None
+        self._local: Any = None              # per-request data
         # registered here to avoid being bypassed by user hooks
         # FIXME not always?
         self._app.before_request(self._show_request)
@@ -419,7 +422,8 @@ class FlaskSimpleAuth:
         self._initialized = False
 
     def _Res(self, msg: str, code: int):
-        """Generate a error actual Response with a message."""
+        """Generate a actual error Response with a message."""
+        # FIXME what about headers and content_type?
         if self._mode >= Mode.DEBUG:
             log.debug(f"error response: {code} {msg}")
         assert self._error_response is not None
@@ -427,6 +431,7 @@ class FlaskSimpleAuth:
 
     def _Exc(self, exc):
         """Handle an internal error."""
+        # trace once with subtle tracking
         if exc and not hasattr(exc, "_fsa_traced"):
             log.error(exc, exc_info=True)
             setattr(exc, "_fsa_traced", True)
@@ -456,7 +461,7 @@ class FlaskSimpleAuth:
     # HOOKS
     #
     def _check_secure(self):
-        """Before request hook to reject insecure requests."""
+        """Before request hook to reject insecure (non-TLS) requests."""
         if not request.is_secure and not (
             request.remote_addr.startswith("127.") or request.remote_addr == "::1"
         ):  # pragma: no cover
@@ -469,9 +474,9 @@ class FlaskSimpleAuth:
                     self._secure_warning = False
 
     def _show_request(self):
-        """Show request."""
+        """Show request in debug mode."""
         if self._mode >= Mode.DEBUG4:
-            # FIXME there is no decent request prettyprinter
+            # FIXME is there a decent request prettyprinter?
             r = request
             rpp = f"{r}\n"
             params = self._params()
@@ -818,10 +823,8 @@ class FlaskSimpleAuth:
                 self._auth = [auth]
         else:  # keep the provided list, whatever
             self._auth = auth
-        for a in self._auth:
-            if a not in self._FSA_AUTH:
-                raise self._Bad(f"unexpected auth: {a}")
-        self._local.auth = self._auth  # type: ignore
+        # needed for _auth_has used below once for flask_httpauth initialization
+        self._local.auth = self._auth
         #
         # authorize
         #
@@ -1000,15 +1003,13 @@ class FlaskSimpleAuth:
         self._login = conf.get("FSA_FAKE_LOGIN", "LOGIN")
         self._userp = conf.get("FSA_PARAM_USER", "USER")
         self._passp = conf.get("FSA_PARAM_PASS", "PASS")
-        # parameters used for authn
-        if "param" in self._auth or "password" in self._auth:
-            self._auth_params.add(self._userp)
-            self._auth_params.add(self._passp)
-        if "fake" in self._auth:
-            self._auth_params.add(self._login)
-        if "token" in self._auth and self._carrier == "param":
-            assert isinstance(self._name, str)
-            self._auth_params.add(self._name)
+        #
+        # authentication checks are delayed here because we may need params
+        #
+        for a in self._auth:
+            if a not in self._FSA_AUTH:
+                raise self._Bad(f"unexpected auth: {a}")
+            self._add_auth(a)
         #
         # authentication and authorization hooks
         #
@@ -1105,6 +1106,23 @@ class FlaskSimpleAuth:
         self._set_caches()
         # done!
         self._initialized = True
+
+    def _add_auth(self, auth: str):
+        """Register that an authentication method is used."""
+        if not isinstance(auth, str):
+            self._Bad(f"unexpected authentication identifier type: {type(auth)}")
+        if auth in self._all_auth:
+            return
+        self._all_auth.add(auth)
+        # possibly add parameters to ignore silently
+        if auth in ("param", "password"):
+            self._auth_params.add(self._userp)
+            self._auth_params.add(self._passp)
+        if auth == "fake":
+            self._auth_params.add(self._login)
+        if auth == "token" and self._carrier == "param":
+            assert isinstance(self._name, str)
+            self._auth_params.add(self._name)
 
     def _init_password_manager(self) -> None:
         """Deferred password manager initialization."""
@@ -1915,10 +1933,10 @@ class FlaskSimpleAuth:
                                     continue
                             else:
                                 kwargs[p] = val
-                        else:
+                        else:  # not found anywhere, set default value if any
                             if p in defaults:
                                 kwargs[p] = defaults[p]
-                            else:
+                            else:  # missing mandatory (no default) parameter
                                 if self._mode >= Mode.DEBUG2:
                                     log.info(debugParam())
                                 e400(f'missing parameter "{pn}"')
@@ -1927,10 +1945,10 @@ class FlaskSimpleAuth:
                 # possibly add others, without shadowing already provided ones
                 if keywords:  # handle **kwargs
                     for p in params:
-                        if p not in kwargs:
+                        if p not in kwargs and p not in self._auth_params:
                             kwargs[p] = params[p]  # FIXME names[p]?
                     for p in fparams:
-                        if p not in kwargs:
+                        if p not in kwargs and p not in self._auth_params:
                             kwargs[p] = fparams[p]  # FIXME?
                 elif self._mode >= Mode.DEBUG or self._reject_param:
                     # detect unused parameters and warn or reject them
@@ -2070,6 +2088,17 @@ class FlaskSimpleAuth:
         # ensure that authorize is a list
         if type(authorize) in (int, str, tuple):
             authorize = [authorize]
+
+        # ensure that auth is registered as used
+        if auth is None:
+            pass
+        elif isinstance(auth, str):
+            self._add_auth(auth)
+        elif isinstance(auth, (list, tuple)):
+            for a in auth:
+                self._add_auth(a)
+        else:
+            self._Bad(f"unexpected auth type, should be str, list or tuple: {type(auth)}")
 
         # normalize None to NONE
         authorize = list(map(lambda a: NONE if a is None else a, authorize))

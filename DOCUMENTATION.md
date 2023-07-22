@@ -201,11 +201,12 @@ authorization declared with `authorize` or when calling `get_user`.
 
 The authentication scheme attempted on a route can be altered with the `auth`
 parameter added to the `route` decorator.
-This may be used to restrict the authentication scheme to a *subset* if those
-configured globally, and may or may not work otherwise depending on module
-internals, so this is only for special cases.
-A legitimate use for a REST API is to have `FSA_AUTH` defined to *token* and have
-only one *basic* route to obtain the token used by other routes.
+This may be used to restrict or change the authentication scheme on a route.
+Some combinations may or may not work depending on module internals, so this is
+only for special cases.
+A legitimate use for a REST API is to have `FSA_AUTH` defined to *token* and
+have only one password-authenticated route to obtain the token used by all other
+routes.
 
 ### Authentication Schemes
 
@@ -1152,10 +1153,11 @@ Todo or not todo…
 - test `FSA_HTTP_AUTH_OPTS`?
 - password re could use a dict for providing an explanation?
 - refactor password manager in a separate class?
+- refactor!
 - how to have several issuers and their signatures schemes?
 - add `issuer` route parameter? see `realm`.
 - authz/authn instead of authorize/auth?
-- rename ANY/ALL/NONE so something more intuitive!
+- rename ANY/ALL/NONE to something more intuitive!
 - ability to add an authentication scheme?
   eg send a mail with a link, or code with a SMS, or trigger some app…
 
@@ -1175,9 +1177,6 @@ Todo or not todo…
 - `FSA_PARAM_STYLE` *any/http/json* to restrict/force parameters?
   being lazy is not too bad?
 - check for bad char in parameter names
-- access Headers as parameters?
-  issue: how to name the variable for `User-Agent`?
-  header names are/should be case insensitive?
 
 ### Features
 
@@ -1186,8 +1185,6 @@ Todo or not todo…
 - how to manage automatic return of ressources?
 - `logging` default behavior is a *pain* and the maintainer is self satisfied.
   how to ensure that logging is initialized?
-- is it ok to have only token auth and add basic/param on a route?
-  *not* ok with token & param, see `demo/fastapi-oauth2-jwt`
 - the doc and implementation should clarify exception handling,
   and possible overrides.
 
