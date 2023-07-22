@@ -824,7 +824,7 @@ class FlaskSimpleAuth:
         else:  # keep the provided list, whatever
             self._auth = auth
         # needed for _auth_has used below once for flask_httpauth initialization
-        self._local.auth = self._auth
+        self._local.auth = self._auth  # type: ignore
         #
         # authorize
         #
