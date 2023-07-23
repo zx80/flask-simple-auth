@@ -821,7 +821,7 @@ class FlaskSimpleAuth:
                 self._auth = ["token", auth]
             else:
                 self._auth = [auth]
-        elif isinstance(auth, (list, tuple)):  # keep the provided list, whatever
+        elif isinstance(auth, list):  # keep the provided list, whatever
             self._auth = auth
         else:
             raise self._Bad(f"unexpected FSA_AUTH type: {type(auth)}")
