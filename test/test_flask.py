@@ -1061,6 +1061,15 @@ def test_bad_app():
         assert False, "bad app creation must fail"
     except ConfigError as e:
         assert "FSA_LOCAL" in str(e)
+    # bad route auth
+    try:
+        app = create_app()
+        @app.get("/bad-auth-type", authorize="ALL", auth=1)
+        def get_bad_auth_type():
+            return None
+        assert False, "bad app creation must fail"
+    except ConfigError as e:
+        assert "unexpected auth type" in str(e)
 
 class PK():
     def __init__(self, kind):

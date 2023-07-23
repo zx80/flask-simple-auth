@@ -2097,10 +2097,11 @@ class FlaskSimpleAuth:
         elif isinstance(auth, str):
             self._add_auth(auth)
         elif isinstance(auth, (list, tuple)):
+            # this also checks that list items are str
             for a in auth:
                 self._add_auth(a)
         else:
-            self._Bad(f"unexpected auth type, should be str, list or tuple: {type(auth)}")
+            raise self._Bad(f"unexpected auth type, should be str, list or tuple: {type(auth)}")
 
         # normalize None to NONE
         authorize = list(map(lambda a: NONE if a is None else a, authorize))
