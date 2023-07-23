@@ -353,6 +353,7 @@ _DEFAULT_KEEP_USER_ERRORS = False
 _DEFAULT_ERROR_RESPONSE = "plain"
 _DEFAULT_PASSWORD_SCHEME = "bcrypt"
 _DEFAULT_PASSWORD_OPTS = {"bcrypt__default_rounds": 4, "bcrypt__default_ident": "2y"}
+_DEFAULT_TOKEN_DELAY = 60.0
 
 
 # actual extension
@@ -980,7 +981,7 @@ class FlaskSimpleAuth:
         self._realm: str = realm
         self._issuer: str|None = conf.get("FSA_TOKEN_ISSUER", None)
         # token expiration in minutes
-        self._delay: float = conf.get("FSA_TOKEN_DELAY", 60.0)
+        self._delay: float = conf.get("FSA_TOKEN_DELAY", _DEFAULT_TOKEN_DELAY)
         self._grace: float = conf.get("FSA_TOKEN_GRACE", 0.0)
         self._renewal: float = conf.get("FSA_TOKEN_RENEWAL", 0.0)  # ratio of delay, only for cookies
         # token signature
