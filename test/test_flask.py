@@ -996,6 +996,16 @@ def test_bad_app():
     except ConfigError as e:
         assert "bad" in str(e), "ok, bad app creation has failed"
     try:
+        app = create_app(FSA_AUTH=1)
+        assert False, "bad app creation must fail"
+    except ConfigError as e:
+        assert "unexpected FSA_AUTH type" in str(e)
+    try:
+        app = create_app(FSA_AUTH=[1])
+        assert False, "bad app creation must fail"
+    except ConfigError as e:
+        assert "unexpected auth: 1" in str(e)
+    try:
         app = create_app(FSA_AUTH=["fake", "basic", "bad"])
         assert False, "bad app creation must fail"
     except ConfigError as e:

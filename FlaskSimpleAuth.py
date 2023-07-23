@@ -821,8 +821,10 @@ class FlaskSimpleAuth:
                 self._auth = ["token", auth]
             else:
                 self._auth = [auth]
-        else:  # keep the provided list, whatever
+        elif isinstance(auth, (list, tuple)):  # keep the provided list, whatever
             self._auth = auth
+        else:
+            raise self._Bad(f"unexpected FSA_AUTH type: {type(auth)}")
         # needed for _auth_has used below once for flask_httpauth initialization
         self._local.auth = self._auth  # type: ignore
         #
@@ -1109,7 +1111,7 @@ class FlaskSimpleAuth:
 
     def _add_auth(self, auth: str):
         """Register that an authentication method is used."""
-        if not isinstance(auth, str):
+        if not isinstance(auth, str):  # pragma: no cover
             self._Bad(f"unexpected authentication identifier type: {type(auth)}")
         if auth in self._all_auth:
             return
