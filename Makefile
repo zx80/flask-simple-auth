@@ -16,7 +16,7 @@ PIP		= venv/bin/pip
 .PHONY: check check.mypy check.flake8 check.black check.pytest check.demo check.coverage check.pymarkdown
 check.mypy: venv
 	source venv/bin/activate
-	mypy --implicit-optional $(MODULE).py
+	mypy --implicit-optional --check-untyped-defs $(MODULE).py
 
 check.flake8: venv
 	source venv/bin/activate

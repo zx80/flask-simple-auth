@@ -91,14 +91,14 @@ def push_auth(app, auth, token = None, carrier = None, name = None):
     # assert auth in (None, "none", "fake", "basic", "param", "password", "token", "http-token")
     assert token in (None, "fsa", "jwt")
     assert carrier in (None , "bearer", "param", "cookie", "header")
-    app_saved_auth.update(a = app._auth, t = app._token, c = app._carrier, n = app._name)
+    app_saved_auth.update(a = app._auth, t = app._tm._token, c = app._tm._carrier, n = app._tm._name)
     app._auth = [auth] if isinstance(auth, str) else auth
-    app._token, app._carrier, app._name = token, carrier, name
+    app._tm._token, app._tm._carrier, app._tm._name = token, carrier, name
     app._auth_params.add(name)
 
 def pop_auth(app):
     d = app_saved_auth
-    app._auth, app._token, app._carrier, app._name = d["a"], d["t"], d["c"], d["n"]
+    app._auth, app._tm._token, app._tm._carrier, app._tm._name = d["a"], d["t"], d["c"], d["n"]
     d.clear()
 
 def auth_header_basic(user: str):
@@ -243,60 +243,61 @@ def test_register(client):
     pop_auth(app._fsa)
 
 def test_fsa_token():
-    tsave, hsave = app._fsa._token, app._fsa._algo
-    app._fsa._token, app._fsa._algo = "fsa", "blake2s"
-    app._fsa._issuer = "self"
-    app._fsa._local.realm = app._fsa._realm
+    tm = app._fsa._tm
+    tsave, hsave = tm._token, tm._algo
+    tm._token, tm._algo = "fsa", "blake2s"
+    tm._issuer = "self"
+    app._fsa._local.token_realm = app._fsa._realm
     foo_token = app.create_token("foo")
     assert foo_token.startswith("Test/self:foo:")
-    assert app._fsa._get_any_token_auth(foo_token) == "foo"
-    app._fsa._issuer = None
+    assert tm._get_any_token_auth(foo_token) == "foo"
+    tm._issuer = None
     calvin_token = app.create_token("calvin")
     assert calvin_token[:12] == "Test:calvin:"
-    assert app._fsa._get_any_token_auth(calvin_token) == "calvin"
+    assert tm._get_any_token_auth(calvin_token) == "calvin"
     # malformed token
     try:
-        user = app._fsa._get_any_token_auth("not an FSA token")
+        user = tm._get_any_token_auth("not an FSA token")
         assert False, "expecting a malformed error"
     except fsa.ErrorResponse as e:
         assert "invalid fsa token" in str(e)
     # bad timestamp format
     try:
-        user = app._fsa._get_any_token_auth("R:U:demain:signature")
+        user = tm._get_any_token_auth("R:U:demain:signature")
         assert False, "expecting a bad timestamp format"
     except fsa.ErrorResponse as e:
         assert "unexpected timestamp format" in e.message
     try:
-        user = app._fsa._get_any_token_auth("Test:calvin:20201500000000:signature")
+        user = tm._get_any_token_auth("Test:calvin:20201500000000:signature")
         assert False, "expecting a bad timestamp format"
     except fsa.ErrorResponse as e:
         assert "unexpected fsa token limit" in e.message
     # force expiration
-    grace = app._fsa._grace
-    app._fsa._grace = -1000000
+    grace = tm._grace
+    tm._grace = -1000000
     try:
-        user = app._fsa._get_any_token_auth(calvin_token)
+        user = tm._get_any_token_auth(calvin_token)
         assert False, "token must have expired"
     except fsa.ErrorResponse as e:
         assert "expired auth token" in e.message
     # again after clear cache, so the expiration is detected at fsa level
     app.clear_caches()
     try:
-        user = app._fsa._get_any_token_auth(calvin_token)
+        user = tm._get_any_token_auth(calvin_token)
         assert False, "token must have expired"
     except fsa.ErrorResponse as e:
         assert "expired fsa auth token" in e.message
     # cleanup
-    app._fsa._grace = grace
-    app._fsa._token, app._fsa._algo = tsave, hsave
+    tm._grace = grace
+    tm._token, tm._algo = tsave, hsave
     hobbes_token = app.create_token("hobbes")
-    grace, app._fsa._grace = app._fsa._grace, -100
+    grace, tm._grace = tm._grace, -100
     try:
-        user = app._fsa._get_any_token_auth(hobbes_token)
+        user = tm._get_any_token_auth(hobbes_token)
         assert False, "token should be invalid"
     except fsa.ErrorResponse as e:
         assert e.status == 401
-    app._fsa._grace = grace
+    tm._grace = grace
 
 
 RSA_TEST_PUB_KEY = """
@@ -319,64 +320,65 @@ JtTFy+PPh909GQIhAMokyDzv42nWS0hiE6ofuDQZZcqz1LVotcH4wN3rMExRAiAd
 """
 
 def test_jwt_token():
-    tsave, hsave, app._fsa._token, app._fsa._algo = app._fsa._token, app._fsa._algo, "jwt", "HS256"
-    Ksave, ksave = app._fsa._secret, app._fsa._sign
+    tm = app._fsa._tm
+    tsave, hsave, tm._token, tm._algo = tm._token, tm._algo, "jwt", "HS256"
+    Ksave, ksave = tm._secret, tm._sign
     # hmac signature scheme
-    app._fsa._issuer = "self"
+    tm._issuer = "self"
     moe_token = app.create_token("moe")
     assert "." in moe_token and len(moe_token.split(".")) == 3
-    user = app._fsa._get_any_token_auth(moe_token)
+    user = tm._get_any_token_auth(moe_token)
     assert user == "moe"
     # again for caching test
-    user = app._fsa._get_any_token_auth(moe_token)
+    user = tm._get_any_token_auth(moe_token)
     assert user == "moe"
-    app._fsa._issuer = None
+    tm._issuer = None
     # expired token
-    delay, grace = app._fsa._delay, app._fsa._grace
-    app._fsa._delay, app._fsa._grace = -1, 0
+    delay, grace = tm._delay, tm._grace
+    tm._delay, tm._grace = -1, 0
     susie_token = app.create_token("susie")
     assert len(susie_token.split(".")) == 3
     try:
-        user = app._fsa._get_any_token_auth(susie_token)
+        user = tm._get_any_token_auth(susie_token)
         assert False, "expired token should fail"
     except fsa.ErrorResponse as e:
         assert "expired jwt auth token" in e.message
     finally:
-        app._fsa._delay, app._fsa._grace = delay, grace
+        tm._delay, tm._grace = delay, grace
     # pubkey stuff
-    app._fsa._algo, app._fsa._secret, app._fsa._sign = \
-        "RS256", RSA_TEST_PUB_KEY, RSA_TEST_PRIV_KEY
+    tm._algo, tm._secret, tm._sign = "RS256", RSA_TEST_PUB_KEY, RSA_TEST_PRIV_KEY
     mum_token = app.create_token("mum")
     pieces = mum_token.split(".")
     assert len(pieces) == 3
-    user = app._fsa._get_any_token_auth(mum_token)
+    user = tm._get_any_token_auth(mum_token)
     assert user == "mum"
     # bad pubkey token
     try:
         bad_token = f"{pieces[0]}.{pieces[2]}.{pieces[1]}"
-        user = app._fsa._get_any_token_auth(bad_token)
+        user = tm._get_any_token_auth(bad_token)
         assert False, "bad token should fail"
     except fsa.ErrorResponse as e:
         assert "invalid jwt token" in e.message
     # cleanup
-    app._fsa._token, app._fsa._algo = tsave, hsave
-    app._fsa._secret, app._fsa._sign = Ksave, ksave
+    tm._token, tm._algo = tsave, hsave
+    tm._secret, tm._sign = Ksave, ksave
 
 def test_invalid_token():
+    tm = app._fsa._tm
     # bad token
-    susie_token = app.create_token("susie", app._fsa._realm)
+    susie_token = app.create_token("susie", tm._realm)
     susie_token = susie_token[:-1] + "z"
     try:
-        user = app._fsa._get_any_token_auth(susie_token, app._fsa._realm)
+        user = tm._get_any_token_auth(susie_token, tm._realm)
         assert False, "token should be invalid"
     except fsa.ErrorResponse as e:
         assert e.status == 401
     # wrong token
-    realm, app._fsa._realm = app._fsa._realm, "elsewhere"
-    moe_token = app.create_token("moe", app._fsa._realm)
-    app._fsa._realm = realm
+    realm, tm._realm = tm._realm, "elsewhere"
+    moe_token = app.create_token("moe", tm._realm)
+    tm._realm = realm
     try:
-        user = app._fsa._get_any_token_auth(moe_token, app._fsa._realm)
+        user = tm._get_any_token_auth(moe_token, tm._realm)
         assert False, "token should be invalid"
     except fsa.ErrorResponse as e:
         assert e.status == 401
@@ -1315,8 +1317,8 @@ def test_authorize_errors():
         assert "no-such-group" in str(e)
     try:
         app.add_scope("foo", "bla")
-        app._fsa._token = "jwt"
-        app._fsa._issuer = "calvin"
+        app._fsa._tm._token = "jwt"
+        app._fsa._tm._issuer = "calvin"
         @app.get("/bad-scope", authorize="no-such-scope", auth="oauth")
         def get_bad_scope():
             return "should not get there", 200
@@ -1551,9 +1553,9 @@ def test_jsondata(client):
 
 def test_www_authenticate_priority(client):
     # save current status
-    fsa = app._fsa
-    token, carrier, name = fsa._token, fsa._carrier, fsa._name
-    fsa._token, fsa._carrier, fsa._name = "fsa", "bearer", "Bearer"
+    tm = app._fsa._tm
+    token, carrier, name = tm._token, tm._carrier, tm._name
+    tm._token, tm._carrier, tm._name = "fsa", "bearer", "Bearer"
     BASIC = auth_header_basic("calvin")
     TOKEN = auth_header_token("calvin")
     # /perm/basic only basic
@@ -1581,7 +1583,7 @@ def test_www_authenticate_priority(client):
     res = check(200, client.get("/perm/token-basic", headers=BASIC))
     res = check(200, client.get("/perm/token-basic", headers=TOKEN))
     # test with other name
-    fsa._name = "Foo"
+    tm._name = "Foo"
     res = check(401, client.get("/perm/token"))
     assert "WWW-Authenticate" in res.headers
     assert "Foo" in res.headers["WWW-Authenticate"]
@@ -1589,7 +1591,7 @@ def test_www_authenticate_priority(client):
     assert "WWW-Authenticate" in res.headers
     assert "Foo" in res.headers["WWW-Authenticate"]
     # restore
-    fsa._token, fsa._carrier, fsa._name = token, carrier, name
+    tm._token, tm._carrier, tm._name = token, carrier, name
 
 
 def test_jwt_authorization():
@@ -1607,7 +1609,7 @@ def test_jwt_authorization():
         assert False, "route should be rejected"
     except fsa.ConfigError as e:
         assert "mixed" in str(e)
-    app._fsa._issuer = None
+    app._fsa._tm._issuer = None
     try:
         @app.patch("/any/stuff", authorize=["write"], auth="oauth")
         def patch_any_stuff():
@@ -1615,9 +1617,9 @@ def test_jwt_authorization():
         assert False, "route should be rejected"
     except fsa.ConfigError as e:
         assert "ISSUER" in str(e)
-    app._fsa._issuer = "god"
+    app._fsa._tm._issuer = "god"
     # usage errors
-    a = app._fsa
+    a = app._fsa._tm
     rosalyn_token = a._get_jwt_token(a._realm, "god", "rosalyn", 10.0, a._secret, scope=["character"])
     rosalyn_auth=("Authorization", f"Bearer {rosalyn_token}")
     moe_token = a._get_jwt_token(a._realm, "god", "moe", 10.0, a._secret, scope=["sidekick"])
