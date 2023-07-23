@@ -399,8 +399,6 @@ class _TokenManager:
             raise self._Bad(f"unexpected FSA_TOKEN_TYPE: {self._token}")
         # token carrier
         self._carrier: str = conf.get("FSA_TOKEN_CARRIER", "bearer")
-        if not self._carrier:
-            raise self._Bad(f"Token type {self._token} requires a carrier")
         if self._carrier not in ("bearer", "param", "cookie", "header"):
             raise self._Bad(f"unexpected FSA_TOKEN_CARRIER: {self._carrier}")
         # name of token for cookie or param, Authentication scheme, or other header
@@ -440,9 +438,7 @@ class _TokenManager:
             # list of 94 chars, about 6.5 bits per char, 40 chars => 260 bits
             chars = string.ascii_letters + string.digits + string.punctuation
             self._secret = "".join(random.SystemRandom().choices(chars, k=40))
-        if not self._token:  # pragma: no cover
-            pass
-        elif self._token == "fsa":
+        if self._token == "fsa":
             self._sign: str|None = self._secret
             self._algo: str = conf.get("FSA_TOKEN_ALGO", "blake2s")
             self._siglen: int = conf.get("FSA_TOKEN_LENGTH", 16)

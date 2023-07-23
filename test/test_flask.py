@@ -1043,7 +1043,7 @@ def test_bad_app():
         app = create_app(FSA_AUTH="token", FSA_TOKEN_CARRIER=None)
         assert False, "bad app creation must fail"
     except ConfigError as e:
-        assert "requires a carrier" in str(e), "ok, bad app creation has failed"
+        assert "unexpected FSA_TOKEN_CARRIER" in str(e), "ok, bad app creation has failed"
     # bad token name
     try:
         app = create_app(FSA_AUTH="token", FSA_TOKEN_CARRIER="bearer", FSA_TOKEN_NAME=None)
