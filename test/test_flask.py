@@ -393,12 +393,13 @@ def test_password_lazy_init():
 def test_password_check(client):
     fsa = app._fsa
     # standard password
-    fsa._init_password_manager()
+    fsa.initialize()
+    pm = fsa._pm
     ref = app.hash_password("hello")
     assert app.check_password("hello", ref)
     assert not app.check_password("bad-pass", ref)
     # password alternate hook
-    assert fsa._password_check is None
+    assert pm._pass_check is None
     def test_check_pass(user, pwd):
         if user == "calvin" and pwd == "hobbes":
             return True
@@ -410,33 +411,33 @@ def test_password_check(client):
              raise ErrorResponse("test_check_pass error", 400)
         else:
              raise Exception("oops!")
-    fsa._password_check = test_check_pass
-    assert fsa._check_password("calvin", "hobbes") == "calvin"
-    assert fsa._check_password("susie", "magic") == "susie"
-    assert fsa._check_password("moe", "magic") == "moe"
+    pm._pass_check = test_check_pass
+    assert pm.check_user_password("calvin", "hobbes") == "calvin"
+    assert pm.check_user_password("susie", "magic") == "susie"
+    assert pm.check_user_password("moe", "magic") == "moe"
     try:
-        fsa._check_password("boo", "none")
+        pm.check_user_password("boo", "none")
         assert False, "should have raised an error"
     except ErrorResponse as e:
         assert True, "none password was rejected"
     try:
-        fsa._check_password("dad", "Error")
+        pm.check_user_password("dad", "Error")
         assert False, "should raise an error"
     except ErrorResponse as e:
         assert "test_check_pass error" in str(e)
     try:
-        fsa._check_password("baa", "whatever")
+        pm.check_user_password("baa", "whatever")
         assert False, "should raise an Exception"
     except ErrorResponse as e:
         assert "no such user" in str(e)
-    saved = fsa._get_user_pass
-    fsa.get_user_pass(None)
+    saved = pm._get_user_pass
+    pm.get_user_pass(None)
     try:
-        fsa._check_password("calvin", "Oops!")
+        pm.check_user_password("calvin", "Oops!")
         assert False, "should raise an error"
     except ErrorResponse as e:
         assert "invalid user/password" in str(e)
-    fsa.get_user_pass(saved)
+    pm.get_user_pass(saved)
     fsa.password_check(None)
     # password, through requests
     push_auth(fsa, ["password"])
@@ -450,23 +451,21 @@ def test_password_check(client):
     res = check(401, client.get("/read", headers={"Authorization": "Basic !!!"}))
     assert b"decoding error on authorization" in res.data
     pop_auth(fsa)
-    # try plaintext
-    pm = fsa._pm
-    fsa._pm = None
-    app.config.update(FSA_PASSWORD_SCHEME = "plaintext")
-    fsa._init_password_manager()
+
+def test_plaintext_password():
+    app = fsa.Flask("plain", FSA_PASSWORD_SCHEME="plaintext")
     assert app.hash_password("hello") == "hello"
-    fsa._pm = pm
 
 def test_password_quality():
     mode = app._fsa._mode
     app._fsa._mode = fsa.Mode.DEBUG3
+    pm = app._fsa._pm
     # password len
-    assert app._fsa._password_len == 0
+    assert pm._pass_len == 0
     assert app.hash_password("") is not None
     assert app.hash_password("c") is not None
     assert app.hash_password("cy") is not None
-    app._fsa._password_len = 1
+    pm._pass_len = 1
     try:
         app.hash_password("")
         assert False, "len must be rejected"
@@ -474,11 +473,11 @@ def test_password_quality():
         assert "too short" in str(e)
     assert app.hash_password("c") is not None
     assert app.hash_password("cy") is not None
-    app._fsa._password_len = 2
+    pm._pass_len = 2
     assert app.hash_password("cy") is not None
     # password re, eg password must contain a lc and uc letter
-    assert len(app._fsa._password_re) == 0
-    app._fsa._password_re = [
+    assert len(pm._pass_re) == 0
+    pm._pass_re = [
         re.compile(r"[a-z]").search,
         re.compile(r"[A-Z]").search,
     ]
@@ -494,7 +493,7 @@ def test_password_quality():
     except ErrorResponse as e:
         assert "A-Z" in str(e)
     # password quality return
-    assert app._fsa._password_quality is None
+    assert pm._pass_quality is None
     def password_quality_checker(pwd):
         if pwd == "G0od!":
             return True
@@ -502,7 +501,7 @@ def test_password_quality():
             return False
         else:
             raise Exception(f"password quality checker is not happy about {pwd}")
-    app._fsa._password_quality = password_quality_checker
+    pm._pass_quality = password_quality_checker
     assert app.hash_password("G0od!") is not None
     try:
         app.hash_password("B@d")
@@ -517,9 +516,9 @@ def test_password_quality():
         assert "not happy" in str(e)
     # reset password checking rules
     app._fsa._mode = mode
-    app._fsa._password_len = 0
-    app._fsa._password_re = []
-    app._fsa.password_quality(None)
+    pm._pass_len = 0
+    pm._pass_re = []
+    pm._pass_quality = None
 
 def test_authorize():
     assert app._fsa._user_in_group("dad", App.ADMIN)
@@ -1459,7 +1458,7 @@ def test_warnings_and_errors():
     except fsa.ErrorResponse as e:
         assert e.status == 400 and "must match" in e.message
     try:
-        app._fsa._check_password("calvin", "hobbes")
+        app._fsa._pm.check_user_password("calvin", "hobbes")
         assert False, "should not get through"
     except fsa.ErrorResponse as e:
         assert e.status == 518 and "bad" in e.message
@@ -1472,7 +1471,7 @@ def test_warnings_and_errors():
     )
     app._fsa.initialize()
     try:
-        app._fsa._check_password("calvin", "hobbes")
+        app._fsa._pm.check_user_password("calvin", "hobbes")
         assert False, "should not get through"
     except fsa.ErrorResponse as e:
         assert e.status == 500 and "internal error with get_user_pass" in e.message

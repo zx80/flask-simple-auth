@@ -287,6 +287,7 @@ class Flask(flask.Flask):
         self.user_in_group = self._fsa.user_in_group
         self.object_perms = self._fsa.object_perms
         self.user_scope = self._fsa.user_scope
+        # decorators
         self.cast = self._fsa.cast
         self.special_parameter = self._fsa.special_parameter
         self.password_quality = self._fsa.password_quality
@@ -365,7 +366,7 @@ class _TokenManager:
     # A token can be checked locally with a simple hash, without querying the
     # database and validating a possibly expensive salted password (+400 ms!).
     #
-    # FSA_TOKEN_TYPE: 'jwt', 'fsa' or None to disactivate
+    # FSA_TOKEN_TYPE: 'jwt', 'fsa', or None to disactivate
     # - for 'fsa': format is <realm>:<user>:<validity-limit>:<signature>
     # FSA_TOKEN_CARRIER: 'param', 'header' or 'bearer'
     # FSA_TOKEN_NAME: name of parameter/cookie/scheme holding the token
@@ -394,16 +395,14 @@ class _TokenManager:
         conf = app._app.config
         # token type
         self._token: str = conf.get("FSA_TOKEN_TYPE", "fsa")
-        if self._token not in (None, "fsa", "jwt"):
+        if self._token not in ("fsa", "jwt"):
             raise self._Bad(f"unexpected FSA_TOKEN_TYPE: {self._token}")
         # token carrier
-        need_carrier = self._token is not None
-        self._carrier: str|None = conf.get("FSA_TOKEN_CARRIER", "bearer" if need_carrier else None)
-        if self._carrier not in (None, "bearer", "param", "cookie", "header"):
-            raise self._Bad(f"unexpected FSA_TOKEN_CARRIER: {self._carrier}")
-        # sanity checks
-        if need_carrier and not self._carrier:
+        self._carrier: str = conf.get("FSA_TOKEN_CARRIER", "bearer")
+        if not self._carrier:
             raise self._Bad(f"Token type {self._token} requires a carrier")
+        if self._carrier not in ("bearer", "param", "cookie", "header"):
+            raise self._Bad(f"unexpected FSA_TOKEN_CARRIER: {self._carrier}")
         # name of token for cookie or param, Authentication scheme, or other header
         default_name: str|None = (
             "AUTH" if self._carrier == "param" else
@@ -412,7 +411,7 @@ class _TokenManager:
             "Auth" if self._carrier == "header" else
             None)
         self._name: str|None = conf.get("FSA_TOKEN_NAME", default_name)
-        if need_carrier and not self._name:
+        if not self._name:
             raise self._Bad(f"Token carrier {self._carrier} requires a name")
         if self._carrier == "param":
             assert isinstance(self._name, str)
@@ -679,22 +678,164 @@ class _TokenManager:
         return token
 
 
+class _PasswordManager:
+    """Password Management Stuff."""
+
+    #
+    # PASSWORD MANAGEMENT
+    #
+    # FSA_PASSWORD_SCHEME: name of password scheme for passlib context
+    # FSA_PASSWORD_OPTS: further options for passlib context
+    # FSA_PASSWORD_LEN: minimal length of provided passwords
+    # FSA_PASSWORD_RE: list of re a password must match
+    # FSA_PASSWORD_QUALITY: hook for password strength check
+    # FSA_PASSWORD_CHECK: hook for alternate password check
+    #
+    # NOTE passlib bcrypt is Apache compatible
+    # NOTE about caching: if password checks are cached, this would
+    #      mean that the clear text password is stored in cache, which
+    #      is a VERY BAD IDEA because consulting the cache would give
+    #      access to said passwords.
+    #      Thus `check_password`, `hash_password`, `_check_password`,
+    #      `_password_check` and `_check_with_password_hook` should not be
+    #      cached, ever, even if expensive.
+    #      Make good use of tokens to reduce password check costs.
+
+    def __init__(self, app):
+        assert isinstance(app, FlaskSimpleAuth)  # FIXME forward declaration…
+        self._app = app
+        conf = self._app._app.config
+        # forward
+        self._Exc = app._Exc
+        self._Bad = app._Bad
+        self._Err = app._Err
+        # configure password management
+        self._pass_check: PasswordCheckFun|None = conf.get("FSA_PASSWORD_CHECK", None)
+        self._pass_quality: PasswordQualityFun|None = conf.get("FSA_PASSWORD_QUALITY", None)
+        self._pass_len: int = conf.get("FSA_PASSWORD_LEN", 0)
+        self._pass_re: list[PasswordQualityFun] = [
+            re.compile(r).search for r in conf.get("FSA_PASSWORD_RE", [])
+        ]
+        # only actually initialize with passlib if needed
+        scheme = conf.get("FSA_PASSWORD_SCHEME", _DEFAULT_PASSWORD_SCHEME)
+        if not scheme:  # pragma: no cover
+            raise self._Bad("cannot initialize password manager without a scheme")
+        log.info(f"initializing password manager with {scheme}")
+        if scheme == "plaintext":
+            log.warning("plaintext password manager is a bad idea")
+        # passlib context is a pain, you have to know the scheme name to set its
+        # round. Ident "2y" is same as "2b" but apache compatible.
+        options = conf.get("FSA_PASSWORD_OPTS", _DEFAULT_PASSWORD_OPTS)
+        try:
+            from passlib.context import CryptContext  # type: ignore
+        except ModuleNotFoundError:  # pragma: no cover
+            log.error("missing module: install FlaskSimpleAuth[passwords]")
+            raise
+        self._pass_context = CryptContext(schemes=[scheme], **options)
+        self._get_user_pass: GetUserPassFun|None = None
+        if "FSA_GET_USER_PASS" in conf:
+            self.get_user_pass(conf["FSA_GET_USER_PASS"])
+
+    def get_user_pass(self, gup: GetUserPassFun):
+        """Set `get_user_pass` helper, can be used as a decorator."""
+        if self._get_user_pass:
+            log.warning("overriding already defined get_user_pass hook")
+        self._get_user_pass = gup
+        return gup
+
+    def _check_quality(self, pwd) -> None:
+        """Check password quality, raising issues or proceeding."""
+        if len(pwd) < self._pass_len:
+            raise self._Err(f"password is too short, must be at least {self._pass_len}", 400)
+        for search in self._pass_re:
+            if not search(pwd):
+                raise self._Err(f"password must match {search.__self__.pattern}", 400)  # type: ignore
+        if self._pass_quality:
+            try:
+                if not self._pass_quality(pwd):
+                    raise self._Err("password quality too low", 400)
+            except Exception as e:
+                raise self._Err(f"password quality too low: {e}", 400, e)
+        # done, quality is okay
+
+    def _check_with_hook(self, user, pwd):
+        """Check user/password with external hook."""
+        if self._pass_check:
+            try:
+                return self._pass_check(user, pwd)
+            except ErrorResponse as e:
+                raise e
+            except Exception as e:
+                log.info(f"AUTH (hook) failed: {e}")
+                if self._Exc(e):  # pragma: no cover
+                    raise
+                return False
+        return False
+
+    def check_password(self, pwd, ref) -> bool:
+        """Check whether password is ok wrt to reference."""
+        return self._pass_context.verify(pwd, ref)
+
+    def hash_password(self, pwd, check=True) -> str:
+        """Hash password according to the current password scheme."""
+        if check:
+            self._check_quality(pwd)
+        return self._pass_context.hash(pwd)
+
+    def check_user_password(self, user, pwd) -> str|None:
+        """Check user/password against internal or external credentials.
+
+        Raise an exception if not ok, otherwise simply return the user."""
+        # first, get user password hash if available
+        if self._get_user_pass:
+            try:
+                ref = self._get_user_pass(user)
+            except ErrorResponse as e:
+                raise e
+            except Exception as e:
+                log.error(f"get_user_pass failed: {e}")
+                raise self._Err("internal error in get_user_pass", self._app._server_error, e)
+        else:
+            ref = None
+        if not ref:  # not available, try alternate check
+            if self._check_with_hook(user, pwd):
+                return user
+            else:  # not ok with hook, generate appropriate error
+                if self._get_user_pass:
+                    log.debug(f"AUTH (password): no such user ({user})")
+                    raise self._Err(f"no such user: {user}", 401)
+                else:
+                    log.debug(f"AUTH (password): invalid user/password ({user})")
+                    raise self._Err(f"invalid user/password for {user}", 401)
+        elif not isinstance(ref, (str, bytes)):  # do a type check in passing
+            log.error(f"type error in get_user_pass: {type(ref)} on {user}, expecting None, str or bytes")
+            raise self._Err("internal error with get_user_pass", self._app._server_error)
+        elif self.check_password(pwd, ref):  # does not match, try alternate check
+            return user
+        else:
+            if self._check_with_hook(user, pwd):
+                return user
+            else:
+                log.debug(f"AUTH (password): invalid password ({user})")
+                raise self._Err(f"invalid password for {user}", 401)
+
+
 # actual extension
 class FlaskSimpleAuth:
     """Flask extension for authentication, authorization and parameters."""
 
     def __init__(self, app: flask.Flask, debug: bool = False, **config):
         """Constructor parameter: flask application to extend."""
+        # A basic minimal non functional initialization.
+        # Actual initializations are deferred to init_app called later,
+        # so as to allow updating the configuration.
         self._mode = Mode.DEBUG2 if debug else Mode.UNDEF
         self._app = app
         self._app.config.update(**config)
         # hooks
         self._error_response: ErrorResponseFun|None = None
-        self._get_user_pass: GetUserPassFun|None = None
         self._user_in_group: UserInGroupFun|None = None
         self._object_perms: dict[Any, ObjectPermsFun] = dict()
-        self._password_check: PasswordCheckFun|None = None
-        self._password_quality: PasswordQualityFun|None = None
         self._casts: dict[type, CastFun] = {
             bool: lambda s: None if s is None else s.lower() not in ("", "0", "false", "f"),
             int: lambda s: int(s, base=0) if s else None,
@@ -718,12 +859,12 @@ class FlaskSimpleAuth:
             Cookie: lambda p: request.cookies[p],
             Header: lambda p: request.headers[p],
         }
-        self._auth: list[str] = []           # order default authentications
-        self._all_auth: set[str] = set()     # all authentication methods
+        self._auth: list[str] = []              # order default authentications
+        self._all_auth: set[str] = set()        # all authentication methods
         # optional managers
-        self._http_auth = None               # possibly flask_httpauth instance, if needed
-        self._pm = None                      # password manager instance, if needed
-        self._tm: _TokenManager|None = None  # token manager instance, if needed
+        self._http_auth = None                   # possibly flask_httpauth instance, if needed
+        self._pm: _PasswordManager|None = None   # password manager instance, if needed
+        self._tm: _TokenManager|None = None      # token manager instance, if needed
         # map auth to their hooks
         self._authentication: dict[str, AuthenticationFun] = {
             "none": lambda _a, _r: None,
@@ -963,36 +1104,41 @@ class FlaskSimpleAuth:
     #
     # REGISTER HOOKS
     #
-    def get_user_pass(self, gup: GetUserPassFun):
+    def get_user_pass(self, gup: GetUserPassFun) -> GetUserPassFun:
         """Set `get_user_pass` helper, can be used as a decorator."""
-        if self._get_user_pass:
-            log.warning("overriding already defined get_user_pass hook")
-        self._get_user_pass = gup
-        self._init_password_manager()
-        return gup
+        self.initialize()
+        if not self._pm:
+            raise self._Err("password manager is disabled", self._server_error)
+        return self._pm.get_user_pass(gup)
 
-    def user_in_group(self, uig: UserInGroupFun):
+    def user_in_group(self, uig: UserInGroupFun) -> UserInGroupFun:
         """Set `user_in_group` helper, can be used as a decorator."""
         if self._user_in_group:
             log.warning("overriding already defined user_in_group hook")
         self._user_in_group = uig
         return uig
 
-    def password_quality(self, pqc: PasswordQualityFun):
+    def password_quality(self, pqc: PasswordQualityFun) -> PasswordQualityFun:
         """Set `password_quality` hook."""
-        if self._password_quality:
+        self.initialize()
+        if not self._pm:
+            raise self._Err("password manager is disabled", self._server_error)
+        if self._pm._pass_quality:
             log.warning("overriding already defined password_quality hook")
-        self._password_quality = pqc
+        self._pm._pass_quality = pqc
         return pqc
 
-    def password_check(self, pwc: PasswordCheckFun):
+    def password_check(self, pwc: PasswordCheckFun) -> PasswordCheckFun:
         """Set `password_check` hook."""
-        if self._password_check:
+        self.initialize()
+        if not self._pm:
+            raise self._Err("password manager is disabled", self._server_error)
+        if self._pm._pass_check:
             log.warning("overriding already defined password_check hook")
-        self._password_check = pwc
+        self._pm._pass_check = pwc
         return pwc
 
-    def error_response(self, erh: ErrorResponseFun):
+    def error_response(self, erh: ErrorResponseFun) -> ErrorResponseFun:
         """Set `error_response` hook."""
         if self._error_response:
             log.warning("overriding already defined error_response hook")
@@ -1257,8 +1403,9 @@ class FlaskSimpleAuth:
             else:
                 raise self._Bad(f"unexpected FSA_CACHE: {cache}")
         #
-        # token manager setup
+        # password and token manager setup
         #
+        self._pm = _PasswordManager(self) if conf.get("FSA_PASSWORD_SCHEME", _DEFAULT_PASSWORD_SCHEME) else None 
         self._tm = _TokenManager(self) if conf.get("FSA_TOKEN_TYPE", "fsa") else None
         #
         # HTTP parameter names
@@ -1281,10 +1428,8 @@ class FlaskSimpleAuth:
                 raise self._Bad(f"unexpected auth: {a}")
             self._add_auth(a)
         #
-        # authentication and authorization hooks
+        # authentication, authorization and other hooks
         #
-        if "FSA_GET_USER_PASS" in conf:
-            self.get_user_pass(conf["FSA_GET_USER_PASS"])
         if "FSA_USER_IN_GROUP" in conf:
             self.user_in_group(conf["FSA_USER_IN_GROUP"])
 
@@ -1293,8 +1438,10 @@ class FlaskSimpleAuth:
                 hooks = conf[directive]
                 if not isinstance(hooks, dict):
                     raise self._Bad(f"{directive} must be a dict")
-                for key, val in hooks.items():
-                    set_hook(key, val)
+                for key, hook in hooks.items():
+                    if not callable(hook):
+                        raise self._Bad("{directive} {key} value must be callable")
+                    set_hook(key, hook)
 
         _set_hooks("FSA_CAST", self.cast)
         _set_hooks("FSA_OBJECT_PERMS", self.object_perms)
@@ -1314,7 +1461,7 @@ class FlaskSimpleAuth:
             if "http-basic" in self._auth:
                 self._http_auth = fha.HTTPBasicAuth(realm=self._realm, **opts)
                 assert self._http_auth is not None  # for pleasing mypy
-                self._http_auth.verify_password(self._check_password)
+                self._http_auth.verify_password(self._pm.check_user_password)
             elif self._auth_has("http-digest", "digest"):
                 self._http_auth = fha.HTTPDigestAuth(realm=self._realm, **opts)
                 assert self._http_auth is not None  # for pleasing mypy
@@ -1329,7 +1476,7 @@ class FlaskSimpleAuth:
                 assert self._http_auth is not None  # for pleasing mypy
                 self._http_auth.verify_token(lambda t: self._tm._get_any_token_auth(t, self._tm._realm))
             assert self._http_auth is not None  # for pleasing mypy
-            self._http_auth.get_password(self._get_user_pass)
+            self._http_auth.get_password(self._pm._get_user_pass)
             # FIXME? error_handler?
         else:
             self._http_auth = None
@@ -1400,35 +1547,6 @@ class FlaskSimpleAuth:
                 assert isinstance(self._tm._name, str)
                 self._auth_params.add(self._tm._name)
 
-    def _init_password_manager(self) -> None:
-        """Deferred password manager initialization."""
-        assert self._app
-        conf = self._app.config
-        self._password_check = conf.get("FSA_PASSWORD_CHECK", self._password_check)
-        # FIXME add _password_hash?
-        self._password_len: int = conf.get("FSA_PASSWORD_LEN", 0)
-        self._password_re: list[PasswordQualityFun] = [
-            re.compile(r).search for r in conf.get("FSA_PASSWORD_RE", [])
-        ]
-        self._password_quality = \
-            conf.get("FSA_PASSWORD_QUALITY", self._password_quality)
-        # only actually initialize with passlib if needed
-        scheme = conf.get("FSA_PASSWORD_SCHEME", _DEFAULT_PASSWORD_SCHEME)
-        log.info(f"initializing password manager with {scheme}")
-        if scheme:
-            if scheme == "plaintext":
-                log.warning("plaintext password manager is a bad idea")
-            # passlib context is a pain, you have to know the scheme name to set its
-            # round. Ident "2y" is same as "2b" but apache compatible.
-            options = conf.get("FSA_PASSWORD_OPTS", _DEFAULT_PASSWORD_OPTS)
-            try:
-                from passlib.context import CryptContext  # type: ignore
-            except ModuleNotFoundError:  # pragma: no cover
-                log.error("missing module: install FlaskSimpleAuth[passwords]")
-                raise
-
-            self._pm = CryptContext(schemes=[scheme], **options)
-
     #
     # INHERITED HTTP AUTH
     #
@@ -1454,101 +1572,21 @@ class FlaskSimpleAuth:
         return user
 
     #
-    # PASSWORD MANAGEMENT
+    # PASSWORD CHECKS
     #
-    # FSA_PASSWORD_SCHEME: name of password scheme for passlib context
-    # FSA_PASSWORD_OPTS: further options for passlib context
-    # FSA_PASSWORD_LEN: minimal length of provided passwords
-    # FSA_PASSWORD_RE: list of re a password must match
-    # FSA_PASSWORD_QUALITY: hook for password strength check
-    # FSA_PASSWORD_CHECK: hook for alternate password check
-    #
-    # NOTE passlib bcrypt is Apache compatible
-    # NOTE about caching: if password checks are cached, this would
-    #      mean that the clear text password is stored in cache, which
-    #      is a VERY BAD IDEA because consulting the cache would give
-    #      access to said passwords. Thus `check_password`, `hash_password`
-    #      `_check_password`, `_password_check` and `_check_with_password_hook`
-    #      should not be cached, ever, even if expensive.
-    #      Make good use of tokens to reduce password check costs.
-
     def check_password(self, pwd, ref):
         """Verify whether a password is correct compared to a reference (eg salted hash)."""
+        self.initialize()
         if not self._pm:
-            self._init_password_manager()
-        assert self._pm  # please mypy
-        return self._pm.verify(pwd, ref)
-
-    def _check_password_quality(self, pwd) -> None:
-        """Check password quality, raising issues or proceeding."""
-        if len(pwd) < self._password_len:
-            raise self._Err(f"password is too short, must be at least {self._password_len}", 400)
-        for search in self._password_re:
-            if not search(pwd):
-                raise self._Err(f"password must match {search.__self__.pattern}", 400)  # type: ignore
-        if self._password_quality:
-            try:
-                if not self._password_quality(pwd):
-                    raise self._Err("password quality too low", 400)
-            except Exception as e:
-                raise self._Err(f"password quality too low: {e}", 400, e)
+            raise self._Err(f"password manager is disabled", self._server_error)
+        return self._pm.check_password(pwd, ref)
 
     def hash_password(self, pwd, check=True):
         """Hash password according to the current password scheme."""
+        self.initialize()
         if not self._pm:
-            self._init_password_manager()
-        assert self._pm  # please mypy
-        if check:
-            self._check_password_quality(pwd)
-        return self._pm.hash(pwd)
-
-    def _check_with_password_hook(self, user, pwd):
-        """Check user/password with external hook."""
-        if self._password_check:
-            try:
-                return self._password_check(user, pwd)
-            except ErrorResponse as e:
-                raise e
-            except Exception as e:
-                log.info(f"AUTH (hook) failed: {e}")
-                if self._Exc(e):  # pragma: no cover
-                    raise
-                return False
-        return False
-
-    def _check_password(self, user, pwd):
-        """Check user/password against internal or external credentials.
-
-        Raise an exception if not ok, otherwise simply return the user."""
-        # first, get user password hash if available
-        if self._get_user_pass:
-            try:
-                ref = self._get_user_pass(user)
-            except ErrorResponse as e:
-                raise e
-            except Exception as e:
-                log.error(f"get_user_pass failed: {e}")
-                raise self._Err("internal error in get_user_pass", self._server_error, e)
-        else:
-            ref = None
-        if not ref:  # not available, try alternate check
-            if not self._check_with_password_hook(user, pwd):
-                if self._get_user_pass:
-                    log.debug(f"AUTH (password): no such user ({user})")
-                    raise self._Err(f"no such user: {user}", 401)
-                else:
-                    log.debug(f"AUTH (password): invalid user/password ({user})")
-                    raise self._Err(f"invalid user/password for {user}", 401)
-            # else OK because of alternate hook
-        elif not isinstance(ref, (str, bytes)):  # do a type check in passing
-            log.error(f"type error in get_user_pass: {type(ref)} on {user}, expecting None, str or bytes")
-            raise self._Err("internal error with get_user_pass", self._server_error)
-        elif not self.check_password(pwd, ref):  # does not match, try alternate check
-            if not self._check_with_password_hook(user, pwd):
-                log.debug(f"AUTH (password): invalid password ({user})")
-                raise self._Err(f"invalid password for {user}", 401)
-            # else ok because of alternate hook
-        return user
+            raise self._Err("password manager is disabled", self._server_error)
+        return self._pm.hash_password(pwd, check)
 
     #
     # FLASK HTTP AUTH (BASIC, DIGEST, TOKEN)
@@ -1587,7 +1625,9 @@ class FlaskSimpleAuth:
         except Exception as e:
             log.debug(f'AUTH (basic): error while decoding auth "{auth}" ({e})')
             raise self._Err("decoding error on authorization header", 401, e)
-        return self._check_password(user, pwd)
+        if not self._pm:
+            raise self._Err(f"password manager is disabled", self._server_error)
+        return self._pm.check_user_password(user, pwd)
 
     #
     # HTTP PARAM AUTH
@@ -1606,7 +1646,9 @@ class FlaskSimpleAuth:
         pwd = params.get(self._passp, None)
         if not pwd:
             raise self._Err(f"missing param password parameter: {self._passp}", 401)
-        return self._check_password(user, pwd)
+        if not self._pm:
+            raise self._Err(f"password manager is disabled", self._server_error)
+        return self._pm.check_user_password(user, pwd)
 
     #
     # HTTP BASIC OR PARAM AUTH
@@ -1627,7 +1669,7 @@ class FlaskSimpleAuth:
 
     def create_token(self, *args, **kwargs):
         if not self._tm:  # pragma: no cover
-            raise ErrorResponse("token is not configured", self._server_error)
+            raise ErrorResponse("token manager is disabled", self._server_error)
         return self._tm.create_token(*args, **kwargs)
 
     #
@@ -1636,7 +1678,7 @@ class FlaskSimpleAuth:
     def get_user(self, required=True) -> str|None:
         """Authenticate user or throw exception."""
 
-        # safe because _user is reset before requests
+        # safe because user is reset before requests
         if self._local.source:
             return self._local.user
 
@@ -1656,7 +1698,7 @@ class FlaskSimpleAuth:
                 log.error(f"internal error in {a} authentication: {e}")
                 self._Exc(e)
 
-        # even if not set, we say that the answer is the right one.
+        # we tried, even if not set, we say that the answer is the right one
         if not self._local.source:
             self._local.source = "none"
 
@@ -1673,7 +1715,6 @@ class FlaskSimpleAuth:
 
     # authentication and authorization methods that can/should be cached
     _CACHABLE = {
-        "_get_user_pass": "u.",
         "_user_in_group": "g.",
         "_check_object_perms": "p.",
     }
@@ -1687,6 +1728,8 @@ class FlaskSimpleAuth:
             ctu.cacheMethods(cache=self._cache, obj=self, gen=self._gen_cache, **self._CACHABLE)
             if self._tm:
                 ctu.cacheMethods(cache=self._cache, obj=self._tm, gen=self._gen_cache, _get_any_token_auth_exp="t.")
+            if self._pm:
+                ctu.cacheMethods(cache=self._cache, obj=self._pm, gen=self._gen_cache, _get_user_pass="u.")
 
     def clear_caches(self):
         """Clear internal shared cache.
@@ -1962,7 +2005,7 @@ class FlaskSimpleAuth:
                             e400(f'unexpected {self._local.params} parameter "{pn}"')
                             continue
                         try:
-                            kwargs[p] = self._special_parameters[tf](pn)
+                            kwargs[p] = self._special_parameters[tf](pn)  # type: ignore
                         except ErrorResponse as e:
                             if e.status == 400:
                                 e400(f"error when retrieving special parameter \"{pn}\": {e.message}")
