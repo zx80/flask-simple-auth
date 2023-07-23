@@ -3,7 +3,7 @@
 Sources are available on [GitHub](https://github.com/zx80/flask-simple-auth)
 and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 
-## ? on ?
+## 23.2 on 2023-07-23
 
 Improve `jsonify` to deal with pydantic-generated classes.
 Allow using some auth only on some routes, not in default list.
