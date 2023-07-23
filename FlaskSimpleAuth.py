@@ -816,6 +816,12 @@ class _PasswordManager:
                 raise self._Err(f"invalid password for {user}", 401)
 
 
+# TODO or not
+# class _AuthenticationManager
+# class _AuthorizationManager
+# class _ParameterManager
+# class _CacheManager
+
 # actual extension
 class FlaskSimpleAuth:
     """Flask extension for authentication, authorization and parameters."""
