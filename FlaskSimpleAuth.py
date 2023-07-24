@@ -385,14 +385,14 @@ class _TokenManager:
     # FSA_REALM: realm (lc simplified app name)
     #
 
-    def __init__(self, app):
-        assert isinstance(app, FlaskSimpleAuth)  # FIXME forward declaration…
-        self._app = app
+    def __init__(self, fsa):
+        assert isinstance(fsa, FlaskSimpleAuth)  # FIXME forward declaration…
+        self._fsa = fsa
         # forward some methods
-        self._Err = app._Err
-        self._Bad = app._Bad
+        self._Err = fsa._Err
+        self._Bad = fsa._Bad
         # use application configuration to setup tokens
-        conf = app._app.config
+        conf = fsa._app.config
         # token type
         self._token: str = conf.get("FSA_TOKEN_TYPE", "fsa")
         if self._token not in ("fsa", "jwt"):
@@ -414,7 +414,7 @@ class _TokenManager:
         if self._carrier == "param":
             assert isinstance(self._name, str)
         # auth and token realm and possible issuer…
-        realm: str = conf.get("FSA_REAM", self._app._app.name)
+        realm: str = conf.get("FSA_REAM", self._fsa._app.name)
         if self._token == "fsa":  # simplify realm for fsa
             keep_char = re.compile(r"[-A-Za-z0-9]").match
             realm = "".join(c if keep_char(c) else "-" for c in realm)
@@ -462,8 +462,9 @@ class _TokenManager:
             self._siglen = 0
         else:  # pragma: no cover
             raise self._Bad(f"invalid FSA_TOKEN_TYPE ({self._token})")
+
         # FIXME this check may be too early…
-        if "oauth" in self._app._local.auth:  # JWT authorizations (RFC 8693)
+        if "oauth" in self._fsa._local.auth:  # JWT authorizations (RFC 8693)
             if self._token != "jwt":
                 raise self._Bad("oauth token authorizations require JWT")
             if not self._issuer:
@@ -474,10 +475,11 @@ class _TokenManager:
         # NOTE thanks to max_age the client should not send stale cookies
         if self._carrier == "cookie":
             assert self._token and self._name
-            if self._app._local.user and self._can_create_token():
+            local = self._fsa._local
+            if local.user and self._can_create_token():
                 if self._name in request.cookies and self._renewal:
                     # renew token when closing expiration
-                    user, exp, _ = self._get_any_token_auth_exp(request.cookies[self._name], self._app._local.token_realm)
+                    user, exp, _ = self._get_any_token_auth_exp(request.cookies[self._name], local.token_realm)
                     limit = dt.datetime.now(dt.timezone.utc) + \
                         self._renewal * dt.timedelta(minutes=self._delay)
                     set_cookie = exp < limit
@@ -485,8 +487,7 @@ class _TokenManager:
                     set_cookie = True
                 if set_cookie:
                     # path? other parameters?
-                    res.set_cookie(self._name, self.create_token(self._app._local.user),
-                                   max_age=int(60 * self._delay))
+                    res.set_cookie(self._name, self.create_token(local.user), max_age=int(60 * self._delay))
         return res
 
     def _cmp_sig(self, data, secret) -> str:
@@ -555,8 +556,8 @@ class _TokenManager:
                      delay: float = None, secret: str = None, **kwargs) -> str:
         """Create a new token for user depending on the configuration."""
         assert self._token
-        user = user or self._app.get_user()
-        realm = realm or self._app._local.token_realm
+        user = user or self._fsa.get_user()
+        realm = realm or self._fsa._local.token_realm
         issuer = issuer or self._issuer
         delay = delay or self._delay
         secret = secret or (self._secret if self._token == "fsa" else self._sign)
@@ -571,32 +572,32 @@ class _TokenManager:
         """Check FSA token validity against a configuration."""
         # token format: "realm[/issuer]:calvin:20380119031407:<signature>"
         if token.count(":") != 3:
-            if self._app._mode >= Mode.DEBUG:
+            if self._fsa._mode >= Mode.DEBUG:
                 log.debug(f"AUTH (fsa token): unexpected token ({token})")
             raise self._Err(f"invalid fsa token: {token}", 401)
         trealm, user, slimit, sig = token.split(":", 3)
         try:
             limit = self._from_timestamp(slimit)
         except Exception as e:
-            if self._app._mode >= Mode.DEBUG:
+            if self._fsa._mode >= Mode.DEBUG:
                 log.debug(f"AUTH (fsa token): malformed timestamp {slimit} ({token}): {e}")
             raise self._Err(f"unexpected fsa token limit: {slimit} ({token})", 401, e)
         # check realm
         if issuer and trealm != f"{realm}/{issuer}" or \
            not issuer and trealm != realm:
-            if self._app._mode >= Mode.DEBUG:
+            if self._fsa._mode >= Mode.DEBUG:
                 log.debug(f"AUTH (fsa token): unexpected realm {trealm} ({token})")
             raise self._Err(f"unexpected fsa token realm: {trealm} ({token})", 401)
         # check signature
         ref = self._cmp_sig(f"{trealm}:{user}:{slimit}", secret)
         if ref != sig:
-            if self._app._mode >= Mode.DEBUG:
+            if self._fsa._mode >= Mode.DEBUG:
                 log.debug("AUTH (fsa token): invalid signature ({token})")
             raise self._Err("invalid fsa auth token signature ({token})", 401)
         # check limit with a grace time
         now = dt.datetime.now(dt.timezone.utc) - dt.timedelta(minutes=self._grace)
         if now > limit:
-            if self._app._mode >= Mode.DEBUG:
+            if self._fsa._mode >= Mode.DEBUG:
                 log.debug("AUTH (fsa token): token {token} has expired ({token})")
             raise self._Err("expired fsa auth token ({token})", 401)
         return user, limit, None
@@ -621,11 +622,11 @@ class _TokenManager:
             scopes = data["scope"].split(" ") if "scope" in data else None
             return data["sub"], exp, scopes
         except jwt.ExpiredSignatureError:
-            if self._app._mode >= Mode.DEBUG:
+            if self._fsa._mode >= Mode.DEBUG:
                 log.debug(f"AUTH (jwt token): token has expired ({token})")
             raise self._Err(f"expired jwt auth token: {token}", 401)
         except Exception as e:
-            if self._app._mode >= Mode.DEBUG:
+            if self._fsa._mode >= Mode.DEBUG:
                 log.debug(f"AUTH (jwt token): invalid token {token}: {e}")
             raise self._Err(f"invalid jwt token: {token}", 401, e)
 
@@ -640,15 +641,15 @@ class _TokenManager:
         """Tell whether token is ok: return validated user or None, may raise 401."""
         if not token:
             raise self._Err("missing token", 401)
-        user, exp, scopes = self._get_any_token_auth_exp(token, realm or self._app._local.token_realm)
+        user, exp, scopes = self._get_any_token_auth_exp(token, realm or self._fsa._local.token_realm)
         # must recheck token expiration
         now = dt.datetime.now(dt.timezone.utc) - dt.timedelta(minutes=self._grace)
         if now > exp:
-            if self._app._mode >= Mode.DEBUG:
+            if self._fsa._mode >= Mode.DEBUG:
                 log.debug(f"AUTH (token): token has expired ({token})")
             raise self._Err(f"expired auth token: {token}", 401)
         # store current available scopes for oauth
-        self._app._local.scopes = scopes
+        self._fsa._local.scopes = scopes
         return user
 
     def _get_token(self) -> str|None:
@@ -667,7 +668,7 @@ class _TokenManager:
             token = (request.cookies[self._name] if self._name in request.cookies else
                      None)
         elif self._carrier == "param":
-            token = self._app._params().get(self._name, None)
+            token = self._fsa._params().get(self._name, None)
         else:
             assert self._carrier == "header" and self._name
             token = request.headers.get(self._name, None)
@@ -697,14 +698,14 @@ class _PasswordManager:
     #      cached, ever, even if expensive.
     #      Make good use of tokens to reduce password check costs.
 
-    def __init__(self, app):
-        assert isinstance(app, FlaskSimpleAuth)  # FIXME forward declaration…
-        self._app = app
-        conf = self._app._app.config
+    def __init__(self, fsa):
+        assert isinstance(fsa, FlaskSimpleAuth)  # FIXME forward declaration…
+        self._fsa = fsa
+        conf = fsa._app.config
         # forward
-        self._Exc = app._Exc
-        self._Bad = app._Bad
-        self._Err = app._Err
+        self._Exc = fsa._Exc
+        self._Bad = fsa._Bad
+        self._Err = fsa._Err
         # configure password management
         self._pass_check: PasswordCheckFun|None = conf.get("FSA_PASSWORD_CHECK", None)
         self._pass_quality: PasswordQualityFun|None = conf.get("FSA_PASSWORD_QUALITY", None)
@@ -790,7 +791,7 @@ class _PasswordManager:
                 raise e
             except Exception as e:
                 log.error(f"get_user_pass failed: {e}")
-                raise self._Err("internal error in get_user_pass", self._app._server_error, e)
+                raise self._Err("internal error in get_user_pass", self._fsa._server_error, e)
         else:
             ref = None
         if not ref:  # not available, try alternate check
@@ -805,7 +806,7 @@ class _PasswordManager:
                     raise self._Err(f"invalid user/password for {user}", 401)
         elif not isinstance(ref, (str, bytes)):  # do a type check in passing
             log.error(f"type error in get_user_pass: {type(ref)} on {user}, expecting None, str or bytes")
-            raise self._Err("internal error with get_user_pass", self._app._server_error)
+            raise self._Err("internal error with get_user_pass", self._fsa._server_error)
         elif self.check_password(pwd, ref):  # does not match, try alternate check
             return user
         else:
@@ -820,15 +821,15 @@ class _PasswordManager:
 class _AuthenticationManager:
     """Internal authentication management."""
 
-    def __init__(self, app):
-        assert isinstance(app, FlaskSimpleAuth)  # FIXME forward declaration…
-        self._app = app
-        conf = self._app._app.config
+    def __init__(self, fsa):
+        assert isinstance(fsa, FlaskSimpleAuth)  # FIXME forward declaration…
+        self._fsa = fsa
+        conf = fsa._app.config
         # forward
-        self._Bad = app._Bad
-        self._Err = app._Err
-        self._Res = app._Res
-        self._Exc = app._Exc
+        self._Bad = fsa._Bad
+        self._Err = fsa._Err
+        self._Res = fsa._Res
+        self._Exc = fsa._Exc
         # initialize all authentication stuff
         self._auth: list[str] = []              # order default authentications
         self._all_auth: set[str] = set()        # all authentication methods
@@ -862,15 +863,15 @@ class _AuthenticationManager:
         else:
             raise self._Bad(f"unexpected FSA_AUTH type: {type(auth)}")
         # FIXME needed for some tm checks
-        self._app._local.auth = self._auth
+        self._fsa._local.auth = self._auth
         # authentication realm
         # FIXME there is a token realm, is this consistent?
-        self._realm: str = conf.get("FSA_REALM", self._app._app.name)
+        self._realm: str = conf.get("FSA_REALM", self._fsa._app.name)
         #
         # password and token manager setup
         #
-        self._pm = _PasswordManager(app) if conf.get("FSA_PASSWORD_SCHEME", _DEFAULT_PASSWORD_SCHEME) else None 
-        self._tm = _TokenManager(app) if conf.get("FSA_TOKEN_TYPE", "fsa") else None
+        self._pm = _PasswordManager(fsa) if conf.get("FSA_PASSWORD_SCHEME", _DEFAULT_PASSWORD_SCHEME) else None 
+        self._tm = _TokenManager(fsa) if conf.get("FSA_TOKEN_TYPE", "fsa") else None
         #
         # HTTP parameter names
         #
@@ -947,11 +948,12 @@ class _AuthenticationManager:
         """Set WWW-Authenticate response header depending on current scheme."""
         if res.status_code == 401:
             schemes = set()
-            for a in self._app._local.auth:
+            local = self._fsa._local
+            for a in local.auth:
                 if a in ("token", "oauth") and self._tm and self._tm._carrier == "bearer":
-                    schemes.add(f'{self._tm._name} realm="{self._app._local.token_realm}"')
+                    schemes.add(f'{self._tm._name} realm="{local.token_realm}"')
                 elif a in ("basic", "password"):
-                    schemes.add(f'Basic realm="{self._app._local.realm}"')
+                    schemes.add(f'Basic realm="{local.realm}"')
                 elif a in ("http-token", "http-basic", "digest", "http-digest"):
                     assert self._http_auth
                     schemes.add(self._http_auth.authenticate_header())
@@ -979,7 +981,7 @@ class _AuthenticationManager:
             @functools.wraps(fun)
             def wrapper(*args, **kwargs):
 
-                fsa = self._app
+                fsa = self._fsa
                 local = fsa._local
 
                 # get user if needed
@@ -1001,7 +1003,7 @@ class _AuthenticationManager:
                 if not local.user:  # pragma no cover
                     return self._Res("no auth", 401)
 
-                return self._app._safe_call(path, "authenticate", fun, *args, **kwargs)
+                return fsa._safe_call(path, "authenticate", fun, *args, **kwargs)
 
             return wrapper
 
@@ -1019,7 +1021,7 @@ class _AuthenticationManager:
     def _auth_has(self, *auth):
         """Tell whether current authentication includes any of these schemes."""
         for a in auth:
-            if a in self._app._local.auth:
+            if a in self._fsa._local.auth:
                 return True
         return False
 
@@ -1041,7 +1043,7 @@ class _AuthenticationManager:
         """Return fake user. Only for local tests."""
         assert req.remote_addr.startswith("127.") or req.remote_addr == "::1", \
             "fake auth only on localhost"
-        params = self._app._params()
+        params = self._fsa._params()
         user = params.get(self._login, None)
         if not user:
             raise self._Err(f"missing fake login parameter: {self._login}", 401)
@@ -1054,7 +1056,7 @@ class _AuthenticationManager:
         """Delegate user authentication to HTTPAuth."""
         assert self._http_auth
         auth = self._http_auth.get_auth()
-        password = self._http_auth.get_auth_password(auth) if "http-token" not in self._app._local.auth else None
+        password = self._http_auth.get_auth_password(auth) if "http-token" not in self._fsa._local.auth else None
         try:
             # NOTE "authenticate" signature is not very clean…
             user = self._http_auth.authenticate(auth, password)
@@ -1085,7 +1087,7 @@ class _AuthenticationManager:
             log.debug(f'AUTH (basic): error while decoding auth "{auth}" ({e})')
             raise self._Err("decoding error on authorization header", 401, e)
         if not self._pm:  # pragma: no cover
-            raise self._Err(f"password manager is disabled", self._app._server_error)
+            raise self._Err(f"password manager is disabled", self._fsa._server_error)
         return self._pm.check_user_password(user, pwd)
 
     #
@@ -1098,7 +1100,7 @@ class _AuthenticationManager:
     #
     def _get_param_auth(self, app, req):
         """Get user with parameter authentication."""
-        params = self._app._params()
+        params = self._fsa._params()
         user = params.get(self._userp, None)
         if not user:
             raise self._Err(f"missing param login parameter: {self._userp}", 401)
@@ -1106,7 +1108,7 @@ class _AuthenticationManager:
         if not pwd:
             raise self._Err(f"missing param password parameter: {self._passp}", 401)
         if not self._pm:  # pragma: no cover
-            raise self._Err(f"password manager is disabled", self._app._server_error)
+            raise self._Err(f"password manager is disabled", self._fsa._server_error)
         return self._pm.check_user_password(user, pwd)
 
     #
@@ -1130,11 +1132,11 @@ class _AuthenticationManager:
 class _CacheManager:
     """Internal cache management."""
 
-    def __init__(self, app):
-        assert isinstance(app, FlaskSimpleAuth)
-        self._app = app
-        conf = app._app.config
-        self._Bad = app._Bad
+    def __init__(self, fsa):
+        assert isinstance(fsa, FlaskSimpleAuth)
+        self._fsa = fsa
+        conf = fsa._app.config
+        self._Bad = fsa._Bad
         # caching stuff
         self._cache_opts: dict[str, Any] = conf.get("FSA_CACHE_OPTS", {})
         cache = conf.get("FSA_CACHE", _DEFAULT_CACHE)
@@ -1206,16 +1208,15 @@ class _CacheManager:
             return
 
         log.info(f"setting up cache…")
-        assert self._app._am  # mypy…
+        assert self._fsa._am  # mypy…
+
         import CacheToolsUtils as ctu
 
-        assert self._app._am  # mypy…
-
         for obj, meth, prefix in [
-            (self._app._zm, "_user_in_group", "g."),
-            (self._app._zm, "_check_object_perms", "p."),
-            (self._app._am._tm, "_get_any_token_auth_exp", "t."),
-            (self._app._am._pm, "_get_user_pass", "u.") ]:
+            (self._fsa._zm, "_user_in_group", "g."),
+            (self._fsa._zm, "_check_object_perms", "p."),
+            (self._fsa._am._tm, "_get_any_token_auth_exp", "t."),
+            (self._fsa._am._pm, "_get_user_pass", "u.") ]:
             if obj and hasattr(obj, meth):
                 log.debug(f"cache: caching {meth[1:]}")
                 ctu.cacheMethods(cache=self._cache, obj=obj, gen=self._gen_cache, **{meth: prefix})
@@ -1229,14 +1230,14 @@ class _CacheManager:
 class _AuthorizationManager:
     """Internal authorization management."""
 
-    def __init__(self, app):
-        assert isinstance(app, FlaskSimpleAuth)  # forward declaration needed…
-        self._app = app
-        conf = app._app.config
+    def __init__(self, fsa):
+        assert isinstance(fsa, FlaskSimpleAuth)  # forward declaration needed…
+        self._fsa = fsa
+        conf = fsa._app.config
         # forward
-        self._Bad = app._Bad
-        self._Res = app._Res
-        self._Exc = app._Exc
+        self._Bad = fsa._Bad
+        self._Res = fsa._Res
+        self._Exc = fsa._Exc
         # authorization stuff
         self._user_in_group: UserInGroupFun|None = None
         self._object_perms: dict[Any, ObjectPermsFun] = dict()
@@ -1263,13 +1264,13 @@ class _AuthorizationManager:
             @functools.wraps(fun)
             def wrapper(*args, **kwargs):
 
-                self._app._local.need_authorization = False
+                self._fsa._local.need_authorization = False
 
                 for scope in scopes:
-                    if not self._app.user_scope(scope):
+                    if not self._fsa.user_scope(scope):
                         return self._Res(f'missing permission "{scope}"', 403)
 
-                return self._app._safe_call(path, "oauth authorization", fun, *args, **kwargs)
+                return self._fsa._safe_call(path, "oauth authorization", fun, *args, **kwargs)
 
             return wrapper
 
@@ -1295,7 +1296,7 @@ class _AuthorizationManager:
             @functools.wraps(fun)
             def wrapper(*args, **kwargs):
 
-                fsa = self._app
+                fsa = self._fsa
                 local = fsa._local
 
                 # track that some autorization check was performed
@@ -1333,8 +1334,8 @@ class _AuthorizationManager:
 
             @functools.wraps(fun)
             def wrapper(*args, **kwargs):
-                self._app._local.need_authorization = False
-                return self._app._safe_call(path, "no authorization", fun, *args, **kwargs)
+                self._fsa._local.need_authorization = False
+                return self._fsa._safe_call(path, "no authorization", fun, *args, **kwargs)
 
             return wrapper
 
@@ -1372,7 +1373,7 @@ class _AuthorizationManager:
             @functools.wraps(fun)
             def wrapper(*args, **kwargs):
 
-                fsa = self._app
+                fsa = self._fsa
                 local = fsa._local
 
                 # track that some autorization check was performed
@@ -1412,7 +1413,6 @@ class _AuthorizationManager:
 # TODO or not
 # class _ParameterManager
 # class _RequestManager
-# app -> fsa where appropriate
 
 # actual extension
 class FlaskSimpleAuth:
