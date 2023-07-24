@@ -827,6 +827,8 @@ class _AuthenticationManager:
         # forward
         self._Bad = app._Bad
         self._Err = app._Err
+        self._Res = app._Res
+        self._Exc = app._Exc
         # initialize all authentication stuff
         self._auth: list[str] = []              # order default authentications
         self._all_auth: set[str] = set()        # all authentication methods
@@ -940,6 +942,70 @@ class _AuthenticationManager:
             if self._tm._carrier == "param":
                 assert isinstance(self._tm._name, str)
                 self._auth_params.add(self._tm._name)
+
+    def _set_www_authenticate(self, res: Response):
+        """Set WWW-Authenticate response header depending on current scheme."""
+        if res.status_code == 401:
+            schemes = set()
+            for a in self._app._local.auth:
+                if a in ("token", "oauth") and self._tm and self._tm._carrier == "bearer":
+                    schemes.add(f'{self._tm._name} realm="{self._app._local.token_realm}"')
+                elif a in ("basic", "password"):
+                    schemes.add(f'Basic realm="{self._app._local.realm}"')
+                elif a in ("http-token", "http-basic", "digest", "http-digest"):
+                    assert self._http_auth
+                    schemes.add(self._http_auth.authenticate_header())
+                # else: scheme does not rely on WWW-Authenticate…
+                # FIXME what about other schemes?
+            if schemes:
+                res.headers["WWW-Authenticate"] = ", ".join(sorted(schemes))
+        # else: no need for WWW-Authenticate
+        return res
+
+    def _authenticate(self, path, auth=None, realm=None):
+        """Decorator to authenticate current user."""
+
+        # check auth parameter
+        if auth:
+            if isinstance(auth, str):
+                auth = [auth]
+            # probably already caught before
+            for a in auth:
+                if a not in self._authentication:  # pragma: no cover
+                    raise self._Bad(f"unexpected authentication scheme {auth} on {path}")
+
+        def decorate(fun: Callable):
+
+            @functools.wraps(fun)
+            def wrapper(*args, **kwargs):
+
+                fsa = self._app
+                local = fsa._local
+
+                # get user if needed
+                if not local.source:
+                    # possibly overwrite the authentication scheme
+                    # NOTE this may or may not work because other settings may
+                    #   not be compatible with the provided scheme…
+                    # TODO add coverage
+                    if realm:  # pragma: no cover
+                        local.realm = realm
+                        local.token_realm = realm
+                    if auth:
+                        local.auth = auth
+                    try:
+                        fsa.get_user()
+                    except ErrorResponse as e:
+                        return self._Res(e.message, e.status, e.headers, e.content_type)
+
+                if not local.user:  # pragma no cover
+                    return self._Res("no auth", 401)
+
+                return self._app._safe_call(path, "authenticate", fun, *args, **kwargs)
+
+            return wrapper
+
+        return decorate
 
     def _check_auth_consistency(self):
         #
@@ -1146,8 +1212,8 @@ class _CacheManager:
         assert self._app._am  # mypy…
 
         for obj, meth, prefix in [
-            (self._app, "_user_in_group", "g."),
-            (self._app, "_check_object_perms", "p."),
+            (self._app._zm, "_user_in_group", "g."),
+            (self._app._zm, "_check_object_perms", "p."),
             (self._app._am._tm, "_get_any_token_auth_exp", "t."),
             (self._app._am._pm, "_get_user_pass", "u.") ]:
             if obj and hasattr(obj, meth):
@@ -1159,9 +1225,194 @@ class _CacheManager:
         # do not process again!
         self._cached = True
 
+
+class _AuthorizationManager:
+    """Internal authorization management."""
+
+    def __init__(self, app):
+        assert isinstance(app, FlaskSimpleAuth)  # forward declaration needed…
+        self._app = app
+        conf = app._app.config
+        # forward
+        self._Bad = app._Bad
+        self._Res = app._Res
+        self._Exc = app._Exc
+        # authorization stuff
+        self._user_in_group: UserInGroupFun|None = None
+        self._object_perms: dict[Any, ObjectPermsFun] = dict()
+        self._groups: set[str|int] = set(conf.get("FSA_AUTHZ_GROUPS", []))
+        self._scopes: set[str] = set(conf.get("FSA_AUTHZ_SCOPES", []))
+
+        if "FSA_USER_IN_GROUP" in conf:
+            self._user_in_group = conf["FSA_USER_IN_GROUP"]
+
+    def _check_object_perms(self, user, domain, oid, mode):
+        """Can user access object oid in domain for mode, cached."""
+        assert domain in self._object_perms
+        return self._object_perms[domain](user, oid, mode)
+
+    def _oauth_authz(self, path, *scopes):
+        """Decorator to authorize OAuth scopes (token-provided authz)."""
+
+        if self._scopes:
+            for scope in scopes:
+                if scope not in self._scopes:
+                    raise self._Bad(f"unexpected scope {scope}")
+
+        def decorate(fun: Callable):
+            @functools.wraps(fun)
+            def wrapper(*args, **kwargs):
+
+                self._app._local.need_authorization = False
+
+                for scope in scopes:
+                    if not self._app.user_scope(scope):
+                        return self._Res(f'missing permission "{scope}"', 403)
+
+                return self._app._safe_call(path, "oauth authorization", fun, *args, **kwargs)
+
+            return wrapper
+
+        return decorate
+
+    def _group_authz(self, path, *groups):
+        """Decorator to authorize user groups."""
+
+        for grp in _PREDEFS:
+            if grp in groups:
+                raise self._Bad(f"unexpected predefined {grp}")
+
+        if self._groups:
+            for grp in groups:
+                if grp not in self._groups:
+                    raise self._Bad(f"unexpected group {grp}")
+
+        if not self._user_in_group:  # pragma: no cover
+            raise self._Bad(f"user_in_group callback needed for group authorization on {path}")
+
+        def decorate(fun: Callable):
+
+            @functools.wraps(fun)
+            def wrapper(*args, **kwargs):
+
+                fsa = self._app
+                local = fsa._local
+
+                # track that some autorization check was performed
+                local.need_authorization = False
+
+                # check against all authorized groups/roles
+                for grp in groups:
+                    try:
+                        assert self._user_in_group  # please mypy
+                        ok = self._user_in_group(local.user, grp)
+                    except ErrorResponse as e:
+                        return self._Res(e.message, e.status, e.headers, e.content_type)
+                    except Exception as e:
+                        log.error(f"user_in_group failed: {e}")
+                        if self._Exc(e):  # pragma: no cover
+                            raise
+                        return self._Res("internal error in user_in_group", fsa._server_error)
+                    if not isinstance(ok, bool):
+                        log.error(f"type error in user_in_group: {ok}: {type(ok)}, must return a boolean")
+                        return self._Res("internal error with user_in_group", fsa._server_error)
+                    if not ok:
+                        return self._Res(f'not in group "{grp}"', 403)
+
+                # all groups are ok, proceed to call underlying function
+                return fsa._safe_call(path, "group authorization", fun, *args, **kwargs)
+
+            return wrapper
+
+        return decorate
+
+    # just to record that no authorization check was needed
+    def _no_authz(self, path, *groups):
+
+        def decorate(fun: Callable):
+
+            @functools.wraps(fun)
+            def wrapper(*args, **kwargs):
+                self._app._local.need_authorization = False
+                return self._app._safe_call(path, "no authorization", fun, *args, **kwargs)
+
+            return wrapper
+
+        return decorate
+
+    def _perm_authz(self, path, first, *perms):
+        """Decorator for per-object permissions."""
+        # check perms wrt to recorded per-object checks
+
+        # normalize tuples length to 3
+        perms = tuple(map(lambda a: (a + (first, None)) if len(a) == 1 else
+                                    (a + (None,)) if len(a) == 2 else
+                                    a, perms))
+
+        # perm checks
+        for perm in perms:
+            if not len(perm) == 3:
+                raise self._Bad(f"per-object permission tuples must have 3 data {perm} on {path}")
+            domain, name, mode = perm
+            if domain not in self._object_perms:
+                raise self._Bad(f"missing object permission checker for {perm} on {path}")
+            if not isinstance(name, str):
+                raise self._Bad(f"unexpected identifier name type ({type(name)}) for {perm} on {path}")
+            if mode is not None and type(mode) not in (int, str):
+                raise self._Bad(f"unexpected mode type ({type(mode)}) for {perm} on {path}")
+
+        def decorate(fun: Callable):
+
+            # check perms wrt fun signature
+            for domain, name, mode in perms:
+                if name not in fun.__code__.co_varnames:
+                    raise self._Bad(f"missing function parameter {name} for {perm} on {path}")
+                # FIXME should parameter type be restricted to int or str?
+
+            @functools.wraps(fun)
+            def wrapper(*args, **kwargs):
+
+                fsa = self._app
+                local = fsa._local
+
+                # track that some autorization check was performed
+                local.need_authorization = False
+
+                for domain, name, mode in perms:
+                    val = kwargs[name]
+
+                    try:
+                        ok = self._check_object_perms(local.user, domain, val, mode)
+                    except ErrorResponse as e:
+                        return self._Res(e.message, e.status, e.headers, e.content_type)
+                    except Exception as e:
+                        log.error(f"internal error on {request.method} {request.path} permission {perm} check: {e}")
+                        if self._Exc(e):  # pragma: no cover
+                            raise
+                        return self._Res("internal error in permission check", fsa._server_error)
+
+                    if ok is None:
+                        log.warning(f"none object permission on {domain} {val} {mode}")
+                        return self._Res("object not found", fsa._not_found_error)
+                    elif not isinstance(ok, bool):  # paranoid?
+                        log.error(f"type error on on {request.method} {request.path} permission {perm} check: {type(ok)}")
+                        return self._Res("internal error with permission check", fsa._server_error)
+                    elif not ok:
+                        return self._Res(f"permission denied on {domain}/{val} {mode}", 403)
+                    # else: all is well, check next!
+
+                # then call the initial function
+                return fsa._safe_call(path, "perm authorization", fun, *args, **kwargs)
+
+            return wrapper
+
+        return decorate
+
+
 # TODO or not
-# class _AuthorizationManager
 # class _ParameterManager
+# class _RequestManager
+# app -> fsa where appropriate
 
 # actual extension
 class FlaskSimpleAuth:
@@ -1177,7 +1428,6 @@ class FlaskSimpleAuth:
         self._app.config.update(**config)
         # hooks
         self._error_response: ErrorResponseFun|None = None
-        self._object_perms: dict[Any, ObjectPermsFun] = dict()
         self._casts: dict[type, CastFun] = {
             bool: lambda s: None if s is None else s.lower() not in ("", "0", "false", "f"),
             int: lambda s: int(s, base=0) if s else None,
@@ -1203,6 +1453,7 @@ class FlaskSimpleAuth:
         }
         # optional managers
         self._am: _AuthenticationManager|None = None
+        self._az: _AuthorizationManager|None = None
         self._cm: _CacheManager|None = None
         # fsa-generated errors
         self._server_error: int = _DEFAULT_SERVER_ERROR
@@ -1211,9 +1462,6 @@ class FlaskSimpleAuth:
         self._secure: bool = True
         self._secure_warning = True
         # misc
-        self._user_in_group: UserInGroupFun|None = None
-        self._groups: set[str|int] = set()   # predeclared groups, error if not there
-        self._scopes: set[str] = set()       # idem for scopes
         self._headers: dict[str, HeaderFun|str] = {}  # response headers
         self._before_requests: list[BeforeRequestFun] = []
         self._before_exec_hooks: list[BeforeExecFun] = []
@@ -1311,8 +1559,7 @@ class FlaskSimpleAuth:
         self._local.realm = self._am._realm        # authn realm
         self._local.token_realm = self._am._tm._realm if self._am._tm else None
         self._local.scopes = None              # current oauth scopes
-        # parameters
-        self._local.params = None              # json|http
+        self._local.params = None              # json|http parameters
 
     def _run_before_requests(self):
         """Run internal before request hooks."""
@@ -1352,26 +1599,6 @@ class FlaskSimpleAuth:
                 sep = "&" if "?" in self._url_name else "?"
                 location += sep + urllib.parse.urlencode({self._url_name: request.url})
             return redirect(location, 307)
-        return res
-
-    def _set_www_authenticate(self, res: Response):
-        """Set WWW-Authenticate response header depending on current scheme."""
-        if res.status_code == 401:
-            assert self._am  # mypy…
-            schemes = set()
-            for a in self._local.auth:
-                if a in ("token", "oauth") and self._am._tm and self._am._tm._carrier == "bearer":
-                    schemes.add(f'{self._am._tm._name} realm="{self._local.token_realm}"')
-                elif a in ("basic", "password"):
-                    schemes.add(f'Basic realm="{self._local.realm}"')
-                elif a in ("http-token", "http-basic", "digest", "http-digest"):
-                    assert self._am._http_auth
-                    schemes.add(self._am._http_auth.authenticate_header())
-                # else: scheme does not rely on WWW-Authenticate…
-                # FIXME what about other schemes?
-            if schemes:
-                res.headers["WWW-Authenticate"] = ", ".join(sorted(schemes))
-        # else: no need for WWW-Authenticate
         return res
 
     def _add_headers(self, res: Response):
@@ -1430,9 +1657,11 @@ class FlaskSimpleAuth:
 
     def user_in_group(self, uig: UserInGroupFun) -> UserInGroupFun:
         """Set `user_in_group` helper, can be used as a decorator."""
-        if self._user_in_group:
+        self.initialize()
+        assert self._zm  # mypy…
+        if self._zm._user_in_group:
             log.warning("overriding already defined user_in_group hook")
-        self._user_in_group = uig
+        self._zm._user_in_group = uig
         return uig
 
     def password_quality(self, pqc: PasswordQualityFun) -> PasswordQualityFun:
@@ -1491,7 +1720,7 @@ class FlaskSimpleAuth:
 
     def object_perms(self, domain: str, checker: ObjectPermsFun = None):
         """Add an object permission helper for a given domain."""
-        return self._store(self._object_perms, "object permission checker", domain, checker)
+        return self._store(self._zm._object_perms, "object permission checker", domain, checker)
 
     def authentication(self, auth: str, hook: AuthenticationFun|None = None):
         """Add new authentication hook."""
@@ -1500,28 +1729,27 @@ class FlaskSimpleAuth:
         self._am._add_auth(auth)
         return self._store(self._am._authentication, "authentication", auth, hook)
 
-    def _check_object_perms(self, user, domain, oid, mode):
-        """Can user access object oid in domain for mode, cached."""
-        assert domain in self._object_perms
-        return self._object_perms[domain](user, oid, mode)
-
     def user_scope(self, scope):
         """Is scope in the current user scope."""
         return self._local.scopes and scope in self._local.scopes
 
     def add_group(self, *groups):
         """Add some groups."""
+        self.initialize()
+        assert self._zm  # mypy…
         for grp in groups:
             if not isinstance(grp, (str, int)):
                 raise self._Bad(f"invalid group type: {type(grp).__name__}")
-            self._groups.add(grp)
+            self._zm._groups.add(grp)
 
     def add_scope(self, *scopes):
         """Add some scopes."""
+        self.initialize()
+        assert self._zm  # mypy…
         for scope in scopes:
             if not isinstance(scope, str):
                 raise self._Bad(f"invalid scope type: {type(scope).__name__}")
-            self._scopes.add(scope)
+            self._zm._scopes.add(scope)
 
     def add_headers(self, **kwargs):
         """Add some headers."""
@@ -1625,9 +1853,11 @@ class FlaskSimpleAuth:
         self._reject_param = \
             conf.get("FSA_REJECT_UNEXPECTED_PARAM", _DEFAULT_REJECT_UNEXPECTED_PARAM)
         #
-        # authentication
+        # managers
         #
         self._am = _AuthenticationManager(self)
+        self._zm = _AuthorizationManager(self)
+        self._cm = _CacheManager(self) if conf.get("FSA_CACHE", _DEFAULT_CACHE) else None
         #
         # web apps…
         #
@@ -1645,12 +1875,6 @@ class FlaskSimpleAuth:
         #
         # authentication, authorization and other hooks
         #
-        self._groups.update(conf.get("FSA_AUTHZ_GROUPS", []))
-        self._scopes.update(conf.get("FSA_AUTHZ_SCOPES", []))
-
-        if "FSA_USER_IN_GROUP" in conf:
-            self.user_in_group(conf["FSA_USER_IN_GROUP"])
-
         def _set_hooks(directive: str, set_hook: Callable[[Any, Callable], Any]):
             if directive in conf:
                 hooks = conf[directive]
@@ -1662,8 +1886,9 @@ class FlaskSimpleAuth:
                     set_hook(key, hook)
 
         _set_hooks("FSA_CAST", self.cast)
-        _set_hooks("FSA_OBJECT_PERMS", self.object_perms)
         _set_hooks("FSA_SPECIAL_PARAMETER", self.special_parameter)
+        # TODO move to _AuthorizationManager?
+        _set_hooks("FSA_OBJECT_PERMS", self.object_perms)
         # TODO move to _AuthenticationManager?
         _set_hooks("FSA_AUTHENTICATION", self.authentication)
         # headers
@@ -1684,8 +1909,9 @@ class FlaskSimpleAuth:
             self._app.after_request(self._run_after_requests)
         if self._headers:
             self._app.after_request(self._add_headers)
-        self._app.after_request(self._set_www_authenticate)  # always for auth=…
-        if self._am._tm and self._am._tm._carrier == "cookie":
+        if self._am:  # always, because of auth=…
+            self._app.after_request(self._am._set_www_authenticate)
+        if self._am and self._am._tm and self._am._tm._carrier == "cookie":
             self._app.after_request(self._am._tm._set_auth_cookie)
         if self._401_redirect:
             self._app.after_request(self._possible_redirect)
@@ -1712,7 +1938,6 @@ class FlaskSimpleAuth:
         # NOTE this is too early to create per function caches because they may not be
         # initialized yet…
         #
-        self._cm = _CacheManager(self) if conf.get("FSA_CACHE", _DEFAULT_CACHE) else None
         #
         # done!
         self._initialized = True
@@ -1743,7 +1968,7 @@ class FlaskSimpleAuth:
         self.initialize()
         assert self._am  # mypy…
         if not self._am._tm:  # pragma: no cover
-            raise ErrorResponse("token manager is disabled", self._server_error)
+            raise self._Err("token manager is disabled", self._server_error)
         return self._am._tm.create_token(*args, **kwargs)
 
     #
@@ -1800,7 +2025,7 @@ class FlaskSimpleAuth:
         The best option is to wait for cache entries to expire with a TTL.
         """
         if not self._cm:  # pragma: no cover
-            raise ErrorResponse("cannot clear cache, cache is disabled", self._server_error)
+            raise self._Err("cannot clear cache, cache is disabled", self._server_error)
         self._cm._cache.clear()
 
     #
@@ -1826,137 +2051,6 @@ class FlaskSimpleAuth:
             if self._Exc(e):
                 raise
             return self._Res(f"internal error caught at {level} on {path}", self._server_error)
-
-    def _authenticate(self, path, auth=None, realm=None):
-        """Decorator to authenticate current user."""
-
-        assert self._am  # mypy
-
-        # check auth parameter
-        if auth:
-            if isinstance(auth, str):
-                auth = [auth]
-            # probably already caught before
-            for a in auth:
-                if a not in self._am._authentication:  # pragma: no cover
-                    raise self._Bad(f"unexpected authentication scheme {auth} on {path}")
-
-        def decorate(fun: Callable):
-
-            @functools.wraps(fun)
-            def wrapper(*args, **kwargs):
-
-                # get user if needed
-                if not self._local.source:
-                    # possibly overwrite the authentication scheme
-                    # NOTE this may or may not work because other settings may
-                    #   not be compatible with the provided scheme…
-                    # TODO add coverage
-                    if realm:  # pragma: no cover
-                        self._local.realm = realm
-                        self._local.token_realm = realm
-                    if auth:
-                        self._local.auth = auth
-                    try:
-                        self.get_user()
-                    except ErrorResponse as e:
-                        return self._Res(e.message, e.status, e.headers, e.content_type)
-
-                if not self._local.user:  # pragma no cover
-                    return self._Res("no auth", 401)
-
-                return self._safe_call(path, "authenticate", fun, *args, **kwargs)
-
-            return wrapper
-
-        return decorate
-
-    def _oauth_authz(self, path, *scopes):
-        """Decorator to authorize OAuth scopes (token-provided authz)."""
-
-        if self._scopes:
-            for scope in scopes:
-                if scope not in self._scopes:
-                    raise self._Bad(f"unexpected scope {scope}")
-
-        def decorate(fun: Callable):
-            @functools.wraps(fun)
-            def wrapper(*args, **kwargs):
-
-                self._local.need_authorization = False
-
-                for scope in scopes:
-                    if not self.user_scope(scope):
-                        return self._Res(f'missing permission "{scope}"', 403)
-
-                return self._safe_call(path, "oauth authorization", fun, *args, **kwargs)
-
-            return wrapper
-
-        return decorate
-
-    def _group_authz(self, path, *groups):
-        """Decorator to authorize user groups."""
-
-        for grp in _PREDEFS:
-            if grp in groups:
-                raise self._Bad(f"unexpected predefined {grp}")
-
-        if self._groups:
-            for grp in groups:
-                if grp not in self._groups:
-                    raise self._Bad(f"unexpected group {grp}")
-
-        if not self._user_in_group:  # pragma: no cover
-            raise self._Bad(f"user_in_group callback needed for group authorization on {path}")
-
-        def decorate(fun: Callable):
-
-            @functools.wraps(fun)
-            def wrapper(*args, **kwargs):
-
-                # track that some autorization check was performed
-                self._local.need_authorization = False
-
-                # check against all authorized groups/roles
-                for grp in groups:
-                    try:
-                        assert self._user_in_group  # please mypy
-                        ok = self._user_in_group(self._local.user, grp)
-                    except ErrorResponse as e:
-                        return self._Res(e.message, e.status, e.headers, e.content_type)
-                    except Exception as e:
-                        log.error(f"user_in_group failed: {e}")
-                        if self._Exc(e):  # pragma: no cover
-                            raise
-                        return self._Res("internal error in user_in_group", self._server_error)
-                    if not isinstance(ok, bool):
-                        log.error(f"type error in user_in_group: {ok}: {type(ok)}, must return a boolean")
-                        return self._Res("internal error with user_in_group", self._server_error)
-                    if not ok:
-                        return self._Res(f'not in group "{grp}"', 403)
-
-                # all groups are ok, proceed to call underlying function
-                return self._safe_call(path, "group authorization", fun, *args, **kwargs)
-
-            return wrapper
-
-        return decorate
-
-    # just to record that no authorization check was needed
-    def _no_authz(self, path, *groups):
-
-        def decorate(fun: Callable):
-
-            @functools.wraps(fun)
-            def wrapper(*args, **kwargs):
-                self._local.need_authorization = False
-                return self._safe_call(path, "no authorization", fun, *args, **kwargs)
-
-            return wrapper
-
-        return decorate
-
     # just check that there are no unused parameters
     def _noparams(self, path):
 
@@ -2165,71 +2259,6 @@ class FlaskSimpleAuth:
 
         return decorate
 
-    def _perm_authz(self, path, first, *perms):
-        """Decorator for per-object permissions."""
-        # check perms wrt to recorded per-object checks
-
-        # normalize tuples length to 3
-        perms = tuple(map(lambda a: (a + (first, None)) if len(a) == 1 else
-                                    (a + (None,)) if len(a) == 2 else
-                                    a, perms))
-
-        # perm checks
-        for perm in perms:
-            if not len(perm) == 3:
-                raise self._Bad(f"per-object permission tuples must have 3 data {perm} on {path}")
-            domain, name, mode = perm
-            if domain not in self._object_perms:
-                raise self._Bad(f"missing object permission checker for {perm} on {path}")
-            if not isinstance(name, str):
-                raise self._Bad(f"unexpected identifier name type ({type(name)}) for {perm} on {path}")
-            if mode is not None and type(mode) not in (int, str):
-                raise self._Bad(f"unexpected mode type ({type(mode)}) for {perm} on {path}")
-
-        def decorate(fun: Callable):
-
-            # check perms wrt fun signature
-            for domain, name, mode in perms:
-                if name not in fun.__code__.co_varnames:
-                    raise self._Bad(f"missing function parameter {name} for {perm} on {path}")
-                # FIXME should parameter type be restricted to int or str?
-
-            @functools.wraps(fun)
-            def wrapper(*args, **kwargs):
-
-                # track that some autorization check was performed
-                self._local.need_authorization = False
-
-                for domain, name, mode in perms:
-                    val = kwargs[name]
-
-                    try:
-                        ok = self._check_object_perms(self._local.user, domain, val, mode)
-                    except ErrorResponse as e:
-                        return self._Res(e.message, e.status, e.headers, e.content_type)
-                    except Exception as e:
-                        log.error(f"internal error on {request.method} {request.path} permission {perm} check: {e}")
-                        if self._Exc(e):  # pragma: no cover
-                            raise
-                        return self._Res("internal error in permission check", self._server_error)
-
-                    if ok is None:
-                        log.warning(f"none object permission on {domain} {val} {mode}")
-                        return self._Res("object not found", self._not_found_error)
-                    elif not isinstance(ok, bool):  # paranoid?
-                        log.error(f"type error on on {request.method} {request.path} permission {perm} check: {type(ok)}")
-                        return self._Res("internal error with permission check", self._server_error)
-                    elif not ok:
-                        return self._Res(f"permission denied on {domain}/{val} {mode}", 403)
-                    # else: all is well, check next!
-
-                # then call the initial function
-                return self._safe_call(path, "perm authorization", fun, *args, **kwargs)
-
-            return wrapper
-
-        return decorate
-
     # run any hook after auth and before exec
     def _before_exec(self, path):
 
@@ -2269,7 +2298,7 @@ class FlaskSimpleAuth:
         if not self._initialized:
             self.initialize()
 
-        assert self._am  # mypy…
+        assert self._am and self._zm  # mypy…
 
         # ensure that authorize is a list
         if type(authorize) in (int, str, tuple):
@@ -2402,7 +2431,7 @@ class FlaskSimpleAuth:
                 raise self._Bad("permissions require some parameters")
             assert need_authenticate and need_parameters
             first = fun.__code__.co_varnames[0]
-            fun = self._perm_authz(newpath, first, *perms)(fun)
+            fun = self._zm._perm_authz(newpath, first, *perms)(fun)
         if need_parameters:
             fun = self._parameters(newpath)(fun)
         else:
@@ -2410,20 +2439,20 @@ class FlaskSimpleAuth:
         if groups:
             assert need_authenticate
             if auth == "oauth":
-                fun = self._oauth_authz(newpath, *groups)(fun)
+                fun = self._zm._oauth_authz(newpath, *groups)(fun)
             else:
-                fun = self._group_authz(newpath, *groups)(fun)
+                fun = self._zm._group_authz(newpath, *groups)(fun)
         elif ANY in predefs:
             assert not groups and not perms
-            fun = self._no_authz(newpath, *groups)(fun)
+            fun = self._zm._no_authz(newpath, *groups)(fun)
         elif ALL in predefs:
             assert need_authenticate
-            fun = self._no_authz(newpath, *groups)(fun)
+            fun = self._zm._no_authz(newpath, *groups)(fun)
         else:  # no authorization at this level
             assert perms
         if need_authenticate:
             assert perms or groups or ALL in predefs
-            fun = self._authenticate(newpath, auth=auth, realm=realm)(fun)
+            fun = self._am._authenticate(newpath, auth=auth, realm=realm)(fun)
         else:  # "ANY" case deserves a warning
             log.warning(f"no authenticate on {newpath}")
 

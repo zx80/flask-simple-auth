@@ -183,9 +183,9 @@ def test_perms(client):
     # admin only
     check(401, client.get("/admin"))
     log.debug(f"App.user_in_group: {App.user_in_group}")
-    log.debug(f"app._fsa._user_in_group: {app._fsa._user_in_group}")
+    log.debug(f"app._fsa._zm._user_in_group: {app._fsa._zm._user_in_group}")
     assert App.user_in_group("dad", App.ADMIN)
-    assert app._fsa._user_in_group("dad", App.ADMIN)
+    assert app._fsa._zm._user_in_group("dad", App.ADMIN)
     all_auth(client, "dad", App.UP["dad"], check_200, "/admin")
     assert not App.user_in_group("calvin", App.ADMIN)
     all_auth(client, "calvin", App.UP["calvin"], check_403, "/admin")
@@ -195,17 +195,17 @@ def test_perms(client):
     app.clear_caches()
     # write only
     check(401, client.get("/write"))
-    assert app._fsa._user_in_group("dad", App.WRITE)
+    assert app._fsa._zm._user_in_group("dad", App.WRITE)
     all_auth(client, "dad", App.UP["dad"], check_200, "/write")
-    assert app._fsa._user_in_group("calvin", App.WRITE)
+    assert app._fsa._zm._user_in_group("calvin", App.WRITE)
     all_auth(client, "calvin", App.UP["calvin"], check_200, "/write")
     assert not App.user_in_group("hobbes", App.WRITE)
     all_auth(client, "hobbes", App.UP["hobbes"], check_403, "/write")
     # read only
     check(401, client.get("/read"))
-    assert not app._fsa._user_in_group("dad", App.READ)
+    assert not app._fsa._zm._user_in_group("dad", App.READ)
     all_auth(client, "dad", App.UP["dad"], check_403, "/read")
-    assert app._fsa._user_in_group("calvin", App.READ)
+    assert app._fsa._zm._user_in_group("calvin", App.READ)
     all_auth(client, "calvin", App.UP["calvin"], check_200, "/read")
     assert App.user_in_group("hobbes", App.READ)
     all_auth(client, "hobbes", App.UP["hobbes"], check_200, "/read")
@@ -521,9 +521,9 @@ def test_password_quality():
     pm._pass_quality = None
 
 def test_authorize():
-    assert app._fsa._user_in_group("dad", App.ADMIN)
-    assert not app._fsa._user_in_group("hobbes", App.ADMIN)
-    @app._fsa._group_authz("stuff", App.ADMIN)
+    assert app._fsa._zm._user_in_group("dad", App.ADMIN)
+    assert not app._fsa._zm._user_in_group("hobbes", App.ADMIN)
+    @app._fsa._zm._group_authz("stuff", App.ADMIN)
     def stuff():
         return Response("", 200)
     app._fsa._local.user = "dad"
@@ -533,7 +533,7 @@ def test_authorize():
     res = stuff()
     assert res.status_code == 403
     try:
-        @app._fsa._group_authz("stuff", fsa.ALL, fsa.ANY)
+        @app._fsa._zm._group_authz("stuff", fsa.ALL, fsa.ANY)
         def foo():
             return "foo", 200
         assert False, "cannot mix ALL & ANY in authorize"
