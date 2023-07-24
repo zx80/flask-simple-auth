@@ -151,10 +151,10 @@ def test_scare(client):
     res = check(200, client.get("/scare", headers=BLA_BASIC))
     assert b"bla" in res.data and b"foo" not in res.data
     res = check(200, client.get("/scare/token", headers=FOO_BASIC))
-    if app._fsa._token == "fsa":
+    if app._fsa._am._tm._token == "fsa":
         assert b"demo:foo:" in res.data
     foo_token = json.loads(res.data)
-    if app._fsa._carrier == "param":
+    if app._fsa._am._tm._carrier == "param":
         res = check(200, client.get("/scare", data={"AUTH": foo_token}))
         assert b"foo" in res.data
         res = check(200, client.get("/scare", json={"AUTH": foo_token}))
@@ -304,7 +304,7 @@ def test_types(client):
 
 
 def test_jwt_oauth(client):
-    if not app._fsa._token == "jwt":
+    if not app._fsa._am._tm._token == "jwt":
         pytest.skip("test needs jwt tokens")
     check(
         201,
@@ -340,7 +340,7 @@ def test_upload(client):
 
 
 def test_mfa(client):
-    if not app._fsa._token == "fsa":
+    if not app._fsa._am._tm._token == "fsa":
         pytest.skip("test needs fsa tokens")
     check(401, client.get("/mfa/login1"))
     # FIRST PASS

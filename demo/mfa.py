@@ -31,7 +31,7 @@ def get_login2(code: str, user: CurrentUser):
         return f"invalid 2nd auth for {user}", 401
     else:
         # YES! generate 2nd level token
-        return json(app.create_token(user, realm=app._fsa._realm)), 200
+        return json(app.create_token(user, realm=app.name)), 200
 
 
 @mfa.get("/test", authorize="ALL")

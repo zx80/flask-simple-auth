@@ -809,7 +809,8 @@ class _PasswordManager:
         elif self.check_password(pwd, ref):  # does not match, try alternate check
             return user
         else:
-            if self._check_with_hook(user, pwd):
+            # there is a reference which did not work, try with hook
+            if self._check_with_hook(user, pwd):  # pragma: no cover
                 return user
             else:
                 log.debug(f"AUTH (password): invalid password ({user})")
@@ -1017,7 +1018,7 @@ class _AuthenticationManager:
         except Exception as e:
             log.debug(f'AUTH (basic): error while decoding auth "{auth}" ({e})')
             raise self._Err("decoding error on authorization header", 401, e)
-        if not self._pm:
+        if not self._pm:  # pragma: no cover
             raise self._Err(f"password manager is disabled", self._app._server_error)
         return self._pm.check_user_password(user, pwd)
 
@@ -1038,7 +1039,7 @@ class _AuthenticationManager:
         pwd = params.get(self._passp, None)
         if not pwd:
             raise self._Err(f"missing param password parameter: {self._passp}", 401)
-        if not self._pm:
+        if not self._pm:  # pragma: no cover
             raise self._Err(f"password manager is disabled", self._app._server_error)
         return self._pm.check_user_password(user, pwd)
 
@@ -1138,7 +1139,7 @@ class _CacheManager:
         if self._cached:
             return
 
-        log.debug(f"setting up cache…")
+        log.info(f"setting up cache…")
         assert self._app._am  # mypy…
         import CacheToolsUtils as ctu
 
@@ -1150,9 +1151,9 @@ class _CacheManager:
             (self._app._am._tm, "_get_any_token_auth_exp", "t."),
             (self._app._am._pm, "_get_user_pass", "u.") ]:
             if obj and hasattr(obj, meth):
-                log.info(f"cache: caching {meth[1:]}")
+                log.debug(f"cache: caching {meth[1:]}")
                 ctu.cacheMethods(cache=self._cache, obj=obj, gen=self._gen_cache, **{meth: prefix})
-            else:
+            else:  # pragma: no cover
                 log.info(f"cache: skipping {meth[1:]}")
 
         # do not process again!
@@ -1423,7 +1424,7 @@ class FlaskSimpleAuth:
         """Set `get_user_pass` helper, can be used as a decorator."""
         self.initialize()
         assert self._am  # mypy…
-        if not self._am._pm:
+        if not self._am._pm:  # pragma: no cover
             raise self._Err("password manager is disabled", self._server_error)
         return self._am._pm.get_user_pass(gup)
 
@@ -1438,7 +1439,7 @@ class FlaskSimpleAuth:
         """Set `password_quality` hook."""
         self.initialize()
         assert self._am  # mypy…
-        if not self._am._pm:
+        if not self._am._pm:  # pragma: no cover
             raise self._Err("password manager is disabled", self._server_error)
         if self._am._pm._pass_quality:
             log.warning("overriding already defined password_quality hook")
@@ -1449,7 +1450,7 @@ class FlaskSimpleAuth:
         """Set `password_check` hook."""
         self.initialize()
         assert self._am  # mypy…
-        if not self._am._pm:
+        if not self._am._pm:  # pragma: no cover
             raise self._Err("password manager is disabled", self._server_error)
         if self._am._pm._pass_check:
             log.warning("overriding already defined password_check hook")
@@ -1511,11 +1512,15 @@ class FlaskSimpleAuth:
     def add_group(self, *groups):
         """Add some groups."""
         for grp in groups:
+            if not isinstance(grp, (str, int)):
+                raise self._Bad(f"invalid group type: {type(grp).__name__}")
             self._groups.add(grp)
 
     def add_scope(self, *scopes):
         """Add some scopes."""
         for scope in scopes:
+            if not isinstance(scope, str):
+                raise self._Bad(f"invalid scope type: {type(scope).__name__}")
             self._scopes.add(scope)
 
     def add_headers(self, **kwargs):
@@ -1652,7 +1657,7 @@ class FlaskSimpleAuth:
                 if not isinstance(hooks, dict):
                     raise self._Bad(f"{directive} must be a dict")
                 for key, hook in hooks.items():
-                    if not callable(hook):
+                    if not callable(hook):  # pragma: no cover
                         raise self._Bad("{directive} {key} value must be callable")
                     set_hook(key, hook)
 
@@ -1719,7 +1724,7 @@ class FlaskSimpleAuth:
         """Verify whether a password is correct compared to a reference (eg salted hash)."""
         self.initialize()
         assert self._am  # mypy…
-        if not self._am._pm:
+        if not self._am._pm:  # pragma: no cover
             raise self._Err(f"password manager is disabled", self._server_error)
         return self._am._pm.check_password(pwd, ref)
 
@@ -1727,7 +1732,7 @@ class FlaskSimpleAuth:
         """Hash password according to the current password scheme."""
         self.initialize()
         assert self._am  # mypy…
-        if not self._am._pm:
+        if not self._am._pm:  # pragma: no cover
             raise self._Err("password manager is disabled", self._server_error)
         return self._am._pm.hash_password(pwd, check)
 
@@ -1831,8 +1836,9 @@ class FlaskSimpleAuth:
         if auth:
             if isinstance(auth, str):
                 auth = [auth]
+            # probably already caught before
             for a in auth:
-                if a not in self._am._authentication:
+                if a not in self._am._authentication:  # pragma: no cover
                     raise self._Bad(f"unexpected authentication scheme {auth} on {path}")
 
         def decorate(fun: Callable):

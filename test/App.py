@@ -23,25 +23,31 @@ app = Flask(
     FSA_MODE="debug2",
     FSA_LOGGING_LEVEL=logging.DEBUG
 )
-app.add_group(ADMIN, WRITE, READ)
 
 #
-# AUTH
+# AUTH*
 #
 app.config.update(
     # FSA_AUTH = "fake",
     FSA_AUTH=["token", "fake", "basic", "param"],
     # FSA_TOKEN_CARRIER="param",
-    FSA_GET_USER_PASS = get_user_pass,
-    FSA_USER_IN_GROUP = user_in_group,
+    FSA_GET_USER_PASS=get_user_pass,
+    FSA_USER_IN_GROUP=user_in_group,
 )
-
 
 # object permissions: dad (admin) or self
 def check_users_perms(login: str, val: str, mode):
     return login in (val, "dad") if val in UP else None
 
+app.add_group(ADMIN, WRITE, READ)
 app.object_perms("users", check_users_perms)
+
+# add and remove a password quality fun
+@app.password_quality
+def check_password_quality(_: str) -> bool:
+    return True
+
+app.password_quality(None)
 
 from SubApp import subapp
 app.register_blueprint(subapp, url_prefix="/b1")

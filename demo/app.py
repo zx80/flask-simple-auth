@@ -70,11 +70,11 @@ from types_path import types
 app.register_blueprint(types, url_prefix="/types")
 
 # example multi-factor authentication
-if app._fsa._token == "fsa":
+if app._fsa._am._tm._token == "fsa":
     from mfa import mfa
     app.register_blueprint(mfa, url_prefix="/mfa")
 
 # demonstrate delegated authorizations through JWT tokens
-if app._fsa._token == "jwt":
+if app._fsa._am._tm._token == "jwt":
     from oauth import oauth
     app.register_blueprint(oauth)

@@ -1071,6 +1071,18 @@ def test_bad_app():
         assert False, "bad app creation must fail"
     except ConfigError as e:
         assert "unexpected auth type" in str(e)
+    # bad add group and scope type
+    app = create_app()
+    try:
+        app.add_group(["hello", "world"])
+        assert False, "bad app creation must fail"
+    except ConfigError as e:
+        assert "invalid group type" in str(e)
+    try:
+        app.add_scope(["hello", "world"])
+        assert False, "bad app creation must fail"
+    except ConfigError as e:
+        assert "invalid scope type" in str(e)
 
 class PK():
     def __init__(self, kind):
