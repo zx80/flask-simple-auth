@@ -358,7 +358,7 @@ _DEFAULT_TOKEN_DELAY = 60.0
 
 
 class _TokenManager:
-    """Internal stuff for managing tokens."""
+    """Internal token management."""
 
     #
     # TOKEN MANAGEMENT
@@ -414,7 +414,7 @@ class _TokenManager:
         if self._carrier == "param":
             assert isinstance(self._name, str)
         # auth and token realm and possible issuer…
-        realm = self._app._realm
+        realm: str = conf.get("FSA_REAM", self._app._app.name)
         if self._token == "fsa":  # simplify realm for fsa
             keep_char = re.compile(r"[-A-Za-z0-9]").match
             realm = "".join(c if keep_char(c) else "-" for c in realm)
@@ -463,7 +463,7 @@ class _TokenManager:
         else:  # pragma: no cover
             raise self._Bad(f"invalid FSA_TOKEN_TYPE ({self._token})")
         # FIXME this check may be too early…
-        if "oauth" in self._app._auth:  # JWT authorizations (RFC 8693)
+        if "oauth" in self._app._local.auth:  # JWT authorizations (RFC 8693)
             if self._token != "jwt":
                 raise self._Bad("oauth token authorizations require JWT")
             if not self._issuer:
@@ -675,7 +675,7 @@ class _TokenManager:
 
 
 class _PasswordManager:
-    """Password Management Stuff."""
+    """Internal password management."""
 
     #
     # PASSWORD MANAGEMENT
@@ -816,8 +816,251 @@ class _PasswordManager:
                 raise self._Err(f"invalid password for {user}", 401)
 
 
+class _AuthenticationManager:
+    """Internal authentication management."""
+
+    def __init__(self, app):
+        assert isinstance(app, FlaskSimpleAuth)  # FIXME forward declaration…
+        self._app = app
+        conf = self._app._app.config
+        # forward
+        self._Bad = app._Bad
+        self._Err = app._Err
+        # initialize all authentication stuff
+        self._auth: list[str] = []              # order default authentications
+        self._all_auth: set[str] = set()        # all authentication methods
+        # map auth to their hooks
+        self._authentication: dict[str, AuthenticationFun] = {
+            "none": lambda _a, _r: None,
+            "httpd": self._get_httpd_auth,
+            "token": self._get_token_auth,
+            "oauth": self._get_token_auth,
+            "fake": self._get_fake_auth,
+            "basic": self._get_basic_auth,
+            "digest": self._get_httpauth,
+            "param": self._get_param_auth,
+            "password": self._get_password_auth,
+            "http-basic": self._get_httpauth,
+            "http-digest": self._get_httpauth,
+            "http-token": self._get_httpauth,
+        }
+        self._auth_params: set[str] = set()  # authentication parameters to ignore
+        # list of allowed authentication schemes
+        auth = conf.get("FSA_AUTH", None)
+        if not auth:
+            self._auth = ["httpd"]
+        elif isinstance(auth, str):
+            if auth not in ("oauth", "token", "http-token"):
+                self._auth = ["token", auth]
+            else:
+                self._auth = [auth]
+        elif isinstance(auth, list):  # keep the provided list, whatever
+            self._auth = auth
+        else:
+            raise self._Bad(f"unexpected FSA_AUTH type: {type(auth)}")
+        # FIXME needed for some tm checks
+        self._app._local.auth = self._auth
+        # authentication realm
+        # FIXME there is a token realm, is this consistent?
+        self._realm: str = conf.get("FSA_REALM", self._app._app.name)
+        #
+        # password and token manager setup
+        #
+        self._pm = _PasswordManager(app) if conf.get("FSA_PASSWORD_SCHEME", _DEFAULT_PASSWORD_SCHEME) else None 
+        self._tm = _TokenManager(app) if conf.get("FSA_TOKEN_TYPE", "fsa") else None
+        #
+        # HTTP parameter names
+        #
+        if "fake" not in self._auth and "FSA_FAKE_LOGIN" in conf:
+            log.warning("ignoring directive FSA_FAKE_LOGIN")
+        if "param" not in self._auth and "password" not in self._auth:
+            if "FSA_PARAM_USER" in conf:
+                log.warning("ignoring directive FSA_PARAM_USER")
+            if "FSA_PARAM_PASS" in conf:
+                log.warning("ignoring directive FSA_PARAM_PASS")
+        self._login = conf.get("FSA_FAKE_LOGIN", "LOGIN")
+        self._userp = conf.get("FSA_PARAM_USER", "USER")
+        self._passp = conf.get("FSA_PARAM_PASS", "PASS")
+        #
+        # registration
+        #
+        for a in self._auth:
+            self._add_auth(a)
+        #
+        # http auth setup
+        #
+        if self._auth_has("http-basic", "http-digest", "http-token", "digest"):
+            opts = conf.get("FSA_HTTP_AUTH_OPTS", {})
+            try:
+                import flask_httpauth as fha  # type: ignore
+            except ModuleNotFoundError:  # pragma: no cover
+                log.error("missing module: install FlaskSimpleAuth[httpauth]")
+                raise
+
+            if "http-basic" in self._auth:
+                self._http_auth = fha.HTTPBasicAuth(realm=self._realm, **opts)
+                assert self._http_auth and self._pm  # mypy…
+                self._http_auth.verify_password(self._pm.check_user_password)
+            elif self._auth_has("http-digest", "digest"):
+                self._http_auth = fha.HTTPDigestAuth(realm=self._realm, **opts)
+                assert self._http_auth  # mypy…
+                # FIXME? nonce & opaque callbacks? session??
+            elif "http-token" in self._auth:
+                if not self._tm:  # pragma: no cover
+                    raise self._Bad("cannot use http-token auth if token is disabled")
+                # NOTE incompatible with local realm
+                if self._tm._carrier == "header" and "header" not in opts and self._tm._name:
+                    opts["header"] = self._tm._name
+                self._http_auth = fha.HTTPTokenAuth(scheme=self._tm._name, realm=self._tm._realm, **opts)
+                assert self._http_auth and self._tm  # mypy…
+                self._http_auth.verify_token(lambda t: self._tm._get_any_token_auth(t, self._tm._realm))
+            assert self._http_auth and self._pm  # mypy…
+            self._http_auth.get_password(self._pm._get_user_pass)
+            # FIXME? error_handler?
+        else:
+            self._http_auth = None
+
+    def _add_auth(self, auth: str):
+        """Register that an authentication method is used."""
+        if not isinstance(auth, str):  # pragma: no cover
+            raise self._Bad(f"unexpected authentication identifier type: {type(auth).__name__}")
+        if auth in self._all_auth:
+            return
+        self._all_auth.add(auth)
+        # possibly add parameters to ignore silently
+        if auth in ("param", "password"):
+            self._auth_params.add(self._userp)
+            self._auth_params.add(self._passp)
+        if auth == "fake":
+            self._auth_params.add(self._login)
+        if auth == "token":
+            if not self._tm:  # pragma: no cover
+                raise self._Bad("cannot use token auth if token is disabled")
+            if self._tm._carrier == "param":
+                assert isinstance(self._tm._name, str)
+                self._auth_params.add(self._tm._name)
+
+    def _check_auth_consistency(self):
+        #
+        # authentication checks are delayed as much as possible because we have
+        # to wait for custom authentication registrations.
+        #
+        for a in self._all_auth:
+            if a not in self._authentication:
+                raise self._Bad(f"unexpected auth: {a}")
+
+    def _auth_has(self, *auth):
+        """Tell whether current authentication includes any of these schemes."""
+        for a in auth:
+            if a in self._app._local.auth:
+                return True
+        return False
+
+    #
+    # INHERITED HTTP AUTH
+    #
+    def _get_httpd_auth(self, app, req) -> str|None:
+        """Inherit HTTP server authentication."""
+        return req.remote_user
+
+    #
+    # HTTP FAKE AUTH
+    #
+    # Just trust a parameter, *only* for local testing.
+    #
+    # FSA_FAKE_LOGIN: name of parameter holding the login ("LOGIN")
+    #
+    def _get_fake_auth(self, app, req):
+        """Return fake user. Only for local tests."""
+        assert req.remote_addr.startswith("127.") or req.remote_addr == "::1", \
+            "fake auth only on localhost"
+        params = self._app._params()
+        user = params.get(self._login, None)
+        if not user:
+            raise self._Err(f"missing fake login parameter: {self._login}", 401)
+        return user
+
+    #
+    # FLASK HTTP AUTH (BASIC, DIGEST, TOKEN)
+    #
+    def _get_httpauth(self, app, req):
+        """Delegate user authentication to HTTPAuth."""
+        assert self._http_auth
+        auth = self._http_auth.get_auth()
+        password = self._http_auth.get_auth_password(auth) if "http-token" not in self._app._local.auth else None
+        try:
+            # NOTE "authenticate" signature is not very clean…
+            user = self._http_auth.authenticate(auth, password)
+            if user is not None and user is not False:
+                return auth.username if user is True else user
+        except ErrorResponse as e:
+            log.debug(f"AUTH (http-*): bad authentication {e}")
+            raise e
+        log.debug("AUTH (http-*): bad authentication")
+        raise self._Err("failed HTTP authentication", 401)
+
+    #
+    # HTTP BASIC AUTH
+    #
+    def _get_basic_auth(self, app, req):
+        """Get user with basic authentication."""
+        auth = req.headers.get("Authorization", None)
+        if not auth:
+            log.debug("AUTH (basic): missing Authorization header")
+            raise self._Err("missing authorization header", 401)
+        if not auth.startswith("Basic "):
+            log.debug(f'AUTH (basic): unexpected auth "{auth}"')
+            raise self._Err("unexpected Authorization header", 401)
+        try:
+            import base64 as b64
+            user, pwd = b64.b64decode(auth[6:]).decode().split(":", 1)
+        except Exception as e:
+            log.debug(f'AUTH (basic): error while decoding auth "{auth}" ({e})')
+            raise self._Err("decoding error on authorization header", 401, e)
+        if not self._pm:
+            raise self._Err(f"password manager is disabled", self._app._server_error)
+        return self._pm.check_user_password(user, pwd)
+
+    #
+    # HTTP PARAM AUTH
+    #
+    # User credentials provided from http or json parameters.
+    #
+    # FSA_PARAM_USER: parameter name for login ("USER")
+    # FSA_PARAM_PASS: parameter name for password ("PASS")
+    #
+    def _get_param_auth(self, app, req):
+        """Get user with parameter authentication."""
+        params = self._app._params()
+        user = params.get(self._userp, None)
+        if not user:
+            raise self._Err(f"missing param login parameter: {self._userp}", 401)
+        pwd = params.get(self._passp, None)
+        if not pwd:
+            raise self._Err(f"missing param password parameter: {self._passp}", 401)
+        if not self._pm:
+            raise self._Err(f"password manager is disabled", self._app._server_error)
+        return self._pm.check_user_password(user, pwd)
+
+    #
+    # HTTP BASIC OR PARAM AUTH
+    #
+    def _get_password_auth(self, app, req) -> str|None:
+        """Get user from basic or param authentication."""
+        try:
+            return self._get_basic_auth(app, req)
+        except ErrorResponse:  # failed, let's try param
+            return self._get_param_auth(app, req)
+
+    #
+    # TOKEN AUTH
+    #
+    def _get_token_auth(self, app, req) -> str|None:
+        """Authenticate with current token."""
+        return self._tm._get_any_token_auth(self._tm._get_token()) if self._tm else None
+
+
 # TODO or not
-# class _AuthenticationManager
 # class _AuthorizationManager
 # class _ParameterManager
 # class _CacheManager
@@ -836,7 +1079,6 @@ class FlaskSimpleAuth:
         self._app.config.update(**config)
         # hooks
         self._error_response: ErrorResponseFun|None = None
-        self._user_in_group: UserInGroupFun|None = None
         self._object_perms: dict[Any, ObjectPermsFun] = dict()
         self._casts: dict[type, CastFun] = {
             bool: lambda s: None if s is None else s.lower() not in ("", "0", "false", "f"),
@@ -861,27 +1103,8 @@ class FlaskSimpleAuth:
             Cookie: lambda p: request.cookies[p],
             Header: lambda p: request.headers[p],
         }
-        self._auth: list[str] = []              # order default authentications
-        self._all_auth: set[str] = set()        # all authentication methods
         # optional managers
-        self._http_auth = None                   # possibly flask_httpauth instance, if needed
-        self._pm: _PasswordManager|None = None   # password manager instance, if needed
-        self._tm: _TokenManager|None = None      # token manager instance, if needed
-        # map auth to their hooks
-        self._authentication: dict[str, AuthenticationFun] = {
-            "none": lambda _a, _r: None,
-            "httpd": self._get_httpd_auth,
-            "token": self._get_token_auth,
-            "oauth": self._get_token_auth,
-            "fake": self._get_fake_auth,
-            "basic": self._get_basic_auth,
-            "digest": self._get_httpauth,
-            "param": self._get_param_auth,
-            "password": self._get_password_auth,
-            "http-basic": self._get_httpauth,
-            "http-digest": self._get_httpauth,
-            "http-token": self._get_httpauth,
-        }
+        self._am: _AuthenticationManager|None = None  # authentication manager
         # cache management
         self._cache: MutableMapping[str, str]|None = None
         self._gen_cache: Callable|None = None
@@ -892,7 +1115,7 @@ class FlaskSimpleAuth:
         self._secure: bool = True
         self._secure_warning = True
         # misc
-        self._auth_params: set[str] = set()  # authentication parameters to ignore
+        self._user_in_group: UserInGroupFun|None = None
         self._groups: set[str|int] = set()   # predeclared groups, error if not there
         self._scopes: set[str] = set()       # idem for scopes
         self._headers: dict[str, HeaderFun|str] = {}  # response headers
@@ -945,13 +1168,6 @@ class FlaskSimpleAuth:
         log.critical(msg)
         return ConfigError(msg)
 
-    def _auth_has(self, *auth):
-        """Tell whether current authentication includes any of these schemes."""
-        for a in auth:
-            if a in self._local.auth:
-                return True
-        return False
-
     #
     # HOOKS
     #
@@ -994,9 +1210,10 @@ class FlaskSimpleAuth:
         self._local.source = None              # what authn has been used
         self._local.user = None                # for this user
         self._local.need_authorization = True  # whether some authz occurred
-        self._local.auth = self._auth          # allowed authn schemes
-        self._local.realm = self._realm        # authn realm
-        self._local.token_realm = self._tm._realm if self._tm else None
+        assert self._am  # mypy…
+        self._local.auth = self._am._auth          # allowed authn schemes
+        self._local.realm = self._am._realm        # authn realm
+        self._local.token_realm = self._am._tm._realm if self._am._tm else None
         self._local.scopes = None              # current oauth scopes
         # parameters
         self._local.params = None              # json|http
@@ -1044,15 +1261,16 @@ class FlaskSimpleAuth:
     def _set_www_authenticate(self, res: Response):
         """Set WWW-Authenticate response header depending on current scheme."""
         if res.status_code == 401:
+            assert self._am  # mypy…
             schemes = set()
             for a in self._local.auth:
-                if a in ("token", "oauth") and self._tm and self._tm._carrier == "bearer":
-                    schemes.add(f'{self._tm._name} realm="{self._local.token_realm}"')
+                if a in ("token", "oauth") and self._am._tm and self._am._tm._carrier == "bearer":
+                    schemes.add(f'{self._am._tm._name} realm="{self._local.token_realm}"')
                 elif a in ("basic", "password"):
                     schemes.add(f'Basic realm="{self._local.realm}"')
                 elif a in ("http-token", "http-basic", "digest", "http-digest"):
-                    assert self._http_auth
-                    schemes.add(self._http_auth.authenticate_header())
+                    assert self._am._http_auth
+                    schemes.add(self._am._http_auth.authenticate_header())
                 # else: scheme does not rely on WWW-Authenticate…
                 # FIXME what about other schemes?
             if schemes:
@@ -1109,9 +1327,10 @@ class FlaskSimpleAuth:
     def get_user_pass(self, gup: GetUserPassFun) -> GetUserPassFun:
         """Set `get_user_pass` helper, can be used as a decorator."""
         self.initialize()
-        if not self._pm:
+        assert self._am  # mypy…
+        if not self._am._pm:
             raise self._Err("password manager is disabled", self._server_error)
-        return self._pm.get_user_pass(gup)
+        return self._am._pm.get_user_pass(gup)
 
     def user_in_group(self, uig: UserInGroupFun) -> UserInGroupFun:
         """Set `user_in_group` helper, can be used as a decorator."""
@@ -1123,21 +1342,23 @@ class FlaskSimpleAuth:
     def password_quality(self, pqc: PasswordQualityFun) -> PasswordQualityFun:
         """Set `password_quality` hook."""
         self.initialize()
-        if not self._pm:
+        assert self._am  # mypy…
+        if not self._am._pm:
             raise self._Err("password manager is disabled", self._server_error)
-        if self._pm._pass_quality:
+        if self._am._pm._pass_quality:
             log.warning("overriding already defined password_quality hook")
-        self._pm._pass_quality = pqc
+        self._am._pm._pass_quality = pqc
         return pqc
 
     def password_check(self, pwc: PasswordCheckFun) -> PasswordCheckFun:
         """Set `password_check` hook."""
         self.initialize()
-        if not self._pm:
+        assert self._am  # mypy…
+        if not self._am._pm:
             raise self._Err("password manager is disabled", self._server_error)
-        if self._pm._pass_check:
+        if self._am._pm._pass_check:
             log.warning("overriding already defined password_check hook")
-        self._pm._pass_check = pwc
+        self._am._pm._pass_check = pwc
         return pwc
 
     def error_response(self, erh: ErrorResponseFun) -> ErrorResponseFun:
@@ -1178,8 +1399,10 @@ class FlaskSimpleAuth:
 
     def authentication(self, auth: str, hook: AuthenticationFun|None = None):
         """Add new authentication hook."""
-        self._add_auth(auth)
-        return self._store(self._authentication, "authentication", auth, hook)
+        self.initialize()
+        assert self._am  # mypy…
+        self._am._add_auth(auth)
+        return self._store(self._am._authentication, "authentication", auth, hook)
 
     def _check_object_perms(self, user, domain, oid, mode):
         """Can user access object oid in domain for mode, cached."""
@@ -1304,23 +1527,7 @@ class FlaskSimpleAuth:
         #
         # overall authn setup
         #
-        auth = conf.get("FSA_AUTH", None)
-        if not auth:
-            self._auth = ["httpd"]
-        elif isinstance(auth, str):
-            if auth not in ("oauth", "token", "http-token"):
-                self._auth = ["token", auth]
-            else:
-                self._auth = [auth]
-        elif isinstance(auth, list):  # keep the provided list, whatever
-            self._auth = auth
-        else:
-            raise self._Bad(f"unexpected FSA_AUTH type: {type(auth)}")
-        # needed for _auth_has used below once for flask_httpauth initialization
-        self._local.auth = self._auth  # type: ignore
-        # authentication realm
-        # FIXME there is a token realm, is this consistent?
-        self._realm = conf.get("FSA_REALM", self._app.name)
+        self._am = _AuthenticationManager(self)
         #
         # authorize
         #
@@ -1405,31 +1612,6 @@ class FlaskSimpleAuth:
             else:
                 raise self._Bad(f"unexpected FSA_CACHE: {cache}")
         #
-        # password and token manager setup
-        #
-        self._pm = _PasswordManager(self) if conf.get("FSA_PASSWORD_SCHEME", _DEFAULT_PASSWORD_SCHEME) else None 
-        self._tm = _TokenManager(self) if conf.get("FSA_TOKEN_TYPE", "fsa") else None
-        #
-        # HTTP parameter names
-        #
-        if "fake" not in self._auth and "FSA_FAKE_LOGIN" in conf:
-            log.warning("ignoring directive FSA_FAKE_LOGIN")
-        if "param" not in self._auth and "password" not in self._auth:
-            if "FSA_PARAM_USER" in conf:
-                log.warning("ignoring directive FSA_PARAM_USER")
-            if "FSA_PARAM_PASS" in conf:
-                log.warning("ignoring directive FSA_PARAM_PASS")
-        self._login = conf.get("FSA_FAKE_LOGIN", "LOGIN")
-        self._userp = conf.get("FSA_PARAM_USER", "USER")
-        self._passp = conf.get("FSA_PARAM_PASS", "PASS")
-        #
-        # authentication checks are delayed here because we may need params
-        #
-        for a in self._auth:
-            if a not in self._authentication:
-                raise self._Bad(f"unexpected auth: {a}")
-            self._add_auth(a)
-        #
         # authentication, authorization and other hooks
         #
         if "FSA_USER_IN_GROUP" in conf:
@@ -1448,40 +1630,8 @@ class FlaskSimpleAuth:
         _set_hooks("FSA_CAST", self.cast)
         _set_hooks("FSA_OBJECT_PERMS", self.object_perms)
         _set_hooks("FSA_SPECIAL_PARAMETER", self.special_parameter)
+        # TODO move to _AuthenticationManager?
         _set_hooks("FSA_AUTHENTICATION", self.authentication)
-        #
-        # http auth setup
-        #
-        if self._auth_has("http-basic", "http-digest", "http-token", "digest"):
-            opts = conf.get("FSA_HTTP_AUTH_OPTS", {})
-            try:
-                import flask_httpauth as fha  # type: ignore
-            except ModuleNotFoundError:  # pragma: no cover
-                log.error("missing module: install FlaskSimpleAuth[httpauth]")
-                raise
-
-            if "http-basic" in self._auth:
-                self._http_auth = fha.HTTPBasicAuth(realm=self._realm, **opts)
-                assert self._http_auth is not None  # for pleasing mypy
-                self._http_auth.verify_password(self._pm.check_user_password)
-            elif self._auth_has("http-digest", "digest"):
-                self._http_auth = fha.HTTPDigestAuth(realm=self._realm, **opts)
-                assert self._http_auth is not None  # for pleasing mypy
-                # FIXME? nonce & opaque callbacks? session??
-            elif "http-token" in self._auth:
-                if not self._tm:  # pragma: no cover
-                    raise self._Bad("cannot use http-token auth if token is disabled")
-                # NOTE incompatible with local realm
-                if self._tm._carrier == "header" and "header" not in opts and self._tm._name:
-                    opts["header"] = self._tm._name
-                self._http_auth = fha.HTTPTokenAuth(scheme=self._tm._name, realm=self._tm._realm, **opts)
-                assert self._http_auth is not None  # for pleasing mypy
-                self._http_auth.verify_token(lambda t: self._tm._get_any_token_auth(t, self._tm._realm))
-            assert self._http_auth is not None  # for pleasing mypy
-            self._http_auth.get_password(self._pm._get_user_pass)
-            # FIXME? error_handler?
-        else:
-            self._http_auth = None
         # headers
         self._headers.update(conf.get("FSA_ADD_HEADERS", {}))
         #
@@ -1501,8 +1651,8 @@ class FlaskSimpleAuth:
         if self._headers:
             self._app.after_request(self._add_headers)
         self._app.after_request(self._set_www_authenticate)  # always for auth=…
-        if self._tm and self._tm._carrier == "cookie":
-            self._app.after_request(self._tm._set_auth_cookie)
+        if self._am._tm and self._am._tm._carrier == "cookie":
+            self._app.after_request(self._am._tm._set_auth_cookie)
         if self._401_redirect:
             self._app.after_request(self._possible_redirect)
         self._app.after_request(self._auth_post_check)
@@ -1529,153 +1679,39 @@ class FlaskSimpleAuth:
         # done!
         self._initialized = True
 
-    def _add_auth(self, auth: str):
-        """Register that an authentication method is used."""
-        if not isinstance(auth, str):  # pragma: no cover
-            raise self._Bad(f"unexpected authentication identifier type: {type(auth)}")
-        if auth in self._all_auth:
-            return
-        self._all_auth.add(auth)
-        # possibly add parameters to ignore silently
-        if auth in ("param", "password"):
-            self._auth_params.add(self._userp)
-            self._auth_params.add(self._passp)
-        if auth == "fake":
-            self._auth_params.add(self._login)
-        if auth == "token":
-            if not self._tm:  # pragma: no cover
-                raise self._Bad("cannot use token auth if token is disabled")
-            if self._tm._carrier == "param":
-                assert isinstance(self._tm._name, str)
-                self._auth_params.add(self._tm._name)
-
-    #
-    # INHERITED HTTP AUTH
-    #
-    def _get_httpd_auth(self, app, req) -> str|None:
-        """Inherit HTTP server authentication."""
-        return req.remote_user
-
-    #
-    # HTTP FAKE AUTH
-    #
-    # Just trust a parameter, *only* for local testing.
-    #
-    # FSA_FAKE_LOGIN: name of parameter holding the login ("LOGIN")
-    #
-    def _get_fake_auth(self, app, req):
-        """Return fake user. Only for local tests."""
-        assert req.remote_addr.startswith("127.") or req.remote_addr == "::1", \
-            "fake auth only on localhost"
-        params = self._params()
-        user = params.get(self._login, None)
-        if not user:
-            raise self._Err(f"missing fake login parameter: {self._login}", 401)
-        return user
-
     #
     # PASSWORD CHECKS
     #
     def check_password(self, pwd, ref):
         """Verify whether a password is correct compared to a reference (eg salted hash)."""
         self.initialize()
-        if not self._pm:
+        assert self._am  # mypy…
+        if not self._am._pm:
             raise self._Err(f"password manager is disabled", self._server_error)
-        return self._pm.check_password(pwd, ref)
+        return self._am._pm.check_password(pwd, ref)
 
     def hash_password(self, pwd, check=True):
         """Hash password according to the current password scheme."""
         self.initialize()
-        if not self._pm:
+        assert self._am  # mypy…
+        if not self._am._pm:
             raise self._Err("password manager is disabled", self._server_error)
-        return self._pm.hash_password(pwd, check)
+        return self._am._pm.hash_password(pwd, check)
 
     #
-    # FLASK HTTP AUTH (BASIC, DIGEST, TOKEN)
+    # TOKEN
     #
-    def _get_httpauth(self, app, req):
-        """Delegate user authentication to HTTPAuth."""
-        assert self._http_auth
-        auth = self._http_auth.get_auth()
-        password = self._http_auth.get_auth_password(auth) if "http-token" not in self._local.auth else None
-        try:
-            # NOTE "authenticate" signature is not very clean…
-            user = self._http_auth.authenticate(auth, password)
-            if user is not None and user is not False:
-                return auth.username if user is True else user
-        except ErrorResponse as e:
-            log.debug(f"AUTH (http-*): bad authentication {e}")
-            raise e
-        log.debug("AUTH (http-*): bad authentication")
-        raise self._Err("failed HTTP authentication", 401)
-
-    #
-    # HTTP BASIC AUTH
-    #
-    def _get_basic_auth(self, app, req):
-        """Get user with basic authentication."""
-        auth = req.headers.get("Authorization", None)
-        if not auth:
-            log.debug("AUTH (basic): missing Authorization header")
-            raise self._Err("missing authorization header", 401)
-        if not auth.startswith("Basic "):
-            log.debug(f'AUTH (basic): unexpected auth "{auth}"')
-            raise self._Err("unexpected Authorization header", 401)
-        try:
-            import base64 as b64
-            user, pwd = b64.b64decode(auth[6:]).decode().split(":", 1)
-        except Exception as e:
-            log.debug(f'AUTH (basic): error while decoding auth "{auth}" ({e})')
-            raise self._Err("decoding error on authorization header", 401, e)
-        if not self._pm:
-            raise self._Err(f"password manager is disabled", self._server_error)
-        return self._pm.check_user_password(user, pwd)
-
-    #
-    # HTTP PARAM AUTH
-    #
-    # User credentials provided from http or json parameters.
-    #
-    # FSA_PARAM_USER: parameter name for login ("USER")
-    # FSA_PARAM_PASS: parameter name for password ("PASS")
-    #
-    def _get_param_auth(self, app, req):
-        """Get user with parameter authentication."""
-        params = self._params()
-        user = params.get(self._userp, None)
-        if not user:
-            raise self._Err(f"missing param login parameter: {self._userp}", 401)
-        pwd = params.get(self._passp, None)
-        if not pwd:
-            raise self._Err(f"missing param password parameter: {self._passp}", 401)
-        if not self._pm:
-            raise self._Err(f"password manager is disabled", self._server_error)
-        return self._pm.check_user_password(user, pwd)
-
-    #
-    # HTTP BASIC OR PARAM AUTH
-    #
-    def _get_password_auth(self, app, req) -> str|None:
-        """Get user from basic or param authentication."""
-        try:
-            return self._get_basic_auth(app, req)
-        except ErrorResponse:  # failed, let's try param
-            return self._get_param_auth(app, req)
-
-    #
-    # TOKEN AUTH
-    #
-    def _get_token_auth(self, app, req) -> str|None:
-        """Authenticate with current token."""
-        return self._tm._get_any_token_auth(self._tm._get_token()) if self._tm else None
-
     def create_token(self, *args, **kwargs):
-        if not self._tm:  # pragma: no cover
+        self.initialize()
+        assert self._am  # mypy…
+        if not self._am._tm:  # pragma: no cover
             raise ErrorResponse("token manager is disabled", self._server_error)
-        return self._tm.create_token(*args, **kwargs)
+        return self._am._tm.create_token(*args, **kwargs)
 
     #
     # AUTHENTICATE WITH ANY MEAN
+    #
+    # TODO move partially to _AuthenticationManager?
     #
     def get_user(self, required=True) -> str|None:
         """Authenticate user or throw exception."""
@@ -1685,12 +1721,13 @@ class FlaskSimpleAuth:
             return self._local.user
 
         assert self._initialized, "FlaskSimpleAuth must be initialized"
+        assert self._am  # mypy
 
         # try authentication schemes
         lae = None
         for a in self._local.auth:
             try:
-                self._local.user = self._authentication[a](self, request)
+                self._local.user = self._am._authentication[a](self, request)
                 if self._local.user:
                     self._local.source = a
                     break
@@ -1725,13 +1762,14 @@ class FlaskSimpleAuth:
         """Create caches around some functions."""
         if self._gen_cache is not None and self._cache is not None:
             log.debug(f"caching: {self._CACHABLE}")
+            assert self._am  # mypy…
             import CacheToolsUtils as ctu
 
             ctu.cacheMethods(cache=self._cache, obj=self, gen=self._gen_cache, **self._CACHABLE)
-            if self._tm:
-                ctu.cacheMethods(cache=self._cache, obj=self._tm, gen=self._gen_cache, _get_any_token_auth_exp="t.")
-            if self._pm:
-                ctu.cacheMethods(cache=self._cache, obj=self._pm, gen=self._gen_cache, _get_user_pass="u.")
+            if self._am._tm:
+                ctu.cacheMethods(cache=self._cache, obj=self._am._tm, gen=self._gen_cache, _get_any_token_auth_exp="t.")
+            if self._am._pm:
+                ctu.cacheMethods(cache=self._cache, obj=self._am._pm, gen=self._gen_cache, _get_user_pass="u.")
 
     def clear_caches(self):
         """Clear internal shared cache.
@@ -1772,12 +1810,15 @@ class FlaskSimpleAuth:
 
     def _authenticate(self, path, auth=None, realm=None):
         """Decorator to authenticate current user."""
+
+        assert self._am  # mypy
+
         # check auth parameter
         if auth:
             if isinstance(auth, str):
                 auth = [auth]
             for a in auth:
-                if a not in self._authentication:
+                if a not in self._am._authentication:
                     raise self._Bad(f"unexpected authentication scheme {auth} on {path}")
 
         def decorate(fun: Callable):
@@ -1884,7 +1925,9 @@ class FlaskSimpleAuth:
 
     # just to record that no authorization check was needed
     def _no_authz(self, path, *groups):
+
         def decorate(fun: Callable):
+
             @functools.wraps(fun)
             def wrapper(*args, **kwargs):
                 self._local.need_authorization = False
@@ -1896,15 +1939,18 @@ class FlaskSimpleAuth:
 
     # just check that there are no unused parameters
     def _noparams(self, path):
+
         def decorate(fun: Callable):
+
             @functools.wraps(fun)
             def wrapper(*args, **kwargs):
+                assert self._am  # mypy…
                 if self._reject_param:
                     params = self._params()
                     if params:
                         sparams = set(params.keys())
-                        if not sparams.issubset(self._auth_params):
-                            bads = ' '.join(sorted(list(sparams - self._auth_params)))
+                        if not sparams.issubset(self._am._auth_params):
+                            bads = ' '.join(sorted(list(sparams - self._am._auth_params)))
                             return f"unexpected {self._local.params} parameters: {bads}", 400
                     fparams = request.files
                     if fparams:
@@ -1991,6 +2037,8 @@ class FlaskSimpleAuth:
             def wrapper(*args, **kwargs):
                 # NOTE *args and **kwargs are empty before being filled in from HTTP
 
+                assert self._am  # mypy…
+
                 # translate request parameters to named function parameters
                 params = self._params()  # HTTP or JSON params
                 fparams = request.files  # FILE params
@@ -2061,16 +2109,16 @@ class FlaskSimpleAuth:
                 # possibly add others, without shadowing already provided ones
                 if keywords:  # handle **kwargs
                     for p in params:
-                        if p not in kwargs and p not in self._auth_params:
+                        if p not in kwargs and p not in self._am._auth_params:
                             kwargs[p] = params[p]  # FIXME names[p]?
                     for p in fparams:
-                        if p not in kwargs and p not in self._auth_params:
+                        if p not in kwargs and p not in self._am._auth_params:
                             kwargs[p] = fparams[p]  # FIXME?
                 elif self._mode >= Mode.DEBUG or self._reject_param:
                     # detect unused parameters and warn or reject them
                     for p in params:
                         # NOTE we silently ignore special authentication params
-                        if p not in names and p not in self._auth_params:
+                        if p not in names and p not in self._am._auth_params:
                             if self._mode >= Mode.DEBUG:
                                 log.debug(f"unexpected {self._local.params} parameter \"{p}\"")
                                 if self._mode >= Mode.DEBUG2:
@@ -2201,6 +2249,8 @@ class FlaskSimpleAuth:
         if not self._initialized:
             self.initialize()
 
+        assert self._am  # mypy…
+
         # ensure that authorize is a list
         if type(authorize) in (int, str, tuple):
             authorize = [authorize]
@@ -2209,13 +2259,16 @@ class FlaskSimpleAuth:
         if auth is None:
             pass
         elif isinstance(auth, str):
-            self._add_auth(auth)
+            self._am._add_auth(auth)
         elif isinstance(auth, (list, tuple)):
             # this also checks that list items are str
             for a in auth:
-                self._add_auth(a)
+                self._am._add_auth(a)
         else:
             raise self._Bad(f"unexpected auth type, should be str, list or tuple: {type(auth)}")
+
+        # FIXME should be in a non existing ready-to-run hook
+        self._am._check_auth_consistency()
 
         # normalize None to NONE
         authorize = list(map(lambda a: NONE if a is None else a, authorize))
@@ -2231,10 +2284,10 @@ class FlaskSimpleAuth:
             auth = "oauth"
 
         if auth == "oauth":  # sanity checks
-            assert self._tm  # please mypy
-            if self._tm._token != "jwt":
+            assert self._am._tm  # please mypy
+            if self._am._tm._token != "jwt":
                 raise self._Bad(f"oauth authorizations require JWT tokens on {rule}")
-            if not self._tm._issuer:
+            if not self._am._tm._issuer:
                 raise self._Bad(f"oauth token authorizations require FSA_TOKEN_ISSUER on {rule}")
 
         # separate predefs, groups and perms

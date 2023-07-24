@@ -7,7 +7,7 @@ and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 
 Add support for custom authentication.
 Extend `ErrorResponse` with headers and content type.
-Refactor token and password management.
+Refactor token, password and authentication management.
 
 ## 23.2 on 2023-07-23
 

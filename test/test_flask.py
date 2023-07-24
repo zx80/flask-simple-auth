@@ -56,7 +56,7 @@ def has_service(host="localhost", port=22):
 def test_sanity():
     assert App.app is not None and fsa is not None
     assert App.app.name == "Test"
-    assert app._fsa._realm == "Test"
+    assert app._fsa._am._realm == "Test"
     assert 'FSA_AUTH' in app.config
     assert "dad" in App.UHP
     assert "calvin" in App.UHP
@@ -91,14 +91,14 @@ def push_auth(app, auth, token = None, carrier = None, name = None):
     # assert auth in (None, "none", "fake", "basic", "param", "password", "token", "http-token")
     assert token in (None, "fsa", "jwt")
     assert carrier in (None , "bearer", "param", "cookie", "header")
-    app_saved_auth.update(a = app._auth, t = app._tm._token, c = app._tm._carrier, n = app._tm._name)
-    app._auth = [auth] if isinstance(auth, str) else auth
-    app._tm._token, app._tm._carrier, app._tm._name = token, carrier, name
-    app._auth_params.add(name)
+    app_saved_auth.update(a = app._am._auth, t = app._am._tm._token, c = app._am._tm._carrier, n = app._am._tm._name)
+    app._am._auth = [auth] if isinstance(auth, str) else auth
+    app._am._tm._token, app._am._tm._carrier, app._am._tm._name = token, carrier, name
+    app._am._auth_params.add(name)
 
 def pop_auth(app):
     d = app_saved_auth
-    app._auth, app._tm._token, app._tm._carrier, app._tm._name = d["a"], d["t"], d["c"], d["n"]
+    app._am._auth, app._am._tm._token, app._am._tm._carrier, app._am._tm._name = d["a"], d["t"], d["c"], d["n"]
     d.clear()
 
 def auth_header_basic(user: str):
@@ -243,11 +243,11 @@ def test_register(client):
     pop_auth(app._fsa)
 
 def test_fsa_token():
-    tm = app._fsa._tm
+    tm = app._fsa._am._tm
     tsave, hsave = tm._token, tm._algo
     tm._token, tm._algo = "fsa", "blake2s"
     tm._issuer = "self"
-    app._fsa._local.token_realm = app._fsa._realm
+    app._fsa._local.token_realm = app._fsa._am._realm
     foo_token = app.create_token("foo")
     assert foo_token.startswith("Test/self:foo:")
     assert tm._get_any_token_auth(foo_token) == "foo"
@@ -320,7 +320,7 @@ JtTFy+PPh909GQIhAMokyDzv42nWS0hiE6ofuDQZZcqz1LVotcH4wN3rMExRAiAd
 """
 
 def test_jwt_token():
-    tm = app._fsa._tm
+    tm = app._fsa._am._tm
     tsave, hsave, tm._token, tm._algo = tm._token, tm._algo, "jwt", "HS256"
     Ksave, ksave = tm._secret, tm._sign
     # hmac signature scheme
@@ -364,7 +364,7 @@ def test_jwt_token():
     tm._secret, tm._sign = Ksave, ksave
 
 def test_invalid_token():
-    tm = app._fsa._tm
+    tm = app._fsa._am._tm
     # bad token
     susie_token = app.create_token("susie", tm._realm)
     susie_token = susie_token[:-1] + "z"
@@ -394,7 +394,7 @@ def test_password_check(client):
     fsa = app._fsa
     # standard password
     fsa.initialize()
-    pm = fsa._pm
+    pm = fsa._am._pm
     ref = app.hash_password("hello")
     assert app.check_password("hello", ref)
     assert not app.check_password("bad-pass", ref)
@@ -459,7 +459,7 @@ def test_plaintext_password():
 def test_password_quality():
     mode = app._fsa._mode
     app._fsa._mode = fsa.Mode.DEBUG3
-    pm = app._fsa._pm
+    pm = app._fsa._am._pm
     # password len
     assert pm._pass_len == 0
     assert app.hash_password("") is not None
@@ -882,10 +882,10 @@ def test_http_token():
         assert res.data == b"calvin"
         # check header with http auth
         push_auth(app._fsa, "http-token", "fsa", "header", "HiHiHi")
-        app._fsa._http_auth.header = "HiHiHi"
+        app._fsa._am._http_auth.header = "HiHiHi"
         res = check(200, client.get("/token", headers={"HiHiHi": calvin_token}))
         assert res.data == b"calvin"
-        app._fsa._http_auth.header = None
+        app._fsa._am._http_auth.header = None
         pop_auth(app._fsa)
         # check header token fallback
         push_auth(app._fsa, "token", "fsa", "header", "HoHoHo")
@@ -1005,7 +1005,7 @@ def test_bad_app():
         app = create_app(FSA_AUTH=[1])
         assert False, "bad app creation must fail"
     except ConfigError as e:
-        assert "unexpected auth: 1" in str(e)
+        assert "unexpected authentication id" in str(e)
     try:
         app = create_app(FSA_AUTH=["fake", "basic", "bad"])
         assert False, "bad app creation must fail"
@@ -1316,8 +1316,8 @@ def test_authorize_errors():
         assert "no-such-group" in str(e)
     try:
         app.add_scope("foo", "bla")
-        app._fsa._tm._token = "jwt"
-        app._fsa._tm._issuer = "calvin"
+        app._fsa._am._tm._token = "jwt"
+        app._fsa._am._tm._issuer = "calvin"
         @app.get("/bad-scope", authorize="no-such-scope", auth="oauth")
         def get_bad_scope():
             return "should not get there", 200
@@ -1458,7 +1458,7 @@ def test_warnings_and_errors():
     except fsa.ErrorResponse as e:
         assert e.status == 400 and "must match" in e.message
     try:
-        app._fsa._pm.check_user_password("calvin", "hobbes")
+        app._fsa._am._pm.check_user_password("calvin", "hobbes")
         assert False, "should not get through"
     except fsa.ErrorResponse as e:
         assert e.status == 518 and "bad" in e.message
@@ -1471,7 +1471,7 @@ def test_warnings_and_errors():
     )
     app._fsa.initialize()
     try:
-        app._fsa._pm.check_user_password("calvin", "hobbes")
+        app._fsa._am._pm.check_user_password("calvin", "hobbes")
         assert False, "should not get through"
     except fsa.ErrorResponse as e:
         assert e.status == 500 and "internal error with get_user_pass" in e.message
@@ -1552,7 +1552,7 @@ def test_jsondata(client):
 
 def test_www_authenticate_priority(client):
     # save current status
-    tm = app._fsa._tm
+    tm = app._fsa._am._tm
     token, carrier, name = tm._token, tm._carrier, tm._name
     tm._token, tm._carrier, tm._name = "fsa", "bearer", "Bearer"
     BASIC = auth_header_basic("calvin")
@@ -1608,7 +1608,7 @@ def test_jwt_authorization():
         assert False, "route should be rejected"
     except fsa.ConfigError as e:
         assert "mixed" in str(e)
-    app._fsa._tm._issuer = None
+    app._fsa._am._tm._issuer = None
     try:
         @app.patch("/any/stuff", authorize=["write"], auth="oauth")
         def patch_any_stuff():
@@ -1616,9 +1616,9 @@ def test_jwt_authorization():
         assert False, "route should be rejected"
     except fsa.ConfigError as e:
         assert "ISSUER" in str(e)
-    app._fsa._tm._issuer = "god"
+    app._fsa._am._tm._issuer = "god"
     # usage errors
-    a = app._fsa._tm
+    a = app._fsa._am._tm
     rosalyn_token = a._get_jwt_token(a._realm, "god", "rosalyn", 10.0, a._secret, scope=["character"])
     rosalyn_auth=("Authorization", f"Bearer {rosalyn_token}")
     moe_token = a._get_jwt_token(a._realm, "god", "moe", 10.0, a._secret, scope=["sidekick"])

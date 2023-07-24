@@ -56,7 +56,7 @@ def create_app(**config):
         return json((len(app._fsa._cache), app._fsa._cache.hits())), 200
 
     # OAuth 2.0
-    if app._fsa._tm and app._fsa._tm._token == "jwt":
+    if app._fsa._am._tm and app._fsa._am._tm._token == "jwt":
         @app.get("/perm/jwt-authz", authorize="character", auth="oauth")
         def get_perm_jwt_authz():
             return f"jwt-authz: {app.get_user()}", 200
