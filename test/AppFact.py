@@ -53,7 +53,7 @@ def create_app(**config):
 
     @app.get("/hits", authorize=ADMIN)
     def get_hits():
-        return json((len(app._fsa._cache), app._fsa._cache.hits())), 200
+        return json((len(app._fsa._cm._cache), app._fsa._cm._cache.hits())), 200
 
     # OAuth 2.0
     if app._fsa._am._tm and app._fsa._am._tm._token == "jwt":

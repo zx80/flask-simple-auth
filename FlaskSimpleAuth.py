@@ -1060,10 +1060,107 @@ class _AuthenticationManager:
         return self._tm._get_any_token_auth(self._tm._get_token()) if self._tm else None
 
 
+class _CacheManager:
+    """Internal cache management."""
+
+    def __init__(self, app):
+        assert isinstance(app, FlaskSimpleAuth)
+        self._app = app
+        conf = app._app.config
+        self._Bad = app._Bad
+        # caching stuff
+        self._cache_opts: dict[str, Any] = conf.get("FSA_CACHE_OPTS", {})
+        cache = conf.get("FSA_CACHE", _DEFAULT_CACHE)
+        assert cache is not None
+        if cache:
+            # NOTE no try/except because the dependency is mandatory
+            import cachetools as ct
+            import CacheToolsUtils as ctu  # type: ignore
+
+            prefix = conf.get("FSA_CACHE_PREFIX", None)
+            if cache in ("ttl", "lru", "lfu", "mru", "fifo", "rr", "dict"):
+                maxsize = conf.get("FSA_CACHE_SIZE", _DEFAULT_CACHE_SIZE)
+                # build actual storage tier
+                if cache == "ttl":
+                    ttl = self._cache_opts.pop("ttl", _DEFAULT_CACHE_TTL)
+                    rcache: MutableMapping = ct.TTLCache(maxsize, **self._cache_opts, ttl=ttl)
+                elif cache == "lru":
+                    rcache = ct.LRUCache(maxsize, **self._cache_opts)
+                elif cache == "lfu":
+                    rcache = ct.LFUCache(maxsize, **self._cache_opts)
+                elif cache == "mru":
+                    rcache = ct.MRUCache(maxsize, **self._cache_opts)
+                elif cache == "fifo":
+                    rcache = ct.FIFOCache(maxsize, **self._cache_opts)
+                elif cache == "rr":
+                    rcache = ct.RRCache(maxsize, **self._cache_opts)
+                elif cache == "dict":
+                    rcache = dict()
+                else:  # pragma: no cover
+                    raise self._Bad(f"unexpected simple cache type: {cache}")
+                if prefix:
+                    rcache = ctu.PrefixedCache(rcache, prefix)
+                self._cache: MutableMapping[str, str] = ctu.StatsCache(rcache)
+                self._gen_cache: Callable = ctu.PrefixedCache
+            elif cache in ("memcached", "pymemcache"):
+                try:
+                    import pymemcache as pmc  # type: ignore
+                except ModuleNotFoundError:  # pragma: no cover
+                    log.error("missing module: install FlaskSimpleAuth[memcached]")
+                    raise
+
+                if "serde" not in self._cache_opts:
+                    self._cache_opts.update(serde=ctu.JsonSerde())
+                if prefix and "key_prefix" not in self._cache_opts:
+                    self._cache_opts.update(key_prefix=prefix.encode("utf-8"))
+                self._cache = ctu.StatsMemCached(pmc.Client(**self._cache_opts))
+                self._gen_cache = ctu.PrefixedMemCached
+            elif cache == "redis":
+                try:
+                    import redis
+                except ModuleNotFoundError:  # pragma: no cover
+                    log.error("missing module: install FlaskSimpleAuth[redis]")
+                    raise
+
+                ttl = self._cache_opts.pop("ttl", _DEFAULT_CACHE_TTL)
+                rc = redis.Redis(**self._cache_opts)
+                if prefix:
+                    self._cache = ctu.PrefixedRedisCache(rc, prefix=prefix, ttl=ttl)
+                else:
+                    self._cache = ctu.RedisCache(rc, ttl=ttl)
+                self._gen_cache = ctu.PrefixedRedisCache
+            else:
+                raise self._Bad(f"unexpected FSA_CACHE: {cache}")
+        self._cached = False
+
+    def _set_caches(self):
+        """Deferred creation of caches around some functions."""
+        if self._cached:
+            return
+
+        log.debug(f"setting up cache…")
+        assert self._app._am  # mypy…
+        import CacheToolsUtils as ctu
+
+        assert self._app._am  # mypy…
+
+        for obj, meth, prefix in [
+            (self._app, "_user_in_group", "g."),
+            (self._app, "_check_object_perms", "p."),
+            (self._app._am._tm, "_get_any_token_auth_exp", "t."),
+            (self._app._am._pm, "_get_user_pass", "u.") ]:
+            if obj and hasattr(obj, meth):
+                log.info(f"cache: caching {meth[1:]}")
+                ctu.cacheMethods(cache=self._cache, obj=obj, gen=self._gen_cache, **{meth: prefix})
+            else:
+                log.info(f"cache: skipping {meth[1:]}")
+
+        # do not process again!
+        self._cached = True
+
 # TODO or not
 # class _AuthorizationManager
 # class _ParameterManager
-# class _CacheManager
 
 # actual extension
 class FlaskSimpleAuth:
@@ -1104,10 +1201,8 @@ class FlaskSimpleAuth:
             Header: lambda p: request.headers[p],
         }
         # optional managers
-        self._am: _AuthenticationManager|None = None  # authentication manager
-        # cache management
-        self._cache: MutableMapping[str, str]|None = None
-        self._gen_cache: Callable|None = None
+        self._am: _AuthenticationManager|None = None
+        self._cm: _CacheManager|None = None
         # fsa-generated errors
         self._server_error: int = _DEFAULT_SERVER_ERROR
         self._not_found_error: int = _DEFAULT_NOT_FOUND_ERROR
@@ -1525,14 +1620,9 @@ class FlaskSimpleAuth:
         self._reject_param = \
             conf.get("FSA_REJECT_UNEXPECTED_PARAM", _DEFAULT_REJECT_UNEXPECTED_PARAM)
         #
-        # overall authn setup
+        # authentication
         #
         self._am = _AuthenticationManager(self)
-        #
-        # authorize
-        #
-        self._groups.update(conf.get("FSA_AUTHZ_GROUPS", []))
-        self._scopes.update(conf.get("FSA_AUTHZ_SCOPES", []))
         #
         # web apps…
         #
@@ -1548,72 +1638,11 @@ class FlaskSimpleAuth:
         self._401_redirect: str|None = conf.get("FSA_401_REDIRECT", None)
         self._url_name: str|None = conf.get("FSA_URL_NAME", "URL" if self._401_redirect else None)
         #
-        # cache management for passwords, permissions, tokens…
-        #
-        self._cache_opts: dict[str, Any] = conf.get("FSA_CACHE_OPTS", {})
-        cache = conf.get("FSA_CACHE", _DEFAULT_CACHE)
-        if cache:
-            # NOTE no try/except because the dependency is mandatory
-            import cachetools as ct
-            import CacheToolsUtils as ctu  # type: ignore
-
-            prefix = conf.get("FSA_CACHE_PREFIX", None)
-            if cache in ("ttl", "lru", "lfu", "mru", "fifo", "rr", "dict"):
-                maxsize = conf.get("FSA_CACHE_SIZE", _DEFAULT_CACHE_SIZE)
-                # build actual storage tier
-                if cache == "ttl":
-                    ttl = self._cache_opts.pop("ttl", _DEFAULT_CACHE_TTL)
-                    rcache: MutableMapping = ct.TTLCache(maxsize, **self._cache_opts, ttl=ttl)
-                elif cache == "lru":
-                    rcache = ct.LRUCache(maxsize, **self._cache_opts)
-                elif cache == "lfu":
-                    rcache = ct.LFUCache(maxsize, **self._cache_opts)
-                elif cache == "mru":
-                    rcache = ct.MRUCache(maxsize, **self._cache_opts)
-                elif cache == "fifo":
-                    rcache = ct.FIFOCache(maxsize, **self._cache_opts)
-                elif cache == "rr":
-                    rcache = ct.RRCache(maxsize, **self._cache_opts)
-                elif cache == "dict":
-                    rcache = dict()
-                else:  # pragma: no cover
-                    raise self._Bad(f"unexpected simple cache type: {cache}")
-                if prefix:
-                    rcache = ctu.PrefixedCache(rcache, prefix)
-                self._cache = ctu.StatsCache(rcache)
-                self._gen_cache = ctu.PrefixedCache
-            elif cache in ("memcached", "pymemcache"):
-                try:
-                    import pymemcache as pmc  # type: ignore
-                except ModuleNotFoundError:  # pragma: no cover
-                    log.error("missing module: install FlaskSimpleAuth[memcached]")
-                    raise
-
-                if "serde" not in self._cache_opts:
-                    self._cache_opts.update(serde=ctu.JsonSerde())
-                if prefix and "key_prefix" not in self._cache_opts:
-                    self._cache_opts.update(key_prefix=prefix.encode("utf-8"))
-                self._cache = ctu.StatsMemCached(pmc.Client(**self._cache_opts))
-                self._gen_cache = ctu.PrefixedMemCached
-            elif cache == "redis":
-                try:
-                    import redis
-                except ModuleNotFoundError:  # pragma: no cover
-                    log.error("missing module: install FlaskSimpleAuth[redis]")
-                    raise
-
-                ttl = self._cache_opts.pop("ttl", _DEFAULT_CACHE_TTL)
-                rc = redis.Redis(**self._cache_opts)
-                if prefix:
-                    self._cache = ctu.PrefixedRedisCache(rc, prefix=prefix, ttl=ttl)
-                else:
-                    self._cache = ctu.RedisCache(rc, ttl=ttl)
-                self._gen_cache = ctu.PrefixedRedisCache
-            else:
-                raise self._Bad(f"unexpected FSA_CACHE: {cache}")
-        #
         # authentication, authorization and other hooks
         #
+        self._groups.update(conf.get("FSA_AUTHZ_GROUPS", []))
+        self._scopes.update(conf.get("FSA_AUTHZ_SCOPES", []))
+
         if "FSA_USER_IN_GROUP" in conf:
             self.user_in_group(conf["FSA_USER_IN_GROUP"])
 
@@ -1673,9 +1702,13 @@ class FlaskSimpleAuth:
         else:  # pragma: no cover
             raise self._Bad("unexpected Flask version while dealing with blueprints?")
         #
-        # caches
+        # CACHE
         #
-        self._set_caches()
+        # NOTE this is too early to create per function caches because they may not be
+        # initialized yet…
+        #
+        self._cm = _CacheManager(self) if conf.get("FSA_CACHE", _DEFAULT_CACHE) else None
+        #
         # done!
         self._initialized = True
 
@@ -1752,25 +1785,6 @@ class FlaskSimpleAuth:
         """Return current authenticated user, if any."""
         return self._local.user
 
-    # authentication and authorization methods that can/should be cached
-    _CACHABLE = {
-        "_user_in_group": "g.",
-        "_check_object_perms": "p.",
-    }
-
-    def _set_caches(self):
-        """Create caches around some functions."""
-        if self._gen_cache is not None and self._cache is not None:
-            log.debug(f"caching: {self._CACHABLE}")
-            assert self._am  # mypy…
-            import CacheToolsUtils as ctu
-
-            ctu.cacheMethods(cache=self._cache, obj=self, gen=self._gen_cache, **self._CACHABLE)
-            if self._am._tm:
-                ctu.cacheMethods(cache=self._cache, obj=self._am._tm, gen=self._gen_cache, _get_any_token_auth_exp="t.")
-            if self._am._pm:
-                ctu.cacheMethods(cache=self._cache, obj=self._am._pm, gen=self._gen_cache, _get_user_pass="u.")
-
     def clear_caches(self):
         """Clear internal shared cache.
 
@@ -1780,9 +1794,9 @@ class FlaskSimpleAuth:
 
         The best option is to wait for cache entries to expire with a TTL.
         """
-        if not self._cache:  # pragma: no cover
+        if not self._cm:  # pragma: no cover
             raise ErrorResponse("cannot clear cache, cache is disabled", self._server_error)
-        self._cache.clear()
+        self._cm._cache.clear()
 
     #
     # INTERNAL DECORATORS
@@ -2269,6 +2283,8 @@ class FlaskSimpleAuth:
 
         # FIXME should be in a non existing ready-to-run hook
         self._am._check_auth_consistency()
+        if self._cm:
+            self._cm._set_caches()
 
         # normalize None to NONE
         authorize = list(map(lambda a: NONE if a is None else a, authorize))
