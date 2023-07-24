@@ -559,13 +559,13 @@ def test_typed_params(client):
     res = check(200, client.get("/add/2", data={"a":"2.0", "b":"4.0"}))
     assert float(res.data) == 12.0
     # unused params are ignored
-    app._fsa._reject_param = False
+    app._fsa._pm._reject_param = False
     res = check(200, client.get("/mul/2", data={"j":"3", "k":"4", "unused":"x"}))
     assert int(res.data) == 24
     res = check(200, client.get("/mul/2", json={"j":5, "k":"4", "unused":"y"}))
     assert int(res.data) == 40
     # unused params are rejected
-    app._fsa._reject_param = True
+    app._fsa._pm._reject_param = True
     res = check(400, client.get("/mul/2", data={"j":"3", "k":"4", "unused":"x"}))
     res = check(400, client.get("/mul/2", json={"j":5, "k":"4", "unused":"y"}))
     # type errors
@@ -1491,11 +1491,11 @@ def test_warnings_and_errors():
     @app.cast("foo")
     def cast_foo(s: str):
         return s
-    assert app._fsa._casts["foo"] == cast_foo
+    assert app._fsa._pm._casts["foo"] == cast_foo
     app.cast("foo", lambda x: cast_foo(x))
-    assert app._fsa._casts["foo"] != cast_foo
+    assert app._fsa._pm._casts["foo"] != cast_foo
     s = "Hello World!"
-    assert app._fsa._casts["foo"](s) == cast_foo(s)
+    assert app._fsa._pm._casts["foo"](s) == cast_foo(s)
     # OAuth2 warnings
     app = af.create_app(FSA_TOKEN_SCOPE=True)
     # type errors

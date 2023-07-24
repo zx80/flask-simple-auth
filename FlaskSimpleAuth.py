@@ -342,7 +342,7 @@ _DIRECTIVES = {
     "FSA_401_REDIRECT", "FSA_URL_NAME", "FSA_CORS", "FSA_CORS_OPTS",
 }
 
-# default settings are centralized here
+# significant default settings are centralized here
 _DEFAULT_MODE = "prod"
 _DEFAULT_CACHE = "ttl"
 _DEFAULT_CACHE_SIZE = 262144  # a few MB
@@ -668,7 +668,8 @@ class _TokenManager:
             token = (request.cookies[self._name] if self._name in request.cookies else
                      None)
         elif self._carrier == "param":
-            token = self._fsa._params().get(self._name, None)
+            assert self._fsa._pm  # mypy…
+            token = self._fsa._pm._params().get(self._name, None)
         else:
             assert self._carrier == "header" and self._name
             token = request.headers.get(self._name, None)
@@ -830,6 +831,7 @@ class _AuthenticationManager:
         self._Err = fsa._Err
         self._Res = fsa._Res
         self._Exc = fsa._Exc
+        self._store = fsa._store
         # initialize all authentication stuff
         self._auth: list[str] = []              # order default authentications
         self._all_auth: set[str] = set()        # all authentication methods
@@ -886,10 +888,11 @@ class _AuthenticationManager:
         self._userp = conf.get("FSA_PARAM_USER", "USER")
         self._passp = conf.get("FSA_PARAM_PASS", "PASS")
         #
-        # registration
+        # registrations
         #
         for a in self._auth:
             self._add_auth(a)
+        fsa._set_hooks("FSA_AUTHENTICATION", self.authentication)
         #
         # http auth setup
         #
@@ -943,6 +946,11 @@ class _AuthenticationManager:
             if self._tm._carrier == "param":
                 assert isinstance(self._tm._name, str)
                 self._auth_params.add(self._tm._name)
+
+    def authentication(self, auth: str, hook: AuthenticationFun|None = None):
+        """Add new authentication hook."""
+        self._add_auth(auth)
+        return self._store(self._authentication, "authentication", auth, hook)
 
     def _set_www_authenticate(self, res: Response):
         """Set WWW-Authenticate response header depending on current scheme."""
@@ -1041,9 +1049,10 @@ class _AuthenticationManager:
     #
     def _get_fake_auth(self, app, req):
         """Return fake user. Only for local tests."""
+        assert self._fsa._pm  # mypy…
         assert req.remote_addr.startswith("127.") or req.remote_addr == "::1", \
             "fake auth only on localhost"
-        params = self._fsa._params()
+        params = self._fsa._pm._params()
         user = params.get(self._login, None)
         if not user:
             raise self._Err(f"missing fake login parameter: {self._login}", 401)
@@ -1100,7 +1109,9 @@ class _AuthenticationManager:
     #
     def _get_param_auth(self, app, req):
         """Get user with parameter authentication."""
-        params = self._fsa._params()
+        fsa = self._fsa
+        assert fsa._pm  # mypy…
+        params = fsa._pm._params()
         user = params.get(self._userp, None)
         if not user:
             raise self._Err(f"missing param login parameter: {self._userp}", 401)
@@ -1108,7 +1119,7 @@ class _AuthenticationManager:
         if not pwd:
             raise self._Err(f"missing param password parameter: {self._passp}", 401)
         if not self._pm:  # pragma: no cover
-            raise self._Err(f"password manager is disabled", self._fsa._server_error)
+            raise self._Err(f"password manager is disabled", fsa._server_error)
         return self._pm.check_user_password(user, pwd)
 
     #
@@ -1238,6 +1249,7 @@ class _AuthorizationManager:
         self._Bad = fsa._Bad
         self._Res = fsa._Res
         self._Exc = fsa._Exc
+        self._store = fsa._store
         # authorization stuff
         self._user_in_group: UserInGroupFun|None = None
         self._object_perms: dict[Any, ObjectPermsFun] = dict()
@@ -1246,6 +1258,12 @@ class _AuthorizationManager:
 
         if "FSA_USER_IN_GROUP" in conf:
             self._user_in_group = conf["FSA_USER_IN_GROUP"]
+
+        fsa._set_hooks("FSA_OBJECT_PERMS", self.object_perms)
+
+    def object_perms(self, domain: str, checker: ObjectPermsFun = None):
+        """Add an object permission helper for a given domain."""
+        return self._store(self._object_perms, "object permission checker", domain, checker)
 
     def _check_object_perms(self, user, domain, oid, mode):
         """Can user access object oid in domain for mode, cached."""
@@ -1410,8 +1428,298 @@ class _AuthorizationManager:
         return decorate
 
 
+class _ParameterManager:
+    """Internal parameter management."""
+
+    def __init__(self, fsa):
+        assert isinstance(fsa, FlaskSimpleAuth)  # forward declaration…
+        self._fsa = fsa
+        conf = fsa._app.config
+        # forward
+        self._Err = fsa._Err
+        self._Bad = fsa._Bad
+        self._Exc = fsa._Exc
+        self._Res = fsa._Res
+        self._store = fsa._store
+        # parameter management
+        # predefined cases, extend with cast
+        self._casts: dict[type, CastFun] = {
+            bool: lambda s: None if s is None else s.lower() not in ("", "0", "false", "f"),
+            int: lambda s: int(s, base=0) if s else None,
+            inspect._empty: str,
+            path: str,
+            string: str,
+            dt.date: dt.date.fromisoformat,
+            dt.time: dt.time.fromisoformat,
+            dt.datetime: dt.datetime.fromisoformat,
+            JsonData: json.loads,
+        }
+        fsa._set_hooks("FSA_CAST", self.cast)
+        # predefined special parameter types, extend with special_parameter
+        self._special_parameters: dict[type, SpecialParameterFun] = {
+            Request: lambda _: request,
+            Environ: lambda _: request.environ,
+            Session: lambda _: session,
+            Globals: lambda _: g,
+            CurrentUser: lambda _: fsa.current_user(),
+            CurrentApp: lambda _: current_app,
+            FileStorage: _get_file_storage,
+            Cookie: lambda p: request.cookies[p],
+            Header: lambda p: request.headers[p],
+        }
+        fsa._set_hooks("FSA_SPECIAL_PARAMETER", self.special_parameter)
+        # whether to error on unexpected parameters
+        self._reject_param = \
+            conf.get("FSA_REJECT_UNEXPECTED_PARAM", _DEFAULT_REJECT_UNEXPECTED_PARAM)
+        # pydantic generated class support
+        try:
+            import pydantic
+            self._pydantic_base_model = pydantic.BaseModel  # type: ignore
+        except ModuleNotFoundError:  # pragma: no cover
+            self._pydantic_base_model = None  # type: ignore
+
+    def cast(self, t, cast: CastFun = None):
+        """Add a cast function associated to a type."""
+        return self._store(self._casts, "type casting", t, cast)
+
+    def special_parameter(self, t, sp: SpecialParameterFun = None):
+        """Add a special parameter type."""
+        return self._store(self._special_parameters, "special parameter", t, sp)
+
+    def _params(self):
+        """Get request parameters wherever they are."""
+        if request.is_json:
+            self._fsa._local.params = "json"
+            return request.json
+        else:
+            self._fsa._local.params = "http"
+
+            # reimplement "request.values" after Flask 2.0 regression
+            # the logic of web-targetted HTTP does not make sense for a REST API
+            # https://github.com/pallets/werkzeug/pull/2037
+            # https://github.com/pallets/flask/issues/4120
+            from werkzeug.datastructures import CombinedMultiDict, MultiDict
+
+            return CombinedMultiDict([MultiDict(d) if not isinstance(d, MultiDict) else d
+                                      for d in (request.args, request.form)])
+
+    # just check that there are no unused parameters
+    def _noparams(self, path):
+
+        def decorate(fun: Callable):
+
+            @functools.wraps(fun)
+            def wrapper(*args, **kwargs):
+
+                fsa = self._fsa
+                am = fsa._am
+                local = fsa._local
+                assert am  # mypy…
+
+                if self._reject_param:
+                    params = self._params()
+                    if params:
+                        sparams = set(params.keys())
+                        if not sparams.issubset(am._auth_params):
+                            bads = ' '.join(sorted(list(sparams - am._auth_params)))
+                            return f"unexpected {local.params} parameters: {bads}", 400
+                    fparams = request.files
+                    if fparams:
+                        return f"unexpected file parameters: {' '.join(sorted(fparams.keys()))}", 400
+
+                return fsa._safe_call(path, "no params", fun, *args, **kwargs)
+
+            return wrapper
+
+        return decorate
+
+    def _parameters(self, path):
+        """Decorator to handle request parameters."""
+
+        def decorate(fun: Callable):
+
+            # for each parameter name: type, cast, default value, http param name
+            types: dict[str, type] = {}
+            typings: dict[str, Callable[[str], Any]] = {}
+            defaults: dict[str, Any] = {}
+            names: dict[str, str] = {}
+
+            # parameters types/casts and defaults taken from signature
+            sig, keywords = inspect.signature(fun), False
+
+            where = f"{fun.__name__}() at {fun.__code__.co_filename}:{fun.__code__.co_firstlineno}"
+
+            # build helpers
+            for n, p in sig.parameters.items():
+                sn = n[1:] if n[0] == "_" and len(n) > 1 else n
+                names[n], names[sn] = sn, n
+                if n not in types and p.kind not in (p.VAR_KEYWORD, p.VAR_POSITIONAL):
+                    # guess and store parameter type
+                    t = _typeof(p)
+                    types[n] = t
+                    # typings: how to actually build the parameter
+                    if t in self._special_parameters:
+                        # this is really managed elsewhere
+                        typings[n] = t
+                    elif (self._pydantic_base_model is not None and
+                          isinstance(t, type) and
+                          issubclass(t, self._pydantic_base_model) or
+                          hasattr(t, "__dataclass_fields__")):
+                        # create a convenient cast for pydantic classes or dataclasses
+                        # we assume that named-parameters are passed
+                        def datacast(val):
+                            if isinstance(val, str):  # HTTP parameters
+                                val = json.loads(val)
+                            if not isinstance(val, dict):  # JSON parameters
+                                raise self._Err(f"unexpected value {val} for dict", 400)
+                            return t(**val)
+                        typings[n] = datacast
+                    else:
+                        typings[n] = self._casts.get(t, t)
+                    # check that type can be isinstance and is castable
+                    try:
+                        isinstance("", t)
+                    except TypeError as e:
+                        raise self._Bad(f"parameter {n} type {t} is not (yet) supported: {e}", where)
+                    except Exception as e:  # pragma: no cover
+                        raise self._Bad(f"parameter {n} type {t} is not (yet) supported: {e}", where)
+                    if not callable(typings[n]) or typings[n].__module__ == "typing":
+                        raise self._Bad(f"parameter {n} type cast {typings[n]} is not callable", where)
+                if p.default != inspect._empty:
+                    defaults[n] = p.default
+                if p.kind == p.VAR_KEYWORD:
+                    keywords = True
+
+            # debug helpers
+            def getNames(pl):
+                return sorted(map(lambda n: names[n], pl))
+
+            mandatory = getNames(filter(lambda n: n not in defaults, types.keys()))
+            optional = getNames(filter(lambda n: n in defaults, types.keys()))
+            signature = f"{fun.__name__}({', '.join(mandatory)}, [{', '.join(optional)}])"
+
+            def debugParam():
+                params = sorted(self._params().keys())
+                files = sorted(request.files.keys())
+                mtype = request.headers.get("Content-Type", "?")
+                return f"{signature}: {' '.join(params)}/{' '.join(files)} [{mtype}]"
+
+            @functools.wraps(fun)
+            def wrapper(*args, **kwargs):
+                # NOTE *args and **kwargs are empty before being filled in from HTTP
+
+                fsa = self._fsa
+                am = fsa._am
+                local = fsa._local
+                assert am  # mypy…
+
+                # translate request parameters to named function parameters
+                params = self._params()  # HTTP or JSON params
+                fparams = request.files  # FILE params
+
+                # detect all possible 400 errors before returning
+                error_400: list[str] = []
+                e400 = error_400.append
+
+                # process all expected "standard" parameters
+                for p, tf in typings.items():
+                    pn = names[p]
+                    if tf in self._special_parameters:  # force specials
+                        if p in params:
+                            e400(f'unexpected {local.params} parameter "{pn}"')
+                            continue
+                        try:
+                            kwargs[p] = self._special_parameters[tf](pn)  # type: ignore
+                        except ErrorResponse as e:
+                            if e.status == 400:
+                                e400(f"error when retrieving special parameter \"{pn}\": {e.message}")
+                                continue
+                            else:  # pragma: no cover
+                                raise  # rethrow?
+                        except Exception as e:
+                            if self._Exc(e):  # pragma: no cover
+                                raise
+                            # this is some unexpected internal error
+                            return self._Res(f"unexpected error when retrieving special parameter \"{pn}\" ({e})",
+                                             fsa._server_error)
+                        # other exception would pass through
+                    elif p in kwargs:  # path parameter, or already seen?
+                        if p in params:
+                            e400(f'unexpected {local.params} parameter "{pn}"')
+                            continue
+                        val = kwargs[p]
+                        if not isinstance(val, types[p]):
+                            try:
+                                kwargs[p] = tf(val)
+                            except Exception as e:
+                                if self._Exc(e):  # pragma: no cover
+                                    raise
+                                e400(f'type error on path parameter "{p}": "{val}" ({e})')
+                                continue
+                    else:  # parameter not yet encountered
+                        if pn in params:
+                            val = params[pn]
+                            is_json = types[p] == JsonData
+                            if is_json and isinstance(val, str) or \
+                               not is_json and not isinstance(val, types[p]):
+                                try:
+                                    kwargs[p] = tf(val)
+                                except Exception as e:
+                                    if self._Exc(e):  # pragma: no cover
+                                        raise
+                                    e400(f'type error on {local.params} parameter "{pn}": "{val}" ({e})')
+                                    continue
+                            else:
+                                kwargs[p] = val
+                        else:  # not found anywhere, set default value if any
+                            if p in defaults:
+                                kwargs[p] = defaults[p]
+                            else:  # missing mandatory (no default) parameter
+                                if fsa._mode >= Mode.DEBUG2:
+                                    log.info(debugParam())
+                                e400(f'missing parameter "{pn}"')
+                                continue
+
+                # possibly add others, without shadowing already provided ones
+                if keywords:  # handle **kwargs
+                    for p in params:
+                        if p not in kwargs and p not in am._auth_params:
+                            kwargs[p] = params[p]  # FIXME names[p]?
+                    for p in fparams:
+                        if p not in kwargs and p not in am._auth_params:
+                            kwargs[p] = fparams[p]  # FIXME?
+                elif fsa._mode >= Mode.DEBUG or self._reject_param:
+                    # detect unused parameters and warn or reject them
+                    for p in params:
+                        # NOTE we silently ignore special authentication params
+                        if p not in names and p not in am._auth_params:
+                            if fsa._mode >= Mode.DEBUG:
+                                log.debug(f"unexpected {local.params} parameter \"{p}\"")
+                                if fsa._mode >= Mode.DEBUG2:
+                                    log.debug(debugParam())
+                            if self._reject_param:
+                                e400(f"unexpected {local.params} parameter \"{p}\"")
+                                continue
+                    for p in fparams:
+                        if p not in names:
+                            if fsa._mode >= Mode.DEBUG:
+                                log.debug(f"unexpected file parameter \"{p}\"")
+                                if fsa._mode >= Mode.DEBUG2:
+                                    log.debug(debugParam())
+                            if self._reject_param:
+                                e400(f"unexpected file parameter \"{p}\"")
+                                continue
+
+                if error_400:
+                    return self._Res("\n".join(error_400), 400)
+
+                return fsa._safe_call(path, "parameters", fun, *args, **kwargs)
+
+            return wrapper
+
+        return decorate
+
 # TODO or not
-# class _ParameterManager
 # class _RequestManager
 
 # actual extension
@@ -1428,33 +1736,11 @@ class FlaskSimpleAuth:
         self._app.config.update(**config)
         # hooks
         self._error_response: ErrorResponseFun|None = None
-        self._casts: dict[type, CastFun] = {
-            bool: lambda s: None if s is None else s.lower() not in ("", "0", "false", "f"),
-            int: lambda s: int(s, base=0) if s else None,
-            inspect._empty: str,
-            path: str,
-            string: str,
-            dt.date: dt.date.fromisoformat,
-            dt.time: dt.time.fromisoformat,
-            dt.datetime: dt.datetime.fromisoformat,
-            JsonData: json.loads,
-        }
-        # predefined special parameter types, extend with special_parameter
-        self._special_parameters: dict[type, SpecialParameterFun] = {
-            Request: lambda _: request,
-            Environ: lambda _: request.environ,
-            Session: lambda _: session,
-            Globals: lambda _: g,
-            CurrentUser: lambda _: self.current_user(),
-            CurrentApp: lambda _: current_app,
-            FileStorage: _get_file_storage,
-            Cookie: lambda p: request.cookies[p],
-            Header: lambda p: request.headers[p],
-        }
         # optional managers
         self._am: _AuthenticationManager|None = None
-        self._az: _AuthorizationManager|None = None
+        self._zm: _AuthorizationManager|None = None
         self._cm: _CacheManager|None = None
+        self._pm: _ParameterManager|None = None
         # fsa-generated errors
         self._server_error: int = _DEFAULT_SERVER_ERROR
         self._not_found_error: int = _DEFAULT_NOT_FOUND_ERROR
@@ -1475,12 +1761,6 @@ class FlaskSimpleAuth:
         self._app.before_request(self._run_before_requests)
         # COLDLY override Flask route decorator…
         self._app.route = self.route  # type: ignore
-        # pydantic generated class support
-        try:
-            import pydantic
-            self._pydantic_base_model = pydantic.BaseModel  # type: ignore
-        except ModuleNotFoundError:  # pragma: no cover
-            self._pydantic_base_model = None  # type: ignore
         # actual main initialization is deferred to `_init_app`
         self._initialized = False
 
@@ -1532,9 +1812,10 @@ class FlaskSimpleAuth:
         """Show request in debug mode."""
         if self._mode >= Mode.DEBUG4:
             # FIXME is there a decent request prettyprinter?
+            assert self._pm  # mypy…
             r = request
             rpp = f"{r}\n"
-            params = self._params()
+            params = self._pm._params()
             if params:
                 rpp += " - params: " + ", ".join(sorted(params.keys())) + "\n"
             if request.files:
@@ -1547,6 +1828,7 @@ class FlaskSimpleAuth:
 
     def _auth_reset_user(self):
         """Before request hook to cleanup authentication and authorization."""
+        # measure execution time
         self._local.start = dt.datetime.timestamp(dt.datetime.now())
         # whether some routing has occurred, vs a before_request generated response
         self._local.routed = False
@@ -1627,23 +1909,6 @@ class FlaskSimpleAuth:
             log.debug(rpp)
         return res
 
-    def _params(self):
-        """Get request parameters wherever they are."""
-        if request.is_json:
-            self._local.params = "json"
-            return request.json
-        else:
-            self._local.params = "http"
-
-            # reimplement "request.values" after Flask 2.0 regression
-            # the logic of web-targetted HTTP does not make sense for a REST API
-            # https://github.com/pallets/werkzeug/pull/2037
-            # https://github.com/pallets/flask/issues/4120
-            from werkzeug.datastructures import CombinedMultiDict, MultiDict
-
-            return CombinedMultiDict([MultiDict(d) if not isinstance(d, MultiDict) else d
-                                      for d in (request.args, request.form)])
-
     #
     # REGISTER HOOKS
     #
@@ -1712,22 +1977,27 @@ class FlaskSimpleAuth:
 
     def cast(self, t, cast: CastFun = None):
         """Add a cast function associated to a type."""
-        return self._store(self._casts, "type casting", t, cast)
+        self.initialize()
+        assert self._pm  # mypy…
+        return self._pm.cast(t, cast)
 
     def special_parameter(self, t, sp: SpecialParameterFun = None):
         """Add a special parameter type."""
-        return self._store(self._special_parameters, "special parameter", t, sp)
+        self.initialize()
+        assert self._pm  # mypy…
+        return self._pm.special_parameter(t, sp)
 
     def object_perms(self, domain: str, checker: ObjectPermsFun = None):
         """Add an object permission helper for a given domain."""
-        return self._store(self._zm._object_perms, "object permission checker", domain, checker)
+        self.initialize()
+        assert self._zm  # mypy…
+        return self._zm.object_perms(domain, checker)
 
     def authentication(self, auth: str, hook: AuthenticationFun|None = None):
         """Add new authentication hook."""
         self.initialize()
         assert self._am  # mypy…
-        self._am._add_auth(auth)
-        return self._store(self._am._authentication, "authentication", auth, hook)
+        return self._am.authentication(auth, hook)
 
     def user_scope(self, scope):
         """Is scope in the current user scope."""
@@ -1767,6 +2037,18 @@ class FlaskSimpleAuth:
         """Run late initialization on current app."""
         if not self._initialized:
             self._init_app()
+
+    def _set_hooks(self, directive: str, set_hook: Callable[[Any, Callable], Any]):
+        """Convenient method to add new hooks."""
+        conf = self._app.config
+        if directive in conf:
+            hooks = conf[directive]
+            if not isinstance(hooks, dict):
+                raise self._Bad(f"{directive} must be a dict")
+            for key, hook in hooks.items():
+                if not callable(hook):  # pragma: no cover
+                    raise self._Bad("{directive} {key} value must be callable")
+                set_hook(key, hook)
 
     def _init_app(self) -> None:
         """Initialize extension with a Flask application.
@@ -1849,14 +2131,12 @@ class FlaskSimpleAuth:
                 raise self._Bad(f"unexpected FSA_ERROR_RESPONSE value: {error}")
         elif "FSA_ERROR_RESPONSE" in conf:
             log.warning("ignoring FSA_ERROR_RESPONSE directive, handler already set")
-        # whether to error on unexpected parameters
-        self._reject_param = \
-            conf.get("FSA_REJECT_UNEXPECTED_PARAM", _DEFAULT_REJECT_UNEXPECTED_PARAM)
         #
         # managers
         #
         self._am = _AuthenticationManager(self)
         self._zm = _AuthorizationManager(self)
+        self._pm = _ParameterManager(self)
         self._cm = _CacheManager(self) if conf.get("FSA_CACHE", _DEFAULT_CACHE) else None
         #
         # web apps…
@@ -1872,26 +2152,6 @@ class FlaskSimpleAuth:
             CORS(self._app, **self._cors_opts)
         self._401_redirect: str|None = conf.get("FSA_401_REDIRECT", None)
         self._url_name: str|None = conf.get("FSA_URL_NAME", "URL" if self._401_redirect else None)
-        #
-        # authentication, authorization and other hooks
-        #
-        def _set_hooks(directive: str, set_hook: Callable[[Any, Callable], Any]):
-            if directive in conf:
-                hooks = conf[directive]
-                if not isinstance(hooks, dict):
-                    raise self._Bad(f"{directive} must be a dict")
-                for key, hook in hooks.items():
-                    if not callable(hook):  # pragma: no cover
-                        raise self._Bad("{directive} {key} value must be callable")
-                    set_hook(key, hook)
-
-        _set_hooks("FSA_CAST", self.cast)
-        _set_hooks("FSA_SPECIAL_PARAMETER", self.special_parameter)
-        # TODO move to _AuthorizationManager?
-        _set_hooks("FSA_OBJECT_PERMS", self.object_perms)
-        # TODO move to _AuthenticationManager?
-        _set_hooks("FSA_AUTHENTICATION", self.authentication)
-        # headers
         self._headers.update(conf.get("FSA_ADD_HEADERS", {}))
         #
         # request hooks: before request executed in order, after in reverse
@@ -2051,213 +2311,6 @@ class FlaskSimpleAuth:
             if self._Exc(e):
                 raise
             return self._Res(f"internal error caught at {level} on {path}", self._server_error)
-    # just check that there are no unused parameters
-    def _noparams(self, path):
-
-        def decorate(fun: Callable):
-
-            @functools.wraps(fun)
-            def wrapper(*args, **kwargs):
-                assert self._am  # mypy…
-                if self._reject_param:
-                    params = self._params()
-                    if params:
-                        sparams = set(params.keys())
-                        if not sparams.issubset(self._am._auth_params):
-                            bads = ' '.join(sorted(list(sparams - self._am._auth_params)))
-                            return f"unexpected {self._local.params} parameters: {bads}", 400
-                    fparams = request.files
-                    if fparams:
-                        return f"unexpected file parameters: {' '.join(sorted(fparams.keys()))}", 400
-
-                return self._safe_call(path, "no params", fun, *args, **kwargs)
-
-            return wrapper
-
-        return decorate
-
-    def _parameters(self, path):
-        """Decorator to handle request parameters."""
-
-        def decorate(fun: Callable):
-
-            # for each parameter name: type, cast, default value, http param name
-            types: dict[str, type] = {}
-            typings: dict[str, Callable[[str], Any]] = {}
-            defaults: dict[str, Any] = {}
-            names: dict[str, str] = {}
-
-            # parameters types/casts and defaults taken from signature
-            sig, keywords = inspect.signature(fun), False
-
-            where = f"{fun.__name__}() at {fun.__code__.co_filename}:{fun.__code__.co_firstlineno}"
-
-            # build helpers
-            for n, p in sig.parameters.items():
-                sn = n[1:] if n[0] == "_" and len(n) > 1 else n
-                names[n], names[sn] = sn, n
-                if n not in types and p.kind not in (p.VAR_KEYWORD, p.VAR_POSITIONAL):
-                    # guess and store parameter type
-                    t = _typeof(p)
-                    types[n] = t
-                    # typings: how to actually build the parameter
-                    if t in self._special_parameters:
-                        # this is really managed elsewhere
-                        typings[n] = t
-                    elif (self._pydantic_base_model is not None and
-                          isinstance(t, type) and
-                          issubclass(t, self._pydantic_base_model) or
-                          hasattr(t, "__dataclass_fields__")):
-                        # create a convenient cast for pydantic classes or dataclasses
-                        # we assume that named-parameters are passed
-                        def datacast(val):
-                            if isinstance(val, str):  # HTTP parameters
-                                val = json.loads(val)
-                            if not isinstance(val, dict):  # JSON parameters
-                                raise self._Err(f"unexpected value {val} for dict", 400)
-                            return t(**val)
-                        typings[n] = datacast
-                    else:
-                        typings[n] = self._casts.get(t, t)
-                    # check that type can be isinstance and is castable
-                    try:
-                        isinstance("", t)
-                    except TypeError as e:
-                        raise self._Bad(f"parameter {n} type {t} is not (yet) supported: {e}", where)
-                    except Exception as e:  # pragma: no cover
-                        raise self._Bad(f"parameter {n} type {t} is not (yet) supported: {e}", where)
-                    if not callable(typings[n]) or typings[n].__module__ == "typing":
-                        raise self._Bad(f"parameter {n} type cast {typings[n]} is not callable", where)
-                if p.default != inspect._empty:
-                    defaults[n] = p.default
-                if p.kind == p.VAR_KEYWORD:
-                    keywords = True
-
-            # debug helpers
-            def getNames(pl):
-                return sorted(map(lambda n: names[n], pl))
-
-            mandatory = getNames(filter(lambda n: n not in defaults, types.keys()))
-            optional = getNames(filter(lambda n: n in defaults, types.keys()))
-            signature = f"{fun.__name__}({', '.join(mandatory)}, [{', '.join(optional)}])"
-
-            def debugParam():
-                params = sorted(self._params().keys())
-                files = sorted(request.files.keys())
-                mtype = request.headers.get("Content-Type", "?")
-                return f"{signature}: {' '.join(params)}/{' '.join(files)} [{mtype}]"
-
-            @functools.wraps(fun)
-            def wrapper(*args, **kwargs):
-                # NOTE *args and **kwargs are empty before being filled in from HTTP
-
-                assert self._am  # mypy…
-
-                # translate request parameters to named function parameters
-                params = self._params()  # HTTP or JSON params
-                fparams = request.files  # FILE params
-
-                # detect all possible 400 errors before returning
-                error_400: list[str] = []
-                e400 = error_400.append
-
-                # process all expected "standard" parameters
-                for p, tf in typings.items():
-                    pn = names[p]
-                    if tf in self._special_parameters:  # force specials
-                        if p in params:
-                            e400(f'unexpected {self._local.params} parameter "{pn}"')
-                            continue
-                        try:
-                            kwargs[p] = self._special_parameters[tf](pn)  # type: ignore
-                        except ErrorResponse as e:
-                            if e.status == 400:
-                                e400(f"error when retrieving special parameter \"{pn}\": {e.message}")
-                                continue
-                            else:  # pragma: no cover
-                                raise  # rethrow?
-                        except Exception as e:
-                            if self._Exc(e):  # pragma: no cover
-                                raise
-                            # this is some unexpected internal error
-                            return self._Res(f"unexpected error when retrieving special parameter \"{pn}\" ({e})",
-                                             self._server_error)
-                        # other exception would pass through
-                    elif p in kwargs:  # path parameter, or already seen?
-                        if p in params:
-                            e400(f'unexpected {self._local.params} parameter "{pn}"')
-                            continue
-                        val = kwargs[p]
-                        if not isinstance(val, types[p]):
-                            try:
-                                kwargs[p] = tf(val)
-                            except Exception as e:
-                                if self._Exc(e):  # pragma: no cover
-                                    raise
-                                e400(f'type error on path parameter "{p}": "{val}" ({e})')
-                                continue
-                    else:  # parameter not yet encountered
-                        if pn in params:
-                            val = params[pn]
-                            is_json = types[p] == JsonData
-                            if is_json and isinstance(val, str) or \
-                               not is_json and not isinstance(val, types[p]):
-                                try:
-                                    kwargs[p] = tf(val)
-                                except Exception as e:
-                                    if self._Exc(e):  # pragma: no cover
-                                        raise
-                                    e400(f'type error on {self._local.params} parameter "{pn}": "{val}" ({e})')
-                                    continue
-                            else:
-                                kwargs[p] = val
-                        else:  # not found anywhere, set default value if any
-                            if p in defaults:
-                                kwargs[p] = defaults[p]
-                            else:  # missing mandatory (no default) parameter
-                                if self._mode >= Mode.DEBUG2:
-                                    log.info(debugParam())
-                                e400(f'missing parameter "{pn}"')
-                                continue
-
-                # possibly add others, without shadowing already provided ones
-                if keywords:  # handle **kwargs
-                    for p in params:
-                        if p not in kwargs and p not in self._am._auth_params:
-                            kwargs[p] = params[p]  # FIXME names[p]?
-                    for p in fparams:
-                        if p not in kwargs and p not in self._am._auth_params:
-                            kwargs[p] = fparams[p]  # FIXME?
-                elif self._mode >= Mode.DEBUG or self._reject_param:
-                    # detect unused parameters and warn or reject them
-                    for p in params:
-                        # NOTE we silently ignore special authentication params
-                        if p not in names and p not in self._am._auth_params:
-                            if self._mode >= Mode.DEBUG:
-                                log.debug(f"unexpected {self._local.params} parameter \"{p}\"")
-                                if self._mode >= Mode.DEBUG2:
-                                    log.debug(debugParam())
-                            if self._reject_param:
-                                e400(f"unexpected {self._local.params} parameter \"{p}\"")
-                                continue
-                    for p in fparams:
-                        if p not in names:
-                            if self._mode >= Mode.DEBUG:
-                                log.debug(f"unexpected file parameter \"{p}\"")
-                                if self._mode >= Mode.DEBUG2:
-                                    log.debug(debugParam())
-                            if self._reject_param:
-                                e400(f"unexpected file parameter \"{p}\"")
-                                continue
-
-                if error_400:
-                    return self._Res("\n".join(error_400), 400)
-
-                return self._safe_call(path, "parameters", fun, *args, **kwargs)
-
-            return wrapper
-
-        return decorate
 
     # run any hook after auth and before exec
     def _before_exec(self, path):
@@ -2298,7 +2351,7 @@ class FlaskSimpleAuth:
         if not self._initialized:
             self.initialize()
 
-        assert self._am and self._zm  # mypy…
+        assert self._am and self._zm and self._pm  # mypy…
 
         # ensure that authorize is a list
         if type(authorize) in (int, str, tuple):
@@ -2433,9 +2486,9 @@ class FlaskSimpleAuth:
             first = fun.__code__.co_varnames[0]
             fun = self._zm._perm_authz(newpath, first, *perms)(fun)
         if need_parameters:
-            fun = self._parameters(newpath)(fun)
+            fun = self._pm._parameters(newpath)(fun)
         else:
-            fun = self._noparams(newpath)(fun)
+            fun = self._pm._noparams(newpath)(fun)
         if groups:
             assert need_authenticate
             if auth == "oauth":

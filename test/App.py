@@ -170,7 +170,7 @@ import flask
 
 # missing authorization check with parameters
 @flask.Flask.route(app, "/mis1", methods=["GET"])
-@app._fsa._parameters("/mis1")
+@app._fsa._pm._parameters("/mis1")
 def get_mis1(i: int = 0):
     return "", 200
 
