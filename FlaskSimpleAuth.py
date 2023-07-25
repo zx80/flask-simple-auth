@@ -10,8 +10,6 @@ This extension helps manage:
 This code is public domain.
 """
 
-# TODO rework two-phase init
-
 import sys
 from typing import Callable, MutableMapping, Any
 import typing
@@ -354,7 +352,14 @@ _DEFAULT_KEEP_USER_ERRORS = False
 _DEFAULT_ERROR_RESPONSE = "plain"
 _DEFAULT_PASSWORD_SCHEME = "bcrypt"
 _DEFAULT_PASSWORD_OPTS = {"bcrypt__default_rounds": 4, "bcrypt__default_ident": "2y"}
+_DEFAULT_TOKEN_TYPE = "fsa"
+_DEFAULT_TOKEN_FSA_ALGO = "blake2s"
+_DEFAULT_TOKEN_JWT_ALGO = "HS256"
 _DEFAULT_TOKEN_DELAY = 60.0
+_DEFAULT_TOKEN_SIGLEN = 16
+_DEFAULT_PARAM_LOGIN = "LOGIN"
+_DEFAULT_PARAM_USER = "USER"
+_DEFAULT_PARAM_PASS = "PASS"
 
 
 class _TokenManager:
@@ -391,24 +396,51 @@ class _TokenManager:
         # forward some methods
         self._Err = fsa._Err
         self._Bad = fsa._Bad
+        # token stuff
+        self._token: str|None = _DEFAULT_TOKEN_TYPE
+        self._carrier: str = "bearer"
+        self._name: str = "Bearer"
+        self._realm: str = fsa._app.name
+        self._issuer: str|None = None
+        self._delay: float = _DEFAULT_TOKEN_DELAY
+        self._grace: float = 0.0
+        self._renewal: float = 0.0
+        self._secret: str = "to be overriden"
+        self._sign: str|None = None
+        self._algo: str = _DEFAULT_TOKEN_FSA_ALGO
+        self._siglen: int = _DEFAULT_TOKEN_SIGLEN
+        self._initialized = False
+
+    def _initialize(self):
+
+        if self._initialized:
+            log.warning("Token Manager already initialized, skipping…")
+            return
+
+        fsa, conf = self._fsa, self._fsa._app.config
+
         # use application configuration to setup tokens
-        conf = fsa._app.config
+        conf = self._fsa._app.config
         # token type
-        self._token: str = conf.get("FSA_TOKEN_TYPE", "fsa")
+        self._token = conf.get("FSA_TOKEN_TYPE", "fsa")
+        if not self._token:
+            # desactivated
+            return
         if self._token not in ("fsa", "jwt"):
             raise self._Bad(f"unexpected FSA_TOKEN_TYPE: {self._token}")
         # token carrier
-        self._carrier: str = conf.get("FSA_TOKEN_CARRIER", "bearer")
+        self._carrier = conf.get("FSA_TOKEN_CARRIER", "bearer")
         if self._carrier not in ("bearer", "param", "cookie", "header"):
             raise self._Bad(f"unexpected FSA_TOKEN_CARRIER: {self._carrier}")
         # name of token for cookie or param, Authentication scheme, or other header
-        default_name: str|None = (
+        default_name = (
             "AUTH" if self._carrier == "param" else
             "auth" if self._carrier == "cookie" else
             "Bearer" if self._carrier == "bearer" else
             "Auth" if self._carrier == "header" else
             None)
-        self._name: str|None = conf.get("FSA_TOKEN_NAME", default_name)
+        assert default_name is not None  # mypy…
+        self._name = conf.get("FSA_TOKEN_NAME", default_name)
         if not self._name:
             raise self._Bad(f"Token carrier {self._carrier} requires a name")
         if self._carrier == "param":
@@ -419,15 +451,15 @@ class _TokenManager:
             keep_char = re.compile(r"[-A-Za-z0-9]").match
             realm = "".join(c if keep_char(c) else "-" for c in realm)
             realm = "-".join(filter(lambda s: s != "", realm.split("-")))
-        self._realm: str = realm
-        self._issuer: str|None = conf.get("FSA_TOKEN_ISSUER", None)
+        self._realm = realm
+        self._issuer = conf.get("FSA_TOKEN_ISSUER", None)
         # token expiration in minutes
-        self._delay: float = conf.get("FSA_TOKEN_DELAY", _DEFAULT_TOKEN_DELAY)
-        self._grace: float = conf.get("FSA_TOKEN_GRACE", 0.0)
-        self._renewal: float = conf.get("FSA_TOKEN_RENEWAL", 0.0)  # ratio of delay, only for cookies
+        self._delay = conf.get("FSA_TOKEN_DELAY", _DEFAULT_TOKEN_DELAY)
+        self._grace = conf.get("FSA_TOKEN_GRACE", 0.0)
+        self._renewal = conf.get("FSA_TOKEN_RENEWAL", 0.0)  # ratio of delay, only for cookies
         # token signature
         if "FSA_TOKEN_SECRET" in conf:
-            self._secret: str = conf["FSA_TOKEN_SECRET"]
+            self._secret = conf["FSA_TOKEN_SECRET"]
             if self._secret and len(self._secret) < 16:
                 log.warning("token secret is short")
         else:
@@ -439,15 +471,15 @@ class _TokenManager:
             chars = string.ascii_letters + string.digits + string.punctuation
             self._secret = "".join(random.SystemRandom().choices(chars, k=40))
         if self._token == "fsa":
-            self._sign: str|None = self._secret
-            self._algo: str = conf.get("FSA_TOKEN_ALGO", "blake2s")
-            self._siglen: int = conf.get("FSA_TOKEN_LENGTH", 16)
+            self._sign = self._secret
+            self._algo = conf.get("FSA_TOKEN_ALGO", _DEFAULT_TOKEN_FSA_ALGO)
+            self._siglen = conf.get("FSA_TOKEN_LENGTH", _DEFAULT_TOKEN_SIGLEN)
             if "FSA_TOKEN_SIGN" in conf:
                 log.warning("ignoring FSA_TOKEN_SIGN directive for fsa tokens")
         elif self._token == "jwt":
             if "FSA_TOKEN_LENGTH" in conf:
                 log.warning("ignoring FSA_TOKEN_LENGTH directive for jwt tokens")
-            algo = conf.get("FSA_TOKEN_ALGO", "HS256")
+            algo = conf.get("FSA_TOKEN_ALGO", _DEFAULT_TOKEN_JWT_ALGO)
             self._algo = algo
             if algo[0] in ("R", "E", "P"):
                 self._sign = conf.get("FSA_TOKEN_SIGN", None)
@@ -668,7 +700,6 @@ class _TokenManager:
             token = (request.cookies[self._name] if self._name in request.cookies else
                      None)
         elif self._carrier == "param":
-            assert self._fsa._pm  # mypy…
             token = self._fsa._pm._params().get(self._name, None)
         else:
             assert self._carrier == "header" and self._name
@@ -707,32 +738,48 @@ class _PasswordManager:
         self._Exc = fsa._Exc
         self._Bad = fsa._Bad
         self._Err = fsa._Err
+        # password stuff
+        self._pass_context = None
+        self._pass_check: PasswordCheckFun|None = None
+        self._pass_quality: PasswordQualityFun|None = None
+        self._pass_len: int = 0
+        self._pass_re: list[PasswordQualityFun] = []
+        self._get_user_pass: GetUserPassFun|None = None
+        self._initialized = False
+
+    def _initialize(self):
+
+        if self._initialized:
+            log.warning("Password Manager already initialized, skipping…")
+            return
+
+        conf = self._fsa._app.config
+
         # configure password management
-        self._pass_check: PasswordCheckFun|None = conf.get("FSA_PASSWORD_CHECK", None)
-        self._pass_quality: PasswordQualityFun|None = conf.get("FSA_PASSWORD_QUALITY", None)
-        self._pass_len: int = conf.get("FSA_PASSWORD_LEN", 0)
-        self._pass_re: list[PasswordQualityFun] = [
-            re.compile(r).search for r in conf.get("FSA_PASSWORD_RE", [])
-        ]
-        # only actually initialize with passlib if needed
         scheme = conf.get("FSA_PASSWORD_SCHEME", _DEFAULT_PASSWORD_SCHEME)
         if not scheme:  # pragma: no cover
-            raise self._Bad("cannot initialize password manager without a scheme")
+            # raise self._Bad("cannot initialize password manager without a scheme")
+            return
         log.info(f"initializing password manager with {scheme}")
         if scheme == "plaintext":
             log.warning("plaintext password manager is a bad idea")
+        options = conf.get("FSA_PASSWORD_OPTS", _DEFAULT_PASSWORD_OPTS)
+        # only actually initialize with passlib if needed
         # passlib context is a pain, you have to know the scheme name to set its
         # round. Ident "2y" is same as "2b" but apache compatible.
-        options = conf.get("FSA_PASSWORD_OPTS", _DEFAULT_PASSWORD_OPTS)
         try:
             from passlib.context import CryptContext  # type: ignore
         except ModuleNotFoundError:  # pragma: no cover
             log.error("missing module: install FlaskSimpleAuth[passwords]")
             raise
         self._pass_context = CryptContext(schemes=[scheme], **options)
-        self._get_user_pass: GetUserPassFun|None = None
+        self._pass_check = conf.get("FSA_PASSWORD_CHECK", None)
+        self._pass_quality = conf.get("FSA_PASSWORD_QUALITY", None)
+        self._pass_len = conf.get("FSA_PASSWORD_LEN", 0)
+        self._pass_re += [ re.compile(r).search for r in conf.get("FSA_PASSWORD_RE", []) ]
         if "FSA_GET_USER_PASS" in conf:
             self.get_user_pass(conf["FSA_GET_USER_PASS"])
+        self._initialized = True
 
     def get_user_pass(self, gup: GetUserPassFun):
         """Set `get_user_pass` helper, can be used as a decorator."""
@@ -772,10 +819,14 @@ class _PasswordManager:
 
     def check_password(self, pwd, ref) -> bool:
         """Check whether password is ok wrt to reference."""
+        if not self._pass_context:
+            raise self._Err("password manager is disabled", self._fsa._server_error)
         return self._pass_context.verify(pwd, ref)
 
     def hash_password(self, pwd, check=True) -> str:
         """Hash password according to the current password scheme."""
+        if not self._pass_context:
+            raise self._Err("password manager is disabled", self._fsa._server_error)
         if check:
             self._check_quality(pwd)
         return self._pass_context.hash(pwd)
@@ -825,7 +876,6 @@ class _AuthenticationManager:
     def __init__(self, fsa):
         assert isinstance(fsa, FlaskSimpleAuth)  # FIXME forward declaration…
         self._fsa = fsa
-        conf = fsa._app.config
         # forward
         self._Bad = fsa._Bad
         self._Err = fsa._Err
@@ -851,6 +901,24 @@ class _AuthenticationManager:
             "http-token": self._get_httpauth,
         }
         self._auth_params: set[str] = set()  # authentication parameters to ignore
+        self._realm: str = fsa._app.name
+        self._login: str = _DEFAULT_PARAM_LOGIN
+        self._userp: str = _DEFAULT_PARAM_USER
+        self._passp: str = _DEFAULT_PARAM_PASS
+        # managers are created even if disactivated
+        self._pm: _PasswordManager = _PasswordManager(fsa)
+        self._tm: _TokenManager = _TokenManager(fsa)
+        self._httpauth: Any|None = None
+        self._initialized = False
+
+    def _initialize(self):
+
+        if self._initialized:
+            log.warning("Authentication Manager already initialized, skipping…")
+            return
+
+        fsa, conf = self._fsa, self._fsa._app.config
+
         # list of allowed authentication schemes
         auth = conf.get("FSA_AUTH", None)
         if not auth:
@@ -866,16 +934,15 @@ class _AuthenticationManager:
             raise self._Bad(f"unexpected FSA_AUTH type: {type(auth)}")
         # FIXME needed for some tm checks
         self._fsa._local.auth = self._auth
-        # authentication realm
         # FIXME there is a token realm, is this consistent?
-        self._realm: str = conf.get("FSA_REALM", self._fsa._app.name)
+        self._realm = conf.get("FSA_REALM", self._fsa._app.name)
         #
-        # password and token manager setup
+        # password and token managers setup
         #
-        self._pm = _PasswordManager(fsa) if conf.get("FSA_PASSWORD_SCHEME", _DEFAULT_PASSWORD_SCHEME) else None
-        self._tm = _TokenManager(fsa) if conf.get("FSA_TOKEN_TYPE", "fsa") else None
+        self._pm._initialize()
+        self._tm._initialize()
         #
-        # HTTP parameter names
+        # HTTP auth parameter names
         #
         if "fake" not in self._auth and "FSA_FAKE_LOGIN" in conf:
             log.warning("ignoring directive FSA_FAKE_LOGIN")
@@ -884,9 +951,9 @@ class _AuthenticationManager:
                 log.warning("ignoring directive FSA_PARAM_USER")
             if "FSA_PARAM_PASS" in conf:
                 log.warning("ignoring directive FSA_PARAM_PASS")
-        self._login = conf.get("FSA_FAKE_LOGIN", "LOGIN")
-        self._userp = conf.get("FSA_PARAM_USER", "USER")
-        self._passp = conf.get("FSA_PARAM_PASS", "PASS")
+        self._login = conf.get("FSA_FAKE_LOGIN", _DEFAULT_PARAM_LOGIN)
+        self._userp = conf.get("FSA_PARAM_USER", _DEFAULT_PARAM_USER)
+        self._passp = conf.get("FSA_PARAM_PASS", _DEFAULT_PARAM_PASS)
         #
         # registrations
         #
@@ -906,7 +973,7 @@ class _AuthenticationManager:
 
             if "http-basic" in self._auth:
                 self._http_auth = fha.HTTPBasicAuth(realm=self._realm, **opts)
-                assert self._http_auth and self._pm  # mypy…
+                assert self._http_auth  # mypy…
                 self._http_auth.verify_password(self._pm.check_user_password)
             elif self._auth_has("http-digest", "digest"):
                 self._http_auth = fha.HTTPDigestAuth(realm=self._realm, **opts)
@@ -919,13 +986,13 @@ class _AuthenticationManager:
                 if self._tm._carrier == "header" and "header" not in opts and self._tm._name:
                     opts["header"] = self._tm._name
                 self._http_auth = fha.HTTPTokenAuth(scheme=self._tm._name, realm=self._tm._realm, **opts)
-                assert self._http_auth and self._tm  # mypy…
+                assert self._http_auth  # mypy…
                 self._http_auth.verify_token(lambda t: self._tm._get_any_token_auth(t, self._tm._realm))
-            assert self._http_auth and self._pm  # mypy…
+            assert self._http_auth  # mypy…
             self._http_auth.get_password(self._pm._get_user_pass)
             # FIXME? error_handler?
-        else:
-            self._http_auth = None
+        # done!
+        self._initialized = True
 
     def _add_auth(self, auth: str):
         """Register that an authentication method is used."""
@@ -1049,7 +1116,6 @@ class _AuthenticationManager:
     #
     def _get_fake_auth(self, app, req):
         """Return fake user. Only for local tests."""
-        assert self._fsa._pm  # mypy…
         assert req.remote_addr.startswith("127.") or req.remote_addr == "::1", \
             "fake auth only on localhost"
         params = self._fsa._pm._params()
@@ -1149,78 +1215,99 @@ class _CacheManager:
         conf = fsa._app.config
         self._Bad = fsa._Bad
         # caching stuff
-        self._cache_opts: dict[str, Any] = conf.get("FSA_CACHE_OPTS", {})
-        cache = conf.get("FSA_CACHE", _DEFAULT_CACHE)
-        assert cache is not None
-        if cache:
-            # NOTE no try/except because the dependency is mandatory
-            import cachetools as ct
-            import CacheToolsUtils as ctu  # type: ignore
-
-            prefix = conf.get("FSA_CACHE_PREFIX", None)
-            if cache in ("ttl", "lru", "lfu", "mru", "fifo", "rr", "dict"):
-                maxsize = conf.get("FSA_CACHE_SIZE", _DEFAULT_CACHE_SIZE)
-                # build actual storage tier
-                if cache == "ttl":
-                    ttl = self._cache_opts.pop("ttl", _DEFAULT_CACHE_TTL)
-                    rcache: MutableMapping = ct.TTLCache(maxsize, **self._cache_opts, ttl=ttl)
-                elif cache == "lru":
-                    rcache = ct.LRUCache(maxsize, **self._cache_opts)
-                elif cache == "lfu":
-                    rcache = ct.LFUCache(maxsize, **self._cache_opts)
-                elif cache == "mru":
-                    rcache = ct.MRUCache(maxsize, **self._cache_opts)
-                elif cache == "fifo":
-                    rcache = ct.FIFOCache(maxsize, **self._cache_opts)
-                elif cache == "rr":
-                    rcache = ct.RRCache(maxsize, **self._cache_opts)
-                elif cache == "dict":
-                    rcache = dict()
-                else:  # pragma: no cover
-                    raise self._Bad(f"unexpected simple cache type: {cache}")
-                if prefix:
-                    rcache = ctu.PrefixedCache(rcache, prefix)
-                self._cache: MutableMapping[str, str] = ctu.StatsCache(rcache)
-                self._gen_cache: Callable = ctu.PrefixedCache
-            elif cache in ("memcached", "pymemcache"):
-                try:
-                    import pymemcache as pmc  # type: ignore
-                except ModuleNotFoundError:  # pragma: no cover
-                    log.error("missing module: install FlaskSimpleAuth[memcached]")
-                    raise
-
-                if "serde" not in self._cache_opts:
-                    self._cache_opts.update(serde=ctu.JsonSerde())
-                if prefix and "key_prefix" not in self._cache_opts:
-                    self._cache_opts.update(key_prefix=prefix.encode("utf-8"))
-                self._cache = ctu.StatsMemCached(pmc.Client(**self._cache_opts))
-                self._gen_cache = ctu.PrefixedMemCached
-            elif cache == "redis":
-                try:
-                    import redis
-                except ModuleNotFoundError:  # pragma: no cover
-                    log.error("missing module: install FlaskSimpleAuth[redis]")
-                    raise
-
-                ttl = self._cache_opts.pop("ttl", _DEFAULT_CACHE_TTL)
-                rc = redis.Redis(**self._cache_opts)
-                if prefix:
-                    self._cache = ctu.PrefixedRedisCache(rc, prefix=prefix, ttl=ttl)
-                else:
-                    self._cache = ctu.RedisCache(rc, ttl=ttl)
-                self._gen_cache = ctu.PrefixedRedisCache
-            else:
-                raise self._Bad(f"unexpected FSA_CACHE: {cache}")
+        self._cache: MutableMapping[str, str]|None = None
+        self._cache_gen: Callable|None = None
+        self._cache_opts: dict[str, Any] = {}
         self._cached = False
+        self._initialized = False
+
+    def _initialize(self):
+
+        if self._initialized:
+            log.warning("Cache Manager is already initialized, skipping…")
+            return
+
+        conf = self._fsa._app.config
+
+        cache = conf.get("FSA_CACHE", _DEFAULT_CACHE)
+        if not cache:
+            self._cache = None
+            self._cache_gen = None
+            return 
+
+        self._cache_opts.update(conf.get("FSA_CACHE_OPTS", {}))
+
+        # NOTE no try/except because the dependency is mandatory
+        import cachetools as ct
+        import CacheToolsUtils as ctu  # type: ignore
+
+        prefix: str|None = conf.get("FSA_CACHE_PREFIX", None)
+
+        if cache in ("ttl", "lru", "lfu", "mru", "fifo", "rr", "dict"):
+            maxsize = conf.get("FSA_CACHE_SIZE", _DEFAULT_CACHE_SIZE)
+            # build actual storage tier
+            if cache == "ttl":
+                ttl = self._cache_opts.pop("ttl", _DEFAULT_CACHE_TTL)
+                rcache: MutableMapping = ct.TTLCache(maxsize, **self._cache_opts, ttl=ttl)
+            elif cache == "lru":
+                rcache = ct.LRUCache(maxsize, **self._cache_opts)
+            elif cache == "lfu":
+                rcache = ct.LFUCache(maxsize, **self._cache_opts)
+            elif cache == "mru":
+                rcache = ct.MRUCache(maxsize, **self._cache_opts)
+            elif cache == "fifo":
+                rcache = ct.FIFOCache(maxsize, **self._cache_opts)
+            elif cache == "rr":
+                rcache = ct.RRCache(maxsize, **self._cache_opts)
+            elif cache == "dict":
+                rcache = dict()
+            else:  # pragma: no cover
+                raise self._Bad(f"unexpected simple cache type: {cache}")
+            if prefix:
+                rcache = ctu.PrefixedCache(rcache, prefix)
+            self._cache = ctu.StatsCache(rcache)
+            self._cache_gen = ctu.PrefixedCache
+        elif cache in ("memcached", "pymemcache"):
+            try:
+                import pymemcache as pmc  # type: ignore
+            except ModuleNotFoundError:  # pragma: no cover
+                log.error("missing module: install FlaskSimpleAuth[memcached]")
+                raise
+
+            if "serde" not in self._cache_opts:
+                self._cache_opts.update(serde=ctu.JsonSerde())
+            if prefix and "key_prefix" not in self._cache_opts:
+                self._cache_opts.update(key_prefix=prefix.encode("utf-8"))
+            self._cache = ctu.StatsMemCached(pmc.Client(**self._cache_opts))
+            self._cache_gen = ctu.PrefixedMemCached
+        elif cache == "redis":
+            try:
+                import redis
+            except ModuleNotFoundError:  # pragma: no cover
+                log.error("missing module: install FlaskSimpleAuth[redis]")
+                raise
+
+            ttl = self._cache_opts.pop("ttl", _DEFAULT_CACHE_TTL)
+            rc = redis.Redis(**self._cache_opts)
+            if prefix:
+                self._cache = ctu.PrefixedRedisCache(rc, prefix=prefix, ttl=ttl)
+            else:
+                self._cache = ctu.RedisCache(rc, ttl=ttl)
+            self._cache_gen = ctu.PrefixedRedisCache
+        else:
+            raise self._Bad(f"unexpected FSA_CACHE: {cache}")
+
+        # done!
+        self._initialized = True
 
     def _set_caches(self):
         """Deferred creation of caches around some functions."""
+
         if self._cached:
+            log.warning("Caches already set, skipping…")
             return
 
         log.info("setting up cache…")
-        assert self._fsa._am  # mypy…
-
         import CacheToolsUtils as ctu
 
         CACHABLE = [
@@ -1233,7 +1320,7 @@ class _CacheManager:
         for obj, meth, prefix in CACHABLE:
             if obj and hasattr(obj, meth):
                 log.debug(f"cache: caching {meth[1:]}")
-                ctu.cacheMethods(cache=self._cache, obj=obj, gen=self._gen_cache, **{meth: prefix})
+                ctu.cacheMethods(cache=self._cache, obj=obj, gen=self._cache_gen, **{meth: prefix})
             else:  # pragma: no cover
                 log.info(f"cache: skipping {meth[1:]}")
 
@@ -1247,7 +1334,6 @@ class _AuthorizationManager:
     def __init__(self, fsa):
         assert isinstance(fsa, FlaskSimpleAuth)  # forward declaration needed…
         self._fsa = fsa
-        conf = fsa._app.config
         # forward
         self._Bad = fsa._Bad
         self._Res = fsa._Res
@@ -1256,13 +1342,23 @@ class _AuthorizationManager:
         # authorization stuff
         self._user_in_group: UserInGroupFun|None = None
         self._object_perms: dict[Any, ObjectPermsFun] = dict()
-        self._groups: set[str|int] = set(conf.get("FSA_AUTHZ_GROUPS", []))
-        self._scopes: set[str] = set(conf.get("FSA_AUTHZ_SCOPES", []))
+        self._groups: set[str|int] = set()
+        self._scopes: set[str] = set()
+        self._initialized = False
 
+    def _initialize(self):
+
+        if self._initialized:
+            log.warning("Authorization Manager already initialized, skipping…")
+            return
+
+        conf = self._fsa._app.config
+        self._groups.update(conf.get("FSA_AUTHZ_GROUPS", []))
+        self._scopes.update(conf.get("FSA_AUTHZ_SCOPES", []))
         if "FSA_USER_IN_GROUP" in conf:
             self._user_in_group = conf["FSA_USER_IN_GROUP"]
-
-        fsa._set_hooks("FSA_OBJECT_PERMS", self.object_perms)
+        self._fsa._set_hooks("FSA_OBJECT_PERMS", self.object_perms)
+        self._initialized = True
 
     def object_perms(self, domain: str, checker: ObjectPermsFun = None):
         """Add an object permission helper for a given domain."""
@@ -1457,7 +1553,6 @@ class _ParameterManager:
             dt.datetime: dt.datetime.fromisoformat,
             JsonData: json.loads,
         }
-        fsa._set_hooks("FSA_CAST", self.cast)
         # predefined special parameter types, extend with special_parameter
         self._special_parameters: dict[type, SpecialParameterFun] = {
             Request: lambda _: request,
@@ -1470,16 +1565,28 @@ class _ParameterManager:
             Cookie: lambda p: request.cookies[p],
             Header: lambda p: request.headers[p],
         }
-        fsa._set_hooks("FSA_SPECIAL_PARAMETER", self.special_parameter)
         # whether to error on unexpected parameters
-        self._reject_param = \
-            conf.get("FSA_REJECT_UNEXPECTED_PARAM", _DEFAULT_REJECT_UNEXPECTED_PARAM)
+        self._reject_param = _DEFAULT_REJECT_UNEXPECTED_PARAM
         # pydantic generated class support
         try:
             import pydantic
             self._pydantic_base_model = pydantic.BaseModel  # type: ignore
         except ModuleNotFoundError:  # pragma: no cover
             self._pydantic_base_model = None  # type: ignore
+        self._initialized = False
+
+    def _initialize(self):
+
+        if self._initialized:
+            log.warning("Parameter Manager already initialized, skipping…")
+            return
+
+        fsa, conf = self._fsa, self._fsa._app.config
+
+        self._reject_param = conf.get("FSA_REJECT_UNEXPECTED_PARAM", _DEFAULT_REJECT_UNEXPECTED_PARAM)
+        fsa._set_hooks("FSA_CAST", self.cast)
+        fsa._set_hooks("FSA_SPECIAL_PARAMETER", self.special_parameter)
+        self._initialized = True
 
     def cast(self, t, cast: CastFun = None):
         """Add a cast function associated to a type."""
@@ -1746,16 +1853,24 @@ class _RequestManager:
         app.before_request(self._auth_reset_user)
         app.before_request(self._check_secure)
         app.before_request(self._run_before_requests)
+        self._initialized = False
 
-    def _init_app(self) -> None:
+    def _initialize(self) -> None:
+
+        if self._initialized:
+            log.warning("Request Manager already initialized, skipping…")
+            return
+
         # whether to only allow secure requests
         conf = self._fsa._app.config
+
         self._secure = conf.get("FSA_SECURE", True)
         if not self._secure:
             log.warning("not secure: non local http queries are accepted")
         # request hooks
         self._before_requests = conf.get("FSA_BEFORE_REQUEST", [])
         self._before_exec_hooks += conf.get("FSA_BEFORE_EXEC", [])
+        self._initialized = True
 
     # run hooks
     def _execute_hooks(self, path: str, what: str, fun: Callable, hooks: list[BeforeExecFun]):
@@ -1763,8 +1878,7 @@ class _RequestManager:
         @functools.wraps(fun)
         def wrapper(*args, **kwargs) -> Response:
 
-            fsa = self._fsa
-            login, auth = fsa.current_user(), fsa._local.auth
+            fsa, login, auth = self._fsa, self._fsa.current_user(), self._fsa._local.auth
 
             # apply all hooks
             for hook in hooks:
@@ -1859,6 +1973,23 @@ class _ResponseManager:
         self._Exc = fsa._Exc
         self._Err = fsa._Err
         # response-related stuff
+        self._error_response: ErrorResponseFun = lambda m, s, h, c: Response(m, s, h, c)
+        self._cors: bool = False
+        self._cors_opts: dict[str, Any] = {}
+        self._401_redirect: str|None = None
+        self._url_name: str|None = None
+        self._after_requests: list[AfterRequestFun] = []
+        self._headers: dict[str, HeaderFun|str] = {}
+        self._initialized = False
+
+    def _initialize(self):
+
+        if self._initialized:
+            log.warning("Response Manager already initialized, skipping…")
+            return
+
+        fsa, app, conf = self._fsa, self._fsa._app, self._fsa._app.config
+
         # generate response on errors
         error = conf.get("FSA_ERROR_RESPONSE", _DEFAULT_ERROR_RESPONSE)
         if error is None:
@@ -1880,8 +2011,8 @@ class _ResponseManager:
         else:
             raise self._Bad(f"unexpected FSA_ERROR_RESPONSE value: {error}")
         # CORS handling
-        self._cors: bool = conf.get("FSA_CORS", False)
-        self._cors_opts: dict[str, Any] = conf.get("FSA_CORS_OPTS", {})
+        self._cors = conf.get("FSA_CORS", False)
+        self._cors_opts.update(conf.get("FSA_CORS_OPTS", {}))
         if self._cors:
             try:
                 from flask_cors import CORS  # type: ignore
@@ -1890,11 +2021,11 @@ class _ResponseManager:
                 raise
             CORS(fsa._app, **self._cors_opts)
         # url
-        self._401_redirect: str|None = conf.get("FSA_401_REDIRECT", None)
-        self._url_name: str|None = conf.get("FSA_URL_NAME", "URL" if self._401_redirect else None)
+        self._401_redirect = conf.get("FSA_401_REDIRECT", None)
+        self._url_name = conf.get("FSA_URL_NAME", "URL" if self._401_redirect else None)
         # hooks stuff
-        self._after_requests: list[AfterRequestFun] = conf.get("FSA_AFTER_REQUEST", [])
-        self._headers: dict[str, HeaderFun|str] = conf.get("FSA_ADD_HEADERS", {})
+        self._after_requests.extend(conf.get("FSA_AFTER_REQUEST", []))
+        self._headers.update(conf.get("FSA_ADD_HEADERS", {}))
         # register fsa hooks to flask, executed in reverse order
         if fsa._mode >= Mode.DEBUG4:
             app.after_request(self._show_response)
@@ -1912,6 +2043,8 @@ class _ResponseManager:
         if self._401_redirect:
             app.after_request(self._possible_redirect)
         app.after_request(self._auth_post_check)
+        # done!
+        self._initialized = True
 
     def _run_after_requests(self, res: Response) -> Response:
         """Run internal after request hooks."""
@@ -1988,12 +2121,12 @@ class FlaskSimpleAuth:
         self._app = app
         self._app.config.update(**config)
         # managers
-        self._am: _AuthenticationManager|None = None
-        self._zm: _AuthorizationManager|None = None
-        self._cm: _CacheManager|None = None
-        self._pm: _ParameterManager|None = None
-        self._qm: _RequestManager = _RequestManager(self)
-        self._rm: _ResponseManager|None = None
+        self._cm = _CacheManager(self)
+        self._am = _AuthenticationManager(self)
+        self._zm = _AuthorizationManager(self)
+        self._pm = _ParameterManager(self)
+        self._qm = _RequestManager(self)
+        self._rm = _ResponseManager(self)
         # fsa-generated errors
         self._server_error: int = _DEFAULT_SERVER_ERROR
         self._not_found_error: int = _DEFAULT_NOT_FOUND_ERROR
@@ -2002,14 +2135,13 @@ class FlaskSimpleAuth:
         self._local: Any = None              # per-request data
         # COLDLY override Flask route decorator…
         self._app.route = self.route  # type: ignore
-        # actual main initialization is deferred to `_init_app`
+        # actual main initialization is deferred to `_initialize`
         self._initialized = False
 
     def _Res(self, msg: str, code: int, headers: dict[str, str]|None = None, content_type: str|None = None) -> Response:
         """Generate a error actual Response with a message."""
         if self._mode >= Mode.DEBUG:
             log.debug(f"error response: {code} {msg}")
-        assert self._rm  # mypy…
         return self._rm._error_response(msg, code, headers, content_type)
 
     def _Exc(self, exc: BaseException|None) -> BaseException|None:
@@ -2039,15 +2171,11 @@ class FlaskSimpleAuth:
     def get_user_pass(self, gup: GetUserPassFun) -> GetUserPassFun:
         """Set `get_user_pass` helper, can be used as a decorator."""
         self.initialize()
-        assert self._am  # mypy…
-        if not self._am._pm:  # pragma: no cover
-            raise self._Err("password manager is disabled", self._server_error)
         return self._am._pm.get_user_pass(gup)
 
     def user_in_group(self, uig: UserInGroupFun) -> UserInGroupFun:
         """Set `user_in_group` helper, can be used as a decorator."""
         self.initialize()
-        assert self._zm  # mypy…
         if self._zm._user_in_group:
             log.warning("overriding already defined user_in_group hook")
         self._zm._user_in_group = uig
@@ -2056,9 +2184,6 @@ class FlaskSimpleAuth:
     def password_quality(self, pqc: PasswordQualityFun) -> PasswordQualityFun:
         """Set `password_quality` hook."""
         self.initialize()
-        assert self._am  # mypy…
-        if not self._am._pm:  # pragma: no cover
-            raise self._Err("password manager is disabled", self._server_error)
         if self._am._pm._pass_quality:
             log.warning("overriding already defined password_quality hook")
         self._am._pm._pass_quality = pqc
@@ -2067,9 +2192,6 @@ class FlaskSimpleAuth:
     def password_check(self, pwc: PasswordCheckFun) -> PasswordCheckFun:
         """Set `password_check` hook."""
         self.initialize()
-        assert self._am  # mypy…
-        if not self._am._pm:  # pragma: no cover
-            raise self._Err("password manager is disabled", self._server_error)
         if self._am._pm._pass_check:
             log.warning("overriding already defined password_check hook")
         self._am._pm._pass_check = pwc
@@ -2078,7 +2200,6 @@ class FlaskSimpleAuth:
     def error_response(self, erh: ErrorResponseFun) -> ErrorResponseFun:
         """Set `error_response` hook."""
         self.initialize()
-        assert self._rm  # mypy…
         log.warning("overriding error_response hook")
         self._rm._error_response = erh
         return erh
@@ -2103,25 +2224,20 @@ class FlaskSimpleAuth:
     def cast(self, t, cast: CastFun = None):
         """Add a cast function associated to a type."""
         self.initialize()
-        assert self._pm  # mypy…
         return self._pm.cast(t, cast)
 
     def special_parameter(self, t, sp: SpecialParameterFun = None):
         """Add a special parameter type."""
         self.initialize()
-        assert self._pm  # mypy…
         return self._pm.special_parameter(t, sp)
 
     def object_perms(self, domain: str, checker: ObjectPermsFun = None):
         """Add an object permission helper for a given domain."""
         self.initialize()
-        assert self._zm  # mypy…
         return self._zm.object_perms(domain, checker)
 
     def authentication(self, auth: str, hook: AuthenticationFun|None = None):
         """Add new authentication hook."""
-        self.initialize()
-        assert self._am  # mypy…
         return self._am.authentication(auth, hook)
 
     def user_scope(self, scope) -> bool:
@@ -2131,7 +2247,6 @@ class FlaskSimpleAuth:
     def add_group(self, *groups) -> None:
         """Add some groups."""
         self.initialize()
-        assert self._zm  # mypy…
         for grp in groups:
             if not isinstance(grp, (str, int)):
                 raise self._Bad(f"invalid group type: {type(grp).__name__}")
@@ -2140,7 +2255,6 @@ class FlaskSimpleAuth:
     def add_scope(self, *scopes) -> None:
         """Add some scopes."""
         self.initialize()
-        assert self._zm  # mypy…
         for scope in scopes:
             if not isinstance(scope, str):
                 raise self._Bad(f"invalid scope type: {type(scope).__name__}")
@@ -2149,12 +2263,11 @@ class FlaskSimpleAuth:
     def add_headers(self, **kwargs) -> None:
         """Add some headers."""
         self.initialize()
-        assert self._rm  # mypy…
         for k, v in kwargs.items():
             if not isinstance(k, str):  # pragma: no cover
-                self._Bad(f"header name must be a string: {type(k).__name__}")
+                raise self._Bad(f"header name must be a string: {type(k).__name__}")
             if not (isinstance(v, str) or callable(v)):
-                self._Bad(f"header value must be a string or a callable: {type(v).__name__}")
+                raise self._Bad(f"header value must be a string or a callable: {type(v).__name__}")
             self._store(self._rm._headers, "header", k, v)
 
     def before_exec(self, hook: BeforeExecFun) -> None:
@@ -2164,11 +2277,6 @@ class FlaskSimpleAuth:
     #
     # DEFERRED INITIALIZATIONS
     #
-    def initialize(self) -> None:
-        """Run late initialization on current app."""
-        if not self._initialized:
-            self._init_app()
-
     def _set_hooks(self, directive: str, set_hook: Callable[[Any, Callable], Any]) -> None:
         """Convenient method to add new hooks."""
         conf = self._app.config
@@ -2181,15 +2289,17 @@ class FlaskSimpleAuth:
                     raise self._Bad("{directive} {key} value must be callable")
                 set_hook(key, hook)
 
-    def _init_app(self) -> None:
-        """Initialize extension with a Flask application.
+    def initialize(self) -> None:
+        """Run late initialization.
 
-        The initialization is performed through `FSA_*` configuration
-        directives.
+        The initialization is performed through `FSA_*` configuration directives.
         """
+        if self._initialized:
+            return
+
         log.info("FSA initialization…")
-        assert self._app
         conf = self._app.config
+
         # running mode
         if "FSA_DEBUG" in conf and conf["FSA_DEBUG"]:  # upward compatibility
             self._mode = Mode.DEBUG
@@ -2236,14 +2346,14 @@ class FlaskSimpleAuth:
         # override FSA internal error handling user errors
         self._keep_user_errors = conf.get("FSA_KEEP_USER_ERRORS", False)
         #
-        # managers
+        # initialize managers
         #
-        self._am = _AuthenticationManager(self)
-        self._zm = _AuthorizationManager(self)
-        self._pm = _ParameterManager(self)
-        self._cm = _CacheManager(self) if conf.get("FSA_CACHE", _DEFAULT_CACHE) else None
-        self._qm._init_app()
-        self._rm = _ResponseManager(self)
+        self._cm._initialize()
+        self._am._initialize()
+        self._zm._initialize()
+        self._pm._initialize()
+        self._qm._initialize()
+        self._rm._initialize()
         #
         # blueprint hacks
         #
@@ -2269,17 +2379,11 @@ class FlaskSimpleAuth:
     def check_password(self, pwd, ref):
         """Verify whether a password is correct compared to a reference (eg salted hash)."""
         self.initialize()
-        assert self._am  # mypy…
-        if not self._am._pm:  # pragma: no cover
-            raise self._Err("password manager is disabled", self._server_error)
         return self._am._pm.check_password(pwd, ref)
 
     def hash_password(self, pwd, check=True):
         """Hash password according to the current password scheme."""
         self.initialize()
-        assert self._am  # mypy…
-        if not self._am._pm:  # pragma: no cover
-            raise self._Err("password manager is disabled", self._server_error)
         return self._am._pm.hash_password(pwd, check)
 
     #
@@ -2287,9 +2391,6 @@ class FlaskSimpleAuth:
     #
     def create_token(self, *args, **kwargs) -> str:
         self.initialize()
-        assert self._am  # mypy…
-        if not self._am._tm:  # pragma: no cover
-            raise self._Err("token manager is disabled", self._server_error)
         return self._am._tm.create_token(*args, **kwargs)
 
     #
@@ -2305,7 +2406,6 @@ class FlaskSimpleAuth:
             return self._local.user
 
         assert self._initialized, "FlaskSimpleAuth must be initialized"
-        assert self._am  # mypy
 
         # try authentication schemes
         lae = None
@@ -2345,8 +2445,9 @@ class FlaskSimpleAuth:
 
         The best option is to wait for cache entries to expire with a TTL.
         """
-        if not self._cm:  # pragma: no cover
-            raise self._Err("cannot clear cache, cache is disabled", self._server_error)
+        if not self._cm._cache:
+            log.warning("cache is not activated, cannot be cleared, skipping…")
+            return
         self._cm._cache.clear()
 
     #
@@ -2378,10 +2479,7 @@ class FlaskSimpleAuth:
         """Route decorator helper method."""
 
         # lazy initialization
-        if not self._initialized:
-            self.initialize()
-
-        assert self._am and self._zm and self._pm  # mypy…
+        self.initialize()
 
         # ensure that authorize is a list
         if type(authorize) in (int, str, tuple):
@@ -2418,7 +2516,6 @@ class FlaskSimpleAuth:
             auth = "oauth"
 
         if auth == "oauth":  # sanity checks
-            assert self._am._tm  # please mypy
             if self._am._tm._token != "jwt":
                 raise self._Bad(f"oauth authorizations require JWT tokens on {rule}")
             if not self._am._tm._issuer:
