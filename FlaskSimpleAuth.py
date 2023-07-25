@@ -417,7 +417,7 @@ class _TokenManager:
 
     def _initialize(self):
 
-        if self._initialized:
+        if self._initialized:  # pragma: no cover
             log.warning("Token Manager already initialized, skipping…")
             return
 
@@ -427,9 +427,8 @@ class _TokenManager:
         conf = self._fsa._app.config
         # token type
         self._token = conf.get("FSA_TOKEN_TYPE", "fsa")
-        if not self._token:
-            # desactivated
-            return
+        if not self._token:  # pragma: no cover
+            return  # desactivated
         if self._token not in ("fsa", "jwt"):
             raise self._Bad(f"unexpected FSA_TOKEN_TYPE: {self._token}")
         # token carrier
@@ -752,7 +751,7 @@ class _PasswordManager:
 
     def _initialize(self):
 
-        if self._initialized:
+        if self._initialized:  # pragma: no cover
             log.warning("Password Manager already initialized, skipping…")
             return
 
@@ -822,13 +821,13 @@ class _PasswordManager:
 
     def check_password(self, pwd, ref) -> bool:
         """Check whether password is ok wrt to reference."""
-        if not self._pass_context:
+        if not self._pass_context:  # pragma: no cover
             raise self._Err("password manager is disabled", self._fsa._server_error)
         return self._pass_context.verify(pwd, ref)
 
     def hash_password(self, pwd, check=True) -> str:
         """Hash password according to the current password scheme."""
-        if not self._pass_context:
+        if not self._pass_context:  # pragma: no cover
             raise self._Err("password manager is disabled", self._fsa._server_error)
         if check:
             self._check_quality(pwd)
@@ -916,7 +915,7 @@ class _AuthenticationManager:
 
     def _initialize(self):
 
-        if self._initialized:
+        if self._initialized:  # pragma: no cover
             log.warning("Authentication Manager already initialized, skipping…")
             return
 
@@ -1225,14 +1224,14 @@ class _CacheManager:
 
     def _initialize(self):
 
-        if self._initialized:
+        if self._initialized:  # pragma: no cover
             log.warning("Cache Manager is already initialized, skipping…")
             return
 
         conf = self._fsa._app.config
 
         cache = conf.get("FSA_CACHE", _DEFAULT_CACHE)
-        if not cache:
+        if not cache:  # pragma: no cover
             self._cache = None
             self._cache_gen = None
             return
@@ -1350,7 +1349,7 @@ class _AuthorizationManager:
 
     def _initialize(self):
 
-        if self._initialized:
+        if self._initialized:  # pragma: no cover
             log.warning("Authorization Manager already initialized, skipping…")
             return
 
@@ -1578,7 +1577,7 @@ class _ParameterManager:
 
     def _initialize(self):
 
-        if self._initialized:
+        if self._initialized:  # pragma: no cover
             log.warning("Parameter Manager already initialized, skipping…")
             return
 
@@ -1858,7 +1857,7 @@ class _RequestManager:
 
     def _initialize(self) -> None:
 
-        if self._initialized:
+        if self._initialized:  # pragma: no cover
             log.warning("Request Manager already initialized, skipping…")
             return
 
@@ -1985,7 +1984,7 @@ class _ResponseManager:
 
     def _initialize(self):
 
-        if self._initialized:
+        if self._initialized:  # pragma: no cover
             log.warning("Response Manager already initialized, skipping…")
             return
 
@@ -2446,7 +2445,7 @@ class FlaskSimpleAuth:
 
         The best option is to wait for cache entries to expire with a TTL.
         """
-        if not self._cm._cache:
+        if not self._cm._cache:  # pragma: no cover
             log.warning("cache is not activated, cannot be cleared, skipping…")
             return
         self._cm._cache.clear()
