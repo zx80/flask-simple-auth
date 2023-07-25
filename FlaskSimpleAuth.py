@@ -10,6 +10,9 @@ This extension helps manage:
 This code is public domain.
 """
 
+# TODO refactoring
+# - clarify manager public/private interfaces
+
 import sys
 from typing import Callable, MutableMapping, Any
 import typing
@@ -54,8 +57,9 @@ log = logging.getLogger("fsa")
 from importlib.metadata import version as pkg_version
 __version__ = pkg_version("FlaskSimpleAuth")
 
-
+#
 # hook function types
+#
 # generate an error response for message and status
 # mimics flask.Response("message", status, headers, content_type)
 ErrorResponseFun = Callable[[str, int, dict[str, str]|None, str|None], Response]
@@ -417,7 +421,7 @@ class _TokenManager:
             log.warning("Token Manager already initialized, skipping…")
             return
 
-        fsa, conf = self._fsa, self._fsa._app.config
+        conf = self._fsa._app.config
 
         # use application configuration to setup tokens
         conf = self._fsa._app.config
@@ -733,7 +737,6 @@ class _PasswordManager:
     def __init__(self, fsa):
         assert isinstance(fsa, FlaskSimpleAuth)  # FIXME forward declaration…
         self._fsa = fsa
-        conf = fsa._app.config
         # forward
         self._Exc = fsa._Exc
         self._Bad = fsa._Bad
@@ -776,7 +779,7 @@ class _PasswordManager:
         self._pass_check = conf.get("FSA_PASSWORD_CHECK", None)
         self._pass_quality = conf.get("FSA_PASSWORD_QUALITY", None)
         self._pass_len = conf.get("FSA_PASSWORD_LEN", 0)
-        self._pass_re += [ re.compile(r).search for r in conf.get("FSA_PASSWORD_RE", []) ]
+        self._pass_re += [re.compile(r).search for r in conf.get("FSA_PASSWORD_RE", [])]
         if "FSA_GET_USER_PASS" in conf:
             self.get_user_pass(conf["FSA_GET_USER_PASS"])
         self._initialized = True
@@ -1212,7 +1215,6 @@ class _CacheManager:
     def __init__(self, fsa):
         assert isinstance(fsa, FlaskSimpleAuth)
         self._fsa = fsa
-        conf = fsa._app.config
         self._Bad = fsa._Bad
         # caching stuff
         self._cache: MutableMapping[str, str]|None = None
@@ -1233,7 +1235,7 @@ class _CacheManager:
         if not cache:
             self._cache = None
             self._cache_gen = None
-            return 
+            return
 
         self._cache_opts.update(conf.get("FSA_CACHE_OPTS", {}))
 
@@ -1533,7 +1535,6 @@ class _ParameterManager:
     def __init__(self, fsa):
         assert isinstance(fsa, FlaskSimpleAuth)  # forward declaration…
         self._fsa = fsa
-        conf = fsa._app.config
         # forward
         self._Err = fsa._Err
         self._Bad = fsa._Bad
@@ -1966,7 +1967,7 @@ class _ResponseManager:
 
     def __init__(self, fsa):
         assert isinstance(fsa, FlaskSimpleAuth)  # forward declaration…
-        self._fsa, app, conf = fsa, fsa._app, fsa._app.config
+        self._fsa = fsa
         # forward
         self._Bad = fsa._Bad
         self._Res = fsa._Res
