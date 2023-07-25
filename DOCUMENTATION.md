@@ -983,7 +983,7 @@ Some directives govern various details for this extension internal working.
   application code.
   As a slight deviation from Flask before request hook, before request functions
   are passed the current request as an argument.
-  The are executed first (just after some internal initializations and before
+  They are executed first (just after some internal initializations and before
   application-provided before request hooks) and last, respectively.
   Defaults are empty.
 
