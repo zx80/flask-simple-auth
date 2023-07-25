@@ -10,7 +10,7 @@ This extension helps manage:
 This code is public domain.
 """
 
-# FIXME this code is rather monolithic…
+# TODO rework two-phase init
 
 import sys
 from typing import Callable, MutableMapping, Any
@@ -80,7 +80,7 @@ HeaderFun = Callable[[Response], str|None]
 # before request hook, with request provided
 BeforeRequestFun = Callable[[Request], Response|None]
 # after authentication and right before exec
-BeforeExecFun = Callable[[Request, str, str], Response|None]
+BeforeExecFun = Callable[[Request, str|None, str|None], Response|None]
 # after request hook
 AfterRequestFun = Callable[[Response], Response]
 # authentication hook
@@ -872,7 +872,7 @@ class _AuthenticationManager:
         #
         # password and token manager setup
         #
-        self._pm = _PasswordManager(fsa) if conf.get("FSA_PASSWORD_SCHEME", _DEFAULT_PASSWORD_SCHEME) else None 
+        self._pm = _PasswordManager(fsa) if conf.get("FSA_PASSWORD_SCHEME", _DEFAULT_PASSWORD_SCHEME) else None
         self._tm = _TokenManager(fsa) if conf.get("FSA_TOKEN_TYPE", "fsa") else None
         #
         # HTTP parameter names
@@ -1096,7 +1096,7 @@ class _AuthenticationManager:
             log.debug(f'AUTH (basic): error while decoding auth "{auth}" ({e})')
             raise self._Err("decoding error on authorization header", 401, e)
         if not self._pm:  # pragma: no cover
-            raise self._Err(f"password manager is disabled", self._fsa._server_error)
+            raise self._Err("password manager is disabled", self._fsa._server_error)
         return self._pm.check_user_password(user, pwd)
 
     #
@@ -1119,7 +1119,7 @@ class _AuthenticationManager:
         if not pwd:
             raise self._Err(f"missing param password parameter: {self._passp}", 401)
         if not self._pm:  # pragma: no cover
-            raise self._Err(f"password manager is disabled", fsa._server_error)
+            raise self._Err("password manager is disabled", fsa._server_error)
         return self._pm.check_user_password(user, pwd)
 
     #
@@ -1218,16 +1218,19 @@ class _CacheManager:
         if self._cached:
             return
 
-        log.info(f"setting up cache…")
+        log.info("setting up cache…")
         assert self._fsa._am  # mypy…
 
         import CacheToolsUtils as ctu
 
-        for obj, meth, prefix in [
+        CACHABLE = [
             (self._fsa._zm, "_user_in_group", "g."),
             (self._fsa._zm, "_check_object_perms", "p."),
             (self._fsa._am._tm, "_get_any_token_auth_exp", "t."),
-            (self._fsa._am._pm, "_get_user_pass", "u.") ]:
+            (self._fsa._am._pm, "_get_user_pass", "u."),
+        ]
+
+        for obj, meth, prefix in CACHABLE:
             if obj and hasattr(obj, meth):
                 log.debug(f"cache: caching {meth[1:]}")
                 ctu.cacheMethods(cache=self._cache, obj=obj, gen=self._gen_cache, **{meth: prefix})
@@ -1719,103 +1722,112 @@ class _ParameterManager:
 
         return decorate
 
-# TODO or not
-# class _RequestManager
 
-# actual extension
-class FlaskSimpleAuth:
-    """Flask extension for authentication, authorization and parameters."""
+class _RequestManager:
+    """Internal request management."""
 
-    def __init__(self, app: flask.Flask, debug: bool = False, **config):
-        """Constructor parameter: flask application to extend."""
-        # A basic minimal non functional initialization.
-        # Actual initializations are deferred to init_app called later,
-        # so as to allow updating the configuration.
-        self._mode = Mode.DEBUG2 if debug else Mode.UNDEF
-        self._app = app
-        self._app.config.update(**config)
-        # hooks
-        self._error_response: ErrorResponseFun|None = None
-        # optional managers
-        self._am: _AuthenticationManager|None = None
-        self._zm: _AuthorizationManager|None = None
-        self._cm: _CacheManager|None = None
-        self._pm: _ParameterManager|None = None
-        # fsa-generated errors
-        self._server_error: int = _DEFAULT_SERVER_ERROR
-        self._not_found_error: int = _DEFAULT_NOT_FOUND_ERROR
-        self._keep_user_errors: bool = _DEFAULT_KEEP_USER_ERRORS
+    def __init__(self, fsa):
+        assert isinstance(fsa, FlaskSimpleAuth)  # forward declaration…
+        self._fsa, app = fsa, fsa._app
+        # forward
+        self._Bad = fsa._Bad
+        self._Res = fsa._Res
+        self._Exc = fsa._Exc
+        self._Err = fsa._Err
+        # request-related stuff
         self._secure: bool = True
         self._secure_warning = True
-        # misc
-        self._headers: dict[str, HeaderFun|str] = {}  # response headers
+        # request hooks
         self._before_requests: list[BeforeRequestFun] = []
         self._before_exec_hooks: list[BeforeExecFun] = []
-        self._after_requests: list[AfterRequestFun] = []
-        self._local: Any = None              # per-request data
-        # registered here to avoid being bypassed by user hooks
+        # registered here to avoid being bypassed by user hooks, executed in order
         # FIXME not always?
-        self._app.before_request(self._show_request)
-        self._app.before_request(self._auth_reset_user)
-        self._app.before_request(self._check_secure)
-        self._app.before_request(self._run_before_requests)
-        # COLDLY override Flask route decorator…
-        self._app.route = self.route  # type: ignore
-        # actual main initialization is deferred to `_init_app`
-        self._initialized = False
+        app.before_request(self._show_request)
+        app.before_request(self._auth_reset_user)
+        app.before_request(self._check_secure)
+        app.before_request(self._run_before_requests)
 
-    def _Res(self, msg: str, code: int, headers: dict[str, str]|None = None, content_type: str|None = None):
-        """Generate a error actual Response with a message."""
-        if self._mode >= Mode.DEBUG:
-            log.debug(f"error response: {code} {msg}")
-        assert self._error_response is not None
-        return self._error_response(msg, code, headers, content_type)
+    def _init_app(self) -> None:
+        # whether to only allow secure requests
+        conf = self._fsa._app.config
+        self._secure = conf.get("FSA_SECURE", True)
+        if not self._secure:
+            log.warning("not secure: non local http queries are accepted")
+        # request hooks
+        self._before_requests = conf.get("FSA_BEFORE_REQUEST", [])
+        self._before_exec_hooks += conf.get("FSA_BEFORE_EXEC", [])
 
-    def _Exc(self, exc):
-        """Handle an internal error."""
-        # trace once with subtle tracking
-        if exc and not hasattr(exc, "_fsa_traced"):
-            log.error(exc, exc_info=True)
-            setattr(exc, "_fsa_traced", True)
-        return exc if self._keep_user_errors else None
+    # run hooks
+    def _execute_hooks(self, path: str, what: str, fun: Callable, hooks: list[BeforeExecFun]):
 
-    def _Err(self, msg: str, code: int, exc: Exception = None):
-        """Build and trace an ErrorResponse exception with a message."""
-        if self._mode >= Mode.DEBUG3:
-            log.debug(f"error: {code} {msg}")
-        return self._Exc(exc) or ErrorResponse(msg, code)
+        @functools.wraps(fun)
+        def wrapper(*args, **kwargs) -> Response:
 
-    def _Bad(self, msg: str, misc: str = None):
-        """Build and trace an exception on a bad configuration."""
-        if misc:
-            msg += "\n" + misc
-        log.critical(msg)
-        return ConfigError(msg)
+            fsa = self._fsa
+            login, auth = fsa.current_user(), fsa._local.auth
+
+            # apply all hooks
+            for hook in hooks:
+                try:
+                    res = hook(request, login, auth)
+                    if res:
+                        if fsa._mode >= Mode.DEBUG2:
+                            log.debug(f"returning on {request.method} {request.path} {what}")
+                        return res
+                except Exception as e:
+                    if self._Exc(e):  # pragma: no cover
+                        raise
+                    return self._Res(f"internal error in {what}", fsa._server_error)
+
+            # then call the initial function
+            return fsa._safe_call(path, what, fun, *args, **kwargs)
+
+        return wrapper
 
     #
-    # HOOKS
+    # PREDEFINED HOOKS
     #
-    def _check_secure(self):
+    def _check_secure(self) -> Response|None:
         """Before request hook to reject insecure (non-TLS) requests."""
         if not request.is_secure and request.remote_addr and not (
             request.remote_addr.startswith("127.") or request.remote_addr == "::1"
         ):  # pragma: no cover
             if self._secure:
                 log.error("insecure HTTP request, allow with FSA_SECURE=False")
-                return self._Res("insecure HTTP request denied", self._server_error)
+                return self._Res("insecure HTTP request denied", self._fsa._server_error)
             else:  # one warning is issued
                 if self._secure_warning:
                     log.warning("insecure HTTP request seen")
                     self._secure_warning = False
+        return None
 
-    def _show_request(self):
-        """Show request in debug mode."""
-        if self._mode >= Mode.DEBUG4:
+    def _auth_reset_user(self) -> None:
+        """Before request hook to cleanup authentication and authorization."""
+        fsa, local = self._fsa, self._fsa._local
+        # measure execution time
+        local.start = dt.datetime.timestamp(dt.datetime.now())
+        # whether some routing has occurred, vs a before_request generated response
+        local.routed = False
+        # authentication and authorizations
+        local.source = None              # what authn has been used
+        local.user = None                # for this user
+        local.need_authorization = True  # whether some authz occurred
+        assert fsa._am and fsa._am._tm   # mypy…
+        local.auth = fsa._am._auth       # allowed authn schemes
+        local.realm = fsa._am._realm     # authn realm
+        local.token_realm = fsa._am._tm._realm if fsa._am._tm else None
+        local.scopes = None              # current oauth scopes
+        local.params = None              # json|http parameters
+
+    def _show_request(self) -> None:
+        """Show request in logs when in debug mode."""
+        fsa = self._fsa
+        if fsa._mode >= Mode.DEBUG4:
             # FIXME is there a decent request prettyprinter?
-            assert self._pm  # mypy…
+            assert fsa._pm  # mypy…
             r = request
             rpp = f"{r}\n"
-            params = self._pm._params()
+            params = fsa._pm._params()
             if params:
                 rpp += " - params: " + ", ".join(sorted(params.keys())) + "\n"
             if request.files:
@@ -1826,48 +1838,100 @@ class FlaskSimpleAuth:
                 "\n\t".join(f"{k}: {v}" for k, v in r.headers.items()) + "\n"
             log.debug(rpp)
 
-    def _auth_reset_user(self):
-        """Before request hook to cleanup authentication and authorization."""
-        # measure execution time
-        self._local.start = dt.datetime.timestamp(dt.datetime.now())
-        # whether some routing has occurred, vs a before_request generated response
-        self._local.routed = False
-        # authentication and authorizations
-        self._local.source = None              # what authn has been used
-        self._local.user = None                # for this user
-        self._local.need_authorization = True  # whether some authz occurred
-        assert self._am  # mypy…
-        self._local.auth = self._am._auth          # allowed authn schemes
-        self._local.realm = self._am._realm        # authn realm
-        self._local.token_realm = self._am._tm._realm if self._am._tm else None
-        self._local.scopes = None              # current oauth scopes
-        self._local.params = None              # json|http parameters
-
-    def _run_before_requests(self):
+    def _run_before_requests(self) -> Response|None:
         """Run internal before request hooks."""
         for fun in self._before_requests:
             rep = fun(request)
             if rep is not None:
                 return rep
+        return None
 
-    def _run_after_requests(self, res: Response):
+
+class _ResponseManager:
+    """Internal response management."""
+
+    def __init__(self, fsa):
+        assert isinstance(fsa, FlaskSimpleAuth)  # forward declaration…
+        self._fsa, app, conf = fsa, fsa._app, fsa._app.config
+        # forward
+        self._Bad = fsa._Bad
+        self._Res = fsa._Res
+        self._Exc = fsa._Exc
+        self._Err = fsa._Err
+        # response-related stuff
+        # generate response on errors
+        error = conf.get("FSA_ERROR_RESPONSE", _DEFAULT_ERROR_RESPONSE)
+        if error is None:
+            raise self._Bad("unexpected FSA_ERROR_RESPONSE: None")
+        elif callable(error):
+            self._error_response = error
+        elif not isinstance(error, str):
+            raise self._Bad(f"unexpected FSA_ERROR_RESPONSE type: {type(error).__name__}")
+        elif error == "plain":
+            self._error_response = \
+                lambda m, c, h, _m: Response(m, c, h, content_type="text/plain")
+        elif error == "json":
+            self._error_response = \
+                lambda m, c, h, _m: Response(json.dumps(m), c, h, content_type="application/json")
+        elif error.startswith("json:"):
+            key = error.split(":", 1)[1]
+            self._error_response = \
+                lambda m, c, h, _m: Response(json.dumps({key: m}), c, h, content_type="application/json")
+        else:
+            raise self._Bad(f"unexpected FSA_ERROR_RESPONSE value: {error}")
+        # CORS handling
+        self._cors: bool = conf.get("FSA_CORS", False)
+        self._cors_opts: dict[str, Any] = conf.get("FSA_CORS_OPTS", {})
+        if self._cors:
+            try:
+                from flask_cors import CORS  # type: ignore
+            except ModuleNotFoundError:  # pragma: no cover
+                log.error("missing module: install FlaskSimpleAuth[cors]")
+                raise
+            CORS(fsa._app, **self._cors_opts)
+        # url
+        self._401_redirect: str|None = conf.get("FSA_401_REDIRECT", None)
+        self._url_name: str|None = conf.get("FSA_URL_NAME", "URL" if self._401_redirect else None)
+        # hooks stuff
+        self._after_requests: list[AfterRequestFun] = conf.get("FSA_AFTER_REQUEST", [])
+        self._headers: dict[str, HeaderFun|str] = conf.get("FSA_ADD_HEADERS", {})
+        # register fsa hooks to flask, executed in reverse order
+        if fsa._mode >= Mode.DEBUG4:
+            app.after_request(self._show_response)
+        if fsa._mode >= Mode.DEV:
+            app.after_request(self._add_fsa_headers)
+        # always, because more may be register after initialization
+        app.after_request(self._run_after_requests)
+        if self._headers:
+            app.after_request(self._add_headers)
+        assert fsa._am  # mypy…
+        if fsa._am:  # FIXME always, because of auth=…
+            app.after_request(fsa._am._set_www_authenticate)
+        if fsa._am and fsa._am._tm and fsa._am._tm._carrier == "cookie":
+            app.after_request(fsa._am._tm._set_auth_cookie)
+        if self._401_redirect:
+            app.after_request(self._possible_redirect)
+        app.after_request(self._auth_post_check)
+
+    def _run_after_requests(self, res: Response) -> Response:
         """Run internal after request hooks."""
         for fun in self._after_requests:
             res = fun(res)
         return res
 
-    def _auth_post_check(self, res: Response):
+    def _auth_post_check(self, res: Response) -> Response:
         """After request hook to detect missing authorizations."""
-        if not hasattr(self._local, "routed"):  # pragma: no cover
+        fsa = self._fsa
+        if not hasattr(fsa._local, "routed"):  # pragma: no cover
             # may be triggered by an early return from a before_request hook?
             log.warn(f"external response on {request.method} {request.path}")
             return res
-        if self._local.routed and res.status_code < 400 and self._local.need_authorization:  # pragma: no cover
+        if fsa._local.routed and res.status_code < 400 and fsa._local.need_authorization:  # pragma: no cover
             # this case is really detected when building the app
             method, path = request.method, request.path
             if not (self._cors and method == "OPTIONS"):
                 log.error(f"missing authorization on {method} {path}")
-                return self._Res("missing authorization check", self._server_error)
+                return self._Res("missing authorization check", fsa._server_error)
         return res
 
     def _possible_redirect(self, res: Response):
@@ -1883,7 +1947,7 @@ class FlaskSimpleAuth:
             return redirect(location, 307)
         return res
 
-    def _add_headers(self, res: Response):
+    def _add_headers(self, res: Response) -> Response:
         """Add arbitrary headers to response."""
         for name, value in self._headers.items():
             val = value(res) if callable(value) else value
@@ -1891,23 +1955,83 @@ class FlaskSimpleAuth:
                 res.headers[name] = val
         return res
 
-    def _add_fsa_headers(self, res: Response):
+    def _add_fsa_headers(self, res: Response) -> Response:
         """Add convenient FSA-related headers."""
+        fsa = self._fsa
         res.headers["FSA-Request"] = f"{request.method} {request.path}"
-        res.headers["FSA-User"] = f"{self.current_user()} ({self._local.source})"
-        delay = dt.datetime.timestamp(dt.datetime.now()) - self._local.start
+        res.headers["FSA-User"] = f"{fsa.current_user()} ({fsa._local.source})"
+        delay = dt.datetime.timestamp(dt.datetime.now()) - fsa._local.start
         res.headers["FSA-Delay"] = f"{delay:.6f}"
         return res
 
-    def _show_response(self, res: Response):
-        """Show response."""
-        if self._mode >= Mode.DEBUG4:
+    def _show_response(self, res: Response) -> Response:
+        """Show response in logs when in debug mode."""
+        if self._fsa._mode >= Mode.DEBUG4:
             # FIXME there is no decent response prettyprinter
             r = res
             rpp = (f"{r}\n\tHTTP/? {r.status}\n\t" +
                    "\n\t".join(f"{k}: {v}" for k, v in r.headers.items()) + "\n")
             log.debug(rpp)
         return res
+
+
+# actual extension
+class FlaskSimpleAuth:
+    """Flask extension for authentication, authorization and parameters."""
+
+    def __init__(self, app: flask.Flask, debug: bool = False, **config):
+        """Constructor parameter: flask application to extend."""
+        # A basic minimal non functional initialization.
+        # Actual initializations are deferred to init_app called later,
+        # so as to allow updating the configuration.
+        self._mode = Mode.DEBUG2 if debug else Mode.UNDEF
+        self._app = app
+        self._app.config.update(**config)
+        # managers
+        self._am: _AuthenticationManager|None = None
+        self._zm: _AuthorizationManager|None = None
+        self._cm: _CacheManager|None = None
+        self._pm: _ParameterManager|None = None
+        self._qm: _RequestManager = _RequestManager(self)
+        self._rm: _ResponseManager|None = None
+        # fsa-generated errors
+        self._server_error: int = _DEFAULT_SERVER_ERROR
+        self._not_found_error: int = _DEFAULT_NOT_FOUND_ERROR
+        self._keep_user_errors: bool = _DEFAULT_KEEP_USER_ERRORS
+        # misc
+        self._local: Any = None              # per-request data
+        # COLDLY override Flask route decorator…
+        self._app.route = self.route  # type: ignore
+        # actual main initialization is deferred to `_init_app`
+        self._initialized = False
+
+    def _Res(self, msg: str, code: int, headers: dict[str, str]|None = None, content_type: str|None = None) -> Response:
+        """Generate a error actual Response with a message."""
+        if self._mode >= Mode.DEBUG:
+            log.debug(f"error response: {code} {msg}")
+        assert self._rm  # mypy…
+        return self._rm._error_response(msg, code, headers, content_type)
+
+    def _Exc(self, exc: BaseException|None) -> BaseException|None:
+        """Handle an internal error."""
+        # trace once with subtle tracking
+        if exc and not hasattr(exc, "_fsa_traced"):
+            log.error(exc, exc_info=True)
+            setattr(exc, "_fsa_traced", True)
+        return exc if self._keep_user_errors else None
+
+    def _Err(self, msg: str, code: int, exc: Exception = None) -> BaseException:
+        """Build and trace an ErrorResponse exception with a message."""
+        if self._mode >= Mode.DEBUG3:
+            log.debug(f"error: {code} {msg}")
+        return self._Exc(exc) or ErrorResponse(msg, code)
+
+    def _Bad(self, msg: str, misc: str = None) -> ConfigError:
+        """Build and trace an exception on a bad configuration."""
+        if misc:
+            msg += "\n" + misc
+        log.critical(msg)
+        return ConfigError(msg)
 
     #
     # REGISTER HOOKS
@@ -1953,9 +2077,10 @@ class FlaskSimpleAuth:
 
     def error_response(self, erh: ErrorResponseFun) -> ErrorResponseFun:
         """Set `error_response` hook."""
-        if self._error_response:
-            log.warning("overriding already defined error_response hook")
-        self._error_response = erh
+        self.initialize()
+        assert self._rm  # mypy…
+        log.warning("overriding error_response hook")
+        self._rm._error_response = erh
         return erh
 
     def _store(self, store: dict[Any, Any], what: str, key: Any, val: Callable|None = None):
@@ -1999,11 +2124,11 @@ class FlaskSimpleAuth:
         assert self._am  # mypy…
         return self._am.authentication(auth, hook)
 
-    def user_scope(self, scope):
+    def user_scope(self, scope) -> bool:
         """Is scope in the current user scope."""
         return self._local.scopes and scope in self._local.scopes
 
-    def add_group(self, *groups):
+    def add_group(self, *groups) -> None:
         """Add some groups."""
         self.initialize()
         assert self._zm  # mypy…
@@ -2012,7 +2137,7 @@ class FlaskSimpleAuth:
                 raise self._Bad(f"invalid group type: {type(grp).__name__}")
             self._zm._groups.add(grp)
 
-    def add_scope(self, *scopes):
+    def add_scope(self, *scopes) -> None:
         """Add some scopes."""
         self.initialize()
         assert self._zm  # mypy…
@@ -2021,24 +2146,30 @@ class FlaskSimpleAuth:
                 raise self._Bad(f"invalid scope type: {type(scope).__name__}")
             self._zm._scopes.add(scope)
 
-    def add_headers(self, **kwargs):
+    def add_headers(self, **kwargs) -> None:
         """Add some headers."""
+        self.initialize()
+        assert self._rm  # mypy…
         for k, v in kwargs.items():
-            self._store(self._headers, "header", k, v)
+            if not isinstance(k, str):  # pragma: no cover
+                self._Bad(f"header name must be a string: {type(k).__name__}")
+            if not (isinstance(v, str) or callable(v)):
+                self._Bad(f"header value must be a string or a callable: {type(v).__name__}")
+            self._store(self._rm._headers, "header", k, v)
 
-    def before_exec(self, hook: BeforeExecFun):
-        """Add an after auth hook."""
-        self._before_exec_hooks.append(hook)
+    def before_exec(self, hook: BeforeExecFun) -> None:
+        """Register an after auth/just before exec hook."""
+        self._qm._before_exec_hooks.append(hook)
 
     #
     # DEFERRED INITIALIZATIONS
     #
-    def initialize(self):
+    def initialize(self) -> None:
         """Run late initialization on current app."""
         if not self._initialized:
             self._init_app()
 
-    def _set_hooks(self, directive: str, set_hook: Callable[[Any, Callable], Any]):
+    def _set_hooks(self, directive: str, set_hook: Callable[[Any, Callable], Any]) -> None:
         """Convenient method to add new hooks."""
         conf = self._app.config
         if directive in conf:
@@ -2095,10 +2226,6 @@ class FlaskSimpleAuth:
         else:
             raise self._Bad(f"unexpected FSA_LOCAL value: {local}")
         self._local = Local()
-        # whether to only allow secure requests
-        self._secure = conf.get("FSA_SECURE", True)
-        if not self._secure:
-            log.warning("not secure: non local http queries are accepted")
         # status code for some errors errors
         self._server_error = conf.get("FSA_SERVER_ERROR", _DEFAULT_SERVER_ERROR)
         self._not_found_error = conf.get("FSA_NOT_FOUND_ERROR", _DEFAULT_NOT_FOUND_ERROR)
@@ -2108,29 +2235,6 @@ class FlaskSimpleAuth:
             self._app.register_error_handler(exceptions.HTTPException, lambda e: self._Res(e.description, e.code))
         # override FSA internal error handling user errors
         self._keep_user_errors = conf.get("FSA_KEEP_USER_ERRORS", False)
-        # how to generate an error response
-        if self._error_response is None:
-            error = conf.get("FSA_ERROR_RESPONSE", _DEFAULT_ERROR_RESPONSE)
-            if error is None:
-                pass
-            elif callable(error):
-                self._error_response = error
-            elif not isinstance(error, str):
-                pass
-            elif error == "plain":
-                self._error_response = \
-                    lambda m, c, h, _m: Response(m, c, h, content_type="text/plain")
-            elif error == "json":
-                self._error_response = \
-                    lambda m, c, h, _m: Response(json.dumps(m), c, h, content_type="application/json")
-            elif error.startswith("json:"):
-                key = error.split(":", 1)[1]
-                self._error_response = \
-                    lambda m, c, h, _m: Response(json.dumps({key: m}), c, h, content_type="application/json")
-            if self._error_response is None:
-                raise self._Bad(f"unexpected FSA_ERROR_RESPONSE value: {error}")
-        elif "FSA_ERROR_RESPONSE" in conf:
-            log.warning("ignoring FSA_ERROR_RESPONSE directive, handler already set")
         #
         # managers
         #
@@ -2138,44 +2242,8 @@ class FlaskSimpleAuth:
         self._zm = _AuthorizationManager(self)
         self._pm = _ParameterManager(self)
         self._cm = _CacheManager(self) if conf.get("FSA_CACHE", _DEFAULT_CACHE) else None
-        #
-        # web apps…
-        #
-        self._cors: bool = conf.get("FSA_CORS", False)
-        self._cors_opts: dict[str, Any] = conf.get("FSA_CORS_OPTS", {})
-        if self._cors:
-            try:
-                from flask_cors import CORS  # type: ignore
-            except ModuleNotFoundError:  # pragma: no cover
-                log.error("missing module: install FlaskSimpleAuth[cors]")
-                raise
-            CORS(self._app, **self._cors_opts)
-        self._401_redirect: str|None = conf.get("FSA_401_REDIRECT", None)
-        self._url_name: str|None = conf.get("FSA_URL_NAME", "URL" if self._401_redirect else None)
-        self._headers.update(conf.get("FSA_ADD_HEADERS", {}))
-        #
-        # request hooks: before request executed in order, after in reverse
-        # (some before hooks are registered in __init__)
-        #
-        self._before_requests = conf.get("FSA_BEFORE_REQUEST", [])
-        self._before_exec_hooks += conf.get("FSA_BEFORE_EXEC", [])
-        # internal hooks
-        if self._mode >= Mode.DEBUG4:
-            self._app.after_request(self._show_response)
-        if self._mode >= Mode.DEV:
-            self._app.after_request(self._add_fsa_headers)
-        self._after_requests = conf.get("FSA_AFTER_REQUEST", [])
-        if self._after_requests:
-            self._app.after_request(self._run_after_requests)
-        if self._headers:
-            self._app.after_request(self._add_headers)
-        if self._am:  # always, because of auth=…
-            self._app.after_request(self._am._set_www_authenticate)
-        if self._am and self._am._tm and self._am._tm._carrier == "cookie":
-            self._app.after_request(self._am._tm._set_auth_cookie)
-        if self._401_redirect:
-            self._app.after_request(self._possible_redirect)
-        self._app.after_request(self._auth_post_check)
+        self._qm._init_app()
+        self._rm = _ResponseManager(self)
         #
         # blueprint hacks
         #
@@ -2192,13 +2260,6 @@ class FlaskSimpleAuth:
             self.template_context_processors = self._app.template_context_processors
         else:  # pragma: no cover
             raise self._Bad("unexpected Flask version while dealing with blueprints?")
-        #
-        # CACHE
-        #
-        # NOTE this is too early to create per function caches because they may not be
-        # initialized yet…
-        #
-        #
         # done!
         self._initialized = True
 
@@ -2210,7 +2271,7 @@ class FlaskSimpleAuth:
         self.initialize()
         assert self._am  # mypy…
         if not self._am._pm:  # pragma: no cover
-            raise self._Err(f"password manager is disabled", self._server_error)
+            raise self._Err("password manager is disabled", self._server_error)
         return self._am._pm.check_password(pwd, ref)
 
     def hash_password(self, pwd, check=True):
@@ -2224,7 +2285,7 @@ class FlaskSimpleAuth:
     #
     # TOKEN
     #
-    def create_token(self, *args, **kwargs):
+    def create_token(self, *args, **kwargs) -> str:
         self.initialize()
         assert self._am  # mypy…
         if not self._am._tm:  # pragma: no cover
@@ -2271,11 +2332,11 @@ class FlaskSimpleAuth:
 
         return self._local.user
 
-    def current_user(self):
+    def current_user(self) -> str|None:
         """Return current authenticated user, if any."""
         return self._local.user
 
-    def clear_caches(self):
+    def clear_caches(self) -> None:
         """Clear internal shared cache.
 
         Probably a bad idea because:
@@ -2300,7 +2361,7 @@ class FlaskSimpleAuth:
     #   _perm_authz: check per-object permissions
     #  _before_exec: as told
     #
-    def _safe_call(self, path, level, fun, *args, **kwargs):
+    def _safe_call(self, path, level, fun, *args, **kwargs) -> Response:
         """Call a route function ensuring a response whatever."""
         try:  # the actual call
             return fun(*args, **kwargs)
@@ -2311,37 +2372,6 @@ class FlaskSimpleAuth:
             if self._Exc(e):
                 raise
             return self._Res(f"internal error caught at {level} on {path}", self._server_error)
-
-    # run any hook after auth and before exec
-    def _before_exec(self, path):
-
-        def decorate(fun: Callable):
-
-            @functools.wraps(fun)
-            def wrapper(*args, **kwargs):
-
-                login = self.current_user()  # may be None
-                auth = self._local.auth
-
-                # apply all hooks
-                for hook in self._before_exec_hooks:
-                    try:
-                        res = hook(request, login, auth)
-                        if res:
-                            if self._mode >= Mode.DEBUG2:
-                                log.debug(f"returning on {request.method} {request.path} before exec hook")
-                            return res
-                    except Exception as e:
-                        if self._Exc(e):  # pragma: no cover
-                            raise
-                        return self._Res("internal error with before exec hook", self._server_error)
-
-                # then call the initial function
-                return self._safe_call(path, "before exec hook", fun, *args, **kwargs)
-
-            return wrapper
-
-        return decorate
 
     # FIXME endpoint?
     def add_url_rule(self, rule, endpoint=None, view_func=None, authorize=NONE, auth=None, realm=None, **options):
@@ -2477,8 +2507,8 @@ class FlaskSimpleAuth:
 
         # build handling layers in reverse order:
         # routed / authenticate / (oauth|group|no|) / params / perms / hooks / fun
-        if self._before_exec_hooks:
-            fun = self._before_exec(newpath)(fun)
+        if self._qm._before_exec_hooks:
+            fun = self._qm._execute_hooks(newpath, "before exec hook", fun, self._qm._before_exec_hooks)
         if perms:
             if not need_parameters:
                 raise self._Bad("permissions require some parameters")
@@ -2530,7 +2560,7 @@ class FlaskSimpleAuth:
         return decorate
 
     # support Flask 2.0 per-method decorator shortcuts
-    # note that app.get("/", methods=["POST"], …) would do a POST.
+    # NOTE app.get("/", methods=["POST"], …) would do a POST.
     def get(self, rule, **options):
         """Shortcut for `route` with `GET` method."""
         return self.route(rule, methods=["GET"], **options)

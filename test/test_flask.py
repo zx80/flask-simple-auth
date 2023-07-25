@@ -1071,7 +1071,7 @@ def test_bad_app():
         assert False, "bad app creation must fail"
     except ConfigError as e:
         assert "unexpected auth type" in str(e)
-    # bad add group and scope type
+    # bad add various checks
     app = create_app()
     try:
         app.add_group(["hello", "world"])
@@ -1083,6 +1083,12 @@ def test_bad_app():
         assert False, "bad app creation must fail"
     except ConfigError as e:
         assert "invalid scope type" in str(e)
+    try:
+        app.add_headers(one=1)
+        assert False, "bad app creation must fail"
+    except ConfigError as e:
+        assert "header value" in str(e)
+
 
 class PK():
     def __init__(self, kind):
@@ -1764,7 +1770,7 @@ def test_request_hooks():
     assert res.data == b"this is cool!"
     assert "Cool" in res.headers and res.headers["Cool"] == "Calvin"
     # add the kill-me before request
-    app._fsa._before_requests = [before_bad]
+    app._fsa._qm._before_requests = [before_bad]
     res = check(555, client.get("/cool"))
     assert res.data == b"Ooops!"
 
