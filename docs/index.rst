@@ -47,46 +47,49 @@ How these are checked is also set from the configuration.
 HTTP or JSON parameters are automatically converted to the expected type.
 
 .. code:: python
-   # file "app.py"
-   import FlaskSimpleAuth as fsa
 
-   app = fsa.Flask("acme")
-   app.config.from_envvar("ACME_CONFIG")
+    # file "app.py"
+    import FlaskSimpleAuth as fsa
 
-   @app.get("/store", authorize="ALL")
-   def get_store():
-       # return the list of stores
-       return fsa.jsonify(...), 200
+    app = fsa.Flask("acme")
+    app.config.from_envvar("ACME_CONFIG")
 
-   @app.post("/store/<sid>", authorize=("store", "sid", "manager"))
-   def post_store(sid: int, product: str, quantity: int):
-       # product is added in quantity to store sid
-       return "", 201
+    @app.get("/store", authorize="ALL")
+    def get_store():
+        # return the list of stores
+        return fsa.jsonify(...), 200
+
+    @app.post("/store/<sid>", authorize=("store", "sid", "manager"))
+    def post_store(sid: int, product: str, quantity: int):
+        # product is added in quantity to store sid
+        return "", 201
 
 Here is an example of configuration for the above application:
 Users are identified either with a JWT token or with a basic authentification.
 
 .. code:: python
-   # acme configuration
-   import os
 
-   FSA_AUTH = ["token", "basic"]
-   FSA_TOKEN_TYPE = "jwt"
-   FSA_TOKEN_SECRET = os.environ["ACME_SECRET"]
+    # acme configuration
+    import os
+
+    FSA_AUTH = ["token", "basic"]
+    FSA_TOKEN_TYPE = "jwt"
+    FSA_TOKEN_SECRET = os.environ["ACME_SECRET"]
 
 In this example, the framework needs two callbacks: one for retrieving the
 salted hashed password for a user, and one for telling whether a user can
 access a given store in a particular role.
 
 .. code:: python
-   # authentication and authorization callbacks
-   @app.get_user_pass
-   def get_user_pass(user: str) -> str|None:
-       return ...  # hashed password retrieved from database
 
-   @app.object_perms("store")
-   def store_permission(sid: int, user: str, role: str) -> bool|None:
-       return ...  # tell wether user can access store sid in role
+    # authentication and authorization callbacks
+    @app.get_user_pass
+    def get_user_pass(user: str) -> str|None:
+        return ...  # hashed password retrieved from database
+
+    @app.object_perms("store")
+    def store_permission(sid: int, user: str, role: str) -> bool|None:
+        return ...  # tell wether user can access store sid in role
 
 .. toctree::
    :maxdepth: 3
