@@ -303,6 +303,8 @@ class Flask(flask.Flask):
       `get_user`, `current_user`, `clear_caches`, `cast`, `object_perms`,
       `user_scope`, `password_quality`, `password_check`, `add_group`,
       `add_scope`, `add_headers`, `error_response`, `authentication`…
+
+    See ``FlaskSimpleAuth`` class documentation about these methods.
     """
 
     def __init__(self, *args, debug: bool = False, **kwargs):
@@ -2475,21 +2477,30 @@ class FlaskSimpleAuth:
     # AUTHENTICATE WITH ANY MEAN
     #
     def get_user(self, required=True) -> str|None:
-        """Authenticate user or throw exception."""
+        """Authenticate user or throw exception.
+
+        Tries all possible authentication schemes allowed on the route,
+        and returns the authenticated user or throws an exception.
+        The result is memoized.
+        """
         return self._am.get_user(required)
 
     def current_user(self) -> str|None:
-        """Return current authenticated user, if any."""
+        """Return current authenticated user, if any.
+
+        Returns `None` if no user has been authenticated.
+        """
         return self._local.user
 
     def user_scope(self, scope) -> bool:
-        """Is scope in the current user scope."""
+        """Is `scope` in the `current user` scopes."""
         return self._local.scopes and scope in self._local.scopes
 
     def clear_caches(self) -> None:
         """Clear internal shared cache.
 
         Probably a bad idea because:
+
         - of the performance impact
         - for a local cache in a multi-process setup, other processes are out
 
@@ -2697,7 +2708,17 @@ class FlaskSimpleAuth:
         return flask.Flask.add_url_rule(self._app, newpath, endpoint=endpoint, view_func=entry, **options)
 
     def route(self, rule, **options):
-        """Extended `route` decorator provided by the extension."""
+        """Extended `route` decorator provided by FlaskSimpleAuth.
+
+        This decorator is also available on the Flask wrapper, please use it from there.
+
+        Parameters:
+
+        - ``rule``: the path, possibly including path parameters.
+        - ``authorize``: mandatory permissions required, eg groups or object perms.
+        - ``auth``: authentication scheme(s) allowed on this route.
+        - ``realm``: authentication realm on this particular route.
+        """
         if "authorize" not in options:
             log.warning(f'missing authorize on route "{rule}" makes it 403 Forbidden')
 
