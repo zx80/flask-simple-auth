@@ -72,6 +72,7 @@ Users are identified either with a JWT token or with a basic authentification.
     # acme configuration
     import os
 
+    FSA_MODE = "dev"
     FSA_AUTH = ["token", "basic"]
     FSA_TOKEN_TYPE = "jwt"
     FSA_TOKEN_SECRET = os.environ["ACME_SECRET"]
@@ -93,6 +94,9 @@ access a given store in a particular role.
 
 The framework ensures that routes are only called by authenticated users
 who have the right authorizations.
+Secured and reasonable defaults are provided, but most features can be adjusted
+or extended to particular needs through directives and hooks.
+Authentication and authorization callback invocations are cached for efficiency.
 
 .. toctree::
    :maxdepth: 3
