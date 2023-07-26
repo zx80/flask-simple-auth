@@ -5,9 +5,9 @@ on: push
 jobs:
   build:
     runs-on: ubuntu-latest
-    inputs:
-      name: github-pages
-      path: docs/_build/html
+    # inputs:
+    #   name: github-pages
+    #  path: docs/_build/html
     steps:
       - name: Checkout
         uses: actions/checkout@v3
