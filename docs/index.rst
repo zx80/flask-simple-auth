@@ -14,7 +14,7 @@ your routes with authentification, authorization and parameter management.
 .. image:: https://img.shields.io/badge/coverage-100%25-success
    :alt: Coverage
 
-.. image:: https://img.shields.io/github/issues/zx80/flask-simple-auth?style=flat)
+.. image:: https://img.shields.io/github/issues/zx80/flask-simple-auth?style=flat
    :alt: Issues
    :target: https://github.com/zx80/flask-simple-auth/issues
 
@@ -23,7 +23,7 @@ your routes with authentification, authorization and parameter management.
 
 .. image:: https://img.shields.io/pypi/v/FlaskSimpleAuth
    :alt: Version
-   :target:: https//pypi.org/project/FlaskSimpleAuth/
+   :target: https//pypi.org/project/FlaskSimpleAuth/
 
 .. image:: https://img.shields.io/badge/badges-8-informational
    :alt: Badges
