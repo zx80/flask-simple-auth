@@ -89,7 +89,10 @@ access a given store in a particular role.
 
     @app.object_perms("store")
     def store_permission(sid: int, user: str, role: str) -> bool|None:
-        return ...  # tell wether user can access store sid in role
+        return ...  # tell whether user can access store sid in role
+
+The framework ensures that routes are only called by authenticated users
+who have the right authorizations.
 
 .. toctree::
    :maxdepth: 3
