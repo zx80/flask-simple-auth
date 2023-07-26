@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Flask Simple Auth Versions &mdash; FlaskSimpleAuth 24.0 documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="_static/graphviz.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="_static/jquery.js"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/sphinx_highlight.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            FlaskSimpleAuth
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <!-- Local TOC -->
+              <div class="local-toc"><ul>
+<li><a class="reference internal" href="#">Flask Simple Auth Versions</a><ul>
+<li><a class="reference internal" href="#on">? on ?</a></li>
+<li><a class="reference internal" href="#on-2023-07-23">23.2 on 2023-07-23</a></li>
+<li><a class="reference internal" href="#on-2023-07-13">23.1 on 2023-07-13</a></li>
+<li><a class="reference internal" href="#on-2023-06-14">23.0 on 2023-06-14</a></li>
+<li><a class="reference internal" href="#on-2023-03-12">22.0 on 2023-03-12</a></li>
+<li><a class="reference internal" href="#on-2023-02-05">21.5 on 2023-02-05</a></li>
+<li><a class="reference internal" href="#id1">21.4 on 2023-02-05</a></li>
+<li><a class="reference internal" href="#on-2023-02-04">21.3 on 2023-02-04</a></li>
+<li><a class="reference internal" href="#on-2023-02-02">21.2 on 2023-02-02</a></li>
+<li><a class="reference internal" href="#on-2023-01-31">21.1 on 2023-01-31</a></li>
+<li><a class="reference internal" href="#on-2023-01-29">21.0 on 2023-01-29</a></li>
+<li><a class="reference internal" href="#on-2023-01-26">20.11 on 2023-01-26</a></li>
+<li><a class="reference internal" href="#on-2023-01-15">20.10 on 2023-01-15</a></li>
+<li><a class="reference internal" href="#on-2023-01-14">20.9 on 2023-01-14</a></li>
+<li><a class="reference internal" href="#id2">20.8 on 2023-01-14</a></li>
+<li><a class="reference internal" href="#id3">20.7 on 2023-01-14</a></li>
+<li><a class="reference internal" href="#on-2023-01-13">20.6 on 2023-01-13</a></li>
+<li><a class="reference internal" href="#on-2023-01-11">20.5 on 2023-01-11</a></li>
+<li><a class="reference internal" href="#on-2023-01-07">20.4 on 2023-01-07</a></li>
+<li><a class="reference internal" href="#on-2023-01-02">20.3 on 2023-01-02</a></li>
+<li><a class="reference internal" href="#on-2022-12-27">20.2 on 2022-12-27</a></li>
+<li><a class="reference internal" href="#on-2022-12-24">20.1 on 2022-12-24</a></li>
+<li><a class="reference internal" href="#on-2022-12-22">20.0 on 2022-12-22</a></li>
+<li><a class="reference internal" href="#on-2022-12-06">19.3 on 2022-12-06</a></li>
+<li><a class="reference internal" href="#id4">19.2 on 2022-12-06</a></li>
+<li><a class="reference internal" href="#on-2022-12-05">19.1 on 2022-12-05</a></li>
+<li><a class="reference internal" href="#on-2022-11-16">19.0 on 2022-11-16</a></li>
+<li><a class="reference internal" href="#on-2022-11-11">18.1 on 2022-11-11</a></li>
+<li><a class="reference internal" href="#on-2022-11-07">18.0 on 2022-11-07</a></li>
+<li><a class="reference internal" href="#on-2022-10-29">17.0 on 2022-10-29</a></li>
+<li><a class="reference internal" href="#on-2022-10-27">16.0 on 2022-10-27</a></li>
+<li><a class="reference internal" href="#on-2022-09-11">15.0 on 2022-09-11</a></li>
+<li><a class="reference internal" href="#on-2022-08-02">14.2 on 2022-08-02</a></li>
+<li><a class="reference internal" href="#id5">14.1 on 2022-08-02</a></li>
+<li><a class="reference internal" href="#id6">14.0 on 2022-08-02</a></li>
+<li><a class="reference internal" href="#on-2022-06-12">13.0 on 2022-06-12</a></li>
+<li><a class="reference internal" href="#on-2022-05-30">12.0 on 2022-05-30</a></li>
+<li><a class="reference internal" href="#on-2022-05-27">11.0 on 2022-05-27</a></li>
+<li><a class="reference internal" href="#on-2022-03-06">10.0 on 2022-03-06</a></li>
+<li><a class="reference internal" href="#on-2022-03-04">9.0 on 2022-03-04</a></li>
+<li><a class="reference internal" href="#id7">8.0 on 2022-03-04</a></li>
+<li><a class="reference internal" href="#on-2022-02-24">7.0 on 2022-02-24</a></li>
+<li><a class="reference internal" href="#on-2022-02-13">6.0 on 2022-02-13</a></li>
+<li><a class="reference internal" href="#on-2022-02-08">5.4.0 on 2022-02-08</a></li>
+<li><a class="reference internal" href="#on-2022-02-04">5.3.0 on 2022-02-04</a></li>
+<li><a class="reference internal" href="#on-2022-01-31">5.2.0 on 2022-01-31</a></li>
+<li><a class="reference internal" href="#on-2022-01-30">5.1.0 on 2022-01-30</a></li>
+<li><a class="reference internal" href="#on-2022-01-29">5.0.0 on 2022-01-29</a></li>
+<li><a class="reference internal" href="#on-2022-01-16">4.7.1 on 2022-01-16</a></li>
+<li><a class="reference internal" href="#id8">4.7.0 on 2022-01-16</a></li>
+<li><a class="reference internal" href="#on-2022-01-12">4.6.3 on 2022-01-12</a></li>
+<li><a class="reference internal" href="#on-2021-12-26">4.6.2 on 2021-12-26</a></li>
+<li><a class="reference internal" href="#on-2021-12-24">4.6.1 on 2021-12-24</a></li>
+<li><a class="reference internal" href="#on-2021-12-19">4.6.0 on 2021-12-19</a></li>
+<li><a class="reference internal" href="#on-2021-12-12">4.5.1 on 2021-12-12</a></li>
+<li><a class="reference internal" href="#id9">4.5.0 on 2021-12-12</a></li>
+<li><a class="reference internal" href="#on-2021-12-11">4.4.0 on 2021-12-11</a></li>
+<li><a class="reference internal" href="#on-2021-12-05">4.3.1 on 2021-12-05</a></li>
+<li><a class="reference internal" href="#on-2021-10-14">4.3.0 on 2021-10-14</a></li>
+<li><a class="reference internal" href="#on-2021-09-14">4.2.0 on 2021-09-14</a></li>
+<li><a class="reference internal" href="#on-2021-06-12">4.1.0 on 2021-06-12</a></li>
+<li><a class="reference internal" href="#on-2021-06-01">4.0.0 on 2021-06-01</a></li>
+<li><a class="reference internal" href="#on-2021-05-31">3.1.1 on 2021-05-31</a></li>
+<li><a class="reference internal" href="#on-2021-04-17">3.1.0 on 2021-04-17</a></li>
+<li><a class="reference internal" href="#on-2021-04-07">3.0.0 on 2021-04-07</a></li>
+<li><a class="reference internal" href="#on-2021-04-04">2.5.0 on 2021-04-04</a></li>
+<li><a class="reference internal" href="#on-2021-03-29">2.4.1 on 2021-03-29</a></li>
+<li><a class="reference internal" href="#id10">2.4.0 on 2021-03-29</a></li>
+<li><a class="reference internal" href="#on-2021-03-27">2.3.0 on 2021-03-27</a></li>
+<li><a class="reference internal" href="#on-2021-03-22">2.2.1 on 2021-03-22</a></li>
+<li><a class="reference internal" href="#id11">2.2.0 on 2021-03-22</a></li>
+<li><a class="reference internal" href="#on-2021-03-21">2.1.0 on 2021-03-21</a></li>
+<li><a class="reference internal" href="#on-2021-03-16">2.0.0 on 2021-03-16</a></li>
+<li><a class="reference internal" href="#on-2021-03-10">1.9.0 on 2021-03-10</a></li>
+<li><a class="reference internal" href="#on-2021-03-02">1.8.1 on 2021-03-02</a></li>
+<li><a class="reference internal" href="#id12">1.8.0 on 2021-03-02</a></li>
+<li><a class="reference internal" href="#on-2021-03-01">1.7.0 on 2021-03-01</a></li>
+<li><a class="reference internal" href="#on-2021-02-28">1.6.0 on 2021-02-28</a></li>
+<li><a class="reference internal" href="#on-2021-02-27">1.5.0 on 2021-02-27</a></li>
+<li><a class="reference internal" href="#on-2021-02-23">1.4.0 on 2021-02-23</a></li>
+<li><a class="reference internal" href="#id13">1.3.0 on 2021-02-23</a></li>
+<li><a class="reference internal" href="#on-2021-02-22">1.2.0 on 2021-02-22</a></li>
+<li><a class="reference internal" href="#id14">1.1.0 on 2021-02-22</a></li>
+<li><a class="reference internal" href="#on-2021-02-21">1.0.0 on 2021-02-21</a></li>
+<li><a class="reference internal" href="#id15">0.9.0 on 2021-02-21</a></li>
+</ul>
+</li>
+</ul>
+</div>
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">FlaskSimpleAuth</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Flask Simple Auth Versions</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/VERSIONS.md.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="flask-simple-auth-versions">
+<h1>Flask Simple Auth Versions<a class="headerlink" href="#flask-simple-auth-versions" title="Permalink to this heading"></a></h1>
+<p>Sources are available on <a class="reference external" href="https://github.com/zx80/flask-simple-auth">GitHub</a>
+and packaged on <a class="reference external" href="https://pypi.org/project/FlaskSimpleAuth/">PyPI</a>.</p>
+<section id="on">
+<h2>? on ?<a class="headerlink" href="#on" title="Permalink to this heading"></a></h2>
+<p>Add support for custom authentication.
+Extend <code class="docutils literal notranslate"><span class="pre">ErrorResponse</span></code> with headers and content type.
+Refactor authentication, authorization, request, parameter, response, token,
+password and cache management.
+Improve documentation for Sphinx.</p>
+</section>
+<section id="on-2023-07-23">
+<h2>23.2 on 2023-07-23<a class="headerlink" href="#on-2023-07-23" title="Permalink to this heading"></a></h2>
+<p>Improve <code class="docutils literal notranslate"><span class="pre">jsonify</span></code> to deal with pydantic-generated classes.
+Allow using some auth only on some routes, not in default list.
+Fix some debug message formatting.
+Fix handling of <code class="docutils literal notranslate"><span class="pre">pydantic</span></code> classes as custom <em>special parameters</em>.
+Better documentation.</p>
+</section>
+<section id="on-2023-07-13">
+<h2>23.1 on 2023-07-13<a class="headerlink" href="#on-2023-07-13" title="Permalink to this heading"></a></h2>
+<p>Add <code class="docutils literal notranslate"><span class="pre">Cookie</span></code> and <code class="docutils literal notranslate"><span class="pre">Header</span></code> special parameters.
+Fix some markdown checks.
+Fix demo tests.</p>
+</section>
+<section id="on-2023-06-14">
+<h2>23.0 on 2023-06-14<a class="headerlink" href="#on-2023-06-14" title="Permalink to this heading"></a></h2>
+<p>Rename branch <code class="docutils literal notranslate"><span class="pre">master</span></code> to <code class="docutils literal notranslate"><span class="pre">main</span></code>.
+Switch to full <code class="docutils literal notranslate"><span class="pre">pyproject.toml</span></code>.
+Fix and improve demo curl tests.
+Add support for MFA with per-route <code class="docutils literal notranslate"><span class="pre">realm</span></code>, see demo.</p>
+</section>
+<section id="on-2023-03-12">
+<h2>22.0 on 2023-03-12<a class="headerlink" href="#on-2023-03-12" title="Permalink to this heading"></a></h2>
+<p>Add a minimal <code class="docutils literal notranslate"><span class="pre">pyproject.toml</span></code>: yet another useless file, which would be a
+good thing if it <em>replaced</em> other files, alas the two <code class="docutils literal notranslate"><span class="pre">setup.*</span></code> files are still
+required.
+Add support for data classes and <a class="reference external" href="https://pydantic.dev/">pydantic</a> classes
+as parameter types.
+Add an after auth/before exec hook, executed just before actually calling
+the route function.
+Report all possible <em>400</em> instead of stopping on the first issue.
+Improve documentation.</p>
+</section>
+<section id="on-2023-02-05">
+<h2>21.5 on 2023-02-05<a class="headerlink" href="#on-2023-02-05" title="Permalink to this heading"></a></h2>
+<p>Remove badly thought upward compatibility attempt.</p>
+</section>
+<section id="id1">
+<h2>21.4 on 2023-02-05<a class="headerlink" href="#id1" title="Permalink to this heading"></a></h2>
+<p>Make <code class="docutils literal notranslate"><span class="pre">jsonify</span></code> work with generators, maps, filters and ranges.
+Ensure upward compatibility with next <code class="docutils literal notranslate"><span class="pre">ProxyPatternPool</span></code> release.
+Fix <code class="docutils literal notranslate"><span class="pre">debug4</span></code> request formatting.</p>
+</section>
+<section id="on-2023-02-04">
+<h2>21.3 on 2023-02-04<a class="headerlink" href="#on-2023-02-04" title="Permalink to this heading"></a></h2>
+<p>Add list of params and files to <code class="docutils literal notranslate"><span class="pre">debug4</span></code> request traces.</p>
+</section>
+<section id="on-2023-02-02">
+<h2>21.2 on 2023-02-02<a class="headerlink" href="#on-2023-02-02" title="Permalink to this heading"></a></h2>
+<p>Add <code class="docutils literal notranslate"><span class="pre">debug4</span></code> verbosity to show request and response headers.
+To intercept the body, consider using <code class="docutils literal notranslate"><span class="pre">tcpdump</span></code>.</p>
+</section>
+<section id="on-2023-01-31">
+<h2>21.1 on 2023-01-31<a class="headerlink" href="#on-2023-01-31" title="Permalink to this heading"></a></h2>
+<p>Improve <code class="docutils literal notranslate"><span class="pre">demo</span></code> with an upload example.
+Fix display of authentication source in <code class="docutils literal notranslate"><span class="pre">dev</span></code> mode.
+Better check parameter types.</p>
+</section>
+<section id="on-2023-01-29">
+<h2>21.0 on 2023-01-29<a class="headerlink" href="#on-2023-01-29" title="Permalink to this heading"></a></h2>
+<p>Add <code class="docutils literal notranslate"><span class="pre">FSA_KEEP_USER_ERRORS</span></code> configuration directive to skip handling
+user errors and let them pass to the WSGI infrastructure instead.
+Add convenient messages when missing an optional module.
+Log internal error traces as errors.
+Simplify optional dependencies.
+Extend special parameter functions with a parameter holding
+the name of the expected parameter.
+Add <code class="docutils literal notranslate"><span class="pre">FileStorage</span></code> special parameter to get file uploads.
+Add <em>manual</em> table of contents to <code class="docutils literal notranslate"><span class="pre">README.md</span></code> and <code class="docutils literal notranslate"><span class="pre">DOCUMENTATION.md</span></code>.</p>
+</section>
+<section id="on-2023-01-26">
+<h2>20.11 on 2023-01-26<a class="headerlink" href="#on-2023-01-26" title="Permalink to this heading"></a></h2>
+<p>Add dependency options to <code class="docutils literal notranslate"><span class="pre">setup.cfg</span></code>.
+Show traces on internal errors.</p>
+</section>
+<section id="on-2023-01-15">
+<h2>20.10 on 2023-01-15<a class="headerlink" href="#on-2023-01-15" title="Permalink to this heading"></a></h2>
+<p>Reduce verbosity again by adding a “debug3” mode.</p>
+</section>
+<section id="on-2023-01-14">
+<h2>20.9 on 2023-01-14<a class="headerlink" href="#on-2023-01-14" title="Permalink to this heading"></a></h2>
+<p>Reduce verbosity when calling <code class="docutils literal notranslate"><span class="pre">current_user</span></code>.
+Improved documentation.</p>
+</section>
+<section id="id2">
+<h2>20.8 on 2023-01-14<a class="headerlink" href="#id2" title="Permalink to this heading"></a></h2>
+<p>Prioritize parameter sources and detect shadowing.
+Improved documentation.</p>
+</section>
+<section id="id3">
+<h2>20.7 on 2023-01-14<a class="headerlink" href="#id3" title="Permalink to this heading"></a></h2>
+<p>Add convenient <code class="docutils literal notranslate"><span class="pre">FSA-Request</span></code> and <code class="docutils literal notranslate"><span class="pre">FSA-User</span></code> headers in <code class="docutils literal notranslate"><span class="pre">dev</span></code> mode.
+Return several challenges with <code class="docutils literal notranslate"><span class="pre">WWW-Authenticate</span></code> if appropriate.</p>
+</section>
+<section id="on-2023-01-13">
+<h2>20.6 on 2023-01-13<a class="headerlink" href="#on-2023-01-13" title="Permalink to this heading"></a></h2>
+<p>Fix password manager lazy initialization.
+Improved documentation.</p>
+</section>
+<section id="on-2023-01-11">
+<h2>20.5 on 2023-01-11<a class="headerlink" href="#on-2023-01-11" title="Permalink to this heading"></a></h2>
+<p>Improve debug messages on parameters.</p>
+</section>
+<section id="on-2023-01-07">
+<h2>20.4 on 2023-01-07<a class="headerlink" href="#on-2023-01-07" title="Permalink to this heading"></a></h2>
+<p>Accept <code class="docutils literal notranslate"><span class="pre">?</span> <span class="pre">|</span> <span class="pre">None</span></code> type declarations on route functions.</p>
+</section>
+<section id="on-2023-01-02">
+<h2>20.3 on 2023-01-02<a class="headerlink" href="#on-2023-01-02" title="Permalink to this heading"></a></h2>
+<p>Add <code class="docutils literal notranslate"><span class="pre">FSA_HANDLE_ALL_ERRORS</span></code> configuration directive.
+Improved documentation.</p>
+</section>
+<section id="on-2022-12-27">
+<h2>20.2 on 2022-12-27<a class="headerlink" href="#on-2022-12-27" title="Permalink to this heading"></a></h2>
+<p>Generate <code class="docutils literal notranslate"><span class="pre">application/json</span></code> instead of <code class="docutils literal notranslate"><span class="pre">text/json</span></code>.
+Cleanup a flake8 warning.
+Improved documentation.</p>
+</section>
+<section id="on-2022-12-24">
+<h2>20.1 on 2022-12-24<a class="headerlink" href="#on-2022-12-24" title="Permalink to this heading"></a></h2>
+<p>Replace <code class="docutils literal notranslate"><span class="pre">FSA_DEBUG</span></code> by <code class="docutils literal notranslate"><span class="pre">FSA_MODE</span></code>.
+Show request execution time in µs precision under debug.
+Improved documentation.</p>
+</section>
+<section id="on-2022-12-22">
+<h2>20.0 on 2022-12-22<a class="headerlink" href="#on-2022-12-22" title="Permalink to this heading"></a></h2>
+<p>Split <code class="docutils literal notranslate"><span class="pre">README.md</span></code> with <code class="docutils literal notranslate"><span class="pre">DOCUMENTATION.md</span></code>.
+Improve documentation, published on <a class="reference external" href="https://zx80.github.io/flask-simple-auth/">github.io</a>.
+Add <code class="docutils literal notranslate"><span class="pre">error_response</span></code> decorator and <code class="docutils literal notranslate"><span class="pre">FSA_ERROR_RESPONSE</span></code> directive
+to control generated error responses.
+Add <code class="docutils literal notranslate"><span class="pre">add_headers</span></code> function and <code class="docutils literal notranslate"><span class="pre">FSA_ADD_HEADERS</span></code> directive to append
+new headers to the response.
+Add <code class="docutils literal notranslate"><span class="pre">FSA_BEFORE_REQUEST</span></code> and <code class="docutils literal notranslate"><span class="pre">FSA_AFTER_REQUEST</span></code> directives to add hooks
+directly from the configuration.</p>
+</section>
+<section id="on-2022-12-06">
+<h2>19.3 on 2022-12-06<a class="headerlink" href="#on-2022-12-06" title="Permalink to this heading"></a></h2>
+<p>Fix an uncaught typo.</p>
+</section>
+<section id="id4">
+<h2>19.2 on 2022-12-06<a class="headerlink" href="#id4" title="Permalink to this heading"></a></h2>
+<p>Improve work around to handle early return.
+Add <code class="docutils literal notranslate"><span class="pre">CurrentApp</span></code> special parameter type.
+Improved documentation.</p>
+</section>
+<section id="on-2022-12-05">
+<h2>19.1 on 2022-12-05<a class="headerlink" href="#on-2022-12-05" title="Permalink to this heading"></a></h2>
+<p>Avoid internal error if a user before request generates an early
+return, in some cases.
+Improve documentation and tests.</p>
+</section>
+<section id="on-2022-11-16">
+<h2>19.0 on 2022-11-16<a class="headerlink" href="#on-2022-11-16" title="Permalink to this heading"></a></h2>
+<p>Add <code class="docutils literal notranslate"><span class="pre">add_group</span></code> method to register groups allowed for <code class="docutils literal notranslate"><span class="pre">authorize</span></code>,
+and <code class="docutils literal notranslate"><span class="pre">add_scope</span></code> to register scopes allowed for <code class="docutils literal notranslate"><span class="pre">oauth</span></code>.
+Add corresponding <code class="docutils literal notranslate"><span class="pre">FSA_AUTHZ_GROUPS</span></code> and <code class="docutils literal notranslate"><span class="pre">FSA_AUTHZ_SCOPES</span></code>
+directives.
+Rename <code class="docutils literal notranslate"><span class="pre">user_oauth</span></code> as <code class="docutils literal notranslate"><span class="pre">user_scope</span></code> for consistency.
+Allow to provide configuration directives as constructor arguments.
+Improve documentation.</p>
+</section>
+<section id="on-2022-11-11">
+<h2>18.1 on 2022-11-11<a class="headerlink" href="#on-2022-11-11" title="Permalink to this heading"></a></h2>
+<p>Handle <code class="docutils literal notranslate"><span class="pre">Optional</span></code> parameters to please <code class="docutils literal notranslate"><span class="pre">mypy</span></code>.
+Add Python 3.12-dev check to CI.
+Improve documentation.</p>
+</section>
+<section id="on-2022-11-07">
+<h2>18.0 on 2022-11-07<a class="headerlink" href="#on-2022-11-07" title="Permalink to this heading"></a></h2>
+<p>Add <code class="docutils literal notranslate"><span class="pre">special_parameter</span></code> decorator and <code class="docutils literal notranslate"><span class="pre">FSA_SPECIAL_PARAMETER</span></code> directive
+to add special parameters.
+Add <code class="docutils literal notranslate"><span class="pre">CurrentUser</span></code> special parameter.
+Add <code class="docutils literal notranslate"><span class="pre">password_check</span></code> hook (also with <code class="docutils literal notranslate"><span class="pre">FSA_PASSWORD_CHECK</span></code> directive) for
+alternate password checking such as temporary access codes or external
+passwords, eg LDAP.
+Add <code class="docutils literal notranslate"><span class="pre">password_quality</span></code> hook (also with <code class="docutils literal notranslate"><span class="pre">FSA_PASSWORD_QUALITY</span></code> directive) to
+check for a password strength.
+Add <code class="docutils literal notranslate"><span class="pre">FSA_TOKEN_ISSUER</span></code> to specify a token issuer.
+Add <code class="docutils literal notranslate"><span class="pre">oauth</span></code> authentication for OAuth 2.0 authorization support (RFC 8693).
+Add <code class="docutils literal notranslate"><span class="pre">FSA_LOCAL</span></code> to adjust local data management.
+Set <code class="docutils literal notranslate"><span class="pre">FSA_TOKEN_RENEWAL</span></code> default to <em>0.0</em>.
+Prioritize authentication scheme per configuration or route order (<code class="docutils literal notranslate"><span class="pre">auth</span></code>).
+Improve documentation.</p>
+</section>
+<section id="on-2022-10-29">
+<h2>17.0 on 2022-10-29<a class="headerlink" href="#on-2022-10-29" title="Permalink to this heading"></a></h2>
+<p>Move <code class="docutils literal notranslate"><span class="pre">Reference</span></code> implementation to module <code class="docutils literal notranslate"><span class="pre">ProxyPatternPool</span></code>.
+Add <code class="docutils literal notranslate"><span class="pre">Environ</span></code> special parameter type.</p>
+</section>
+<section id="on-2022-10-27">
+<h2>16.0 on 2022-10-27<a class="headerlink" href="#on-2022-10-27" title="Permalink to this heading"></a></h2>
+<p>Require Flask 2.2.
+Add <code class="docutils literal notranslate"><span class="pre">FSA_REJECT_UNEXPECTED_PARAM</span></code> to be strict about unexpected parameters.
+Add <code class="docutils literal notranslate"><span class="pre">Request</span></code>, <code class="docutils literal notranslate"><span class="pre">Session</span></code> and <code class="docutils literal notranslate"><span class="pre">Globals</span></code> special parameter types.
+Ensure <code class="docutils literal notranslate"><span class="pre">Reference</span></code> count consistency.
+Improve one error message.</p>
+</section>
+<section id="on-2022-09-11">
+<h2>15.0 on 2022-09-11<a class="headerlink" href="#on-2022-09-11" title="Permalink to this heading"></a></h2>
+<p>Add early sanity checks about path parameters: they <em>must</em> appear as function
+parameters and should not have a default value.
+Also, path parameters converter, if declared, should be consistent with
+the corresponding parameter type.
+Improve <code class="docutils literal notranslate"><span class="pre">mypy</span></code> checks by removing some <em>ignore</em> hints.
+Improve <code class="docutils literal notranslate"><span class="pre">Makefile</span></code>.
+Rename FSA generated exceptions: <code class="docutils literal notranslate"><span class="pre">ErrorResponse</span></code> and <code class="docutils literal notranslate"><span class="pre">ConfigError</span></code>.
+Add <code class="docutils literal notranslate"><span class="pre">pymarkdown</span></code> check.
+Add a GitHub CI configuration (with 99% coverage for now).</p>
+</section>
+<section id="on-2022-08-02">
+<h2>14.2 on 2022-08-02<a class="headerlink" href="#on-2022-08-02" title="Permalink to this heading"></a></h2>
+<p>Only use <code class="docutils literal notranslate"><span class="pre">re2</span></code> if available, do not require it as a dependency.</p>
+</section>
+<section id="id5">
+<h2>14.1 on 2022-08-02<a class="headerlink" href="#id5" title="Permalink to this heading"></a></h2>
+<p>Fix pypi badge version link.</p>
+</section>
+<section id="id6">
+<h2>14.0 on 2022-08-02<a class="headerlink" href="#id6" title="Permalink to this heading"></a></h2>
+<p>Fix compatibility with <em>Flask 2.2</em>.
+Add <code class="docutils literal notranslate"><span class="pre">max_use</span></code> to internal pool.
+Use <code class="docutils literal notranslate"><span class="pre">re2</span></code> instead of <code class="docutils literal notranslate"><span class="pre">re</span></code>.
+Improve documentation.</p>
+</section>
+<section id="on-2022-06-12">
+<h2>13.0 on 2022-06-12<a class="headerlink" href="#on-2022-06-12" title="Permalink to this heading"></a></h2>
+<p>Add <code class="docutils literal notranslate"><span class="pre">max_size</span></code> parameter to <code class="docutils literal notranslate"><span class="pre">Reference</span></code> pool.
+Remove <code class="docutils literal notranslate"><span class="pre">pool</span></code> constructor parameter.
+Add <code class="docutils literal notranslate"><span class="pre">mode</span></code> option to <code class="docutils literal notranslate"><span class="pre">Reference</span></code> with a <code class="docutils literal notranslate"><span class="pre">VERSATILE</span></code> scope.</p>
+</section>
+<section id="on-2022-05-30">
+<h2>12.0 on 2022-05-30<a class="headerlink" href="#on-2022-05-30" title="Permalink to this heading"></a></h2>
+<p>Add <code class="docutils literal notranslate"><span class="pre">pool</span></code> option to <code class="docutils literal notranslate"><span class="pre">Reference</span></code> to better deal with <code class="docutils literal notranslate"><span class="pre">werkzeug</span></code> thread management.
+Improve documentation and code comments.</p>
+</section>
+<section id="on-2022-05-27">
+<h2>11.0 on 2022-05-27<a class="headerlink" href="#on-2022-05-27" title="Permalink to this heading"></a></h2>
+<p>Add <code class="docutils literal notranslate"><span class="pre">FSA_CACHE_PREFIX</span></code> directive to help with sharing a distributed cache
+such as redis or memcached.</p>
+<p>Fixes for Flask 2.1:
+Now <code class="docutils literal notranslate"><span class="pre">get_json</span></code> raises a exception when unhappy instead of returning <code class="docutils literal notranslate"><span class="pre">None</span></code>.
+Remove <code class="docutils literal notranslate"><span class="pre">safe_join</span></code> export as flask removed it.</p>
+</section>
+<section id="on-2022-03-06">
+<h2>10.0 on 2022-03-06<a class="headerlink" href="#on-2022-03-06" title="Permalink to this heading"></a></h2>
+<p>Improve documentation. Minor code cleanup.
+Take advantage of <code class="docutils literal notranslate"><span class="pre">CacheToolUtils</span></code> 3.0 to reduce the loc count.</p>
+</section>
+<section id="on-2022-03-04">
+<h2>9.0 on 2022-03-04<a class="headerlink" href="#on-2022-03-04" title="Permalink to this heading"></a></h2>
+<p>Extend <code class="docutils literal notranslate"><span class="pre">set</span></code> in <code class="docutils literal notranslate"><span class="pre">Reference</span></code> to handle both objects and generation functions.
+Fix <code class="docutils literal notranslate"><span class="pre">cast</span></code> decorator.</p>
+</section>
+<section id="id7">
+<h2>8.0 on 2022-03-04<a class="headerlink" href="#id7" title="Permalink to this heading"></a></h2>
+<p>Use <code class="docutils literal notranslate"><span class="pre">AUTH</span></code> as the default parameter name for tokens.
+Under debug, warn about unused parameters.
+Improve demonstration code and environment.
+Use <code class="docutils literal notranslate"><span class="pre">threading.local()</span></code> so that <code class="docutils literal notranslate"><span class="pre">Flask</span></code> and <code class="docutils literal notranslate"><span class="pre">Reference</span></code> work with threads.</p>
+</section>
+<section id="on-2022-02-24">
+<h2>7.0 on 2022-02-24<a class="headerlink" href="#on-2022-02-24" title="Permalink to this heading"></a></h2>
+<p>Improve and simplify code where possible.
+Remove <code class="docutils literal notranslate"><span class="pre">FSA_MODE</span></code>, <code class="docutils literal notranslate"><span class="pre">FSA_SKIP_PATH</span></code> and <code class="docutils literal notranslate"><span class="pre">FSA_CHECK</span></code> directives to make
+authentication <em>always</em> on demand. This is safe because missing
+authorizations are treated as errors and route are closed by default.
+Drop Flask 1.x support.
+Remove <code class="docutils literal notranslate"><span class="pre">register_cast</span></code> function, in favor of the <code class="docutils literal notranslate"><span class="pre">cast</span></code> method.
+Simplify <code class="docutils literal notranslate"><span class="pre">Reference</span></code> implementation.</p>
+</section>
+<section id="on-2022-02-13">
+<h2>6.0 on 2022-02-13<a class="headerlink" href="#on-2022-02-13" title="Permalink to this heading"></a></h2>
+<p>Rename <code class="docutils literal notranslate"><span class="pre">register_object_perms</span></code> and <code class="docutils literal notranslate"><span class="pre">register_cast</span></code> functions to simpler
+<code class="docutils literal notranslate"><span class="pre">object_perms</span></code> and <code class="docutils literal notranslate"><span class="pre">cast</span></code>.
+Add <code class="docutils literal notranslate"><span class="pre">FSA_OBJECT_PERMS</span></code> and <code class="docutils literal notranslate"><span class="pre">FSA_CAST</span></code> configuration directives.
+Make module work without <code class="docutils literal notranslate"><span class="pre">cachetools</span></code> if <code class="docutils literal notranslate"><span class="pre">FSA_CACHE</span></code> is set to <em>None</em>.
+Use <code class="docutils literal notranslate"><span class="pre">ttl</span></code> as a default cache strategy.
+Simplify version numbering from 3 to 2 figures.
+Improve demo example with login and email authentication.
+Make all configuration errors issue a critical message.</p>
+</section>
+<section id="on-2022-02-08">
+<h2>5.4.0 on 2022-02-08<a class="headerlink" href="#on-2022-02-08" title="Permalink to this heading"></a></h2>
+<p>Add <code class="docutils literal notranslate"><span class="pre">JsonData</span></code> special type to convert strings to JSON.
+Improve json parameter type tests.</p>
+</section>
+<section id="on-2022-02-04">
+<h2>5.3.0 on 2022-02-04<a class="headerlink" href="#on-2022-02-04" title="Permalink to this heading"></a></h2>
+<p>Improve debug mode setting.
+Attempt at fixing typing errors with json.</p>
+</section>
+<section id="on-2022-01-31">
+<h2>5.2.0 on 2022-01-31<a class="headerlink" href="#on-2022-01-31" title="Permalink to this heading"></a></h2>
+<p>Add convenient <code class="docutils literal notranslate"><span class="pre">cast</span></code> decorator to register a cast directly.
+Add <code class="docutils literal notranslate"><span class="pre">FSA_DEBUG</span></code> and <code class="docutils literal notranslate"><span class="pre">FSA_NOT_FOUND_ERROR</span></code> configuration directives.</p>
+</section>
+<section id="on-2022-01-30">
+<h2>5.1.0 on 2022-01-30<a class="headerlink" href="#on-2022-01-30" title="Permalink to this heading"></a></h2>
+<p>Add default variable name to object permission checks.
+Add convenient <code class="docutils literal notranslate"><span class="pre">object_perms</span></code> decorator.
+Return <em>404</em> when checking perm on an unknown object.
+Warn on overriden hooks.
+Improve tests.</p>
+</section>
+<section id="on-2022-01-29">
+<h2>5.0.0 on 2022-01-29<a class="headerlink" href="#on-2022-01-29" title="Permalink to this heading"></a></h2>
+<p>Add a per-object permission scheme to the <code class="docutils literal notranslate"><span class="pre">authorize</span></code> decorator parameter.
+Add support for <a class="reference external" href="https://redis.io/">Redis</a> and <a class="reference external" href="https://memcached.org/">MemCached</a>
+distributed caches.
+Move cache support to <a class="reference external" href="https://pypi.org/project/CacheToolsUtils/">CacheToolsUtils</a>.</p>
+</section>
+<section id="on-2022-01-16">
+<h2>4.7.1 on 2022-01-16<a class="headerlink" href="#on-2022-01-16" title="Permalink to this heading"></a></h2>
+<p>Bump version in doc.</p>
+</section>
+<section id="id8">
+<h2>4.7.0 on 2022-01-16<a class="headerlink" href="#id8" title="Permalink to this heading"></a></h2>
+<p>Add <code class="docutils literal notranslate"><span class="pre">FSA_SERVER_ERROR</span></code> configuration directive to control the server internal
+error status code.
+Add <code class="docutils literal notranslate"><span class="pre">FSA_SECURE</span></code> to check for secure requests, on by default (sorry!).
+Drop <code class="docutils literal notranslate"><span class="pre">allparams</span></code> and <code class="docutils literal notranslate"><span class="pre">required</span></code> route parameters: they are implicit with a dict
+of keyword arguments and default values.
+Improve documentation.</p>
+</section>
+<section id="on-2022-01-12">
+<h2>4.6.3 on 2022-01-12<a class="headerlink" href="#on-2022-01-12" title="Permalink to this heading"></a></h2>
+<p>Improve error messages on internal errors in user functions such as
+<code class="docutils literal notranslate"><span class="pre">get_user_pass</span></code>, <code class="docutils literal notranslate"><span class="pre">user_in_group</span></code> or path functions.</p>
+</section>
+<section id="on-2021-12-26">
+<h2>4.6.2 on 2021-12-26<a class="headerlink" href="#on-2021-12-26" title="Permalink to this heading"></a></h2>
+<p>Put back version auto extraction after <code class="docutils literal notranslate"><span class="pre">aiosql</span></code> update to <em>3.4.0</em>.</p>
+</section>
+<section id="on-2021-12-24">
+<h2>4.6.1 on 2021-12-24<a class="headerlink" href="#on-2021-12-24" title="Permalink to this heading"></a></h2>
+<p>Minor cleanup.</p>
+</section>
+<section id="on-2021-12-19">
+<h2>4.6.0 on 2021-12-19<a class="headerlink" href="#on-2021-12-19" title="Permalink to this heading"></a></h2>
+<p>Fix timezone issues by putting everything explicitely in UTC.
+Rework caching: remove <code class="docutils literal notranslate"><span class="pre">CacheOK</span></code> class, add <code class="docutils literal notranslate"><span class="pre">FSA_CACHE</span></code> and <code class="docutils literal notranslate"><span class="pre">FSA_CACHE_OPTS</span></code> to
+give more ability to control the type of cache and its behavior.
+Use a TTL cache set to 10 minutes by default.
+Rename <code class="docutils literal notranslate"><span class="pre">*_OPTIONS</span></code> to <code class="docutils literal notranslate"><span class="pre">_OPTS</span></code> for consistency and concision.</p>
+</section>
+<section id="on-2021-12-12">
+<h2>4.5.1 on 2021-12-12<a class="headerlink" href="#on-2021-12-12" title="Permalink to this heading"></a></h2>
+<p>Ensure that FSA internal exceptions are always translated into HTTP responses.</p>
+</section>
+<section id="id9">
+<h2>4.5.0 on 2021-12-12<a class="headerlink" href="#id9" title="Permalink to this heading"></a></h2>
+<p>Add <code class="docutils literal notranslate"><span class="pre">FSA_PASSWORD_LEN</span></code> and <code class="docutils literal notranslate"><span class="pre">FSA_PASSWORD_RE</span></code> directives to check
+for password quality when hashing.
+Remove <code class="docutils literal notranslate"><span class="pre">VERSION</span></code> and <code class="docutils literal notranslate"><span class="pre">VERSION\_NUM</span></code>, replaced with <code class="docutils literal notranslate"><span class="pre">__version__</span></code>,
+although not from the package resources because of some obscure issue…</p>
+</section>
+<section id="on-2021-12-11">
+<h2>4.4.0 on 2021-12-11<a class="headerlink" href="#on-2021-12-11" title="Permalink to this heading"></a></h2>
+<p>Add support for CORS with directives <code class="docutils literal notranslate"><span class="pre">FSA_CORS</span></code> and <code class="docutils literal notranslate"><span class="pre">FSA_CORS_OPTIONS</span></code>.</p>
+</section>
+<section id="on-2021-12-05">
+<h2>4.3.1 on 2021-12-05<a class="headerlink" href="#on-2021-12-05" title="Permalink to this heading"></a></h2>
+<p>Add <code class="docutils literal notranslate"><span class="pre">FSA_TOKEN_RENEWAL</span></code> directive to manage automatic renewal of cookie-based
+authentication tokens.
+Fix version in module.</p>
+</section>
+<section id="on-2021-10-14">
+<h2>4.3.0 on 2021-10-14<a class="headerlink" href="#on-2021-10-14" title="Permalink to this heading"></a></h2>
+<p>Rename <code class="docutils literal notranslate"><span class="pre">FSA_TOKEN_REALM</span></code> as <code class="docutils literal notranslate"><span class="pre">FSA_REALM</span></code>, because it is not token specific.
+Make demo work with psycopg 3.</p>
+</section>
+<section id="on-2021-09-14">
+<h2>4.2.0 on 2021-09-14<a class="headerlink" href="#on-2021-09-14" title="Permalink to this heading"></a></h2>
+<p>Add <code class="docutils literal notranslate"><span class="pre">register_cast</span></code> to provide a cast function for custom types, if the type
+itself would not work.
+Add <code class="docutils literal notranslate"><span class="pre">VERSION</span></code> as a string and <code class="docutils literal notranslate"><span class="pre">VERSION_NUM</span></code> as an integer tuple.
+Improve documentation.
+Allow to use Python keywords as HTTP parameters by prepending the
+parameter with a <code class="docutils literal notranslate"><span class="pre">_</span></code>.</p>
+</section>
+<section id="on-2021-06-12">
+<h2>4.1.0 on 2021-06-12<a class="headerlink" href="#on-2021-06-12" title="Permalink to this heading"></a></h2>
+<p>Add support for per-method decorator shortcuts to <code class="docutils literal notranslate"><span class="pre">Flask</span></code> wrapper class.
+Add <code class="docutils literal notranslate"><span class="pre">FSA_LOGGING_LEVEL</span></code> directive.
+Make <code class="docutils literal notranslate"><span class="pre">current_user</span></code> attempt an authentication, but not fail on errors.
+Check configuration directive names to warn about possible typos or errors.
+Warn about some unused directives.
+Check <code class="docutils literal notranslate"><span class="pre">get_user_pass</span></code> and <code class="docutils literal notranslate"><span class="pre">user_in_group</span></code> returned types.
+Update documentation.
+Add a demo application.</p>
+</section>
+<section id="on-2021-06-01">
+<h2>4.0.0 on 2021-06-01<a class="headerlink" href="#on-2021-06-01" title="Permalink to this heading"></a></h2>
+<p>Port to Flask 2.0, working around a regression on <code class="docutils literal notranslate"><span class="pre">request.values</span></code> handling.
+Add support for Flask 2.0 per-method decorator shortcuts <code class="docutils literal notranslate"><span class="pre">get</span></code>, <code class="docutils literal notranslate"><span class="pre">post</span></code>, <code class="docutils literal notranslate"><span class="pre">put</span></code>,
+<code class="docutils literal notranslate"><span class="pre">delete</span></code> and <code class="docutils literal notranslate"><span class="pre">patch</span></code>.
+Rework documentation.
+Minor style improvements.
+Fix <code class="docutils literal notranslate"><span class="pre">all</span></code> authentication mode.</p>
+</section>
+<section id="on-2021-05-31">
+<h2>3.1.1 on 2021-05-31<a class="headerlink" href="#on-2021-05-31" title="Permalink to this heading"></a></h2>
+<p>Tell setup that Flask 2.0 is not yet supported.</p>
+</section>
+<section id="on-2021-04-17">
+<h2>3.1.0 on 2021-04-17<a class="headerlink" href="#on-2021-04-17" title="Permalink to this heading"></a></h2>
+<p>Defer password manager setup till it is actually needed, so as to avoid
+importing <code class="docutils literal notranslate"><span class="pre">passlib</span></code> for nothing.
+Do not attempt to re-create a token if it is not possible, i.e. when
+relying on a third party token provider.
+Allow to fully control the list of authentication schemes.
+Allow to control the authentication scheme on a route.
+Improve test code coverage.</p>
+</section>
+<section id="on-2021-04-07">
+<h2>3.0.0 on 2021-04-07<a class="headerlink" href="#on-2021-04-07" title="Permalink to this heading"></a></h2>
+<p>Add <code class="docutils literal notranslate"><span class="pre">FSA_CACHE_SIZE</span></code> to control caches.
+Merge <code class="docutils literal notranslate"><span class="pre">FSA_ALWAYS</span></code> and <code class="docutils literal notranslate"><span class="pre">FSA_LAZY</span></code> in a single <code class="docutils literal notranslate"><span class="pre">FSA_MODE</span></code> directive
+with 3 values: <code class="docutils literal notranslate"><span class="pre">always</span></code>, <code class="docutils literal notranslate"><span class="pre">lazy</span></code> and <code class="docutils literal notranslate"><span class="pre">all</span></code>.
+Make <code class="docutils literal notranslate"><span class="pre">ANY</span></code>, <code class="docutils literal notranslate"><span class="pre">ALL</span></code> and <code class="docutils literal notranslate"><span class="pre">NONE</span></code> special groups simple strings as well.
+Package as a one file module (again), and add more files to packaging.</p>
+</section>
+<section id="on-2021-04-04">
+<h2>2.5.0 on 2021-04-04<a class="headerlink" href="#on-2021-04-04" title="Permalink to this heading"></a></h2>
+<p>Add <em>header</em> carrier for authentication tokens.
+Make it work both with internal and HTTPAuth implementations.
+Force HTTPAuth implementation on <code class="docutils literal notranslate"><span class="pre">http-token</span></code>.</p>
+</section>
+<section id="on-2021-03-29">
+<h2>2.4.1 on 2021-03-29<a class="headerlink" href="#on-2021-03-29" title="Permalink to this heading"></a></h2>
+<p>Fix packaging issue… the python file was missing.
+Add <code class="docutils literal notranslate"><span class="pre">digest</span></code> as a synonymous for <code class="docutils literal notranslate"><span class="pre">http-digest</span></code>.
+Improve documentation.</p>
+</section>
+<section id="id10">
+<h2>2.4.0 on 2021-03-29<a class="headerlink" href="#id10" title="Permalink to this heading"></a></h2>
+<p>Add <code class="docutils literal notranslate"><span class="pre">http-basic</span></code>, <code class="docutils literal notranslate"><span class="pre">http-digest</span></code> and <code class="docutils literal notranslate"><span class="pre">http-token</span></code> authentication schemes based
+on flask-HTTPAuth.
+Add coverage report on tests.
+Distribute as a one file python module.
+Only simplify realm for <em>fsa</em> tokens.
+Renew cookies when they are closing expiration.</p>
+</section>
+<section id="on-2021-03-27">
+<h2>2.3.0 on 2021-03-27<a class="headerlink" href="#on-2021-03-27" title="Permalink to this heading"></a></h2>
+<p>Use a fully dynamic method for <code class="docutils literal notranslate"><span class="pre">set</span></code> in <code class="docutils literal notranslate"><span class="pre">Reference</span></code>.
+Add a <code class="docutils literal notranslate"><span class="pre">string</span></code> type.
+Add caching of <code class="docutils literal notranslate"><span class="pre">get_user_pass</span></code> and <code class="docutils literal notranslate"><span class="pre">user_in_group</span></code> helpers.
+Add <code class="docutils literal notranslate"><span class="pre">clear_caches</span></code> method.
+Warn on missing <code class="docutils literal notranslate"><span class="pre">authorize</span></code> on a route declaration.
+Add <code class="docutils literal notranslate"><span class="pre">FSA_TOKEN_CARRIER</span></code> to specify how token auth is transfered,
+including a new <em>cookie</em> option.
+Rename <code class="docutils literal notranslate"><span class="pre">FSA_TYPE</span></code> to <code class="docutils literal notranslate"><span class="pre">FSA_AUTH</span></code>.
+Make <code class="docutils literal notranslate"><span class="pre">create_token</span></code> argument optional.
+Add <code class="docutils literal notranslate"><span class="pre">WWW-Authenticate</span></code> headers when appropriate.
+Set <code class="docutils literal notranslate"><span class="pre">Content-Type</span></code> to <code class="docutils literal notranslate"><span class="pre">text/plain</span></code> on generated responses.</p>
+</section>
+<section id="on-2021-03-22">
+<h2>2.2.1 on 2021-03-22<a class="headerlink" href="#on-2021-03-22" title="Permalink to this heading"></a></h2>
+<p>Partial fix for method renaming in <code class="docutils literal notranslate"><span class="pre">Reference</span></code>.</p>
+</section>
+<section id="id11">
+<h2>2.2.0 on 2021-03-22<a class="headerlink" href="#id11" title="Permalink to this heading"></a></h2>
+<p>Rename <code class="docutils literal notranslate"><span class="pre">_setobj</span></code> to <code class="docutils literal notranslate"><span class="pre">set</span></code> in <code class="docutils literal notranslate"><span class="pre">Reference</span></code>, with an option to rename the method
+if needed.
+Shorten <code class="docutils literal notranslate"><span class="pre">Reference</span></code> class implementation.
+Add <code class="docutils literal notranslate"><span class="pre">current_user</span></code> to <code class="docutils literal notranslate"><span class="pre">FlaskSimpleAuth</span></code> as well.
+Add python documentation on class and methods.
+Fix <code class="docutils literal notranslate"><span class="pre">Reference</span></code> issue when using several references.</p>
+</section>
+<section id="on-2021-03-21">
+<h2>2.1.0 on 2021-03-21<a class="headerlink" href="#on-2021-03-21" title="Permalink to this heading"></a></h2>
+<p>Add <code class="docutils literal notranslate"><span class="pre">Reference</span></code> any object wrapper class.
+Add <code class="docutils literal notranslate"><span class="pre">CacheOK</span></code> positive caching decorator.
+Add <code class="docutils literal notranslate"><span class="pre">current_user</span></code> function.
+Add <code class="docutils literal notranslate"><span class="pre">none</span></code> authentication type.
+Add <code class="docutils literal notranslate"><span class="pre">path</span></code> parameter type.
+Add more tests.</p>
+</section>
+<section id="on-2021-03-16">
+<h2>2.0.0 on 2021-03-16<a class="headerlink" href="#on-2021-03-16" title="Permalink to this heading"></a></h2>
+<p>Make the module as an extension <em>and</em> a full <code class="docutils literal notranslate"><span class="pre">Flask</span></code> wrapper.
+Advertise only the extended <code class="docutils literal notranslate"><span class="pre">route</span></code> decorator in the documentation
+(though others are still used internally).
+Change passlib bcrypt version to be compatible with Apache httpd.
+Allow disabling password checking.
+Rename <code class="docutils literal notranslate"><span class="pre">FSA_TOKEN_HASH</span></code> as <code class="docutils literal notranslate"><span class="pre">FSA_TOKEN_ALGO</span></code>.
+Disable tokens by setting their type to <code class="docutils literal notranslate"><span class="pre">None</span></code>.
+Import Flask <code class="docutils literal notranslate"><span class="pre">session</span></code>, <code class="docutils literal notranslate"><span class="pre">redirect</span></code>, <code class="docutils literal notranslate"><span class="pre">url_for</span></code>, <code class="docutils literal notranslate"><span class="pre">make_response</span></code>,
+<code class="docutils literal notranslate"><span class="pre">abort</span></code>, <code class="docutils literal notranslate"><span class="pre">render_template</span></code>, <code class="docutils literal notranslate"><span class="pre">current_app</span></code> objects.
+Add parameter support for <code class="docutils literal notranslate"><span class="pre">date</span></code>, <code class="docutils literal notranslate"><span class="pre">time</span></code> and <code class="docutils literal notranslate"><span class="pre">datetime</span></code> in iso format.
+Allow to use any type as path parameters, not just Flask predefined ones.
+Make blueprints work.
+Add special <code class="docutils literal notranslate"><span class="pre">path</span></code> type for parameters taken from the path.</p>
+</section>
+<section id="on-2021-03-10">
+<h2>1.9.0 on 2021-03-10<a class="headerlink" href="#on-2021-03-10" title="Permalink to this heading"></a></h2>
+<p>Add <em>bearer</em> authorization for tokens and make it the default.
+Add <em>JWT</em> tokens, both hmac and pubkey variants.
+Add <em>500</em> generation if a route is missing an authorization declaration.
+Add convenient <code class="docutils literal notranslate"><span class="pre">route</span></code> decorator.
+Add type inference for HTTP/JSON parameters based on default value, when provided.
+Add type inference for root path parameters based on function declaration.</p>
+</section>
+<section id="on-2021-03-02">
+<h2>1.8.1 on 2021-03-02<a class="headerlink" href="#on-2021-03-02" title="Permalink to this heading"></a></h2>
+<p>Fix typo in distribution configuration file.</p>
+</section>
+<section id="id12">
+<h2>1.8.0 on 2021-03-02<a class="headerlink" href="#id12" title="Permalink to this heading"></a></h2>
+<p>Merge <code class="docutils literal notranslate"><span class="pre">autoparams</span></code> and <code class="docutils literal notranslate"><span class="pre">parameters</span></code> decorators into a single <code class="docutils literal notranslate"><span class="pre">parameters</span></code>
+decorator.
+Make it guess optional parameters based on default values.
+Fix conversion issues with boolean type parameters.
+Enhance integer type to accept other base syntaxes.
+Improve documentation to advertise the simple and elegant approach.
+Implement decorator with functions instead of a class.</p>
+</section>
+<section id="on-2021-03-01">
+<h2>1.7.0 on 2021-03-01<a class="headerlink" href="#on-2021-03-01" title="Permalink to this heading"></a></h2>
+<p>Simplify code.
+Add <code class="docutils literal notranslate"><span class="pre">FSA_ALWAYS</span></code> configuration directive and move the authentication before request
+hook logic inside the module.
+Add <code class="docutils literal notranslate"><span class="pre">FSA_SKIP_PATH</span></code> to skip authentication for some paths.
+Update documentation to reflect this simplified model.
+Switch all decorators to functions.</p>
+</section>
+<section id="on-2021-02-28">
+<h2>1.6.0 on 2021-02-28<a class="headerlink" href="#on-2021-02-28" title="Permalink to this heading"></a></h2>
+<p>Add <code class="docutils literal notranslate"><span class="pre">autoparams</span></code> decorator with required or optional parameters.
+Add typed parameters to <code class="docutils literal notranslate"><span class="pre">parameters</span></code> decorator.
+Make <code class="docutils literal notranslate"><span class="pre">parameters</span></code> pass request parameters as named function parameters.
+Simplify <code class="docutils literal notranslate"><span class="pre">authorize</span></code> decorator syntax and implementation.
+Advise <code class="docutils literal notranslate"><span class="pre">authorize</span></code> <em>then</em> <code class="docutils literal notranslate"><span class="pre">parameters</span></code> or <code class="docutils literal notranslate"><span class="pre">autoparams</span></code> decorator order.
+Improved documentation.</p>
+</section>
+<section id="on-2021-02-27">
+<h2>1.5.0 on 2021-02-27<a class="headerlink" href="#on-2021-02-27" title="Permalink to this heading"></a></h2>
+<p>Flask <em>internal</em> tests with a good coverage.
+Switch to <code class="docutils literal notranslate"><span class="pre">setup.cfg</span></code> configuration.
+Add convenient <code class="docutils literal notranslate"><span class="pre">parameters</span></code> decorator.</p>
+</section>
+<section id="on-2021-02-23">
+<h2>1.4.0 on 2021-02-23<a class="headerlink" href="#on-2021-02-23" title="Permalink to this heading"></a></h2>
+<p>Add <code class="docutils literal notranslate"><span class="pre">FSA_LAZY</span></code> configuration directive.
+Simplify code.
+Improve warning on short secrets.
+Repackage…</p>
+</section>
+<section id="id13">
+<h2>1.3.0 on 2021-02-23<a class="headerlink" href="#id13" title="Permalink to this heading"></a></h2>
+<p>Improved documentation.
+Reduce default token signature length and default token secret.
+Warn on random or short token secrets.</p>
+</section>
+<section id="on-2021-02-22">
+<h2>1.2.0 on 2021-02-22<a class="headerlink" href="#on-2021-02-22" title="Permalink to this heading"></a></h2>
+<p>Add grace time for auth token validity.
+Some code refactoring.</p>
+</section>
+<section id="id14">
+<h2>1.1.0 on 2021-02-22<a class="headerlink" href="#id14" title="Permalink to this heading"></a></h2>
+<p>Add after request module cleanup.</p>
+</section>
+<section id="on-2021-02-21">
+<h2>1.0.0 on 2021-02-21<a class="headerlink" href="#on-2021-02-21" title="Permalink to this heading"></a></h2>
+<p>Add <code class="docutils literal notranslate"><span class="pre">authorize</span></code> decorator.
+Add <code class="docutils literal notranslate"><span class="pre">password</span></code> authentication scheme.
+Improved documentation.</p>
+</section>
+<section id="id15">
+<h2>0.9.0 on 2021-02-21<a class="headerlink" href="#id15" title="Permalink to this heading"></a></h2>
+<p>Initial release in beta.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Calvin.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

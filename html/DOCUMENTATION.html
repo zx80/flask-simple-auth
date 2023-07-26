@@ -1,0 +1,1276 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FlaskSimpleAuth Module Documentation &mdash; FlaskSimpleAuth 24.0 documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="_static/graphviz.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="_static/jquery.js"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/sphinx_highlight.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            FlaskSimpleAuth
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <!-- Local TOC -->
+              <div class="local-toc"><ul>
+<li><a class="reference internal" href="#">FlaskSimpleAuth Module Documentation</a><ul>
+<li><a class="reference internal" href="#table-of-contents">Table of Contents</a></li>
+<li><a class="reference internal" href="#motivation">Motivation</a></li>
+<li><a class="reference internal" href="#examples-and-features">Examples and Features</a></li>
+<li><a class="reference internal" href="#install">Install</a></li>
+<li><a class="reference internal" href="#initialization">Initialization</a></li>
+<li><a class="reference internal" href="#authentication">Authentication</a><ul>
+<li><a class="reference internal" href="#authentication-schemes">Authentication Schemes</a></li>
+<li><a class="reference internal" href="#password-management">Password Management</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#authorization">Authorization</a><ul>
+<li><a class="reference internal" href="#group-authorizations">Group Authorizations</a></li>
+<li><a class="reference internal" href="#oauth-authorizations">OAuth Authorizations</a></li>
+<li><a class="reference internal" href="#object-authorizations">Object Authorizations</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#parameters">Parameters</a></li>
+<li><a class="reference internal" href="#utils">Utils</a><ul>
+<li><a class="reference internal" href="#reference-object-wrapper"><code class="docutils literal notranslate"><span class="pre">Reference</span></code> Object Wrapper</a></li>
+<li><a class="reference internal" href="#error-handling">Error Handling</a></li>
+<li><a class="reference internal" href="#miscellaneous-configuration-directives">Miscellaneous Configuration Directives</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#see-also">See Also</a><ul>
+<li><a class="reference internal" href="#flask-security">Flask-Security</a></li>
+<li><a class="reference internal" href="#flask-restful">Flask-RESTful</a></li>
+<li><a class="reference internal" href="#flask-appbuilder">Flask-AppBuilder</a></li>
+<li><a class="reference internal" href="#flask-login">Flask-Login</a></li>
+<li><a class="reference internal" href="#others">Others</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#license">License</a></li>
+<li><a class="reference internal" href="#versions">Versions</a></li>
+<li><a class="reference internal" href="#todo">TODO</a><ul>
+<li><a class="reference internal" href="#authn">Authn</a></li>
+<li><a class="reference internal" href="#params">Params</a></li>
+<li><a class="reference internal" href="#features">Features</a></li>
+<li><a class="reference internal" href="#software-engineering">Software Engineering</a></li>
+<li><a class="reference internal" href="#documentation">Documentation</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</div>
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">FlaskSimpleAuth</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">FlaskSimpleAuth Module Documentation</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/DOCUMENTATION.md.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="flasksimpleauth-module-documentation">
+<h1>FlaskSimpleAuth Module Documentation<a class="headerlink" href="#flasksimpleauth-module-documentation" title="Permalink to this heading"></a></h1>
+<p>This modules helps handling <em>authentication</em>, <em>authorizations</em>,
+<em>parameters</em> and provide other <em>utils</em> for
+<a class="reference external" href="https://flask.palletsprojects.com/">Flask</a>, controled from
+Flask configuration and the extended <code class="docutils literal notranslate"><span class="pre">route</span></code> decorator.</p>
+<section id="table-of-contents">
+<h2>Table of Contents<a class="headerlink" href="#table-of-contents" title="Permalink to this heading"></a></h2>
+<ul class="simple">
+<li><p><a class="reference internal" href="#motivation"><span class="xref myst">Motivation</span></a>,
+<a class="reference internal" href="#examples-and-features"><span class="xref myst">Examples and Features</span></a>,
+<a class="reference internal" href="#install"><span class="xref myst">Installation</span></a> and
+<a class="reference internal" href="#initialization"><span class="xref myst">Initialization</span></a>.</p></li>
+<li><p><a class="reference internal" href="autoapi/FlaskSimpleAuth/index.html#FlaskSimpleAuth.FlaskSimpleAuth.authentication" title="FlaskSimpleAuth.FlaskSimpleAuth.authentication"><span class="xref myst py py-meth">Authentication</span></a>
+<a class="reference internal" href="#authentication-schemes"><span class="xref myst">Schemes</span></a> (<em>basic</em>, <em>param</em>, <em>token</em>…) and
+<a class="reference internal" href="#password-management"><span class="xref myst">Password Management</span></a>.</p></li>
+<li><p><a class="reference internal" href="#authorization"><span class="xref myst">Authorizations</span></a> with
+<a class="reference internal" href="#group-authorizations"><span class="xref myst">Groups</span></a>,
+<a class="reference internal" href="#oauth-authorizations"><span class="xref myst">OAuth</span></a> and about
+<a class="reference internal" href="#object-authorizations"><span class="xref myst">Objects</span></a>…</p></li>
+<li><p><a class="reference internal" href="#parameters"><span class="xref myst">Parameters</span></a>
+<em>http</em>, <em>json</em> and <em>file</em> parameters are managed with type hints.</p></li>
+<li><p><a class="reference internal" href="#utils"><span class="xref myst">Utils</span></a> such as
+<a class="reference internal" href="#reference-object-wrapper"><span class="xref myst"><code class="docutils literal notranslate"><span class="pre">Reference</span></code> wrapper</span></a>,
+<a class="reference internal" href="#error-handling"><span class="xref myst">Error Handling</span></a> and
+<a class="reference internal" href="#miscellaneous-configuration-directives"><span class="xref myst">Miscellaneous Directives</span></a>.</p></li>
+<li><p><a class="reference internal" href="#see-also"><span class="xref myst">See Also</span></a>
+<a class="reference internal" href="#flask-security"><span class="xref myst">Flask-Security</span></a>,
+<a class="reference internal" href="#flask-restful"><span class="xref myst">Flask-RESTful</span></a>,
+<a class="reference internal" href="#flask-appbuilder"><span class="xref myst">Flask-AppBuilder</span></a>,
+<a class="reference internal" href="#flask-login"><span class="xref myst">Flask-Login</span></a> and
+<a class="reference internal" href="#others"><span class="xref myst">others</span></a>.</p></li>
+<li><p><a class="reference internal" href="#license"><span class="xref myst">License</span></a>, <a class="reference internal" href="#versions"><span class="xref myst">Versions</span></a>, <a class="reference internal" href="#todo"><span class="xref myst">TODO</span></a>.</p></li>
+</ul>
+</section>
+<section id="motivation">
+<h2>Motivation<a class="headerlink" href="#motivation" title="Permalink to this heading"></a></h2>
+<p><a class="reference external" href="https://github.com/zx80/flask-simple-auth/">FlaskSimpleAuth</a>
+is designed to help an application REST API back-end development.
+The features provided in this module point at fixing what I deem
+Flask lack of helpfulness and wrong style, such as:</p>
+<ul class="simple">
+<li><p>not providing a simple and effective declarative security layer,
+which must address both authentication and authorization possibly
+in connection to application data, thus requires some kind of
+integration;</p></li>
+<li><p>not providing a clean way to put authentication in the configuration only,
+where it belongs, and taking into account password management best
+practices.</p></li>
+<li><p>not providing any real help with handling parameters, which
+is demonstrated by the fact that the user must find them
+in different dictionaries depending on where they come from,
+and having to access them through <em>ugly</em> global proxies such
+as <code class="docutils literal notranslate"><span class="pre">request</span></code>.</p></li>
+</ul>
+<p>The resulting module allows clean application development which only has to
+focus on handling routes depending on cleanly typed parameters, with
+declarative security on each one, reducing both line counts and code
+complexity.</p>
+<p>An emphasis is also put on performance by providing caching where it matters,
+so this is not only about style:
+Many hooks are provided to be able to take full control of various
+features, with reasonable defaults which make this less a necessity.
+Many key features rely on proven third-party packages such as <code class="docutils literal notranslate"><span class="pre">passlib</span></code>,
+<code class="docutils literal notranslate"><span class="pre">PyJWT</span></code> or <code class="docutils literal notranslate"><span class="pre">flask-cors</span></code>.</p>
+<p>This module does not care much about web and application oriented features:
+it is a Flask framework extension which aims at better handling HTTP-related
+features. It could be used as a cleaner layer for other Flask
+application-oriented extensions such as Flask-Security.</p>
+</section>
+<section id="examples-and-features">
+<h2>Examples and Features<a class="headerlink" href="#examples-and-features" title="Permalink to this heading"></a></h2>
+<p>A simple <a class="reference internal" href="#README.md#example"><span class="xref myst">example</span></a> is available on the main page.
+<a class="reference internal" href="#README.md#features"><span class="xref myst">Features</span></a> are also described there.
+Look out for the <a class="reference internal" href="#demo/"><span class="xref myst">demo</span></a> application for more fully working examples.</p>
+</section>
+<section id="install">
+<h2>Install<a class="headerlink" href="#install" title="Permalink to this heading"></a></h2>
+<p>Use <code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">FlaskSimpleAuth</span></code> to install the module, or whatever
+other installation method you prefer.
+Depending on options, the following modules should be installed:</p>
+<ul class="simple">
+<li><p><a class="reference external" href="https://pypi.org/project/ProxyPatternPool/">ProxyPatternPool</a> for sharing.</p></li>
+<li><p><a class="reference external" href="https://pypi.org/project/cachetools/">cachetools</a> and
+<a class="reference external" href="https://pypi.org/project/cachetoolsutils/">CacheToolsUtils</a> for caching.
+Possibly <a class="reference external" href="https://pypi.org/project/pymemcache/">pymemcache</a> and
+<a class="reference external" href="https://pypi.org/project/redis/">redis</a> for external back-ends.</p></li>
+<li><p><a class="reference external" href="https://pypi.org/project/passlib/">passlib</a> for password management,
+<a class="reference external" href="https://pypi.org/project/bcrypt/">bcrypt</a>  for password hashing (default algorithm).</p></li>
+<li><p><a class="reference external" href="https://pypi.org/project/PyJWT/">PyJWT</a> for JSON Web Token (JWT),
+<a class="reference external" href="https://pypi.org/project/cryptography/">cryptography</a> for pubkey-signed JWT.</p></li>
+<li><p><a class="reference external" href="https://github.com/miguelgrinberg/Flask-HTTPAuth">Flask HTTPAuth</a>
+for <code class="docutils literal notranslate"><span class="pre">http-*</span></code> authentication options.</p></li>
+<li><p><a class="reference external" href="https://github.com/corydolphin/flask-cors">Flask CORS</a> for CORS handling.</p></li>
+</ul>
+<p>These modules are installed with the corresponding options: <code class="docutils literal notranslate"><span class="pre">password</span></code>, <code class="docutils literal notranslate"><span class="pre">jwt</span></code>,
+<code class="docutils literal notranslate"><span class="pre">memcached</span></code>, <code class="docutils literal notranslate"><span class="pre">redis</span></code>, <code class="docutils literal notranslate"><span class="pre">httpauth</span></code>, <code class="docutils literal notranslate"><span class="pre">cors</span></code>: <code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">FlaskSimpleAuth[jwt]</span></code>.</p>
+<p>Sharing and cache-related modules are currently always installed, even if they
+are unused or may be desactivated.</p>
+</section>
+<section id="initialization">
+<h2>Initialization<a class="headerlink" href="#initialization" title="Permalink to this heading"></a></h2>
+<p>The module is simply initialize by calling its <code class="docutils literal notranslate"><span class="pre">Flask</span></code> constructor and providing
+a configuration through <code class="docutils literal notranslate"><span class="pre">FSA_*</span></code> directives (from a separate file or directly
+in the constructor).</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">FlaskSimpleAuth</span> <span class="k">as</span> <span class="nn">fsa</span>
+<span class="n">app</span> <span class="o">=</span> <span class="n">fsa</span><span class="o">.</span><span class="n">Flask</span><span class="p">(</span><span class="s2">&quot;acme&quot;</span><span class="p">,</span> <span class="n">FSA_MODE</span><span class="o">=</span><span class="s2">&quot;debug&quot;</span><span class="p">)</span>
+<span class="n">app</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">from_envvar</span><span class="p">(</span><span class="s2">&quot;ACME_CONFIG&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Once initialized, <code class="docutils literal notranslate"><span class="pre">app</span></code> behaves as a standard Flask object with many additions.
+The main change is the <code class="docutils literal notranslate"><span class="pre">route</span></code> decorator, an extended version of Flask’s own
+with an <code class="docutils literal notranslate"><span class="pre">authorize</span></code> parameter and transparent management of request parameters.
+Per-method shortcut decorators <code class="docutils literal notranslate"><span class="pre">post</span></code>, <code class="docutils literal notranslate"><span class="pre">get</span></code>, <code class="docutils literal notranslate"><span class="pre">put</span></code>, <code class="docutils literal notranslate"><span class="pre">patch</span></code> and <code class="docutils literal notranslate"><span class="pre">delete</span></code>
+which support the same extensions.
+The security first principle means that if the parameter is missing the route
+is closed with a <em>403</em>.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nd">@app</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;/store&quot;</span><span class="p">,</span> <span class="n">authorize</span><span class="o">=</span><span class="s2">&quot;ANY&quot;</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">get_store</span><span class="p">(</span><span class="nb">filter</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+    <span class="c1"># return store contents, possibly filtered</span>
+    <span class="o">...</span>
+
+<span class="nd">@app</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="s2">&quot;/store&quot;</span><span class="p">,</span> <span class="n">authorize</span><span class="o">=</span><span class="s2">&quot;contributor&quot;</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">post_store</span><span class="p">(</span><span class="n">data</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+    <span class="c1"># append new data to store, return id</span>
+    <span class="o">...</span>
+
+<span class="nd">@app</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;/store/&lt;id&gt;&quot;</span><span class="p">,</span> <span class="n">authorize</span><span class="o">=</span><span class="s2">&quot;ANY&quot;</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">get_store_id</span><span class="p">(</span><span class="nb">id</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
+    <span class="c1"># return data corresponding to id</span>
+    <span class="o">...</span>
+</pre></div>
+</div>
+<p>Inside a request handling function, additional methods on <code class="docutils literal notranslate"><span class="pre">app</span></code> give access to
+authentication-dependent data, for instance:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">get_user</span></code> extracts the authenticated user or raise an exception,
+and <code class="docutils literal notranslate"><span class="pre">current_user</span></code> gets the authenticated user if any, or <code class="docutils literal notranslate"><span class="pre">None</span></code>.
+It can also be requested as a parameter with the <code class="docutils literal notranslate"><span class="pre">CurrentUser</span></code> type.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">user_scope</span></code> checks if the current token-authenticated user has some
+authorizations.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">hash_password</span></code> and <code class="docutils literal notranslate"><span class="pre">check_password</span></code> hash or check a password.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">create_token</span></code> computes a new authentication token for the current user.</p></li>
+</ul>
+<p>Various decorators/functions allow to register hooks, such as:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">user_in_group</span></code>, <code class="docutils literal notranslate"><span class="pre">get_user_pass</span></code> and <code class="docutils literal notranslate"><span class="pre">object_perms</span></code> functions/decorators to
+register authentication and authorization helper functions:</p>
+<ul>
+<li><p>a function to retrieve the password hash from the user name.</p></li>
+<li><p>a function which tells whether a user is in a group or role.</p></li>
+<li><p>functions which define object ownership and access permissions.</p></li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">password_quality</span></code> a function/decorator to register a function to check for
+password quality.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">password_check</span></code> a function/decorator to register a new password checker,
+so as to handle recovery codes, for instance.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">cast</span></code> a function/decorator to register new str-to-some-type casts for
+function parameters.</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># return password hash if any (see with FSA_GET_USER_PASS)</span>
+<span class="c1"># None means that the user does not exists</span>
+<span class="nd">@app</span><span class="o">.</span><span class="n">get_user_pass</span>
+<span class="k">def</span> <span class="nf">get_user_pass</span><span class="p">(</span><span class="n">user</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="o">|</span><span class="kc">None</span><span class="p">:</span>
+    <span class="k">return</span> <span class="o">...</span>
+
+<span class="c1"># return whether user is in group (see with FSA_USER_IN_GROUP)</span>
+<span class="nd">@app</span><span class="o">.</span><span class="n">user_in_group</span>
+<span class="k">def</span> <span class="nf">user_in_group</span><span class="p">(</span><span class="n">user</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">group</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+    <span class="k">return</span> <span class="o">...</span>
+
+<span class="c1"># return whether user can access the `foo` object for an operation</span>
+<span class="c1"># None will generates a 404</span>
+<span class="nd">@app</span><span class="o">.</span><span class="n">object_perms</span><span class="p">(</span><span class="s2">&quot;foo&quot;</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">allow_foo_access</span><span class="p">(</span><span class="n">user</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">fooid</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">mode</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="o">|</span><span class="kc">None</span><span class="p">:</span>
+    <span class="k">return</span> <span class="o">...</span>
+</pre></div>
+</div>
+<p>These hooks allow taking over control of most internal processes, if needed.</p>
+</section>
+<section id="authentication">
+<h2>Authentication<a class="headerlink" href="#authentication" title="Permalink to this heading"></a></h2>
+<p>The main authentication configuration directive is <code class="docutils literal notranslate"><span class="pre">FSA_AUTH</span></code> which governs the
+authentication methods used by the <code class="docutils literal notranslate"><span class="pre">get_user</span></code> function, as described in the
+following sections. Defaut is <code class="docutils literal notranslate"><span class="pre">httpd</span></code>.</p>
+<p>If a non-token scheme is provided, authentication will be <code class="docutils literal notranslate"><span class="pre">token</span></code>
+followed by the provided scheme, i.e. <code class="docutils literal notranslate"><span class="pre">token</span></code> is tried first anyway if
+enabled.</p>
+<p>To take full control of authentication schemes, provide an ordered list.
+Note that it does not always make much sense to mix some schemes, e.g.
+<em>basic</em> and <em>digest</em> password storage assumptions are distinct and should
+not be merged.  Also, only one HTTPAuth-based scheme can be active at a time.</p>
+<p>Authentication is <em>always</em> performed on demand, either to check for a route
+authorization declared with <code class="docutils literal notranslate"><span class="pre">authorize</span></code> or when calling <code class="docutils literal notranslate"><span class="pre">get_user</span></code>.</p>
+<p>The authentication scheme attempted on a route can be altered with the <code class="docutils literal notranslate"><span class="pre">auth</span></code>
+parameter added to the <code class="docutils literal notranslate"><span class="pre">route</span></code> decorator.
+This may be used to restrict or change the authentication scheme on a route.
+Some combinations may or may not work depending on module internals, so this is
+only for special cases.
+A legitimate use for a REST API is to have <code class="docutils literal notranslate"><span class="pre">FSA_AUTH</span></code> defined to <em>token</em> and
+have only one password-authenticated route to obtain the token used by all other
+routes.</p>
+<section id="authentication-schemes">
+<h3>Authentication Schemes<a class="headerlink" href="#authentication-schemes" title="Permalink to this heading"></a></h3>
+<p>The available authentication schemes are:</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">none</span></code></p>
+<p>Deactivate authentication.</p>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">httpd</span></code></p>
+<p>Inherit web server supplied authentication through <code class="docutils literal notranslate"><span class="pre">request.remote_user</span></code>.
+This is the default.</p>
+<p>There are plenty authentication schemes available in a web server such as
+<a class="reference external" href="https://httpd.apache.org/">Apache</a> or <a class="reference external" href="https://nginx.org/">Nginx</a>, including
+LDAP or other databases, all of which probably more efficiently implemented
+than python code, so it should be the preferred option.
+However, it could require significant configuration effort compared to the
+application-side approach.</p>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">basic</span></code></p>
+<p>HTTP Basic password authentication, which rely on the <code class="docutils literal notranslate"><span class="pre">Authorization</span></code>
+HTTP header in the request.</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">FSA_REALM</span></code> provides the authentication realm.</p></li>
+</ul>
+<p>See also <a class="reference internal" href="#password-management"><span class="xref myst">Password Management</span></a> below for
+how the password is retrieved and checked.</p>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">http-basic</span></code></p>
+<p>Same as previous based on <a class="reference external" href="https://pypi.org/project/Flask-HTTPAuth/">flask-HTTPAuth</a>.</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">FSA_REALM</span></code> provides the authentication realm.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">FSA_HTTP_AUTH_OPTS</span></code> allow to pass additional options to the
+HTTPAuth authentication class.</p></li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">param</span></code></p>
+<p>HTTP or JSON parameter for password authentication.
+User name and password are passed as request parameters.</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">FSA_PARAM_USER</span></code> is the parameter used for the user name.
+Default is <code class="docutils literal notranslate"><span class="pre">USER</span></code>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">FSA_PARAM_PASS</span></code> is the parameter used for the password.
+Default is <code class="docutils literal notranslate"><span class="pre">PASS</span></code>.</p></li>
+</ul>
+<p>See also <a class="reference internal" href="#password-management"><span class="xref myst">Password Management</span></a> below for
+the password is retrieved and checked.</p>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">password</span></code></p>
+<p>Tries <code class="docutils literal notranslate"><span class="pre">basic</span></code> then <code class="docutils literal notranslate"><span class="pre">param</span></code> authentication.</p>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">http-digest</span></code> or <code class="docutils literal notranslate"><span class="pre">digest</span></code></p>
+<p>HTTP Digest authentication based on <a class="reference external" href="https://pypi.org/project/Flask-HTTPAuth/">flask-HTTPAuth</a>.</p>
+<p>Note that the implementation relies on <em>sessions</em>, which may require the
+<code class="docutils literal notranslate"><span class="pre">SECRET_KEY</span></code> option to be set to something.
+The documentation states that server-side sessions are needed because
+otherwise the <em>nonce</em> and <em>opaque</em> parameters could be reused, which
+may be a security issue under some conditions. I’m unsure about that,
+but I agree that client-side cookie sessions are strange things best
+avoided if possible.</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">FSA_REALM</span></code> provides the authentication realm.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">FSA_HTTP_AUTH_OPTS</span></code> allow to pass additional options to the
+HTTPAuth authentication class, such as <code class="docutils literal notranslate"><span class="pre">use_ha1_pw</span></code>, as a dictionary.</p></li>
+</ul>
+<p>See also <a class="reference internal" href="#password-management"><span class="xref myst">Password Management</span></a> below for
+how the password is retrieved and checked. Note that password management
+is different for digest authentication because the simple hash of the
+password or the password itself is needed for the verification.</p>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">token</span></code></p>
+<p>Only rely on signed tokens for authentication.
+A token certifies that a <em>user</em> is authenticated in a <em>realm</em> up to some
+time <em>limit</em>.
+The token is authenticated by a signature which is usually the hash of the
+payload (<em>realm</em>, <em>user</em> and <em>limit</em>) and a secret hold by the server.</p>
+<p>There are two token types chosen with the <code class="docutils literal notranslate"><span class="pre">FSA_TOKEN_TYPE</span></code> configuration
+directive: <code class="docutils literal notranslate"><span class="pre">fsa</span></code> is a simple compact readable custom format, and <code class="docutils literal notranslate"><span class="pre">jwt</span></code>
+<a class="reference external" href="https://tools.ietf.org/html/rfc7519">RFC 7519</a> standard based
+on <a class="reference external" href="https://pypi.org/project/PyJWT/">PyJWT</a> implementation.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">fsa</span></code> token syntax is: <code class="docutils literal notranslate"><span class="pre">&lt;realm&gt;:&lt;user&gt;:&lt;limit&gt;:&lt;signature&gt;</span></code>,
+for instance: <code class="docutils literal notranslate"><span class="pre">comics:calvin:20380119031407:4ee89cd4cc7afe0a86b26bdce6d11126</span></code>.
+The time limit is a simple UTC timestamp <em>YYYYMMDDHHmmSS</em> that
+can be checked easily by the application client.
+Compared to <code class="docutils literal notranslate"><span class="pre">jwt</span></code> tokens, they are short and easy to interpret and compare
+manually, no decoding is involved.
+If an issuer is set (see <code class="docutils literal notranslate"><span class="pre">FSA_TOKEN_ISSUER</span></code> below), the name is appended to
+the realm after a <code class="docutils literal notranslate"><span class="pre">/</span></code>.</p>
+<p>The following configuration directives are available:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">FSA_TOKEN_TYPE</span></code> type of token, either <em>fsa</em>, <em>jwt</em> or <code class="docutils literal notranslate"><span class="pre">None</span></code> to disable.
+Default is <em>fsa</em>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">FSA_TOKEN_CARRIER</span></code> how to transport the token: <em>bearer</em> (<code class="docutils literal notranslate"><span class="pre">Authorization</span></code>
+HTTP header), <em>param</em>, <em>cookie</em> or <em>header</em>.
+Default is <em>bearer</em>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">FSA_TOKEN_NAME</span></code> name of parameter or cookie holding the token, or
+bearer scheme, or header name.
+Default is <code class="docutils literal notranslate"><span class="pre">AUTH</span></code> for <em>param</em> carrier, <code class="docutils literal notranslate"><span class="pre">auth</span></code> for <em>cookie</em> carrier,
+<code class="docutils literal notranslate"><span class="pre">Bearer</span></code> for HTTP Authorization header (<em>bearer</em> carrier),
+<code class="docutils literal notranslate"><span class="pre">Auth</span></code> for <em>header</em> carrier.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">FSA_REALM</span></code> realm of authentication for token, basic or digest.
+Default is the simplified lower case application name.
+For <em>jwt</em>, this is translated as the audience.
+The application realm may be overriden on a route for creating MFA stages.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">FSA_TOKEN_ISSUER</span></code> the issuer of the token.
+Default is <em>None</em>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">FSA_TOKEN_SECRET</span></code> secret string used for validating tokens.
+Default is a system-generated random string containing 256 bits.
+This default will only work with itself, as it is not shared
+across server instances or processes.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">FSA_TOKEN_SIGN</span></code> secret string used for signing tokens, if
+different from previous secret. This is only relevant for public-key
+<em>jwt</em> schemes (<code class="docutils literal notranslate"><span class="pre">R…</span></code>, <code class="docutils literal notranslate"><span class="pre">E…</span></code>, <code class="docutils literal notranslate"><span class="pre">P…</span></code>).
+Default is to use the previous secret.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">FSA_TOKEN_DELAY</span></code> number of minutes of token validity.
+Default is <em>60.0</em> minutes.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">FSA_TOKEN_GRACE</span></code> number of minutes of grace time for token validity.
+Default is <em>0.0</em> minutes.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">FSA_TOKEN_ALGO</span></code> algorithm used to sign the token.
+Default is <code class="docutils literal notranslate"><span class="pre">blake2s</span></code> for <code class="docutils literal notranslate"><span class="pre">fsa</span></code> and <code class="docutils literal notranslate"><span class="pre">HS256</span></code> for <em>jwt</em>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">FSA_TOKEN_LENGTH</span></code> number of hash bytes kept for token signature.
+Default is <em>16</em> for <code class="docutils literal notranslate"><span class="pre">fsa</span></code>. The directive is ignored for <code class="docutils literal notranslate"><span class="pre">jwt</span></code>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">FSA_TOKEN_RENEWAL</span></code> for cookie tokens, the fraction of delay under
+which the cookie/token is renewed automatically.
+Default is <em>0.0</em>, meaning no renewal.</p></li>
+</ul>
+<p>Function <code class="docutils literal notranslate"><span class="pre">create_token(user)</span></code> creates a token for the user depending
+on the current scheme. If <code class="docutils literal notranslate"><span class="pre">user</span></code> is not given, the current user is taken.
+Other parameters can be overriden, such as <code class="docutils literal notranslate"><span class="pre">realm</span></code>, <code class="docutils literal notranslate"><span class="pre">delay</span></code>, <code class="docutils literal notranslate"><span class="pre">issuer</span></code>,
+<code class="docutils literal notranslate"><span class="pre">secret</span></code>… to allow full control if necessary, eg for MFA.</p>
+<p>Token authentication is always attempted unless the secret is empty.
+Setting <code class="docutils literal notranslate"><span class="pre">FSA_AUTH</span></code> to <code class="docutils literal notranslate"><span class="pre">token</span></code> results in <em>only</em> token authentication to be used.</p>
+<p>Token authentication is usually much faster than password verification because
+password checks are designed to be slow so as to hinder password cracking,
+whereas token authentication relies on simple hashing for its security.
+Another benefit of token is that it avoids sending passwords over and over.
+The rational option is to use a password scheme to retrieve a token and then to
+use it till it expires. This can be enforced by setting <code class="docutils literal notranslate"><span class="pre">FSA_AUTH</span></code> to <code class="docutils literal notranslate"><span class="pre">token</span></code>
+and to only add <code class="docutils literal notranslate"><span class="pre">auth=&quot;basic&quot;</span></code> on the login route used to retrieve a token.</p>
+<p>Token expiration can be understood as a kind of automatic logout, which suggests
+to choose the delay with some care depending on the use case.</p>
+<p>Internally token checks are cached so that even with slow JWT public-key schemes
+the performance impact should be low.</p>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">oauth</span></code></p>
+<p>Synonymous to <code class="docutils literal notranslate"><span class="pre">token</span></code>, but to be used on a route so as to trigger JWT <em>scope</em>
+authorizations on that route.</p>
+<p>See also <a class="reference internal" href="#oauth-authorizations"><span class="xref myst">OAuth Authorizations</span></a> below for how to use
+JWT token scopes.</p>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">http-token</span></code></p>
+<p>Token scheme based on <a class="reference external" href="https://pypi.org/project/Flask-HTTPAuth/">flask-HTTPAuth</a>.
+Carrier is <em>bearer</em> or <em>header</em>.</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">FSA_HTTP_AUTH_OPTS</span></code> passes additional options to the HTTPAuth
+authentication class, such as <code class="docutils literal notranslate"><span class="pre">header</span></code>, as a dictionary.</p></li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">fake</span></code></p>
+<p>Trust a parameter for authentication claims.
+Only for local tests, obviously.
+This is enforced.</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">FSA_FAKE_LOGIN</span></code> is the parameter holding the user name.
+Default is <code class="docutils literal notranslate"><span class="pre">LOGIN</span></code>.</p></li>
+</ul>
+</li>
+</ul>
+<p>Other authentication schemes can be added by registering a new hook which:</p>
+<ul class="simple">
+<li><p>is passed the application and request</p></li>
+<li><p>returns the authenticated login as a str, or None</p></li>
+<li><p>may raise an <code class="docutils literal notranslate"><span class="pre">ErrorResponse</span></code> if unhappy, eg to generate a 401</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nd">@app</span><span class="o">.</span><span class="n">authentication</span><span class="p">(</span><span class="s2">&quot;code&quot;</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">code_authentication</span><span class="p">(</span><span class="n">app</span><span class="p">:</span> <span class="n">Flask</span><span class="p">,</span> <span class="n">req</span><span class="p">:</span> <span class="n">Request</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="o">|</span><span class="kc">None</span><span class="p">:</span>
+    <span class="o">...</span>
+
+<span class="nd">@app</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;/code-authentication&quot;</span><span class="p">,</span> <span class="n">authorization</span><span class="o">=</span><span class="s2">&quot;ALL&quot;</span><span class="p">,</span> <span class="n">auth</span><span class="o">=</span><span class="s2">&quot;code&quot;</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">get_code_authentication</span><span class="p">(</span><span class="n">user</span><span class="p">:</span> <span class="n">CurrentUser</span><span class="p">):</span>
+    <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;Hello code-authenticated </span><span class="si">{</span><span class="n">user</span><span class="si">}</span><span class="s2">!&quot;</span><span class="p">,</span> <span class="mi">200</span>
+</pre></div>
+</div>
+<p>The <code class="docutils literal notranslate"><span class="pre">FSA_AUTHENTICATION</span></code> configuration directive is a dictionary which can be
+used for the same purpose.</p>
+</section>
+<section id="password-management">
+<h3>Password Management<a class="headerlink" href="#password-management" title="Permalink to this heading"></a></h3>
+<p>Password authentication is performed for the following authentication schemes:
+<code class="docutils literal notranslate"><span class="pre">param</span></code>, <code class="docutils literal notranslate"><span class="pre">basic</span></code>, <code class="docutils literal notranslate"><span class="pre">http-basic</span></code>, <code class="docutils literal notranslate"><span class="pre">http-digest</span></code>, <code class="docutils literal notranslate"><span class="pre">digest</span></code>, <code class="docutils literal notranslate"><span class="pre">password</span></code>.</p>
+<p>The provided password management comprises handling password verification
+in the application, relying on standard password hashing schemes and
+a user-provided function to retrieve the password hash (<code class="docutils literal notranslate"><span class="pre">get_user_pass</span></code>),
+and/or delegating the whole verification process to a user-provided function
+(<code class="docutils literal notranslate"><span class="pre">password_check</span></code>).</p>
+<p>For checking passwords internally, the password (salted hash) must be retrieved
+through <code class="docutils literal notranslate"><span class="pre">get_user_pass(user)</span></code>.
+This function must be provided when the module is initialized.
+Because this function is cached by default, the cache expiration must be reached
+so that changes take effect, or the cache must be cleared manually, which may
+impair application performance.</p>
+<p>The following configuration directives are available to configure <code class="docutils literal notranslate"><span class="pre">passlib</span></code>
+password checks:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">FSA_PASSWORD_SCHEME</span></code> password scheme to use for passwords.
+Default is <code class="docutils literal notranslate"><span class="pre">bcrypt</span></code>.
+See <a class="reference external" href="https://passlib.readthedocs.io/en/stable/lib/passlib.hash.html">passlib documentation</a>
+for available options, including the bad <em>plaintext</em>.
+Set to <code class="docutils literal notranslate"><span class="pre">None</span></code> to disable internal password checking.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">FSA_PASSWORD_OPTS</span></code> relevant options (for <code class="docutils literal notranslate"><span class="pre">passlib.CryptContext</span></code>).
+Default is <code class="docutils literal notranslate"><span class="pre">{'bcrypt__default_rounds':</span> <span class="pre">4,</span> <span class="pre">'bcrypt__default_ident':</span> <span class="pre">'2y'}</span></code>.</p></li>
+</ul>
+<p>Beware that modern password checking is often pretty expensive in order to
+thwart password cracking if the hashed passwords are leaked, so that you
+do not want to have to use that on every request in real life (eg <em>hundreds</em>
+milliseconds for passlib bcrypt <em>12</em> rounds).
+The above defaults result in manageable password checks of a few milliseconds.
+Consider using tokens to reduce the authentication load on each request.</p>
+<p>For <code class="docutils literal notranslate"><span class="pre">digest</span></code> authentication, the password must be either in <em>plaintext</em> or a
+simple MD5 hash (<a class="reference external" href="https://www.rfc-editor.org/rfc/rfc2617.txt">RFC 2617</a>).
+The authentication setup must be consistent (set <code class="docutils literal notranslate"><span class="pre">use_ha1_pw</span></code> as <em>True</em> for the
+later).
+As retrieving the stored information is enough to steal the password (plaintext)
+or at least impersonate a user (hash), consider avoiding <code class="docutils literal notranslate"><span class="pre">digest</span></code> altogether.
+HTTP Digest Authentication only makes sense for unencrypted connexions, which
+is bad practice anyway. It is just provided here for completeness.</p>
+<p>Function <code class="docutils literal notranslate"><span class="pre">hash_password(pass)</span></code> computes the password salted digest compatible
+with the current configuration, and may be used by the application for setting
+or resetting passwords.</p>
+<p>This function checks the password quality by relying on:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">FSA_PASSWORD_LEN</span></code> minimal password length, <em>0</em> to disable.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">FSA_PASSWORD_RE</span></code> list of regular expressions that a password must match.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">FSA_PASSWORD_QUALITY</span></code> hook function which returns whether the password is
+acceptable, possibly raising an exception to complain if not.
+This hook can also be filled with the <code class="docutils literal notranslate"><span class="pre">password_quality</span></code> method/decorator.
+It allows to plug a password strength estimator such as
+<a class="reference external" href="https://github.com/dropbox/zxcvbn">zxcvbn</a>.</p></li>
+</ul>
+<p>This application-managed standard password checking can be overridden by
+providing an alternate password checking function with a directive:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">FSA_PASSWORD_CHECK</span></code> hook function which returns whether user and password
+provided is acceptable.
+This allows to plug a LDAP server or a temporary password recovery scheme or
+other one-time or limited-time passwords sent by SMS or mail, for instance.
+This hook can also be filled with the <code class="docutils literal notranslate"><span class="pre">password_check</span></code> method/decorator.
+This alternate check is used if the primary check failed or is disactivated.</p></li>
+</ul>
+<p>An opened route for user registration with mandatory parameters
+could look like that:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nd">@app</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="s2">&quot;/register&quot;</span><span class="p">,</span> <span class="n">authorize</span><span class="o">=</span><span class="s2">&quot;ANY&quot;</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">post_register</span><span class="p">(</span><span class="n">user</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">password</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">user_already_exists</span><span class="p">(</span><span class="n">user</span><span class="p">):</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;cannot create </span><span class="si">{</span><span class="n">user</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="mi">409</span>
+    <span class="n">add_new_user_with_hashed_pass</span><span class="p">(</span><span class="n">user</span><span class="p">,</span> <span class="n">app</span><span class="o">.</span><span class="n">hash_password</span><span class="p">(</span><span class="n">password</span><span class="p">))</span>
+    <span class="k">return</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="mi">201</span>
+</pre></div>
+</div>
+<p>Because password checks are usually expensive, it is advisable to switch
+to <code class="docutils literal notranslate"><span class="pre">token</span></code> authentication. A token can be created on a path authenticated
+by a password method:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># token creation route for all registered users</span>
+<span class="nd">@app</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;/login&quot;</span><span class="p">,</span> <span class="n">authorize</span><span class="o">=</span><span class="s2">&quot;ALL&quot;</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">get_login</span><span class="p">():</span>
+    <span class="k">return</span> <span class="n">jsonify</span><span class="p">(</span><span class="n">app</span><span class="o">.</span><span class="n">create_token</span><span class="p">()),</span> <span class="mi">200</span>
+</pre></div>
+</div>
+<p>The client application will return the token as a parameter or in
+headers for authenticating later requests, till it expires.</p>
+<p>Multi-factor authentication (MFA) is supported by generating intermediate tokens
+on distinct <em>realms</em> at different stages, as illustrated in the
+<a class="reference internal" href="#demo/mfa.py"><span class="xref myst">demo</span></a> and below:</p>
+<ul class="simple">
+<li><p>a first password-authenticated route returns an intermediate short-lived token</p></li>
+<li><p>required on a second route which generates a final token if a second
+authentication (eg code received by SMS or mail) is validated.</p></li>
+<li><p>giving final access to the application.</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Stage 1: check password, return token1</span>
+<span class="nd">@app</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;/login1&quot;</span><span class="p">,</span> <span class="n">authorize</span><span class="o">=</span><span class="s2">&quot;ALL&quot;</span><span class="p">,</span> <span class="n">auth</span><span class="o">=</span><span class="s2">&quot;basic&quot;</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">get_login1</span><span class="p">(</span><span class="n">user</span><span class="p">:</span> <span class="n">CurrentUser</span><span class="p">):</span>
+    <span class="n">generate_and_send_code_to_user</span><span class="p">(</span><span class="n">user</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">json</span><span class="p">(</span><span class="n">app</span><span class="o">.</span><span class="n">create_token</span><span class="p">(</span><span class="n">user</span><span class="p">,</span> <span class="s2">&quot;stage1&quot;</span><span class="p">,</span> <span class="n">delay</span><span class="o">=</span><span class="mf">1.0</span><span class="p">)),</span> <span class="mi">200</span>
+
+<span class="c1"># Stage 2: check token1 and code parameter, return token2</span>
+<span class="nd">@app</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;/login2&quot;</span><span class="p">,</span> <span class="n">authorize</span><span class="o">=</span><span class="s2">&quot;ALL&quot;</span><span class="p">,</span> <span class="n">auth</span><span class="o">=</span><span class="s2">&quot;token&quot;</span><span class="p">,</span> <span class="n">realm</span><span class="o">=</span><span class="s2">&quot;stage1&quot;</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">get_login2</span><span class="p">(</span><span class="n">user</span><span class="p">:</span> <span class="n">CurrentUser</span><span class="p">,</span> <span class="n">code</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">user_code_is_valid</span><span class="p">(</span><span class="n">user</span><span class="p">,</span> <span class="n">code</span><span class="p">):</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;invalid code for </span><span class="si">{</span><span class="n">user</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="mi">401</span>
+    <span class="c1"># return token generated from default settings</span>
+    <span class="k">return</span> <span class="n">json</span><span class="p">(</span><span class="n">app</span><span class="o">.</span><span class="n">create_token</span><span class="p">()),</span> <span class="mi">200</span>
+
+<span class="nd">@app</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;/logged&quot;</span><span class="p">,</span> <span class="n">authorize</span><span class="o">=</span><span class="s2">&quot;ALL&quot;</span><span class="p">,</span> <span class="n">auth</span><span class="o">=</span><span class="s2">&quot;token&quot;</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">get_logged</span><span class="p">(</span><span class="n">user</span><span class="p">:</span> <span class="n">CurrentUser</span><span class="p">):</span>
+    <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;Hello </span><span class="si">{</span><span class="n">user</span><span class="si">}</span><span class="s2">!&quot;</span><span class="p">,</span> <span class="mi">200</span>
+</pre></div>
+</div>
+<p>Note that route-dependent realms do <strong>not</strong> work with <code class="docutils literal notranslate"><span class="pre">http-*</span></code> authentications
+because the realm is frozen by the external implementation in this case.
+Also, The same shared secret is used to validate all realms.</p>
+</section>
+</section>
+<section id="authorization">
+<h2>Authorization<a class="headerlink" href="#authorization" title="Permalink to this heading"></a></h2>
+<p>Authorizations are declared with the <code class="docutils literal notranslate"><span class="pre">authorize</span></code> parameter to
+the <code class="docutils literal notranslate"><span class="pre">route</span></code> decorator or its per-method shortcuts.
+The modules supports three permission models:</p>
+<ul class="simple">
+<li><p>a group-oriented model</p></li>
+<li><p>a scope OAuth model</p></li>
+<li><p>an object-oriented model</p></li>
+</ul>
+<p>The parameter accepts a list of <code class="docutils literal notranslate"><span class="pre">str</span></code> and <code class="docutils literal notranslate"><span class="pre">int</span></code> for groups or scopes, and of
+<code class="docutils literal notranslate"><span class="pre">tuple</span></code> for object permissions.  If a scalar is provided, it is assumed
+to be equivalent to a list of one element.</p>
+<p>When multiple authorizations are required through a list, they are cumulative,
+that is <em>all</em> conditions must be met.</p>
+<section id="group-authorizations">
+<h3>Group Authorizations<a class="headerlink" href="#group-authorizations" title="Permalink to this heading"></a></h3>
+<p>A group or role is identified as an integer or a string.
+The <code class="docutils literal notranslate"><span class="pre">user_in_group(user,</span> <span class="pre">group)</span></code> function is called to check whether the
+authenticated user belongs to a given group.
+Because this function is cached by default, the cache expiration must
+be reached so that changes take effect, or the cache must be cleared
+manually, which may impair application performance.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nd">@app</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;/admin-only&quot;</span><span class="p">,</span> <span class="n">authorize</span><span class="o">=</span><span class="s2">&quot;ADMIN&quot;</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">get_admin_only</span><span class="p">():</span>
+    <span class="c1"># only authenticated &quot;ADMIN&quot; users can get here!</span>
+</pre></div>
+</div>
+<p>There are three special values that can be passed to the <code class="docutils literal notranslate"><span class="pre">authorize</span></code> decorator:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">ANY</span></code> declares that no authentication is needed on that route,
+i.e. <em>any</em>one can get in.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ALL</span></code> declares that all authenticated user can access this route,
+without group checks.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">NONE</span></code> returns a <em>403</em> on all access. It can be used to close a route
+temporarily. This is the default.</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nd">@app</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;/closed&quot;</span><span class="p">,</span> <span class="n">authorize</span><span class="o">=</span><span class="s2">&quot;NONE&quot;</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">get_closed</span><span class="p">():</span>
+    <span class="c1"># nobody can get here</span>
+
+<span class="nd">@app</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;/authenticated&quot;</span><span class="p">,</span> <span class="n">authorize</span><span class="o">=</span><span class="s2">&quot;ALL&quot;</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">get_authenticated</span><span class="p">():</span>
+    <span class="c1"># ALL authenticated users can get here</span>
+
+<span class="nd">@app</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;/opened&quot;</span><span class="p">,</span> <span class="n">authorize</span><span class="o">=</span><span class="s2">&quot;ANY&quot;</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">get_opened</span><span class="p">():</span>
+    <span class="c1"># ANYone can get here, no authentication is required</span>
+</pre></div>
+</div>
+<p>Note that this simplistic model does is not enough for non-trivial applications,
+where permissions on objects often depend on the object owner.
+For those, careful per-object and per-operation authorization are needed.</p>
+<p>Groups <em>can</em> be registered with <code class="docutils literal notranslate"><span class="pre">add_group</span></code> or with <code class="docutils literal notranslate"><span class="pre">FSA_AUTHZ_GROUPS</span></code>.
+If done so, unregistered groups are rejected and result in a configuration error:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">app</span><span class="o">.</span><span class="n">add_group</span><span class="p">(</span><span class="s2">&quot;student&quot;</span><span class="p">,</span> <span class="s2">&quot;professor&quot;</span><span class="p">)</span>
+
+<span class="nd">@app</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;/students&quot;</span><span class="p">,</span> <span class="n">authorize</span><span class="o">=</span><span class="s2">&quot;admin&quot;</span><span class="p">)</span>  <span class="c1"># ERROR, unregistered group</span>
+<span class="k">def</span> <span class="nf">get_students</span><span class="p">():</span>
+    <span class="o">...</span>
+</pre></div>
+</div>
+</section>
+<section id="oauth-authorizations">
+<h3>OAuth Authorizations<a class="headerlink" href="#oauth-authorizations" title="Permalink to this heading"></a></h3>
+<p>OAuth authorizations are similar to group authorizations.
+They are attached to the current authentification performed through a token,
+on routes explicitely marked with <code class="docutils literal notranslate"><span class="pre">auth=&quot;oauth&quot;</span></code>.
+In that case, the <code class="docutils literal notranslate"><span class="pre">authorize</span></code> values are interpreted as <em>scopes</em> that must be
+provided by the token.</p>
+<p>In order to simplify security implications, <em>scopes</em> and <em>groups</em>
+(<code class="docutils literal notranslate"><span class="pre">user_in_group</span></code>) authorizations cannot be mixed on a route:
+create distinct routes to handle these.
+Another current limitation is that only one <em>issuer</em> is allowed.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># /data is only accessible through a trusted JWT token with &quot;read&quot; scope</span>
+<span class="nd">@app</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;/data&quot;</span><span class="p">,</span> <span class="n">authorize</span><span class="o">=</span><span class="s2">&quot;read&quot;</span><span class="p">,</span> <span class="n">auth</span><span class="o">=</span><span class="s2">&quot;oauth&quot;</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">get_data</span><span class="p">(</span><span class="n">user</span><span class="p">:</span> <span class="n">CurrentUser</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">access_some_data</span><span class="p">(</span><span class="n">user</span><span class="p">),</span> <span class="mi">200</span>
+</pre></div>
+</div>
+<p>Method <code class="docutils literal notranslate"><span class="pre">user_scope</span></code> allows to check whether the current user can perform
+some operation. It can be used with an object authorization rule.</p>
+<p>Method <code class="docutils literal notranslate"><span class="pre">add_scope</span></code> and directive <code class="docutils literal notranslate"><span class="pre">FSA_AUTHZ_SCOPES</span></code> allow to register valid
+scopes that can be checked later. If not set, all scopes are considered valid.</p>
+<p>The <em>scope</em> delegated authorization model suggests that the issuer is
+trusted to control accesses with any possible scope.
+This may or may not make sense from a security perspective depending
+on the use case.
+It makes perfect sense if the issuer is providing authorizations for
+accesses to itself, possibly from a third party.</p>
+</section>
+<section id="object-authorizations">
+<h3>Object Authorizations<a class="headerlink" href="#object-authorizations" title="Permalink to this heading"></a></h3>
+<p>Non trivial application have access permissions which depend on the data
+stored by the application. For instance, a user may alter a data because
+they <em>own</em> it, or access a data because they are <em>friends</em> of the owner.</p>
+<p>In order to implement this model, the <code class="docutils literal notranslate"><span class="pre">authorize</span></code> decorator parameter can
+hold <code class="docutils literal notranslate"><span class="pre">(domain,</span> <span class="pre">variable,</span> <span class="pre">mode)</span></code> tuples which designate a permission domain
+(eg a table or object or concept name in the application), the name of
+a variable in the request (path or HTTP or JSON parameters) which identifies
+an object of the domain, and the operation or level of access necessary for
+this route:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nd">@app</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;/message/&lt;mid&gt;&quot;</span><span class="p">,</span> <span class="n">authorize</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;msg&quot;</span><span class="p">,</span> <span class="s2">&quot;mid&quot;</span><span class="p">,</span> <span class="s2">&quot;read&quot;</span><span class="p">))</span>
+<span class="k">def</span> <span class="nf">get_message_mid</span><span class="p">(</span><span class="n">mid</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
+    <span class="o">...</span>
+</pre></div>
+</div>
+<p>The system will check whether the current user can access message <em>mid</em>
+in <em>read</em> mode by calling a per-domain user-supplied function:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nd">@app</span><span class="o">.</span><span class="n">object_perms</span><span class="p">(</span><span class="s2">&quot;msg&quot;</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">can_access_message</span><span class="p">(</span><span class="n">user</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">mid</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">mode</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="o">|</span><span class="kc">None</span><span class="p">:</span>
+    <span class="c1"># can user access message mid for operation mode?</span>
+    <span class="k">return</span> <span class="o">...</span>
+
+<span class="c1"># also: app.object_perms(&quot;msg&quot;, can_access_message)</span>
+</pre></div>
+</div>
+<p>If the check function returns <em>None</em>, a <em>404 Not Found</em> response is generated.
+If it returns <em>False</em>, a <em>403 Forbidden</em> response is generated.
+If it returns <em>True</em>, the route function is called to generate the response.</p>
+<p>If <code class="docutils literal notranslate"><span class="pre">mode</span></code> is not supplied, <em>None</em> is passed to the check function.
+If <code class="docutils literal notranslate"><span class="pre">variable</span></code> is not supplied, the <em>first</em> parameter of the route function
+is taken:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># same as authorize=(&quot;msg&quot;, &quot;mid&quot;, None)</span>
+<span class="nd">@app</span><span class="o">.</span><span class="n">patch</span><span class="p">(</span><span class="s2">&quot;/message/&lt;mid&gt;&quot;</span><span class="p">,</span> <span class="n">authorize</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;msg&quot;</span><span class="p">,))</span>
+<span class="k">def</span> <span class="nf">patch_message_mid</span><span class="p">(</span><span class="n">mid</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
+    <span class="o">...</span>
+</pre></div>
+</div>
+<p>The <code class="docutils literal notranslate"><span class="pre">FSA_OBJECT_PERMS</span></code> configuration directive can be set as a dictionary
+which maps domains to their access checking functions:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">FSA_OBJECT_PERMS</span> <span class="o">=</span> <span class="p">{</span> <span class="s2">&quot;msg&quot;</span><span class="p">:</span> <span class="n">can_access_message</span><span class="p">,</span> <span class="s2">&quot;blog&quot;</span><span class="p">:</span> <span class="n">can_access_blog</span> <span class="p">}</span>
+</pre></div>
+</div>
+<p>Because these functions are cached by default, the cache expiration must
+be reached so that changes take effect, or the cache must be cleared
+manually, which may impair application performance.</p>
+<p>In the context of <code class="docutils literal notranslate"><span class="pre">oauth</span></code> authorizations, the per-domain object permission
+function can rely on <code class="docutils literal notranslate"><span class="pre">user_scope</span></code> to check whether some mode is allowed
+by the token.</p>
+</section>
+</section>
+<section id="parameters">
+<h2>Parameters<a class="headerlink" href="#parameters" title="Permalink to this heading"></a></h2>
+<p>Request parameters (HTTP or JSON) are translated automatically to named function
+parameters by relying on function type annotations.
+Parameters are considered mandatory unless a default value is provided.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nd">@app</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;/something/&lt;id&gt;&quot;</span><span class="p">,</span> <span class="n">authorize</span><span class="o">=...</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">get_something_id</span><span class="p">(</span><span class="nb">id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">when</span><span class="p">:</span> <span class="n">date</span><span class="p">,</span> <span class="n">what</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;nothing&quot;</span><span class="p">):</span>
+    <span class="c1"># `id` is an integer path-parameter</span>
+    <span class="c1"># `when` is a mandatory date HTTP or JSON parameter</span>
+    <span class="c1"># `what` is an optional string HTTP or JSON parameter</span>
+    <span class="o">...</span>
+</pre></div>
+</div>
+<p>Request parameter string values are actually <em>converted</em> to the target type,
+and generate a <em>400</em> if the configuration fails.
+For <code class="docutils literal notranslate"><span class="pre">int</span></code>, base syntax is accepted for HTTP/JSON parameters, i.e. <code class="docutils literal notranslate"><span class="pre">0x11</span></code>,
+<code class="docutils literal notranslate"><span class="pre">0o21</span></code>, <code class="docutils literal notranslate"><span class="pre">0b10001</span></code> and <code class="docutils literal notranslate"><span class="pre">17</span></code> all mean decimal <em>17</em>.
+For <code class="docutils literal notranslate"><span class="pre">bool</span></code>, <em>False</em> is an empty string, <code class="docutils literal notranslate"><span class="pre">0</span></code>, <code class="docutils literal notranslate"><span class="pre">False</span></code> or <code class="docutils literal notranslate"><span class="pre">F</span></code>, otherwise
+the value is <em>True</em>.
+Type <code class="docutils literal notranslate"><span class="pre">path</span></code> is a special <code class="docutils literal notranslate"><span class="pre">str</span></code> type which allows to trigger accepting
+any path on a route.
+Type <code class="docutils literal notranslate"><span class="pre">JsonData</span></code> is a special type to convert, if necessary, a string value
+to JSON, expecting a list or a dictionary.</p>
+<p>If one parameter is a dict of keyword arguments, all remaining request
+parameters are provided into it, as shown below:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nd">@app</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="s2">&quot;/awesome&quot;</span><span class="p">,</span> <span class="n">authorize</span><span class="o">=</span><span class="s2">&quot;ALL&quot;</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">put_awesome</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="o">...</span>
+</pre></div>
+</div>
+<p><a class="reference external" href="https://pydantic.dev">Pydantic</a>-generated classes and dataclasses work out of
+the box both with HTTP and JSON parameters.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">Search</span><span class="p">(</span><span class="n">pydantic</span><span class="o">.</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">words</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>
+    <span class="n">limit</span><span class="p">:</span> <span class="nb">int</span>
+
+<span class="c1"># or</span>
+<span class="nd">@dataclass</span>
+<span class="k">class</span> <span class="nc">Search</span><span class="p">:</span>
+    <span class="n">words</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>
+    <span class="n">limit</span><span class="p">:</span> <span class="nb">int</span>
+
+<span class="nd">@app</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;/search&quot;</span><span class="p">,</span> <span class="n">authorize</span><span class="o">=</span><span class="s2">&quot;ANY&quot;</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">get_search</span><span class="p">(</span><span class="n">q</span><span class="p">:</span> <span class="n">Search</span><span class="p">):</span>
+    <span class="o">...</span>
+</pre></div>
+</div>
+<p>Custom classes can be used as parameter types, provided that the constructor
+accepts a string (for HTTP parameters) or whatever value provided (for JSON)
+to build the expected type.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">EmailAddr</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">addr</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_addr</span> <span class="o">=</span> <span class="n">addr</span>
+
+<span class="nd">@app</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;/mail/&lt;addr&gt;&quot;</span><span class="p">,</span> <span class="n">authorize</span><span class="o">=</span><span class="s2">&quot;ALL&quot;</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">get_mail_addr</span><span class="p">(</span><span class="n">addr</span><span class="p">:</span> <span class="n">EmailAddr</span><span class="p">):</span>
+    <span class="o">...</span>
+</pre></div>
+</div>
+<p>Defining new types can be used to factor out some parameter checks,
+for instance requiring a positive integer:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">nat</span><span class="p">(</span><span class="nb">int</span><span class="p">):</span>  <span class="c1"># this demonstrate Python simplicity</span>
+    <span class="k">def</span> <span class="fm">__new__</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">val</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">val</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;nat value must be positive: </span><span class="si">{</span><span class="n">val</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__new__</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">val</span><span class="p">)</span>
+
+<span class="nd">@app</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;/pos&quot;</span><span class="p">,</span> <span class="n">authorize</span><span class="o">=</span><span class="s2">&quot;ANY&quot;</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">get_pos</span><span class="p">(</span><span class="n">i</span><span class="p">:</span> <span class="n">nat</span><span class="p">,</span> <span class="n">j</span><span class="p">:</span> <span class="n">nat</span><span class="p">):</span>
+    <span class="c1"># i and j are positive integers</span>
+    <span class="o">...</span>
+</pre></div>
+</div>
+<p>If the constructor does not match, a custom function can be provided with the
+<code class="docutils literal notranslate"><span class="pre">cast</span></code> function/decorator and will be called automatically to convert
+parameters:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">House</span><span class="p">:</span>
+    <span class="o">...</span>
+
+<span class="nd">@app</span><span class="o">.</span><span class="n">cast</span><span class="p">(</span><span class="n">House</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">strToHouse</span><span class="p">(</span><span class="n">s</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">House</span><span class="p">:</span>
+    <span class="k">return</span> <span class="o">...</span>
+
+<span class="c1"># or: app.cast(House, strToHouse)</span>
+
+<span class="nd">@app</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;/house/&lt;h&gt;&quot;</span><span class="p">,</span> <span class="n">authorize</span><span class="o">=</span><span class="s2">&quot;ANY&quot;</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">get_house_h</span><span class="p">(</span><span class="n">h</span><span class="p">:</span> <span class="n">House</span><span class="p">)</span>
+    <span class="o">...</span>
+</pre></div>
+</div>
+<p>The <code class="docutils literal notranslate"><span class="pre">FSA_CAST</span></code> directive can also be defined as a dictionary mapping
+types to their conversion functions:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">FSA_CAST</span> <span class="o">=</span> <span class="p">{</span> <span class="n">House</span><span class="p">:</span> <span class="n">strToHouse</span><span class="p">,</span> <span class="o">...</span> <span class="p">}</span>
+</pre></div>
+</div>
+<p>As a special case, the <code class="docutils literal notranslate"><span class="pre">Request</span></code>, <code class="docutils literal notranslate"><span class="pre">Session</span></code>, <code class="docutils literal notranslate"><span class="pre">Globals</span></code>, <code class="docutils literal notranslate"><span class="pre">Environ</span></code>,
+<code class="docutils literal notranslate"><span class="pre">CurrentApp</span></code>, <code class="docutils literal notranslate"><span class="pre">CurrentUser</span></code>, <code class="docutils literal notranslate"><span class="pre">Cookie</span></code>, <code class="docutils literal notranslate"><span class="pre">Header</span></code> and
+<a class="reference external" href="https://werkzeug.palletsprojects.com/en/2.2.x/datastructures/#werkzeug.datastructures.FileStorage"><code class="docutils literal notranslate"><span class="pre">FileStorage</span></code></a>
+types, when used for parameters,
+result in the <code class="docutils literal notranslate"><span class="pre">request</span></code>, <code class="docutils literal notranslate"><span class="pre">session</span></code>, <code class="docutils literal notranslate"><span class="pre">g</span></code> flask special objects, <code class="docutils literal notranslate"><span class="pre">environ</span></code> WSGI
+parameter, the current authenticated user, the current application, the cookie value,
+the header value or a special file parameter (for upload) to be passed as this
+parameter to the function, allowing to keep a functional programming style by
+hidding away these special proxies.</p>
+<p>More special parameters can be added with the <code class="docutils literal notranslate"><span class="pre">special_parameter</span></code> app
+function/decorator, by providing a type and a function which is given the
+parameter name (usually useless, but not always) and returns the expected value.
+For instance, the <code class="docutils literal notranslate"><span class="pre">Request</span></code> and <code class="docutils literal notranslate"><span class="pre">FileStorage</span></code> definitions roughly correspond to:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">app</span><span class="o">.</span><span class="n">special_parameter</span><span class="p">(</span><span class="n">Request</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">_</span><span class="p">:</span> <span class="n">request</span><span class="p">)</span>
+<span class="n">app</span><span class="o">.</span><span class="n">special_parameter</span><span class="p">(</span><span class="n">FileStorage</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">p</span><span class="p">:</span> <span class="n">request</span><span class="o">.</span><span class="n">files</span><span class="p">[</span><span class="n">p</span><span class="p">])</span>
+</pre></div>
+</div>
+<p>An example use-case is to make user-related data easily available
+through such a special type:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">User</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">login</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">firstname</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">lastname</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">get_user_data</span><span class="p">(</span><span class="n">login</span><span class="o">=</span><span class="n">login</span><span class="p">)</span>
+
+<span class="n">app</span><span class="o">.</span><span class="n">special_parameter</span><span class="p">(</span><span class="n">User</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">_</span><span class="p">:</span> <span class="n">User</span><span class="p">(</span><span class="n">app</span><span class="o">.</span><span class="n">current_user</span><span class="p">()))</span>
+
+<span class="nd">@app</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;/hello&quot;</span><span class="p">,</span> <span class="n">authorize</span><span class="o">=</span><span class="s2">&quot;ALL&quot;</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">get_hello</span><span class="p">(</span><span class="n">user</span><span class="p">:</span> <span class="n">User</span><span class="p">):</span>
+    <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;Hello </span><span class="si">{</span><span class="n">user</span><span class="o">.</span><span class="n">firstname</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">user</span><span class="o">.</span><span class="n">lastname</span><span class="si">}</span><span class="s2">!&quot;</span><span class="p">,</span> <span class="mi">200</span>
+</pre></div>
+</div>
+<p>The <code class="docutils literal notranslate"><span class="pre">FSA_SPECIAL_PARAMETER</span></code> directive can also be defined as a dictionary
+mapping types to their parameter value function.</p>
+<p>Python parameter names can be prepended with a <code class="docutils literal notranslate"><span class="pre">_</span></code>, which is ignored when
+translating HTTP parameters.  This allows to use python keywords as parameter
+names, such as <code class="docutils literal notranslate"><span class="pre">pass</span></code> or <code class="docutils literal notranslate"><span class="pre">def</span></code>.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nd">@app</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="s2">&quot;/user/&lt;pass&gt;&quot;</span><span class="p">,</span> <span class="n">authorize</span><span class="o">=</span><span class="s2">&quot;ALL&quot;</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">put_user_pass</span><span class="p">(</span><span class="n">_pass</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">_def</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">_import</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+    <span class="o">...</span>
+</pre></div>
+</div>
+<p>Finally, configuration directive <code class="docutils literal notranslate"><span class="pre">FSA_REJECT_UNEXPECTED_PARAM</span></code> tells whether to
+reject requests with unexpected parameters.
+Default is <em>True</em>.</p>
+</section>
+<section id="utils">
+<h2>Utils<a class="headerlink" href="#utils" title="Permalink to this heading"></a></h2>
+<p>Utilities include the <code class="docutils literal notranslate"><span class="pre">Reference</span></code> generic object wrapper class,
+error handling utilities and
+miscellaneous configuration directives which cover security,
+caching and CORS.</p>
+<section id="reference-object-wrapper">
+<h3><code class="docutils literal notranslate"><span class="pre">Reference</span></code> Object Wrapper<a class="headerlink" href="#reference-object-wrapper" title="Permalink to this heading"></a></h3>
+<p>This class provides a proxy object based on the <code class="docutils literal notranslate"><span class="pre">Proxy</span></code> class
+from <a class="reference external" href="https://pypi.org/project/proxypatternpool/">ProxyPatternPool</a>.</p>
+<p>This class implements a generic share-able global variable which can be
+used by modules (eg app, blueprints…) with its initialization differed.</p>
+<p>Under the hood, most methods calls are forwarded to a possibly sub-thread-local
+object stored inside the wrapper, so that the Reference object mostly
+behaves like the wrapped object itself.</p>
+<p>See the module for a detailed documentation.</p>
+</section>
+<section id="error-handling">
+<h3>Error Handling<a class="headerlink" href="#error-handling" title="Permalink to this heading"></a></h3>
+<p>Raising the <code class="docutils literal notranslate"><span class="pre">ErrorResponse</span></code> exception with a message, status, and possibly
+headers and content type from any user-defined function generates a <code class="docutils literal notranslate"><span class="pre">Response</span></code>
+of this status with the text message as contents.</p>
+<p>The following directives provide convenient configuration about error
+handling:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">FSA_ERROR_RESPONSE</span></code> sets the handler for generating actual responses on
+errors.  Text values  <em>plain</em> or <em>json</em> generate simple <code class="docutils literal notranslate"><span class="pre">text/plain</span></code> or
+<code class="docutils literal notranslate"><span class="pre">application/json</span></code> responses.
+Using <em>json:error</em> generates a JSON dictionary with key <em>error</em> holding
+the error message.
+The response generation can be fully overriden by providing a callable which
+expects the error message, status code, headers and content type as parameters.
+This handler can be restricted to apply only to FSA-generated errors,
+see <code class="docutils literal notranslate"><span class="pre">FSA_HANDLE_ALL_ERRORS</span></code> below.
+Default is <em>plain</em>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">FSA_HANDLE_ALL_ERRORS</span></code> whether to handle all <em>4xx</em> and <em>5xx</em> errors,
+i.e. take full responsability for generating error responses using FSA
+internal error handler (see <code class="docutils literal notranslate"><span class="pre">FSA_ERROR_RESPONSE</span></code> above).
+Default is <em>True</em>.
+When set to <em>False</em>, some errors may generate their own response in
+any format based on Flask default error response generator.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">FSA_KEEP_USER_ERRORS</span></code> whether to refrain from handling user errors
+and let them pass to the outer WSGI infrastructure instead.
+User errors are intercepted anyway, traced and raised again.
+They may occur from any user-provided functions such as various hooks
+and route functions.
+Default is <em>False</em></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">FSA_SERVER_ERROR</span></code> controls the status code returned on the module internal
+errors, to help distinguish these from other internal errors which may occur.
+Default is <em>500</em>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">FSA_NOT_FOUND_ERROR</span></code> controls the status code returned when a permission
+checks returns <em>None</em>.
+Default is <em>404</em>.</p></li>
+</ul>
+<p>A possible pattern is to put checks, say about parameters, in a function
+which raises the <code class="docutils literal notranslate"><span class="pre">ErrorResponse</span></code> exception to control client-facing results,
+and to call this function for checking these parameters:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">check_foo_param</span><span class="p">(</span><span class="n">foo</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">db_has_no_foo</span><span class="p">(</span><span class="n">foo</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="n">ErrorResponse</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;no such foo: </span><span class="si">{</span><span class="n">foo</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="mi">404</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">this_foo_is_confidential</span><span class="p">(</span><span class="n">foo</span><span class="p">,</span> <span class="n">app</span><span class="o">.</span><span class="n">current_user</span><span class="p">()):</span>
+        <span class="k">raise</span> <span class="n">ErrorResponse</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;no way foo: </span><span class="si">{</span><span class="n">foo</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="mi">403</span><span class="p">)</span>
+
+<span class="nd">@app</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;/foo/&lt;fid&gt;&quot;</span><span class="p">,</span> <span class="n">authorize</span><span class="o">=</span><span class="s2">&quot;ALL&quot;</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">get_foo_fid</span><span class="p">(</span><span class="n">fid</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
+    <span class="n">check_foo_param</span><span class="p">(</span><span class="n">fid</span><span class="p">)</span>
+    <span class="o">...</span>
+</pre></div>
+</div>
+<p>Such checks can also be performed in an object constructor, with the
+inconvenience that the objects become specific to the HTTP context.</p>
+</section>
+<section id="miscellaneous-configuration-directives">
+<h3>Miscellaneous Configuration Directives<a class="headerlink" href="#miscellaneous-configuration-directives" title="Permalink to this heading"></a></h3>
+<p>Some directives govern various details for this extension internal working.</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">FSA_MODE</span></code> set module mode, expecting <em>prod</em>, <em>dev</em>, <em>debug</em> to <em>debug4</em>.
+This changes the module verbosity.
+Under <em>dev</em> or debug, <code class="docutils literal notranslate"><span class="pre">FSA-*</span></code> headers is added to show informations about
+the request, the authentication and the elapsed time from the application
+code perspective.
+Default is <em>prod</em>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">FSA_LOGGING_LEVEL</span></code> adjust module internal logging level.
+Default is <em>None</em>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">FSA_SECURE</span></code> only allows secured requests on non-local connections.
+Default is <em>True</em>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">FSA_LOCAL</span></code> sets the internal object isolation level.
+It must be consistent with the module WSGI usage.
+Possible values are <em>process</em>, <em>thread</em> (several threads can be used by the
+WSGI server) and <em>werkzeug</em> (should work with sub-thread level request
+handling, eg greenlets).
+Default is <em>thread</em>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">FSA_ADD_HEADERS</span></code> allows to add headers to the generated response,
+as a dictionary.
+Keys are header names and values are either strings, which are used as is,
+or functions which are called with the response as a parameter to generate
+a value. <em>None</em> returned values are silently ignored.
+The corresponding <code class="docutils literal notranslate"><span class="pre">add_headers</span></code> method allows to add headers as keyword
+arguments.
+Default is empty.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">FSA_BEFORE_REQUEST</span></code> and <code class="docutils literal notranslate"><span class="pre">FSA_AFTER_REQUEST</span></code> allow to add a list of before
+and after request hooks from the configuration instead of the actual
+application code.
+As a slight deviation from Flask before request hook, before request functions
+are passed the current request as an argument.
+They are executed first (just after some internal initializations and before
+application-provided before request hooks) and last, respectively.
+Defaults are empty.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">FSA_BEFORE_EXEC</span></code> allows to add a list of functions called after all
+preprocessing and just before the actual execution of the route function.
+The hooks are passed the request, the login and the authentication scheme.
+It may return a response to shortcut the route function.
+Such functions can also be register with the <code class="docutils literal notranslate"><span class="pre">before_exec</span></code>
+function/decorator.
+Defaults are empty.</p></li>
+</ul>
+<p>Some control is available about internal caching features used for user
+authentication (user password access and token validations) and
+authorization (group and per-object permissions):</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">FSA_CACHE</span></code> controls the type of cache to use, set to <em>None</em> to disallow
+caches. Values for standard <code class="docutils literal notranslate"><span class="pre">cachetools</span></code> cache classes are <code class="docutils literal notranslate"><span class="pre">ttl</span></code>, <code class="docutils literal notranslate"><span class="pre">lru</span></code>,
+<code class="docutils literal notranslate"><span class="pre">lfu</span></code>, <code class="docutils literal notranslate"><span class="pre">mru</span></code>, <code class="docutils literal notranslate"><span class="pre">fifo</span></code>, <code class="docutils literal notranslate"><span class="pre">rr</span></code> plus <code class="docutils literal notranslate"><span class="pre">dict</span></code>.
+MemCached is supported by setting it to <code class="docutils literal notranslate"><span class="pre">memcached</span></code>, and Redis with <code class="docutils literal notranslate"><span class="pre">redis</span></code>.
+Default is <code class="docutils literal notranslate"><span class="pre">ttl</span></code>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">FSA_CACHE_OPTS</span></code> sets internal cache options with a dictionary.
+This must contain the expected connection parameters for <code class="docutils literal notranslate"><span class="pre">pymemcache.Client</span></code>
+and for <code class="docutils literal notranslate"><span class="pre">redis.Redis</span></code> redis, for instance.
+For <code class="docutils literal notranslate"><span class="pre">redis</span></code> and <code class="docutils literal notranslate"><span class="pre">ttl</span></code>, an expiration ttl of 10 minutes is used and can be
+overwritten by providing the <code class="docutils literal notranslate"><span class="pre">ttl</span></code> parameter.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">FSA_CACHE_SIZE</span></code> controls size of internal <code class="docutils literal notranslate"><span class="pre">cachetools</span></code> caches.
+Default is <em>262144</em>, which should use a few MiB.
+<em>None</em> means unbounded, more or less.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">FSA_CACHE_PREFIX</span></code> use this application-level prefix, useful for shared
+distributed caches.  A good candidate could be <code class="docutils literal notranslate"><span class="pre">app.name</span> <span class="pre">+</span> <span class="pre">&quot;.&quot;</span></code>.
+Default is <em>None</em>, meaning no prefix.</p></li>
+<li><p>Method <code class="docutils literal notranslate"><span class="pre">clear_caches</span></code> allows to clear internal process caches.
+This is a mostly a bad idea, you should wait for the <code class="docutils literal notranslate"><span class="pre">ttl</span></code>.</p></li>
+</ul>
+<p>Web-application oriented features:</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">FSA_401_REDIRECT</span></code> url to redirect to on <em>401</em>.
+Default is <em>None</em>.
+This can be used for a web application login page.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">FSA_URL_NAME</span></code> name of parameter for the target URL after a successful login.
+Default is <code class="docutils literal notranslate"><span class="pre">URL</span></code> if redirect is activated, else <em>None</em>.
+Currently, the login page should use this parameter to redirect to when ok.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">FSA_CORS</span></code> and <code class="docutils literal notranslate"><span class="pre">FSA_CORS_OPTS</span></code> control CORS (Cross Origin Resource Sharing) settings.</p>
+<p><a class="reference external" href="https://en.wikipedia.org/wiki/Cross-origin_resource_sharing">CORS</a> is a
+security feature implemented by web browsers to prevent JavaScript injection.
+It checks whether a server accepts requests from a given origin (<em>i.e.</em> from
+JavaScript code provided by some domain).</p>
+<p>CORS request handling is enabled by setting <code class="docutils literal notranslate"><span class="pre">FSA_CORS</span></code> to <em>True</em> which
+allows requests from any origin. Default is <em>False</em>.
+Additional options are controled with <code class="docutils literal notranslate"><span class="pre">FSA_CORS_OPTS</span></code>.
+The implementation is simply delegated to the
+<a class="reference external" href="https://pypi.org/project/Flask-Cors/"><code class="docutils literal notranslate"><span class="pre">flask_cors</span></code></a> Flask extension
+which must be available if the feature is enabled.</p>
+</li>
+</ul>
+</section>
+</section>
+<section id="see-also">
+<h2>See Also<a class="headerlink" href="#see-also" title="Permalink to this heading"></a></h2>
+<p>The following links point to alternative to <em>FlaskSimpleAuth</em>, which may be a
+better match depending on the use case.</p>
+<section id="flask-security">
+<h3>Flask-Security<a class="headerlink" href="#flask-security" title="Permalink to this heading"></a></h3>
+<p><a class="reference external" href="https://github.com/Flask-Middleware/flask-security/">Flask-Security</a> is a
+feature-full web-oriented authentication and authorization framework based on
+an ORM.
+By contrast, <em>Flask Simple Auth</em>:</p>
+<ul class="simple">
+<li><p>does NOT assume any ORM or impose a data model,
+you only have to provide callback functions to access the needed data
+(password, groups, object permissions…).</p></li>
+<li><p>does NOT do any web-related tasks (forms, views, templates, blueprint,
+translation…), it just helps providing declarative security layer (role or
+object permissions) to an HTTP API, well integrated into Flask by
+extending the existing <code class="docutils literal notranslate"><span class="pre">route</span></code> decorator.</p></li>
+<li><p>does provide a nice integrated parameter management to Flask,
+including conversions and type checks, detecting missing parameters…</p></li>
+<li><p>does care about performance by providing an automatic and relevant caching
+mechanism to expensive authentication and authorization checks, including
+relying on external stores such as <em>redis</em>.</p></li>
+<li><p>provides simple hooks to extend features, such as adding a
+password strength checker or a password alternate verifier.</p></li>
+<li><p>is much smaller (about 1/10th, ignoring dependencies), so probably it does
+less things!</p></li>
+</ul>
+</section>
+<section id="flask-restful">
+<h3>Flask-RESTful<a class="headerlink" href="#flask-restful" title="Permalink to this heading"></a></h3>
+<p><a class="reference external" href="https://github.com/flask-restful/flask-restful">Flask-RESTful</a> is a
+Flask extension designed to ease developping a REST API by associating
+classes to routes, with class methods to handle each HTTP method.
+By contrast, <em>Flask Simple Auth</em>:</p>
+<ul class="simple">
+<li><p>does NOT propose/impose a method/class for each route.</p></li>
+<li><p>does provide a simpler parameter management scheme.</p></li>
+<li><p>integrates cleanly authentification and authorizations,
+including handling <em>404</em> transparently.
+Our <a class="reference internal" href="#demo/todos-fsa.py"><span class="xref myst">implementation</span></a> of the doc <a class="reference internal" href="#demo/todos-frf.py"><span class="xref myst">example</span></a>
+is shorter (32 vs 40 cloc), elegant and featureful.</p></li>
+</ul>
+</section>
+<section id="flask-appbuilder">
+<h3>Flask-AppBuilder<a class="headerlink" href="#flask-appbuilder" title="Permalink to this heading"></a></h3>
+<p><a class="reference external" href="https://github.com/dpgaspar/Flask-AppBuilder">Flask-AppBuilder</a> is
+yet another Flask web-application framework on top of Flask and
+SQLAlchemy.
+By contrast, <em>Flask Simple Auth</em>:</p>
+<ul class="simple">
+<li><p>does NOT impose an ORM or database model.</p></li>
+<li><p>keeps close to Flask look and feel by simply extending the <code class="docutils literal notranslate"><span class="pre">route</span></code>
+decorator, instead of adding a handful of function-specific ones,
+which is error-prone as some may be forgotten.</p></li>
+<li><p>has a simpler and direct yet more powerful parameter management
+framework based on type declarations instead of additional decorators
+and specially formatted comments.</p></li>
+<li><p>offers an integrated authorization scheme linked to application objects.</p></li>
+</ul>
+</section>
+<section id="flask-login">
+<h3>Flask-Login<a class="headerlink" href="#flask-login" title="Permalink to this heading"></a></h3>
+<p><a class="reference external" href="https://github.com/maxcountryman/flask-login">Flask-Login</a> is
+yet another web-oriented Flask helper to manage logins and logouts using Flask
+and an underlying session management. It does not help much with actual
+authentication though, and does nothing about authorizations.
+By contrast, <em>Flask Simple Auth</em>:</p>
+<ul class="simple">
+<li><p>does NOT impose a user model.</p></li>
+<li><p>does NOT require enabling session management.</p></li>
+<li><p>does NOT require any additional decorator to protect routes.</p></li>
+<li><p>does actually provide a consistent authentication, authorization
+and parameter management framework.</p></li>
+</ul>
+</section>
+<section id="others">
+<h3>Others<a class="headerlink" href="#others" title="Permalink to this heading"></a></h3>
+<p><a class="reference external" href="https://github.com/zx80/flask-simple-auth">FlaskSimpleAuth</a> is a
+<a class="reference external" href="https://flask.palletsprojects.com/">Flask</a> extension, however:</p>
+<ul class="simple">
+<li><p>you do not have to use Flask for your back-end!
+Other (less popular) HTTP frameworks in the Python ecosystem include:
+<a class="reference external" href="https://cherrypy.dev/">CherryPy</a>,
+<a class="reference external" href="https://www.djangoproject.com/">Django</a>,
+<a class="reference external" href="http://falconframework.org/">Falcon</a>,
+<a class="reference external" href="https://fastapi.tiangolo.com/">FastAPI</a>,
+<a class="reference external" href="https://pylonsproject.org/">Pylon</a>,
+<a class="reference external" href="https://trypyramid.com/">Pyramid</a>…</p></li>
+<li><p>you do not have to use Python for your back-end!
+Other languages with more-or-less convenient HTTP frameworks include:
+<a class="reference external" href="https://github.com/babelouest/ulfius">C Ulfius</a>,
+<a class="reference external" href="https://oatpp.io/">C++ Oat++</a>,
+<a class="reference external" href="https://dotnet.microsoft.com/apps/aspnet">C# ASP.NET</a>,
+<a class="reference external" href="https://github.com/gin-gonic/gin">Go Gin</a>,
+<a class="reference external" href="https://spring.io/">Java Spring</a>,
+<a class="reference external" href="https://nodejs.org/">JavaScript Node.js</a>,
+<a class="reference external" href="https://github.com/PerlDancer/Dancer2/">Perl Dancer2</a>,
+<a class="reference external" href="https://lumen.laravel.com/">PHP Lumen</a>,
+<a class="reference external" href="https://rubyonrails.org/">Ruby Rails</a>,
+<a class="reference external" href="https://rocket.rs/">Rust Rocket</a>,
+<a class="reference external" href="https://www.playframework.com/">Scala Play</a>…</p></li>
+</ul>
+</section>
+</section>
+<section id="license">
+<h2>License<a class="headerlink" href="#license" title="Permalink to this heading"></a></h2>
+<p>This software is <em>public domain</em>.</p>
+<p>All software has bug, this is software, hence…
+Beware that you may lose your hairs or your friends because of it.
+If you like it, feel free to send a postcard to the author.</p>
+</section>
+<section id="versions">
+<h2>Versions<a class="headerlink" href="#versions" title="Permalink to this heading"></a></h2>
+<p><a class="reference external" href="https://github.com/zx80/flask-simple-auth">Sources</a>,
+<a class="reference external" href="https://zx80.github.io/flask-simple-auth/">documentation</a> and
+<a class="reference external" href="https://github.com/zx80/flask-simple-auth/issues">issues</a>
+are hosted on <a class="reference external" href="https://github.com">GitHub</a>.
+Install <a class="reference external" href="https://pypi.org/project/FlaskSimpleAuth/">package</a> from
+<a class="reference external" href="https://pypi.org/">PyPI</a>.</p>
+<p>See <a class="reference internal" href="VERSIONS.html"><span class="std std-doc">all versions</span></a>.</p>
+</section>
+<section id="todo">
+<h2>TODO<a class="headerlink" href="#todo" title="Permalink to this heading"></a></h2>
+<p>Todo or not todo…</p>
+<section id="authn">
+<h3>Authn<a class="headerlink" href="#authn" title="Permalink to this heading"></a></h3>
+<ul class="simple">
+<li><p>demo LDAP auth? One class plus a new <code class="docutils literal notranslate"><span class="pre">check_password</span></code>?</p></li>
+<li><p>add <code class="docutils literal notranslate"><span class="pre">any</span></code> token scheme?</p></li>
+<li><p>use <code class="docutils literal notranslate"><span class="pre">authlib</span></code>?</p></li>
+<li><p>test <code class="docutils literal notranslate"><span class="pre">FSA_HTTP_AUTH_OPTS</span></code>?</p></li>
+<li><p>password re could use a dict for providing an explanation?</p></li>
+<li><p>how to have several issuers and their signatures schemes?</p></li>
+<li><p>add <code class="docutils literal notranslate"><span class="pre">issuer</span></code> route parameter? see <code class="docutils literal notranslate"><span class="pre">realm</span></code>.</p></li>
+<li><p>authz/authn instead of authorize/auth?</p></li>
+<li><p>rename ANY/ALL/NONE to something more intuitive!</p></li>
+</ul>
+</section>
+<section id="params">
+<h3>Params<a class="headerlink" href="#params" title="Permalink to this heading"></a></h3>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">FSA_PARAM_STYLE</span></code> <em>any/http/json</em> to restrict/force parameters?
+being lazy is not too bad?</p></li>
+<li><p>check for bad char in parameter names</p></li>
+</ul>
+</section>
+<section id="features">
+<h3>Features<a class="headerlink" href="#features" title="Permalink to this heading"></a></h3>
+<ul class="simple">
+<li><p>clear cache per type? entry??</p></li>
+<li><p>how to add a timeout? or manage an outside one?</p></li>
+<li><p>how to manage automatic return of ressources?</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">logging</span></code> default behavior is a <em>pain</em> and the maintainer is self satisfied.
+how to ensure that logging is initialized?</p></li>
+<li><p>the doc and implementation should clarify exception handling,
+and possible overrides.</p></li>
+</ul>
+</section>
+<section id="software-engineering">
+<h3>Software Engineering<a class="headerlink" href="#software-engineering" title="Permalink to this heading"></a></h3>
+<ul class="simple">
+<li><p>reduce sloc?</p></li>
+<li><p>separate classes/projects?</p></li>
+<li><p>check for more directive types (dynamically)?</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">local</span></code> should depend on <code class="docutils literal notranslate"><span class="pre">traitlets</span></code> and others?</p></li>
+<li><p>add app.log?</p></li>
+<li><p>type checks: mypy vs pyright vs pyanalyze?  mypy is way too slow!</p></li>
+<li><p>how to ensure that shared/pooled resources are returned even on errors?
+is an <code class="docutils literal notranslate"><span class="pre">after_request</span></code> hook enough?</p></li>
+<li><p>add more examples in the documentation</p></li>
+<li><p>take advantage of <code class="docutils literal notranslate"><span class="pre">TypedDict</span></code>?</p></li>
+</ul>
+</section>
+<section id="documentation">
+<h3>Documentation<a class="headerlink" href="#documentation" title="Permalink to this heading"></a></h3>
+<ul class="simple">
+<li><p>Tutorial? Recipee?</p></li>
+<li><p>comparisons with other frameworks</p></li>
+<li><p>build and link API doc?</p></li>
+</ul>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Calvin.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

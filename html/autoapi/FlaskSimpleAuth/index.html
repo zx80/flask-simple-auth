@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FlaskSimpleAuth &mdash; FlaskSimpleAuth 24.0 documentation</title>
+      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/graphviz.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/doctools.js"></script>
+        <script src="../../_static/sphinx_highlight.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            FlaskSimpleAuth
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <!-- Local TOC -->
+              <div class="local-toc"><ul>
+<li><a class="reference internal" href="#"><code class="xref py py-mod docutils literal notranslate"><span class="pre">FlaskSimpleAuth</span></code></a><ul>
+<li><a class="reference internal" href="#module-contents">Module Contents</a><ul>
+<li><a class="reference internal" href="#classes">Classes</a></li>
+<li><a class="reference internal" href="#functions">Functions</a><ul>
+<li><a class="reference internal" href="#FlaskSimpleAuth.ErrorResponse"><code class="docutils literal notranslate"><span class="pre">ErrorResponse</span></code></a></li>
+<li><a class="reference internal" href="#FlaskSimpleAuth.ConfigError"><code class="docutils literal notranslate"><span class="pre">ConfigError</span></code></a></li>
+<li><a class="reference internal" href="#FlaskSimpleAuth.path"><code class="docutils literal notranslate"><span class="pre">path</span></code></a></li>
+<li><a class="reference internal" href="#FlaskSimpleAuth.string"><code class="docutils literal notranslate"><span class="pre">string</span></code></a></li>
+<li><a class="reference internal" href="#FlaskSimpleAuth.JsonData"><code class="docutils literal notranslate"><span class="pre">JsonData</span></code></a></li>
+<li><a class="reference internal" href="#FlaskSimpleAuth.Session"><code class="docutils literal notranslate"><span class="pre">Session</span></code></a></li>
+<li><a class="reference internal" href="#FlaskSimpleAuth.Globals"><code class="docutils literal notranslate"><span class="pre">Globals</span></code></a></li>
+<li><a class="reference internal" href="#FlaskSimpleAuth.Environ"><code class="docutils literal notranslate"><span class="pre">Environ</span></code></a></li>
+<li><a class="reference internal" href="#FlaskSimpleAuth.CurrentUser"><code class="docutils literal notranslate"><span class="pre">CurrentUser</span></code></a></li>
+<li><a class="reference internal" href="#FlaskSimpleAuth.CurrentApp"><code class="docutils literal notranslate"><span class="pre">CurrentApp</span></code></a></li>
+<li><a class="reference internal" href="#FlaskSimpleAuth.Cookie"><code class="docutils literal notranslate"><span class="pre">Cookie</span></code></a></li>
+<li><a class="reference internal" href="#FlaskSimpleAuth.Header"><code class="docutils literal notranslate"><span class="pre">Header</span></code></a></li>
+<li><a class="reference internal" href="#FlaskSimpleAuth.jsonify"><code class="docutils literal notranslate"><span class="pre">jsonify()</span></code></a></li>
+<li><a class="reference internal" href="#FlaskSimpleAuth.Reference"><code class="docutils literal notranslate"><span class="pre">Reference</span></code></a></li>
+<li><a class="reference internal" href="#FlaskSimpleAuth.Flask"><code class="docutils literal notranslate"><span class="pre">Flask</span></code></a></li>
+<li><a class="reference internal" href="#FlaskSimpleAuth.FlaskSimpleAuth"><code class="docutils literal notranslate"><span class="pre">FlaskSimpleAuth</span></code></a><ul>
+<li><a class="reference internal" href="#FlaskSimpleAuth.FlaskSimpleAuth.get_user_pass"><code class="docutils literal notranslate"><span class="pre">FlaskSimpleAuth.get_user_pass()</span></code></a></li>
+<li><a class="reference internal" href="#FlaskSimpleAuth.FlaskSimpleAuth.user_in_group"><code class="docutils literal notranslate"><span class="pre">FlaskSimpleAuth.user_in_group()</span></code></a></li>
+<li><a class="reference internal" href="#FlaskSimpleAuth.FlaskSimpleAuth.password_quality"><code class="docutils literal notranslate"><span class="pre">FlaskSimpleAuth.password_quality()</span></code></a></li>
+<li><a class="reference internal" href="#FlaskSimpleAuth.FlaskSimpleAuth.password_check"><code class="docutils literal notranslate"><span class="pre">FlaskSimpleAuth.password_check()</span></code></a></li>
+<li><a class="reference internal" href="#FlaskSimpleAuth.FlaskSimpleAuth.error_response"><code class="docutils literal notranslate"><span class="pre">FlaskSimpleAuth.error_response()</span></code></a></li>
+<li><a class="reference internal" href="#FlaskSimpleAuth.FlaskSimpleAuth.cast"><code class="docutils literal notranslate"><span class="pre">FlaskSimpleAuth.cast()</span></code></a></li>
+<li><a class="reference internal" href="#FlaskSimpleAuth.FlaskSimpleAuth.special_parameter"><code class="docutils literal notranslate"><span class="pre">FlaskSimpleAuth.special_parameter()</span></code></a></li>
+<li><a class="reference internal" href="#FlaskSimpleAuth.FlaskSimpleAuth.object_perms"><code class="docutils literal notranslate"><span class="pre">FlaskSimpleAuth.object_perms()</span></code></a></li>
+<li><a class="reference internal" href="#FlaskSimpleAuth.FlaskSimpleAuth.authentication"><code class="docutils literal notranslate"><span class="pre">FlaskSimpleAuth.authentication()</span></code></a></li>
+<li><a class="reference internal" href="#FlaskSimpleAuth.FlaskSimpleAuth.add_group"><code class="docutils literal notranslate"><span class="pre">FlaskSimpleAuth.add_group()</span></code></a></li>
+<li><a class="reference internal" href="#FlaskSimpleAuth.FlaskSimpleAuth.add_scope"><code class="docutils literal notranslate"><span class="pre">FlaskSimpleAuth.add_scope()</span></code></a></li>
+<li><a class="reference internal" href="#FlaskSimpleAuth.FlaskSimpleAuth.add_headers"><code class="docutils literal notranslate"><span class="pre">FlaskSimpleAuth.add_headers()</span></code></a></li>
+<li><a class="reference internal" href="#FlaskSimpleAuth.FlaskSimpleAuth.before_exec"><code class="docutils literal notranslate"><span class="pre">FlaskSimpleAuth.before_exec()</span></code></a></li>
+<li><a class="reference internal" href="#FlaskSimpleAuth.FlaskSimpleAuth.check_password"><code class="docutils literal notranslate"><span class="pre">FlaskSimpleAuth.check_password()</span></code></a></li>
+<li><a class="reference internal" href="#FlaskSimpleAuth.FlaskSimpleAuth.hash_password"><code class="docutils literal notranslate"><span class="pre">FlaskSimpleAuth.hash_password()</span></code></a></li>
+<li><a class="reference internal" href="#FlaskSimpleAuth.FlaskSimpleAuth.get_user"><code class="docutils literal notranslate"><span class="pre">FlaskSimpleAuth.get_user()</span></code></a></li>
+<li><a class="reference internal" href="#FlaskSimpleAuth.FlaskSimpleAuth.current_user"><code class="docutils literal notranslate"><span class="pre">FlaskSimpleAuth.current_user()</span></code></a></li>
+<li><a class="reference internal" href="#FlaskSimpleAuth.FlaskSimpleAuth.user_scope"><code class="docutils literal notranslate"><span class="pre">FlaskSimpleAuth.user_scope()</span></code></a></li>
+<li><a class="reference internal" href="#FlaskSimpleAuth.FlaskSimpleAuth.clear_caches"><code class="docutils literal notranslate"><span class="pre">FlaskSimpleAuth.clear_caches()</span></code></a></li>
+<li><a class="reference internal" href="#FlaskSimpleAuth.FlaskSimpleAuth.add_url_rule"><code class="docutils literal notranslate"><span class="pre">FlaskSimpleAuth.add_url_rule()</span></code></a></li>
+<li><a class="reference internal" href="#FlaskSimpleAuth.FlaskSimpleAuth.route"><code class="docutils literal notranslate"><span class="pre">FlaskSimpleAuth.route()</span></code></a></li>
+<li><a class="reference internal" href="#FlaskSimpleAuth.FlaskSimpleAuth.get"><code class="docutils literal notranslate"><span class="pre">FlaskSimpleAuth.get()</span></code></a></li>
+<li><a class="reference internal" href="#FlaskSimpleAuth.FlaskSimpleAuth.post"><code class="docutils literal notranslate"><span class="pre">FlaskSimpleAuth.post()</span></code></a></li>
+<li><a class="reference internal" href="#FlaskSimpleAuth.FlaskSimpleAuth.put"><code class="docutils literal notranslate"><span class="pre">FlaskSimpleAuth.put()</span></code></a></li>
+<li><a class="reference internal" href="#FlaskSimpleAuth.FlaskSimpleAuth.delete"><code class="docutils literal notranslate"><span class="pre">FlaskSimpleAuth.delete()</span></code></a></li>
+<li><a class="reference internal" href="#FlaskSimpleAuth.FlaskSimpleAuth.patch"><code class="docutils literal notranslate"><span class="pre">FlaskSimpleAuth.patch()</span></code></a></li>
+<li><a class="reference internal" href="#FlaskSimpleAuth.FlaskSimpleAuth.register_blueprint"><code class="docutils literal notranslate"><span class="pre">FlaskSimpleAuth.register_blueprint()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</div>
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">FlaskSimpleAuth</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active"><code class="xref py py-mod docutils literal notranslate"><span class="pre">FlaskSimpleAuth</span></code></li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/autoapi/FlaskSimpleAuth/index.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-FlaskSimpleAuth">
+<span id="flasksimpleauth"></span><h1><a class="reference internal" href="#module-FlaskSimpleAuth" title="FlaskSimpleAuth"><code class="xref py py-mod docutils literal notranslate"><span class="pre">FlaskSimpleAuth</span></code></a><a class="headerlink" href="#module-FlaskSimpleAuth" title="Permalink to this heading"></a></h1>
+<p>Flask Extension and Wrapper</p>
+<p>This extension helps manage:</p>
+<ul class="simple">
+<li><p>authentication</p></li>
+<li><p>authorization</p></li>
+<li><p>parameters</p></li>
+<li><p>and more…</p></li>
+</ul>
+<p>This code is public domain.</p>
+<section id="module-contents">
+<h2>Module Contents<a class="headerlink" href="#module-contents" title="Permalink to this heading"></a></h2>
+<section id="classes">
+<h3>Classes<a class="headerlink" href="#classes" title="Permalink to this heading"></a></h3>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#FlaskSimpleAuth.path" title="FlaskSimpleAuth.path"><code class="xref py py-obj docutils literal notranslate"><span class="pre">path</span></code></a></p></td>
+<td><p>Type to distinguish str path parameters.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#FlaskSimpleAuth.string" title="FlaskSimpleAuth.string"><code class="xref py py-obj docutils literal notranslate"><span class="pre">string</span></code></a></p></td>
+<td><p>Type to distinguish str string parameters.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#FlaskSimpleAuth.JsonData" title="FlaskSimpleAuth.JsonData"><code class="xref py py-obj docutils literal notranslate"><span class="pre">JsonData</span></code></a></p></td>
+<td><p>Magic JSON type.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#FlaskSimpleAuth.Session" title="FlaskSimpleAuth.Session"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Session</span></code></a></p></td>
+<td><p>Session parameter type.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#FlaskSimpleAuth.Globals" title="FlaskSimpleAuth.Globals"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Globals</span></code></a></p></td>
+<td><p>Globals parameter type.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#FlaskSimpleAuth.Environ" title="FlaskSimpleAuth.Environ"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Environ</span></code></a></p></td>
+<td><p>Environ parameter type.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#FlaskSimpleAuth.CurrentUser" title="FlaskSimpleAuth.CurrentUser"><code class="xref py py-obj docutils literal notranslate"><span class="pre">CurrentUser</span></code></a></p></td>
+<td><p>CurrentUser parameter type.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#FlaskSimpleAuth.CurrentApp" title="FlaskSimpleAuth.CurrentApp"><code class="xref py py-obj docutils literal notranslate"><span class="pre">CurrentApp</span></code></a></p></td>
+<td><p>CurrentApp parameter type.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#FlaskSimpleAuth.Cookie" title="FlaskSimpleAuth.Cookie"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Cookie</span></code></a></p></td>
+<td><p>Application Cookie type.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#FlaskSimpleAuth.Header" title="FlaskSimpleAuth.Header"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Header</span></code></a></p></td>
+<td><p>Request Header type.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#FlaskSimpleAuth.Reference" title="FlaskSimpleAuth.Reference"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Reference</span></code></a></p></td>
+<td><p>Convenient object wrapper class.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#FlaskSimpleAuth.Flask" title="FlaskSimpleAuth.Flask"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Flask</span></code></a></p></td>
+<td><p>Flask class wrapper.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#FlaskSimpleAuth.FlaskSimpleAuth" title="FlaskSimpleAuth.FlaskSimpleAuth"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FlaskSimpleAuth</span></code></a></p></td>
+<td><p>Flask extension for authentication, authorization and parameters.</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="functions">
+<h3>Functions<a class="headerlink" href="#functions" title="Permalink to this heading"></a></h3>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#FlaskSimpleAuth.jsonify" title="FlaskSimpleAuth.jsonify"><code class="xref py py-obj docutils literal notranslate"><span class="pre">jsonify</span></code></a>(a)</p></td>
+<td><p>Jsonify something, including generators, dataclasses and pydantic stuff.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py exception">
+<dt class="sig sig-object py" id="FlaskSimpleAuth.ErrorResponse">
+<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">FlaskSimpleAuth.</span></span><span class="sig-name descname"><span class="pre">ErrorResponse</span></span><a class="headerlink" href="#FlaskSimpleAuth.ErrorResponse" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-obj docutils literal notranslate"><span class="pre">BaseException</span></code></p>
+<p>Exception class to carry fields for an error Response.</p>
+<p>Use this exception from hooks to trigger an error response.</p>
+</dd></dl>
+
+<dl class="py exception">
+<dt class="sig sig-object py" id="FlaskSimpleAuth.ConfigError">
+<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">FlaskSimpleAuth.</span></span><span class="sig-name descname"><span class="pre">ConfigError</span></span><a class="headerlink" href="#FlaskSimpleAuth.ConfigError" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-obj docutils literal notranslate"><span class="pre">BaseException</span></code></p>
+<p>FSA User Configuration Error.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="FlaskSimpleAuth.path">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">FlaskSimpleAuth.</span></span><span class="sig-name descname"><span class="pre">path</span></span><a class="headerlink" href="#FlaskSimpleAuth.path" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-obj docutils literal notranslate"><span class="pre">str</span></code></p>
+<p>Type to distinguish str path parameters.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="FlaskSimpleAuth.string">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">FlaskSimpleAuth.</span></span><span class="sig-name descname"><span class="pre">string</span></span><a class="headerlink" href="#FlaskSimpleAuth.string" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-obj docutils literal notranslate"><span class="pre">str</span></code></p>
+<p>Type to distinguish str string parameters.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="FlaskSimpleAuth.JsonData">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">FlaskSimpleAuth.</span></span><span class="sig-name descname"><span class="pre">JsonData</span></span><a class="headerlink" href="#FlaskSimpleAuth.JsonData" title="Permalink to this definition"></a></dt>
+<dd><p>Magic JSON type.</p>
+<p>This triggers interpretting a parameter as JSON when used as a parameter type on a route.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="FlaskSimpleAuth.Session">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">FlaskSimpleAuth.</span></span><span class="sig-name descname"><span class="pre">Session</span></span><a class="headerlink" href="#FlaskSimpleAuth.Session" title="Permalink to this definition"></a></dt>
+<dd><p>Session parameter type.</p>
+<p>This provides the session object when used as a parameter type on a route.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="FlaskSimpleAuth.Globals">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">FlaskSimpleAuth.</span></span><span class="sig-name descname"><span class="pre">Globals</span></span><a class="headerlink" href="#FlaskSimpleAuth.Globals" title="Permalink to this definition"></a></dt>
+<dd><p>Globals parameter type.</p>
+<p>This provides the g (globals) object when used as a parameter type on a route.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="FlaskSimpleAuth.Environ">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">FlaskSimpleAuth.</span></span><span class="sig-name descname"><span class="pre">Environ</span></span><a class="headerlink" href="#FlaskSimpleAuth.Environ" title="Permalink to this definition"></a></dt>
+<dd><p>Environ parameter type.</p>
+<p>This provides the WSGI environ object when used as a parameter type on a route.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="FlaskSimpleAuth.CurrentUser">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">FlaskSimpleAuth.</span></span><span class="sig-name descname"><span class="pre">CurrentUser</span></span><a class="headerlink" href="#FlaskSimpleAuth.CurrentUser" title="Permalink to this definition"></a></dt>
+<dd><p>CurrentUser parameter type.</p>
+<p>This provides the authenticated user (str) when used as a parameter type on a route.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="FlaskSimpleAuth.CurrentApp">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">FlaskSimpleAuth.</span></span><span class="sig-name descname"><span class="pre">CurrentApp</span></span><a class="headerlink" href="#FlaskSimpleAuth.CurrentApp" title="Permalink to this definition"></a></dt>
+<dd><p>CurrentApp parameter type.</p>
+<p>This provides the current application object when used as a parameter type on a route.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="FlaskSimpleAuth.Cookie">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">FlaskSimpleAuth.</span></span><span class="sig-name descname"><span class="pre">Cookie</span></span><a class="headerlink" href="#FlaskSimpleAuth.Cookie" title="Permalink to this definition"></a></dt>
+<dd><p>Application Cookie type.</p>
+<p>This provides the cookie value (str) when used as a parameter type on a route.
+The <cite>name</cite> of the parameter is the cookie name.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="FlaskSimpleAuth.Header">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">FlaskSimpleAuth.</span></span><span class="sig-name descname"><span class="pre">Header</span></span><a class="headerlink" href="#FlaskSimpleAuth.Header" title="Permalink to this definition"></a></dt>
+<dd><p>Request Header type.</p>
+<p>This provides the header value (str) when used as a parameter type on a route.
+The <cite>name</cite> of the parameter is the header name (case insensitive, underscore for dash).</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="FlaskSimpleAuth.jsonify">
+<span class="sig-prename descclassname"><span class="pre">FlaskSimpleAuth.</span></span><span class="sig-name descname"><span class="pre">jsonify</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">a</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#FlaskSimpleAuth.jsonify" title="Permalink to this definition"></a></dt>
+<dd><p>Jsonify something, including generators, dataclasses and pydantic stuff.</p>
+<p>This is an extension of Flask own jsonify.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="FlaskSimpleAuth.Reference">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">FlaskSimpleAuth.</span></span><span class="sig-name descname"><span class="pre">Reference</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">close</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'close'</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#FlaskSimpleAuth.Reference" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-obj docutils literal notranslate"><span class="pre">ProxyPatternPool.Proxy</span></code></p>
+<p>Convenient object wrapper class.</p>
+<p>This is a very thin wrapper around ProxyPatternPool Proxy class.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="FlaskSimpleAuth.Flask">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">FlaskSimpleAuth.</span></span><span class="sig-name descname"><span class="pre">Flask</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">debug</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#FlaskSimpleAuth.Flask" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-obj docutils literal notranslate"><span class="pre">flask.Flask</span></code></p>
+<p>Flask class wrapper.</p>
+<p>The class behaves mostly as a Flask class, but supports extensions:</p>
+<ul class="simple">
+<li><p>the <cite>route</cite> decorator manages authentication, authorization and
+parameters transparently.</p></li>
+<li><p>per-methods shortcut decorators allow to handle root for a given
+method: <cite>get</cite>, <cite>post</cite>, <cite>put</cite>, <cite>patch</cite>, <cite>delete</cite>.</p></li>
+<li><p>several additional methods are provided: <cite>get_user_pass</cite>,
+<cite>user_in_group</cite>, <cite>check_password</cite>, <cite>hash_password</cite>, <cite>create_token</cite>,
+<cite>get_user</cite>, <cite>current_user</cite>, <cite>clear_caches</cite>, <cite>cast</cite>, <cite>object_perms</cite>,
+<cite>user_scope</cite>, <cite>password_quality</cite>, <cite>password_check</cite>, <cite>add_group</cite>,
+<cite>add_scope</cite>, <cite>add_headers</cite>, <cite>error_response</cite>, <cite>authentication</cite>…</p></li>
+</ul>
+<p>See <code class="docutils literal notranslate"><span class="pre">FlaskSimpleAuth</span></code> class documentation about these methods.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="FlaskSimpleAuth.FlaskSimpleAuth">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">FlaskSimpleAuth.</span></span><span class="sig-name descname"><span class="pre">FlaskSimpleAuth</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">app</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">flask.Flask</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">debug</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">config</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#FlaskSimpleAuth.FlaskSimpleAuth" title="Permalink to this definition"></a></dt>
+<dd><p>Flask extension for authentication, authorization and parameters.</p>
+<p>Although this class can be used as a Flask extension, the prefered approach
+is to use the Flask class provided in this module, which overrides directly
+Flask internals so as to provide our declarative security layer, so that
+you may not shortcut the extension.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="FlaskSimpleAuth.FlaskSimpleAuth.get_user_pass">
+<span class="sig-name descname"><span class="pre">get_user_pass</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">gup</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">GetUserPassFun</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">GetUserPassFun</span></span></span><a class="headerlink" href="#FlaskSimpleAuth.FlaskSimpleAuth.get_user_pass" title="Permalink to this definition"></a></dt>
+<dd><p>Set <cite>get_user_pass</cite> helper, can be used as a decorator.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="FlaskSimpleAuth.FlaskSimpleAuth.user_in_group">
+<span class="sig-name descname"><span class="pre">user_in_group</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">uig</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">UserInGroupFun</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">UserInGroupFun</span></span></span><a class="headerlink" href="#FlaskSimpleAuth.FlaskSimpleAuth.user_in_group" title="Permalink to this definition"></a></dt>
+<dd><p>Set <cite>user_in_group</cite> helper, can be used as a decorator.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="FlaskSimpleAuth.FlaskSimpleAuth.password_quality">
+<span class="sig-name descname"><span class="pre">password_quality</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pqc</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">PasswordQualityFun</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">PasswordQualityFun</span></span></span><a class="headerlink" href="#FlaskSimpleAuth.FlaskSimpleAuth.password_quality" title="Permalink to this definition"></a></dt>
+<dd><p>Set <cite>password_quality</cite> hook.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="FlaskSimpleAuth.FlaskSimpleAuth.password_check">
+<span class="sig-name descname"><span class="pre">password_check</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pwc</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">PasswordCheckFun</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">PasswordCheckFun</span></span></span><a class="headerlink" href="#FlaskSimpleAuth.FlaskSimpleAuth.password_check" title="Permalink to this definition"></a></dt>
+<dd><p>Set <cite>password_check</cite> hook.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="FlaskSimpleAuth.FlaskSimpleAuth.error_response">
+<span class="sig-name descname"><span class="pre">error_response</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">erh</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ErrorResponseFun</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ErrorResponseFun</span></span></span><a class="headerlink" href="#FlaskSimpleAuth.FlaskSimpleAuth.error_response" title="Permalink to this definition"></a></dt>
+<dd><p>Set <cite>error_response</cite> hook.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="FlaskSimpleAuth.FlaskSimpleAuth.cast">
+<span class="sig-name descname"><span class="pre">cast</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cast</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">CastFun</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#FlaskSimpleAuth.FlaskSimpleAuth.cast" title="Permalink to this definition"></a></dt>
+<dd><p>Add a cast function associated to a type.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="FlaskSimpleAuth.FlaskSimpleAuth.special_parameter">
+<span class="sig-name descname"><span class="pre">special_parameter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sp</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">SpecialParameterFun</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#FlaskSimpleAuth.FlaskSimpleAuth.special_parameter" title="Permalink to this definition"></a></dt>
+<dd><p>Add a special parameter type.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="FlaskSimpleAuth.FlaskSimpleAuth.object_perms">
+<span class="sig-name descname"><span class="pre">object_perms</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">domain</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">checker</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ObjectPermsFun</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#FlaskSimpleAuth.FlaskSimpleAuth.object_perms" title="Permalink to this definition"></a></dt>
+<dd><p>Add an object permission helper for a given domain.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="FlaskSimpleAuth.FlaskSimpleAuth.authentication">
+<span class="sig-name descname"><span class="pre">authentication</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">auth</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hook</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">AuthenticationFun</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#FlaskSimpleAuth.FlaskSimpleAuth.authentication" title="Permalink to this definition"></a></dt>
+<dd><p>Add new authentication hook.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="FlaskSimpleAuth.FlaskSimpleAuth.add_group">
+<span class="sig-name descname"><span class="pre">add_group</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">groups</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#FlaskSimpleAuth.FlaskSimpleAuth.add_group" title="Permalink to this definition"></a></dt>
+<dd><p>Add some groups.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="FlaskSimpleAuth.FlaskSimpleAuth.add_scope">
+<span class="sig-name descname"><span class="pre">add_scope</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">scopes</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#FlaskSimpleAuth.FlaskSimpleAuth.add_scope" title="Permalink to this definition"></a></dt>
+<dd><p>Add some scopes.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="FlaskSimpleAuth.FlaskSimpleAuth.add_headers">
+<span class="sig-name descname"><span class="pre">add_headers</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#FlaskSimpleAuth.FlaskSimpleAuth.add_headers" title="Permalink to this definition"></a></dt>
+<dd><p>Add some headers.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="FlaskSimpleAuth.FlaskSimpleAuth.before_exec">
+<span class="sig-name descname"><span class="pre">before_exec</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hook</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">BeforeExecFun</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#FlaskSimpleAuth.FlaskSimpleAuth.before_exec" title="Permalink to this definition"></a></dt>
+<dd><p>Register an after auth/just before exec hook.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="FlaskSimpleAuth.FlaskSimpleAuth.check_password">
+<span class="sig-name descname"><span class="pre">check_password</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pwd</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ref</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#FlaskSimpleAuth.FlaskSimpleAuth.check_password" title="Permalink to this definition"></a></dt>
+<dd><p>Verify whether a password is correct compared to a reference (eg salted hash).</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="FlaskSimpleAuth.FlaskSimpleAuth.hash_password">
+<span class="sig-name descname"><span class="pre">hash_password</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pwd</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">check</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#FlaskSimpleAuth.FlaskSimpleAuth.hash_password" title="Permalink to this definition"></a></dt>
+<dd><p>Hash password according to the current password scheme.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="FlaskSimpleAuth.FlaskSimpleAuth.get_user">
+<span class="sig-name descname"><span class="pre">get_user</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">required</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></span><a class="headerlink" href="#FlaskSimpleAuth.FlaskSimpleAuth.get_user" title="Permalink to this definition"></a></dt>
+<dd><p>Authenticate user or throw exception.</p>
+<p>Tries all possible authentication schemes allowed on the route,
+and returns the authenticated user or throws an exception.
+The result is memoized.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="FlaskSimpleAuth.FlaskSimpleAuth.current_user">
+<span class="sig-name descname"><span class="pre">current_user</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></span><a class="headerlink" href="#FlaskSimpleAuth.FlaskSimpleAuth.current_user" title="Permalink to this definition"></a></dt>
+<dd><p>Return current authenticated user, if any.</p>
+<p>Returns <cite>None</cite> if no user has been authenticated.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="FlaskSimpleAuth.FlaskSimpleAuth.user_scope">
+<span class="sig-name descname"><span class="pre">user_scope</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">scope</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="headerlink" href="#FlaskSimpleAuth.FlaskSimpleAuth.user_scope" title="Permalink to this definition"></a></dt>
+<dd><p>Is <cite>scope</cite> in the <cite>current user</cite> scopes.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="FlaskSimpleAuth.FlaskSimpleAuth.clear_caches">
+<span class="sig-name descname"><span class="pre">clear_caches</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#FlaskSimpleAuth.FlaskSimpleAuth.clear_caches" title="Permalink to this definition"></a></dt>
+<dd><p>Clear internal shared cache.</p>
+<p>Probably a bad idea because:</p>
+<ul class="simple">
+<li><p>of the performance impact</p></li>
+<li><p>for a local cache in a multi-process setup, other processes are out</p></li>
+</ul>
+<p>The best option is to wait for cache entries to expire with a TTL.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="FlaskSimpleAuth.FlaskSimpleAuth.add_url_rule">
+<span class="sig-name descname"><span class="pre">add_url_rule</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rule</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">endpoint</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">view_func</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">authorize</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">NONE</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">auth</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">realm</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">options</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#FlaskSimpleAuth.FlaskSimpleAuth.add_url_rule" title="Permalink to this definition"></a></dt>
+<dd><p>Route decorator helper method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="FlaskSimpleAuth.FlaskSimpleAuth.route">
+<span class="sig-name descname"><span class="pre">route</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rule</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">options</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#FlaskSimpleAuth.FlaskSimpleAuth.route" title="Permalink to this definition"></a></dt>
+<dd><p>Extended <cite>route</cite> decorator provided by FlaskSimpleAuth.</p>
+<p>This decorator is also available on the Flask wrapper, please use it from there.</p>
+<p>Parameters:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">rule</span></code>: the path, possibly including path parameters.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">authorize</span></code>: mandatory permissions required, eg groups or object perms.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">auth</span></code>: authentication scheme(s) allowed on this route.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">realm</span></code>: authentication realm on this particular route.</p></li>
+</ul>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="FlaskSimpleAuth.FlaskSimpleAuth.get">
+<span class="sig-name descname"><span class="pre">get</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rule</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">options</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#FlaskSimpleAuth.FlaskSimpleAuth.get" title="Permalink to this definition"></a></dt>
+<dd><p>Shortcut for <cite>route</cite> with <cite>GET</cite> method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="FlaskSimpleAuth.FlaskSimpleAuth.post">
+<span class="sig-name descname"><span class="pre">post</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rule</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">options</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#FlaskSimpleAuth.FlaskSimpleAuth.post" title="Permalink to this definition"></a></dt>
+<dd><p>Shortcut for <cite>route</cite> with <cite>POST</cite> method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="FlaskSimpleAuth.FlaskSimpleAuth.put">
+<span class="sig-name descname"><span class="pre">put</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rule</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">options</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#FlaskSimpleAuth.FlaskSimpleAuth.put" title="Permalink to this definition"></a></dt>
+<dd><p>Shortcut for <cite>route</cite> with <cite>PUT</cite> method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="FlaskSimpleAuth.FlaskSimpleAuth.delete">
+<span class="sig-name descname"><span class="pre">delete</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rule</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">options</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#FlaskSimpleAuth.FlaskSimpleAuth.delete" title="Permalink to this definition"></a></dt>
+<dd><p>Shortcut for <cite>route</cite> with <cite>DELETE</cite> method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="FlaskSimpleAuth.FlaskSimpleAuth.patch">
+<span class="sig-name descname"><span class="pre">patch</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rule</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">options</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#FlaskSimpleAuth.FlaskSimpleAuth.patch" title="Permalink to this definition"></a></dt>
+<dd><p>Shortcut for <cite>route</cite> with <cite>PATCH</cite> method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="FlaskSimpleAuth.FlaskSimpleAuth.register_blueprint">
+<span class="sig-name descname"><span class="pre">register_blueprint</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">blueprint</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">options</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#FlaskSimpleAuth.FlaskSimpleAuth.register_blueprint" title="Permalink to this definition"></a></dt>
+<dd><p>Register a blueprint.</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Calvin.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

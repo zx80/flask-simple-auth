@@ -1,0 +1,360 @@
+:py:mod:`FlaskSimpleAuth`
+=========================
+
+.. py:module:: FlaskSimpleAuth
+
+.. autoapi-nested-parse::
+
+   Flask Extension and Wrapper
+
+   This extension helps manage:
+
+   - authentication
+   - authorization
+   - parameters
+   - and more…
+
+   This code is public domain.
+
+
+
+Module Contents
+---------------
+
+Classes
+~~~~~~~
+
+.. autoapisummary::
+
+   FlaskSimpleAuth.path
+   FlaskSimpleAuth.string
+   FlaskSimpleAuth.JsonData
+   FlaskSimpleAuth.Session
+   FlaskSimpleAuth.Globals
+   FlaskSimpleAuth.Environ
+   FlaskSimpleAuth.CurrentUser
+   FlaskSimpleAuth.CurrentApp
+   FlaskSimpleAuth.Cookie
+   FlaskSimpleAuth.Header
+   FlaskSimpleAuth.Reference
+   FlaskSimpleAuth.Flask
+   FlaskSimpleAuth.FlaskSimpleAuth
+
+
+
+Functions
+~~~~~~~~~
+
+.. autoapisummary::
+
+   FlaskSimpleAuth.jsonify
+
+
+
+.. py:exception:: ErrorResponse
+
+
+   Bases: :py:obj:`BaseException`
+
+   Exception class to carry fields for an error Response.
+
+   Use this exception from hooks to trigger an error response.
+
+
+.. py:exception:: ConfigError
+
+
+   Bases: :py:obj:`BaseException`
+
+   FSA User Configuration Error.
+
+
+.. py:class:: path
+
+
+   Bases: :py:obj:`str`
+
+   Type to distinguish str path parameters.
+
+
+.. py:class:: string
+
+
+   Bases: :py:obj:`str`
+
+   Type to distinguish str string parameters.
+
+
+.. py:class:: JsonData
+
+
+   Magic JSON type.
+
+   This triggers interpretting a parameter as JSON when used as a parameter type on a route.
+
+
+.. py:class:: Session
+
+
+   Session parameter type.
+
+   This provides the session object when used as a parameter type on a route.
+
+
+.. py:class:: Globals
+
+
+   Globals parameter type.
+
+   This provides the g (globals) object when used as a parameter type on a route.
+
+
+.. py:class:: Environ
+
+
+   Environ parameter type.
+
+   This provides the WSGI environ object when used as a parameter type on a route.
+
+
+.. py:class:: CurrentUser
+
+
+   CurrentUser parameter type.
+
+   This provides the authenticated user (str) when used as a parameter type on a route.
+
+
+.. py:class:: CurrentApp
+
+
+   CurrentApp parameter type.
+
+   This provides the current application object when used as a parameter type on a route.
+
+
+.. py:class:: Cookie
+
+
+   Application Cookie type.
+
+   This provides the cookie value (str) when used as a parameter type on a route.
+   The `name` of the parameter is the cookie name.
+
+
+.. py:class:: Header
+
+
+   Request Header type.
+
+   This provides the header value (str) when used as a parameter type on a route.
+   The `name` of the parameter is the header name (case insensitive, underscore for dash).
+
+
+.. py:function:: jsonify(a: Any)
+
+   Jsonify something, including generators, dataclasses and pydantic stuff.
+
+   This is an extension of Flask own jsonify.
+
+
+.. py:class:: Reference(*args, close: str | None = 'close', **kwargs)
+
+
+   Bases: :py:obj:`ProxyPatternPool.Proxy`
+
+   Convenient object wrapper class.
+
+   This is a very thin wrapper around ProxyPatternPool Proxy class.
+
+
+.. py:class:: Flask(*args, debug: bool = False, **kwargs)
+
+
+   Bases: :py:obj:`flask.Flask`
+
+   Flask class wrapper.
+
+   The class behaves mostly as a Flask class, but supports extensions:
+
+   - the `route` decorator manages authentication, authorization and
+     parameters transparently.
+   - per-methods shortcut decorators allow to handle root for a given
+     method: `get`, `post`, `put`, `patch`, `delete`.
+   - several additional methods are provided: `get_user_pass`,
+     `user_in_group`, `check_password`, `hash_password`, `create_token`,
+     `get_user`, `current_user`, `clear_caches`, `cast`, `object_perms`,
+     `user_scope`, `password_quality`, `password_check`, `add_group`,
+     `add_scope`, `add_headers`, `error_response`, `authentication`…
+
+   See ``FlaskSimpleAuth`` class documentation about these methods.
+
+
+.. py:class:: FlaskSimpleAuth(app: flask.Flask, debug: bool = False, **config)
+
+
+   Flask extension for authentication, authorization and parameters.
+
+   Although this class can be used as a Flask extension, the prefered approach
+   is to use the Flask class provided in this module, which overrides directly
+   Flask internals so as to provide our declarative security layer, so that
+   you may not shortcut the extension.
+
+   .. py:method:: get_user_pass(gup: GetUserPassFun) -> GetUserPassFun
+
+      Set `get_user_pass` helper, can be used as a decorator.
+
+
+   .. py:method:: user_in_group(uig: UserInGroupFun) -> UserInGroupFun
+
+      Set `user_in_group` helper, can be used as a decorator.
+
+
+   .. py:method:: password_quality(pqc: PasswordQualityFun) -> PasswordQualityFun
+
+      Set `password_quality` hook.
+
+
+   .. py:method:: password_check(pwc: PasswordCheckFun) -> PasswordCheckFun
+
+      Set `password_check` hook.
+
+
+   .. py:method:: error_response(erh: ErrorResponseFun) -> ErrorResponseFun
+
+      Set `error_response` hook.
+
+
+   .. py:method:: cast(t, cast: CastFun = None)
+
+      Add a cast function associated to a type.
+
+
+   .. py:method:: special_parameter(t, sp: SpecialParameterFun = None)
+
+      Add a special parameter type.
+
+
+   .. py:method:: object_perms(domain: str, checker: ObjectPermsFun = None)
+
+      Add an object permission helper for a given domain.
+
+
+   .. py:method:: authentication(auth: str, hook: AuthenticationFun | None = None)
+
+      Add new authentication hook.
+
+
+   .. py:method:: add_group(*groups) -> None
+
+      Add some groups.
+
+
+   .. py:method:: add_scope(*scopes) -> None
+
+      Add some scopes.
+
+
+   .. py:method:: add_headers(**kwargs) -> None
+
+      Add some headers.
+
+
+   .. py:method:: before_exec(hook: BeforeExecFun) -> None
+
+      Register an after auth/just before exec hook.
+
+
+   .. py:method:: check_password(pwd, ref)
+
+      Verify whether a password is correct compared to a reference (eg salted hash).
+
+
+   .. py:method:: hash_password(pwd, check=True)
+
+      Hash password according to the current password scheme.
+
+
+   .. py:method:: get_user(required=True) -> str | None
+
+      Authenticate user or throw exception.
+
+      Tries all possible authentication schemes allowed on the route,
+      and returns the authenticated user or throws an exception.
+      The result is memoized.
+
+
+   .. py:method:: current_user() -> str | None
+
+      Return current authenticated user, if any.
+
+      Returns `None` if no user has been authenticated.
+
+
+   .. py:method:: user_scope(scope) -> bool
+
+      Is `scope` in the `current user` scopes.
+
+
+   .. py:method:: clear_caches() -> None
+
+      Clear internal shared cache.
+
+      Probably a bad idea because:
+
+      - of the performance impact
+      - for a local cache in a multi-process setup, other processes are out
+
+      The best option is to wait for cache entries to expire with a TTL.
+
+
+   .. py:method:: add_url_rule(rule, endpoint=None, view_func=None, authorize=NONE, auth=None, realm=None, **options)
+
+      Route decorator helper method.
+
+
+   .. py:method:: route(rule, **options)
+
+      Extended `route` decorator provided by FlaskSimpleAuth.
+
+      This decorator is also available on the Flask wrapper, please use it from there.
+
+      Parameters:
+
+      - ``rule``: the path, possibly including path parameters.
+      - ``authorize``: mandatory permissions required, eg groups or object perms.
+      - ``auth``: authentication scheme(s) allowed on this route.
+      - ``realm``: authentication realm on this particular route.
+
+
+   .. py:method:: get(rule, **options)
+
+      Shortcut for `route` with `GET` method.
+
+
+   .. py:method:: post(rule, **options)
+
+      Shortcut for `route` with `POST` method.
+
+
+   .. py:method:: put(rule, **options)
+
+      Shortcut for `route` with `PUT` method.
+
+
+   .. py:method:: delete(rule, **options)
+
+      Shortcut for `route` with `DELETE` method.
+
+
+   .. py:method:: patch(rule, **options)
+
+      Shortcut for `route` with `PATCH` method.
+
+
+   .. py:method:: register_blueprint(blueprint, **options)
+
+      Register a blueprint.
+
+
+

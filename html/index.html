@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Flask Simple Auth &mdash; FlaskSimpleAuth 24.0 documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="_static/graphviz.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="_static/jquery.js"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/sphinx_highlight.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="#" class="icon icon-home">
+            FlaskSimpleAuth
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <!-- Local TOC -->
+              <div class="local-toc"><ul>
+<li><a class="reference internal" href="#">Flask Simple Auth</a><ul>
+<li><a class="reference internal" href="#example">Example</a></li>
+<li><a class="reference internal" href="#features">Features</a></li>
+<li><a class="reference internal" href="#documentation">Documentation</a></li>
+<li><a class="reference internal" href="#license">License</a></li>
+<li><a class="reference internal" href="#versions">Versions</a></li>
+</ul>
+</li>
+</ul>
+</div>
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="#">FlaskSimpleAuth</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="#" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Flask Simple Auth</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/index.md.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="flask-simple-auth">
+<h1>Flask Simple Auth<a class="headerlink" href="#flask-simple-auth" title="Permalink to this heading"></a></h1>
+<p>Simple authentication, authorization, parameter checks and utils
+for <a class="reference external" href="https://flask.palletsprojects.com/">Flask</a>, controled from
+Flask configuration and the extended <code class="docutils literal notranslate"><span class="pre">route</span></code> decorator.</p>
+<p><img alt="Status" src="https://github.com/zx80/flask-simple-auth/actions/workflows/fsa.yml/badge.svg?branch=master&amp;style=flat" />
+<img alt="Tests" src="https://img.shields.io/badge/tests-79%20%E2%9C%93-success" />
+<img alt="Coverage" src="https://img.shields.io/badge/coverage-100%25-success" />
+<img alt="Issues" src="https://img.shields.io/github/issues/zx80/flask-simple-auth?style=flat" />
+<img alt="Python" src="https://img.shields.io/badge/python-3-informational" />
+<img alt="Version" src="https://img.shields.io/pypi/v/FlaskSimpleAuth" />
+<img alt="Badges" src="https://img.shields.io/badge/badges-8-informational" />
+<img alt="License" src="https://img.shields.io/pypi/l/flasksimpleauth?style=flat" /></p>
+<p><strong>Contents:</strong> <a class="reference internal" href="#example"><span class="xref myst">Example</span></a>, <a class="reference internal" href="#features"><span class="xref myst">Features</span></a>,
+<a class="reference internal" href="#documentation"><span class="xref myst">Documentation</span></a>, <a class="reference internal" href="#license"><span class="xref myst">License</span></a>, <a class="reference internal" href="#versions"><span class="xref myst">Versions</span></a>.</p>
+<section id="example">
+<h2>Example<a class="headerlink" href="#example" title="Permalink to this heading"></a></h2>
+<p>The application code below (yes, the <strong>6</strong> lines of code, plus arguably some
+configurations) performs <em>authentication</em>, <em>authorization</em> and <em>parameter</em> type
+checks triggered by the extended <code class="docutils literal notranslate"><span class="pre">route</span></code> decorator, or per-method shortcut
+decorators (<code class="docutils literal notranslate"><span class="pre">get</span></code>, <code class="docutils literal notranslate"><span class="pre">patch</span></code>, <code class="docutils literal notranslate"><span class="pre">post</span></code>…).
+There is no clue in the source about what kind of authentication is used,
+which is the point: authentication is managed in the configuration,
+not in the application code.
+The authorization rule is declared explicitely on each function with the
+mandatory <code class="docutils literal notranslate"><span class="pre">authorize</span></code> parameter.
+Path and HTTP/JSON parameters are type checked and converted automatically
+based on type annotations.
+Basically, you just have to implement a type-annotated Python function and
+most of the crust is managed by <code class="docutils literal notranslate"><span class="pre">FlaskSimpleAuth</span></code>.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">FlaskSimpleAuth</span> <span class="kn">import</span> <span class="n">Flask</span>
+<span class="n">app</span> <span class="o">=</span> <span class="n">Flask</span><span class="p">(</span><span class="s2">&quot;acme&quot;</span><span class="p">)</span>
+<span class="n">app</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">from_envvar</span><span class="p">(</span><span class="s2">&quot;ACME_CONFIG&quot;</span><span class="p">)</span>
+
+<span class="nd">@app</span><span class="o">.</span><span class="n">patch</span><span class="p">(</span><span class="s2">&quot;/users/&lt;id&gt;&quot;</span><span class="p">,</span> <span class="n">authorize</span><span class="o">=</span><span class="s2">&quot;admin&quot;</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">patch_users_id</span><span class="p">(</span><span class="nb">id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">password</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">email</span><span class="p">:</span> <span class="n">Email</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+    <span class="c1"># Admins can patch user *id* with a mandatory *password* and</span>
+    <span class="c1"># an optional *email* parameter. Type conversions are performed</span>
+    <span class="c1"># so that invalid values are rejected with a *400* automatically.</span>
+    <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;users </span><span class="si">{</span><span class="nb">id</span><span class="si">}</span><span class="s2"> updated&quot;</span><span class="p">,</span> <span class="mi">204</span>
+</pre></div>
+</div>
+<p>Authentication is manage from the application flask configuration
+with <code class="docutils literal notranslate"><span class="pre">FSA_*</span></code> (Flask simple authentication) directives from
+the configuration file (<code class="docutils literal notranslate"><span class="pre">ACME_CONFIG</span></code>):</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">FSA_AUTH</span> <span class="o">=</span> <span class="s2">&quot;httpd&quot;</span>     <span class="c1"># inherit web-serveur authentication</span>
+<span class="c1"># or others schemes such as: basic, token (eg jwt)…</span>
+<span class="c1"># hooks must be provided for retrieving user&#39;s passwords and</span>
+<span class="c1"># checking whether a user belongs to a group, if these features are used.</span>
+</pre></div>
+</div>
+<p>If the <code class="docutils literal notranslate"><span class="pre">authorize</span></code> argument is not supplied, the security first approach
+results in the route to be forbidden (<em>403</em>).
+Various aspects of the implemented schemes can be configured with other
+directives, with reasonable defaults provided so that not much is really
+needed beyond choosing the authentication scheme.
+Look at the <a class="reference internal" href="#demo/README.md"><span class="xref myst">demo application</span></a> for a simple full-featured
+application.</p>
+</section>
+<section id="features">
+<h2>Features<a class="headerlink" href="#features" title="Permalink to this heading"></a></h2>
+<p>The module provides a wrapper around the <code class="docutils literal notranslate"><span class="pre">Flask</span></code> class which extends its
+capabilities for managing authentication, authorization and parameters.
+This is intended for a REST API implementation serving a remote client
+application through HTTP methods called on a path, with HTTP or JSON
+parameters passed in and a JSON result is returned: this help implement
+an authenticated function call over HTTP.</p>
+<p><a class="reference internal" href="DOCUMENTATION.html#authentication"><span class="std std-ref"><strong>Authentication</strong></span></a>,
+i.e. checking <em>who</em> is doing the request, is performed whenever an
+authorization is required on a route.
+The module implements inheriting the web-server authentication,
+various password authentication (HTTP Basic, or HTTP/JSON parameters),
+tokens (custom or JWT passed in headers or as a parameter),
+a fake authentication scheme useful for local application testing,
+or relying on a user provided function to check a password or code.
+It allows to have a login route to generate authentication tokens.
+For registration, support functions allow to hash new passwords consistently
+with password checks.
+Alternate password checking schemes (eg temporary code, external LDAP server)
+can be plug in easily through a hook.
+Multi-factor authentication can be implemented easily thanks to per-route
+<em>realms</em>.</p>
+<p><a class="reference internal" href="DOCUMENTATION.html#authorization"><span class="std std-ref"><strong>Authorizations</strong></span></a>,
+i.e. checking whether the above <em>who</em> can perform a request, are managed by
+mandatory permission declaration on a route (eg a role name, or an object
+access), and relies on supplied functions to check whether a user has this role
+or can access a particular object.
+Authorization can also be provided from a third party through JWT tokens
+following the <a class="reference external" href="https://oauth.net/2/">OAuth2</a> approach.</p>
+<p><a class="reference internal" href="DOCUMENTATION.html#parameters"><span class="std std-ref"><strong>Parameters</strong></span></a> expected in the request can be
+declared, their presence and type checked, and they are added automatically as
+named parameters to route functions, skipping the burden of checking them in
+typical flask functions. The module manages <em>http</em>, <em>json</em> and <em>files</em>.
+In practice, importing Flask’s <code class="docutils literal notranslate"><span class="pre">request</span></code> global variable is not necessary.
+The philosophy is that a REST API entry point is a function call through HTTP,
+so the route definition should be a function, avoiding relying on magic globals.
+The parameter handling based on type hints was inspired and is an extension of
+<a class="reference external" href="https://fastapi.tiangolo.com/lo/">fastapi</a> approach.</p>
+<p><a class="reference internal" href="DOCUMENTATION.html#utils"><span class="std std-ref"><strong>Utils</strong></span></a> include the convenient <code class="docutils literal notranslate"><span class="pre">Reference</span></code> class which
+allows to share possibly thread-local data for import, error and CORS handling.</p>
+<p>It makes sense to integrate these capabilities into a Flask wrapper so that only
+one extended decorator is needed on a route, meaning that the security cannot be
+forgotten, compared to an extension which would require additional decorators.
+Also, parameters checks are relevant to security in general and interdependent
+as checking for object ownership requires accessing parameters.</p>
+<p>Note that web-oriented flask authentication modules are not really
+relevant in the REST API context, where the server does not care about
+presenting login forms or managing views, for instance.
+However, some provisions are made so that it can <em>also</em> be used for a web
+application: CORS, login page redirection…</p>
+</section>
+<section id="documentation">
+<h2>Documentation<a class="headerlink" href="#documentation" title="Permalink to this heading"></a></h2>
+<p>See the <a class="reference internal" href="DOCUMENTATION.html"><span class="std std-doc">detailed documentation</span></a> for how to best take advantage
+of this module.</p>
+</section>
+<section id="license">
+<h2>License<a class="headerlink" href="#license" title="Permalink to this heading"></a></h2>
+<p>This software is <em>public domain</em>.</p>
+<p>All software has bug, this is software, hence…
+Beware that you may lose your hairs or your friends because of it.
+If you like it, feel free to send a postcard to the author.</p>
+</section>
+<section id="versions">
+<h2>Versions<a class="headerlink" href="#versions" title="Permalink to this heading"></a></h2>
+<p><a class="reference external" href="https://github.com/zx80/flask-simple-auth">Sources</a>,
+<a class="reference external" href="https://zx80.github.io/flask-simple-auth/">documentation</a> and
+<a class="reference external" href="https://github.com/zx80/flask-simple-auth/issues">issues</a>
+are hosted on <a class="reference external" href="https://github.com">GitHub</a>.
+Install <a class="reference external" href="https://pypi.org/project/FlaskSimpleAuth/">package</a> from
+<a class="reference external" href="https://pypi.org/">PyPI</a>.</p>
+<p>Latest version is <em>23.2</em> published on 2023-07-23.</p>
+<p>See <a class="reference internal" href="VERSIONS.html"><span class="std std-doc">all versions</span></a>.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Calvin.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
