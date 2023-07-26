@@ -393,7 +393,7 @@ def test_password_lazy_init():
 def test_password_check(client):
     fsa = app._fsa
     # standard password
-    fsa.initialize()
+    fsa._initialize()
     pm = fsa._am._pm
     ref = app.hash_password("hello")
     assert app.check_password("hello", ref)
@@ -458,7 +458,7 @@ def test_plaintext_password():
 
 def test_password_quality():
     mode = app._fsa._mode
-    app._fsa._mode = fsa.Mode.DEBUG3
+    app._fsa._mode = fsa._Mode.DEBUG3
     pm = app._fsa._am._pm
     # password len
     assert pm._pass_len == 0
@@ -1463,7 +1463,7 @@ def test_warnings_and_errors():
         FSA_PASSWORD_RE=[r"[0-9]"],
         FSA_GET_USER_PASS=bad_gup_1,
     )
-    app._fsa.initialize()
+    app._fsa._initialize()
     # password exceptions
     try:
         app.hash_password("short1")
@@ -1487,7 +1487,7 @@ def test_warnings_and_errors():
         FSA_TOKEN_LENGTH=8,  # no used if jwt
         FSA_GET_USER_PASS=bad_gup_2,
     )
-    app._fsa.initialize()
+    app._fsa._initialize()
     try:
         app._fsa._am._pm.check_user_password("calvin", "hobbes")
         assert False, "should not get through"
@@ -1700,21 +1700,21 @@ def test_error_response():
     # again, with FSA_ERROR_RESPONSE wrong type
     try:
         app = af.create_app(FSA_ERROR_RESPONSE=True)
-        app._fsa.initialize()
+        app._fsa._initialize()
         assert False, "should have raised an exception"
     except ConfigError as e:
         assert "unexpected FSA_ERROR_RESPONSE" in str(e)
     # again, with FSA_ERROR_RESPONSE None
     try:
         app = af.create_app(FSA_ERROR_RESPONSE=None)
-        app._fsa.initialize()
+        app._fsa._initialize()
         assert False, "should have raised an exception"
     except ConfigError as e:
         assert "unexpected FSA_ERROR_RESPONSE" in str(e)
     # again, with FSA_ERROR_RESPONSE "bad value"
     try:
         app = af.create_app(FSA_ERROR_RESPONSE="bad value")
-        app._fsa.initialize()
+        app._fsa._initialize()
         assert False, "should have raised an exception"
     except ConfigError as e:
         assert "unexpected FSA_ERROR_RESPONSE" in str(e)
@@ -1724,7 +1724,7 @@ def test_error_response():
     app = fsa.Flask("trigger warning")
     app._fsa._error_response = erh
     app.config.update(FSA_ERROR_RESPONSE="json", FSA_SECURE=False)
-    app._fsa.initialize()
+    app._fsa._initialize()
     # check that we take control of flask errors
     app = fsa.Flask("not-implemented", FSA_LOGGING_LEVEL=logging.INFO, FSA_ERROR_RESPONSE="json:bad")
     @app.get("/implemented", authorize="ANY")
@@ -1796,7 +1796,7 @@ def test_mode():
             hello(fsa.Flask("mode", FSA_DEBUG=debug, FSA_MODE=mode))
     try:
         app = fsa.Flask("mode", FSA_MODE="unexpected")
-        app._fsa.initialize()
+        app._fsa._initialize()
         assert False, "should raise an exception"
     except ConfigError as e:
         assert "FSA_MODE" in str(e)

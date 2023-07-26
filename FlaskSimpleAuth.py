@@ -2,6 +2,7 @@
 Flask Extension and Wrapper
 
 This extension helps manage:
+
 - authentication
 - authorization
 - parameters
@@ -92,7 +93,10 @@ AuthenticationFun = Callable[[Any, Request], str|None]
 
 @dataclasses.dataclass
 class ErrorResponse(BaseException):
-    """Internal exception class to carry fields for an error Response."""
+    """Exception class to carry fields for an error Response.
+
+    Use this exception from hooks to trigger an error response.
+    """
     # NOTE this should maybe inherit from exceptions.HTTPException?
     message: str
     status: int
@@ -101,30 +105,30 @@ class ErrorResponse(BaseException):
 
 
 class ConfigError(BaseException):
-    """FSA Configuration User Error."""
+    """FSA User Configuration Error."""
     pass
 
 
-class Mode(IntEnum):
+class _Mode(IntEnum):
     """FSA running modes."""
     UNDEF = 0
     PROD = 1
     DEV = 2
+    DEBUG = 3
     DEBUG1 = 3
     DEBUG2 = 4
     DEBUG3 = 5
     DEBUG4 = 6
-    DEBUG = 3
 
 
 _MODES = {
-    "debug1": Mode.DEBUG1,
-    "debug2": Mode.DEBUG2,
-    "debug3": Mode.DEBUG3,
-    "debug4": Mode.DEBUG4,
-    "debug": Mode.DEBUG,
-    "dev": Mode.DEV,
-    "prod": Mode.PROD,
+    "debug1": _Mode.DEBUG1,
+    "debug2": _Mode.DEBUG2,
+    "debug3": _Mode.DEBUG3,
+    "debug4": _Mode.DEBUG4,
+    "debug": _Mode.DEBUG,
+    "dev": _Mode.DEV,
+    "prod": _Mode.PROD,
 }
 
 
@@ -143,42 +147,68 @@ class string(str):
 
 # "JsonData = json.loads" would do:-)
 class JsonData:
-    """Magic JSON type."""
+    """Magic JSON type.
+
+    This triggers interpretting a parameter as JSON when used as a parameter type on a route.
+    """
     pass
 
 
 class Session:
-    """Session parameter type."""
+    """Session parameter type.
+
+    This provides the session object when used as a parameter type on a route.
+    """
     pass
 
 
 class Globals:
-    """Globals parameter type."""
+    """Globals parameter type.
+
+    This provides the g (globals) object when used as a parameter type on a route.
+    """
     pass
 
 
 class Environ:
-    """Environ parameter type."""
+    """Environ parameter type.
+
+    This provides the WSGI environ object when used as a parameter type on a route.
+    """
     pass
 
 
 class CurrentUser:
-    """CurrentUser parameter type."""
+    """CurrentUser parameter type.
+
+    This provides the authenticated user (str) when used as a parameter type on a route.
+    """
     pass
 
 
 class CurrentApp:
-    """CurrentApp parameter type."""
+    """CurrentApp parameter type.
+
+    This provides the current application object when used as a parameter type on a route.
+    """
     pass
 
 
 class Cookie:
-    """Application Cookie type."""
+    """Application Cookie type.
+
+    This provides the cookie value (str) when used as a parameter type on a route.
+    The `name` of the parameter is the cookie name.
+    """
     pass
 
 
 class Header:
-    """Request Header type."""
+    """Request Header type.
+
+    This provides the header value (str) when used as a parameter type on a route.
+    The `name` of the parameter is the header name (case insensitive, underscore for dash).
+    """
     pass
 
 
@@ -229,7 +259,10 @@ def _get_file_storage(p: str) -> FileStorage:
 
 
 def jsonify(a: Any):
-    """Jsonify something, including generators and pydantic stuff."""
+    """Jsonify something, including generators, dataclasses and pydantic stuff.
+
+    This is an extension of Flask own jsonify.
+    """
     if hasattr(a, "model_dump"):  # Pydantic BaseModel
         return a.model_dump()
     elif hasattr(a, "__pydantic_fields__"):  # Pydantic dataclass
@@ -243,7 +276,10 @@ def jsonify(a: Any):
 
 
 class Reference(ppp.Proxy):
-    """Convenient object wrapper class."""
+    """Convenient object wrapper class.
+
+    This is a very thin wrapper around ProxyPatternPool Proxy class.
+    """
 
     def __init__(self, *args, close: str|None = "close", **kwargs):
         # NOTE max_delay is just here for backward compatibility
@@ -266,7 +302,7 @@ class Flask(flask.Flask):
       `user_in_group`, `check_password`, `hash_password`, `create_token`,
       `get_user`, `current_user`, `clear_caches`, `cast`, `object_perms`,
       `user_scope`, `password_quality`, `password_check`, `add_group`,
-      `add_scope`, `add_headers`, `error_response`.
+      `add_scope`, `add_headers`, `error_response`, `authentication`…
     """
 
     def __init__(self, *args, debug: bool = False, **kwargs):
@@ -277,9 +313,9 @@ class Flask(flask.Flask):
                 fsaconf[key] = val
         for key in fsaconf:
             del kwargs[key]
-        # Flask initialization
+        # Flask actual initialization
         super().__init__(*args, **kwargs)
-        # FSA initialization
+        # FSA extension initialization
         self._fsa = FlaskSimpleAuth(self, debug=debug, **fsaconf)
         # overwritten late because called by upper Flask initialization for "static"
         setattr(self, "add_url_rule", self._fsa.add_url_rule)
@@ -607,32 +643,32 @@ class _TokenManager:
         """Check FSA token validity against a configuration."""
         # token format: "realm[/issuer]:calvin:20380119031407:<signature>"
         if token.count(":") != 3:
-            if self._fsa._mode >= Mode.DEBUG:
+            if self._fsa._mode >= _Mode.DEBUG:
                 log.debug(f"AUTH (fsa token): unexpected token ({token})")
             raise self._Err(f"invalid fsa token: {token}", 401)
         trealm, user, slimit, sig = token.split(":", 3)
         try:
             limit = self._from_timestamp(slimit)
         except Exception as e:
-            if self._fsa._mode >= Mode.DEBUG:
+            if self._fsa._mode >= _Mode.DEBUG:
                 log.debug(f"AUTH (fsa token): malformed timestamp {slimit} ({token}): {e}")
             raise self._Err(f"unexpected fsa token limit: {slimit} ({token})", 401, e)
         # check realm
         if issuer and trealm != f"{realm}/{issuer}" or \
            not issuer and trealm != realm:
-            if self._fsa._mode >= Mode.DEBUG:
+            if self._fsa._mode >= _Mode.DEBUG:
                 log.debug(f"AUTH (fsa token): unexpected realm {trealm} ({token})")
             raise self._Err(f"unexpected fsa token realm: {trealm} ({token})", 401)
         # check signature
         ref = self._cmp_sig(f"{trealm}:{user}:{slimit}", secret)
         if ref != sig:
-            if self._fsa._mode >= Mode.DEBUG:
+            if self._fsa._mode >= _Mode.DEBUG:
                 log.debug("AUTH (fsa token): invalid signature ({token})")
             raise self._Err("invalid fsa auth token signature ({token})", 401)
         # check limit with a grace time
         now = dt.datetime.now(dt.timezone.utc) - dt.timedelta(minutes=self._grace)
         if now > limit:
-            if self._fsa._mode >= Mode.DEBUG:
+            if self._fsa._mode >= _Mode.DEBUG:
                 log.debug("AUTH (fsa token): token {token} has expired ({token})")
             raise self._Err("expired fsa auth token ({token})", 401)
         return user, limit, None
@@ -657,11 +693,11 @@ class _TokenManager:
             scopes = data["scope"].split(" ") if "scope" in data else None
             return data["sub"], exp, scopes
         except jwt.ExpiredSignatureError:
-            if self._fsa._mode >= Mode.DEBUG:
+            if self._fsa._mode >= _Mode.DEBUG:
                 log.debug(f"AUTH (jwt token): token has expired ({token})")
             raise self._Err(f"expired jwt auth token: {token}", 401)
         except Exception as e:
-            if self._fsa._mode >= Mode.DEBUG:
+            if self._fsa._mode >= _Mode.DEBUG:
                 log.debug(f"AUTH (jwt token): invalid token {token}: {e}")
             raise self._Err(f"invalid jwt token: {token}", 401, e)
 
@@ -680,7 +716,7 @@ class _TokenManager:
         # must recheck token expiration
         now = dt.datetime.now(dt.timezone.utc) - dt.timedelta(minutes=self._grace)
         if now > exp:
-            if self._fsa._mode >= Mode.DEBUG:
+            if self._fsa._mode >= _Mode.DEBUG:
                 log.debug(f"AUTH (token): token has expired ({token})")
             raise self._Err(f"expired auth token: {token}", 401)
         # store current available scopes for oauth
@@ -1041,6 +1077,42 @@ class _AuthenticationManager:
         # else: no need for WWW-Authenticate
         return res
 
+    def get_user(self, required=True) -> str|None:
+        """Authenticate user or throw exception."""
+
+        assert self._initialized
+
+        local = self._fsa._local
+
+        # memoization is safe because local is reset before a request
+        if local.source:
+            return local.user
+
+        # try authentication schemes
+        lae = None  # last error response (should it be the first?)
+        for a in local.auth:
+            try:
+                local.user = self._authentication[a](self, request)
+                if local.user:
+                    local.source = a
+                    break
+            except ErrorResponse as e:  # keep last one
+                lae = e
+            except Exception as e:  # pragma: no cover
+                log.error(f"internal error in {a} authentication: {e}")
+                self._Exc(e)  # just for recording
+
+        # we tried, even if not set, we say that the answer is the right one
+        if not local.source:
+            local.source = "none"
+
+        # rethrow last auth exception on failure
+        if required and not local.user:
+            # we do not leak allowed authentication schemes
+            raise lae or self._Err("missing authentication", 401)
+
+        return local.user
+
     def _authenticate(self, path, auth=None, realm=None):
         """Decorator to authenticate current user."""
 
@@ -1058,8 +1130,7 @@ class _AuthenticationManager:
             @functools.wraps(fun)
             def wrapper(*args, **kwargs):
 
-                fsa = self._fsa
-                local = fsa._local
+                fsa, local = self._fsa, self._fsa._local
 
                 # get user if needed
                 if not local.source:
@@ -1073,7 +1144,7 @@ class _AuthenticationManager:
                     if auth:
                         local.auth = auth
                     try:
-                        fsa.get_user()
+                        self.get_user()
                     except ErrorResponse as e:
                         return self._Res(e.message, e.status, e.headers, e.content_type)
 
@@ -1785,7 +1856,7 @@ class _ParameterManager:
                             if p in defaults:
                                 kwargs[p] = defaults[p]
                             else:  # missing mandatory (no default) parameter
-                                if fsa._mode >= Mode.DEBUG2:
+                                if fsa._mode >= _Mode.DEBUG2:
                                     log.info(debugParam())
                                 e400(f'missing parameter "{pn}"')
                                 continue
@@ -1798,23 +1869,23 @@ class _ParameterManager:
                     for p in fparams:
                         if p not in kwargs and p not in am._auth_params:
                             kwargs[p] = fparams[p]  # FIXME?
-                elif fsa._mode >= Mode.DEBUG or self._reject_param:
+                elif fsa._mode >= _Mode.DEBUG or self._reject_param:
                     # detect unused parameters and warn or reject them
                     for p in params:
                         # NOTE we silently ignore special authentication params
                         if p not in names and p not in am._auth_params:
-                            if fsa._mode >= Mode.DEBUG:
+                            if fsa._mode >= _Mode.DEBUG:
                                 log.debug(f"unexpected {local.params} parameter \"{p}\"")
-                                if fsa._mode >= Mode.DEBUG2:
+                                if fsa._mode >= _Mode.DEBUG2:
                                     log.debug(debugParam())
                             if self._reject_param:
                                 e400(f"unexpected {local.params} parameter \"{p}\"")
                                 continue
                     for p in fparams:
                         if p not in names:
-                            if fsa._mode >= Mode.DEBUG:
+                            if fsa._mode >= _Mode.DEBUG:
                                 log.debug(f"unexpected file parameter \"{p}\"")
-                                if fsa._mode >= Mode.DEBUG2:
+                                if fsa._mode >= _Mode.DEBUG2:
                                     log.debug(debugParam())
                             if self._reject_param:
                                 e400(f"unexpected file parameter \"{p}\"")
@@ -1885,7 +1956,7 @@ class _RequestManager:
                 try:
                     res = hook(request, login, auth)
                     if res:
-                        if fsa._mode >= Mode.DEBUG2:
+                        if fsa._mode >= _Mode.DEBUG2:
                             log.debug(f"returning on {request.method} {request.path} {what}")
                         return res
                 except Exception as e:
@@ -1936,7 +2007,7 @@ class _RequestManager:
     def _show_request(self) -> None:
         """Show request in logs when in debug mode."""
         fsa = self._fsa
-        if fsa._mode >= Mode.DEBUG4:
+        if fsa._mode >= _Mode.DEBUG4:
             # FIXME is there a decent request prettyprinter?
             assert fsa._pm  # mypy…
             r = request
@@ -2027,9 +2098,9 @@ class _ResponseManager:
         self._after_requests.extend(conf.get("FSA_AFTER_REQUEST", []))
         self._headers.update(conf.get("FSA_ADD_HEADERS", {}))
         # register fsa hooks to flask, executed in reverse order
-        if fsa._mode >= Mode.DEBUG4:
+        if fsa._mode >= _Mode.DEBUG4:
             app.after_request(self._show_response)
-        if fsa._mode >= Mode.DEV:
+        if fsa._mode >= _Mode.DEV:
             app.after_request(self._add_fsa_headers)
         # always, because more may be register after initialization
         app.after_request(self._run_after_requests)
@@ -2099,7 +2170,7 @@ class _ResponseManager:
 
     def _show_response(self, res: Response) -> Response:
         """Show response in logs when in debug mode."""
-        if self._fsa._mode >= Mode.DEBUG4:
+        if self._fsa._mode >= _Mode.DEBUG4:
             # FIXME there is no decent response prettyprinter
             r = res
             rpp = (f"{r}\n\tHTTP/? {r.status}\n\t" +
@@ -2110,14 +2181,20 @@ class _ResponseManager:
 
 # actual extension
 class FlaskSimpleAuth:
-    """Flask extension for authentication, authorization and parameters."""
+    """Flask extension for authentication, authorization and parameters.
+
+    Although this class can be used as a Flask extension, the prefered approach
+    is to use the Flask class provided in this module, which overrides directly
+    Flask internals so as to provide our declarative security layer, so that
+    you may not shortcut the extension.
+    """
 
     def __init__(self, app: flask.Flask, debug: bool = False, **config):
-        """Constructor parameter: flask application to extend."""
+        """Constructor parameter: flask application to extend and FSA directives."""
         # A basic minimal non functional initialization.
         # Actual initializations are deferred to init_app called later,
         # so as to allow updating the configuration.
-        self._mode = Mode.DEBUG2 if debug else Mode.UNDEF
+        self._mode = _Mode.DEBUG2 if debug else _Mode.UNDEF
         self._app = app
         self._app.config.update(**config)
         # managers
@@ -2138,158 +2215,10 @@ class FlaskSimpleAuth:
         # actual main initialization is deferred to `_initialize`
         self._initialized = False
 
-    def _Res(self, msg: str, code: int, headers: dict[str, str]|None = None, content_type: str|None = None) -> Response:
-        """Generate a error actual Response with a message."""
-        if self._mode >= Mode.DEBUG:
-            log.debug(f"error response: {code} {msg}")
-        return self._rm._error_response(msg, code, headers, content_type)
-
-    def _Exc(self, exc: BaseException|None) -> BaseException|None:
-        """Handle an internal error."""
-        # trace once with subtle tracking
-        if exc and not hasattr(exc, "_fsa_traced"):
-            log.error(exc, exc_info=True)
-            setattr(exc, "_fsa_traced", True)
-        return exc if self._keep_user_errors else None
-
-    def _Err(self, msg: str, code: int, exc: Exception = None) -> BaseException:
-        """Build and trace an ErrorResponse exception with a message."""
-        if self._mode >= Mode.DEBUG3:
-            log.debug(f"error: {code} {msg}")
-        return self._Exc(exc) or ErrorResponse(msg, code)
-
-    def _Bad(self, msg: str, misc: str = None) -> ConfigError:
-        """Build and trace an exception on a bad configuration."""
-        if misc:
-            msg += "\n" + misc
-        log.critical(msg)
-        return ConfigError(msg)
-
-    #
-    # REGISTER HOOKS
-    #
-    def get_user_pass(self, gup: GetUserPassFun) -> GetUserPassFun:
-        """Set `get_user_pass` helper, can be used as a decorator."""
-        self.initialize()
-        return self._am._pm.get_user_pass(gup)
-
-    def user_in_group(self, uig: UserInGroupFun) -> UserInGroupFun:
-        """Set `user_in_group` helper, can be used as a decorator."""
-        self.initialize()
-        if self._zm._user_in_group:
-            log.warning("overriding already defined user_in_group hook")
-        self._zm._user_in_group = uig
-        return uig
-
-    def password_quality(self, pqc: PasswordQualityFun) -> PasswordQualityFun:
-        """Set `password_quality` hook."""
-        self.initialize()
-        if self._am._pm._pass_quality:
-            log.warning("overriding already defined password_quality hook")
-        self._am._pm._pass_quality = pqc
-        return pqc
-
-    def password_check(self, pwc: PasswordCheckFun) -> PasswordCheckFun:
-        """Set `password_check` hook."""
-        self.initialize()
-        if self._am._pm._pass_check:
-            log.warning("overriding already defined password_check hook")
-        self._am._pm._pass_check = pwc
-        return pwc
-
-    def error_response(self, erh: ErrorResponseFun) -> ErrorResponseFun:
-        """Set `error_response` hook."""
-        self.initialize()
-        log.warning("overriding error_response hook")
-        self._rm._error_response = erh
-        return erh
-
-    def _store(self, store: dict[Any, Any], what: str, key: Any, val: Callable|None = None):
-        """Add a function associated to something in a dict."""
-        if self._mode >= Mode.DEBUG2:
-            log.debug(f"registering {what} for {key} ({val})")
-        if val:  # direct
-            if key in store:
-                log.warning(f"overriding {what} function for {key}")
-            store[key] = val
-        else:
-
-            def decorate(fun: Callable):
-                assert fun is not None
-                self._store(store, what, key, fun)
-                return fun
-
-            return decorate
-
-    def cast(self, t, cast: CastFun = None):
-        """Add a cast function associated to a type."""
-        self.initialize()
-        return self._pm.cast(t, cast)
-
-    def special_parameter(self, t, sp: SpecialParameterFun = None):
-        """Add a special parameter type."""
-        self.initialize()
-        return self._pm.special_parameter(t, sp)
-
-    def object_perms(self, domain: str, checker: ObjectPermsFun = None):
-        """Add an object permission helper for a given domain."""
-        self.initialize()
-        return self._zm.object_perms(domain, checker)
-
-    def authentication(self, auth: str, hook: AuthenticationFun|None = None):
-        """Add new authentication hook."""
-        return self._am.authentication(auth, hook)
-
-    def user_scope(self, scope) -> bool:
-        """Is scope in the current user scope."""
-        return self._local.scopes and scope in self._local.scopes
-
-    def add_group(self, *groups) -> None:
-        """Add some groups."""
-        self.initialize()
-        for grp in groups:
-            if not isinstance(grp, (str, int)):
-                raise self._Bad(f"invalid group type: {type(grp).__name__}")
-            self._zm._groups.add(grp)
-
-    def add_scope(self, *scopes) -> None:
-        """Add some scopes."""
-        self.initialize()
-        for scope in scopes:
-            if not isinstance(scope, str):
-                raise self._Bad(f"invalid scope type: {type(scope).__name__}")
-            self._zm._scopes.add(scope)
-
-    def add_headers(self, **kwargs) -> None:
-        """Add some headers."""
-        self.initialize()
-        for k, v in kwargs.items():
-            if not isinstance(k, str):  # pragma: no cover
-                raise self._Bad(f"header name must be a string: {type(k).__name__}")
-            if not (isinstance(v, str) or callable(v)):
-                raise self._Bad(f"header value must be a string or a callable: {type(v).__name__}")
-            self._store(self._rm._headers, "header", k, v)
-
-    def before_exec(self, hook: BeforeExecFun) -> None:
-        """Register an after auth/just before exec hook."""
-        self._qm._before_exec_hooks.append(hook)
-
     #
     # DEFERRED INITIALIZATIONS
     #
-    def _set_hooks(self, directive: str, set_hook: Callable[[Any, Callable], Any]) -> None:
-        """Convenient method to add new hooks."""
-        conf = self._app.config
-        if directive in conf:
-            hooks = conf[directive]
-            if not isinstance(hooks, dict):
-                raise self._Bad(f"{directive} must be a dict")
-            for key, hook in hooks.items():
-                if not callable(hook):  # pragma: no cover
-                    raise self._Bad("{directive} {key} value must be callable")
-                set_hook(key, hook)
-
-    def initialize(self) -> None:
+    def _initialize(self) -> None:
         """Run late initialization.
 
         The initialization is performed through `FSA_*` configuration directives.
@@ -2302,9 +2231,9 @@ class FlaskSimpleAuth:
 
         # running mode
         if "FSA_DEBUG" in conf and conf["FSA_DEBUG"]:  # upward compatibility
-            self._mode = Mode.DEBUG
+            self._mode = _Mode.DEBUG
             del conf["FSA_DEBUG"]
-        if self._mode and self._mode >= Mode.DEBUG and "FSA_MODE" in conf:
+        if self._mode and self._mode >= _Mode.DEBUG and "FSA_MODE" in conf:
             log.warning("ignoring FSA_MODE because already in debug mode")
         else:
             mode = conf.get("FSA_MODE", _DEFAULT_MODE)
@@ -2312,7 +2241,7 @@ class FlaskSimpleAuth:
                 self._mode = _MODES[mode]
             else:
                 raise self._Bad(f"unexpected FSA_MODE value: {mode}")
-        if self._mode >= Mode.DEBUG:
+        if self._mode >= _Mode.DEBUG:
             log.warning("FlaskSimpleAuth running in debug mode")
             log.setLevel(logging.DEBUG)
             if "FSA_LOGGING_LEVEL" in conf:
@@ -2374,67 +2303,188 @@ class FlaskSimpleAuth:
         self._initialized = True
 
     #
+    # COMMON UTILS
+    #
+    def _Res(self, msg: str, code: int, headers: dict[str, str]|None = None, content_type: str|None = None) -> Response:
+        """Generate a error actual Response with a message."""
+        if self._mode >= _Mode.DEBUG:
+            log.debug(f"error response: {code} {msg}")
+        return self._rm._error_response(msg, code, headers, content_type)
+
+    def _Exc(self, exc: BaseException|None) -> BaseException|None:
+        """Handle an internal error."""
+        # trace once with subtle tracking
+        if exc and not hasattr(exc, "_fsa_traced"):
+            log.error(exc, exc_info=True)
+            setattr(exc, "_fsa_traced", True)
+        return exc if self._keep_user_errors else None
+
+    def _Err(self, msg: str, code: int, exc: Exception = None) -> BaseException:
+        """Build and trace an ErrorResponse exception with a message."""
+        if self._mode >= _Mode.DEBUG3:
+            log.debug(f"error: {code} {msg}")
+        return self._Exc(exc) or ErrorResponse(msg, code)
+
+    def _Bad(self, msg: str, misc: str = None) -> ConfigError:
+        """Build and trace an exception on a bad configuration."""
+        if misc:
+            msg += "\n" + misc
+        log.critical(msg)
+        return ConfigError(msg)
+
+    def _store(self, store: dict[Any, Any], what: str, key: Any, val: Callable|None = None):
+        """Add a function associated to something in a dict."""
+        if self._mode >= _Mode.DEBUG2:
+            log.debug(f"registering {what} for {key} ({val})")
+        if val:  # direct
+            if key in store:
+                log.warning(f"overriding {what} function for {key}")
+            store[key] = val
+        else:
+
+            def decorate(fun: Callable):
+                assert fun is not None
+                self._store(store, what, key, fun)
+                return fun
+
+            return decorate
+
+    def _set_hooks(self, directive: str, set_hook: Callable[[Any, Callable], Any]) -> None:
+        """Convenient method to add new hooks."""
+        conf = self._app.config
+        if directive in conf:
+            hooks = conf[directive]
+            if not isinstance(hooks, dict):
+                raise self._Bad(f"{directive} must be a dict")
+            for key, hook in hooks.items():
+                if not callable(hook):  # pragma: no cover
+                    raise self._Bad("{directive} {key} value must be callable")
+                set_hook(key, hook)
+
+    #
+    # REGISTER HOOKS
+    #
+    def get_user_pass(self, gup: GetUserPassFun) -> GetUserPassFun:
+        """Set `get_user_pass` helper, can be used as a decorator."""
+        self._initialize()
+        return self._am._pm.get_user_pass(gup)
+
+    def user_in_group(self, uig: UserInGroupFun) -> UserInGroupFun:
+        """Set `user_in_group` helper, can be used as a decorator."""
+        self._initialize()
+        if self._zm._user_in_group:
+            log.warning("overriding already defined user_in_group hook")
+        self._zm._user_in_group = uig
+        return uig
+
+    def password_quality(self, pqc: PasswordQualityFun) -> PasswordQualityFun:
+        """Set `password_quality` hook."""
+        self._initialize()
+        if self._am._pm._pass_quality:
+            log.warning("overriding already defined password_quality hook")
+        self._am._pm._pass_quality = pqc
+        return pqc
+
+    def password_check(self, pwc: PasswordCheckFun) -> PasswordCheckFun:
+        """Set `password_check` hook."""
+        self._initialize()
+        if self._am._pm._pass_check:
+            log.warning("overriding already defined password_check hook")
+        self._am._pm._pass_check = pwc
+        return pwc
+
+    def error_response(self, erh: ErrorResponseFun) -> ErrorResponseFun:
+        """Set `error_response` hook."""
+        self._initialize()
+        log.warning("overriding error_response hook")
+        self._rm._error_response = erh
+        return erh
+
+    def cast(self, t, cast: CastFun = None):
+        """Add a cast function associated to a type."""
+        self._initialize()
+        return self._pm.cast(t, cast)
+
+    def special_parameter(self, t, sp: SpecialParameterFun = None):
+        """Add a special parameter type."""
+        self._initialize()
+        return self._pm.special_parameter(t, sp)
+
+    def object_perms(self, domain: str, checker: ObjectPermsFun = None):
+        """Add an object permission helper for a given domain."""
+        self._initialize()
+        return self._zm.object_perms(domain, checker)
+
+    def authentication(self, auth: str, hook: AuthenticationFun|None = None):
+        """Add new authentication hook."""
+        self._initialize()
+        return self._am.authentication(auth, hook)
+
+    def add_group(self, *groups) -> None:
+        """Add some groups."""
+        self._initialize()
+        for grp in groups:
+            if not isinstance(grp, (str, int)):
+                raise self._Bad(f"invalid group type: {type(grp).__name__}")
+            self._zm._groups.add(grp)
+
+    def add_scope(self, *scopes) -> None:
+        """Add some scopes."""
+        self._initialize()
+        for scope in scopes:
+            if not isinstance(scope, str):
+                raise self._Bad(f"invalid scope type: {type(scope).__name__}")
+            self._zm._scopes.add(scope)
+
+    def add_headers(self, **kwargs) -> None:
+        """Add some headers."""
+        self._initialize()
+        for k, v in kwargs.items():
+            if not isinstance(k, str):  # pragma: no cover
+                raise self._Bad(f"header name must be a string: {type(k).__name__}")
+            if not (isinstance(v, str) or callable(v)):
+                raise self._Bad(f"header value must be a string or a callable: {type(v).__name__}")
+            self._store(self._rm._headers, "header", k, v)
+
+    def before_exec(self, hook: BeforeExecFun) -> None:
+        """Register an after auth/just before exec hook."""
+        self._initialize()
+        self._qm._before_exec_hooks.append(hook)
+
+    #
     # PASSWORD CHECKS
     #
     def check_password(self, pwd, ref):
         """Verify whether a password is correct compared to a reference (eg salted hash)."""
-        self.initialize()
+        self._initialize()
         return self._am._pm.check_password(pwd, ref)
 
     def hash_password(self, pwd, check=True):
         """Hash password according to the current password scheme."""
-        self.initialize()
+        self._initialize()
         return self._am._pm.hash_password(pwd, check)
 
     #
     # TOKEN
     #
     def create_token(self, *args, **kwargs) -> str:
-        self.initialize()
+        self._initialize()
         return self._am._tm.create_token(*args, **kwargs)
 
     #
     # AUTHENTICATE WITH ANY MEAN
     #
-    # TODO move partially to _AuthenticationManager?
-    #
     def get_user(self, required=True) -> str|None:
         """Authenticate user or throw exception."""
-
-        # safe because user is reset before requests
-        if self._local.source:
-            return self._local.user
-
-        assert self._initialized, "FlaskSimpleAuth must be initialized"
-
-        # try authentication schemes
-        lae = None
-        for a in self._local.auth:
-            try:
-                self._local.user = self._am._authentication[a](self, request)
-                if self._local.user:
-                    self._local.source = a
-                    break
-            except ErrorResponse as e:
-                lae = e
-            except Exception as e:  # pragma: no cover
-                log.error(f"internal error in {a} authentication: {e}")
-                self._Exc(e)
-
-        # we tried, even if not set, we say that the answer is the right one
-        if not self._local.source:
-            self._local.source = "none"
-
-        # rethrow last auth exception on failure
-        if required and not self._local.user:
-            # we do not leak allowed authentication schemes
-            raise lae or self._Err("missing authentication", 401)
-
-        return self._local.user
+        return self._am.get_user(required)
 
     def current_user(self) -> str|None:
         """Return current authenticated user, if any."""
         return self._local.user
+
+    def user_scope(self, scope) -> bool:
+        """Is scope in the current user scope."""
+        return self._local.scopes and scope in self._local.scopes
 
     def clear_caches(self) -> None:
         """Clear internal shared cache.
@@ -2479,7 +2529,7 @@ class FlaskSimpleAuth:
         """Route decorator helper method."""
 
         # lazy initialization
-        self.initialize()
+        self._initialize()
 
         # ensure that authorize is a list
         if type(authorize) in (int, str, tuple):
@@ -2683,8 +2733,7 @@ class FlaskSimpleAuth:
         """Register a blueprint."""
 
         # lazy initialization
-        if not self._initialized:  # pragma: no cover
-            self.initialize()
+        self._initialize()
 
         # although self is not a Flask instance, it should be good enough
         flask.Flask.register_blueprint(self, blueprint, **options)  # type: ignore
