@@ -123,17 +123,17 @@ is closed with a *403*.
 @app.get("/store", authorize="ANY")
 def get_store(filter: str = None):
     # return store contents, possibly filtered
-    …
+    ...
 
 @app.post("/store", authorize="contributor")
 def post_store(data: str):
     # append new data to store, return id
-    …
+    ...
 
 @app.get("/store/<id>", authorize="ANY")
 def get_store_id(id: int):
     # return data corresponding to id
-    …
+    ...
 ```
 
 Inside a request handling function, additional methods on `app` give access to
@@ -165,18 +165,18 @@ Various decorators/functions allow to register hooks, such as:
 # None means that the user does not exists
 @app.get_user_pass
 def get_user_pass(user: str) -> str|None:
-    return …
+    return ...
 
 # return whether user is in group (see with FSA_USER_IN_GROUP)
 @app.user_in_group
 def user_in_group(user: str, group: str) -> bool:
-    return …
+    return ...
 
 # return whether user can access the `foo` object for an operation
 # None will generates a 404
 @app.object_perms("foo")
 def allow_foo_access(user: str, fooid: int, mode: str) -> bool|None:
-    return …
+    return ...
 ```
 
 These hooks allow taking over control of most internal processes, if needed.
@@ -400,7 +400,7 @@ Other authentication schemes can be added by registering a new hook which:
 ```python
 @app.authentication("code")
 def code_authentication(app: Flask, req: Request) -> str|None:
-    …
+    ...
 
 @app.get("/code-authentication", authorization="ALL", auth="code")
 def get_code_authentication(user: CurrentUser):
@@ -603,7 +603,7 @@ app.add_group("student", "professor")
 
 @app.get("/students", authorize="admin")  # ERROR, unregistered group
 def get_students():
-    …
+    ...
 ```
 
 ### OAuth Authorizations
@@ -655,7 +655,7 @@ this route:
 ```python
 @app.get("/message/<mid>", authorize=("msg", "mid", "read"))
 def get_message_mid(mid: int):
-    …
+    ...
 ```
 
 The system will check whether the current user can access message *mid*
@@ -665,7 +665,7 @@ in *read* mode by calling a per-domain user-supplied function:
 @app.object_perms("msg")
 def can_access_message(user: str, mid: int, mode: str) -> bool|None:
     # can user access message mid for operation mode?
-    return …
+    return ...
 
 # also: app.object_perms("msg", can_access_message)
 ```
@@ -682,7 +682,7 @@ is taken:
 # same as authorize=("msg", "mid", None)
 @app.patch("/message/<mid>", authorize=("msg",))
 def patch_message_mid(mid: int):
-    …
+    ...
 ```
 
 The `FSA_OBJECT_PERMS` configuration directive can be set as a dictionary
@@ -707,12 +707,12 @@ parameters by relying on function type annotations.
 Parameters are considered mandatory unless a default value is provided.
 
 ```python
-@app.get("/something/<id>", authorize=…)
+@app.get("/something/<id>", authorize=...)
 def get_something_id(id: int, when: date, what: str = "nothing"):
     # `id` is an integer path-parameter
     # `when` is a mandatory date HTTP or JSON parameter
     # `what` is an optional string HTTP or JSON parameter
-    …
+    ...
 ```
 
 Request parameter string values are actually *converted* to the target type,
@@ -732,7 +732,7 @@ parameters are provided into it, as shown below:
 ```python
 @app.put("/awesome", authorize="ALL")
 def put_awesome(**kwargs):
-    …
+    ...
 ```
 
 [Pydantic](https://pydantic.dev)-generated classes and dataclasses work out of
@@ -751,7 +751,7 @@ class Search:
 
 @app.get("/search", authorize="ANY")
 def get_search(q: Search):
-    …
+    ...
 ```
 
 Custom classes can be used as parameter types, provided that the constructor
@@ -765,14 +765,14 @@ class EmailAddr:
 
 @app.get("/mail/<addr>", authorize="ALL")
 def get_mail_addr(addr: EmailAddr):
-    …
+    ...
 ```
 
 Defining new types can be used to factor out some parameter checks,
 for instance requiring a positive integer:
 
 ```python
-class nat(int):  # this demonstrate Python simplicity…
+class nat(int):  # this demonstrate Python simplicity
     def __new__(cls, val):
         if val < 0:
             raise ValueError(f"nat value must be positive: {val}")
@@ -781,7 +781,7 @@ class nat(int):  # this demonstrate Python simplicity…
 @app.get("/pos", authorize="ANY")
 def get_pos(i: nat, j: nat):
     # i and j are positive integers
-    …
+    ...
 ```
 
 If the constructor does not match, a custom function can be provided with the
@@ -790,24 +790,24 @@ parameters:
 
 ```python
 class House:
-    …
+    ...
 
 @app.cast(House)
 def strToHouse(s: str) -> House:
-    return …
+    return ...
 
 # or: app.cast(House, strToHouse)
 
 @app.get("/house/<h>", authorize="ANY")
 def get_house_h(h: House)
-    …
+    ...
 ```
 
 The `FSA_CAST` directive can also be defined as a dictionary mapping
 types to their conversion functions:
 
 ```python
-FSA_CAST = { House: strToHouse, … }
+FSA_CAST = { House: strToHouse, ... }
 ```
 
 As a special case, the `Request`, `Session`, `Globals`, `Environ`,
@@ -855,7 +855,7 @@ names, such as `pass` or `def`.
 ```python
 @app.put("/user/<pass>", authorize="ALL")
 def put_user_pass(_pass: str, _def: str, _import: str):
-    …
+    ...
 ```
 
 Finally, configuration directive `FSA_REJECT_UNEXPECTED_PARAM` tells whether to
@@ -939,7 +939,7 @@ def check_foo_param(foo):
 @app.get("/foo/<fid>", authorize="ALL")
 def get_foo_fid(fid: int):
     check_foo_param(fid)
-    …
+    ...
 ```
 
 Such checks can also be performed in an object constructor, with the
@@ -1171,25 +1171,10 @@ Todo or not todo…
 - use `authlib`?
 - test `FSA_HTTP_AUTH_OPTS`?
 - password re could use a dict for providing an explanation?
-- refactor password manager in a separate class?
-- refactor!
 - how to have several issuers and their signatures schemes?
 - add `issuer` route parameter? see `realm`.
 - authz/authn instead of authorize/auth?
 - rename ANY/ALL/NONE to something more intuitive!
-- ability to add an authentication scheme?
-  eg send a mail with a link, or code with a SMS, or trigger some app…
-
-  ```python
-  def code_check_fun(app, request, ...) -> str:
-      …
-
-  app.register_auth_scheme("code", code_check_fun)
-
-  @app.get("/code-protected", authorize="ALL", auth="code")
-  def get_code_protected(…):
-      …
-  ```
 
 ### Params
 
