@@ -1,5 +1,5 @@
-Welcome to FlaskSimpleAuth's documentation!
-===========================================
+FlaskSimpleAuth documentation
+=============================
 
 FlaskSimpleAuth is a Flask wrapper to add a declarative security layer to
 your routes with authentification, authorization and parameter management.
@@ -100,7 +100,7 @@ Authentication and authorization callback invocations are cached for efficiency.
 
 .. toctree::
    :maxdepth: 3
-   :caption: Contents:
+   :caption: Contents
 
    Introduction <README>
    Documentation <DOCUMENTATION>
