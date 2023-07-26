@@ -195,7 +195,7 @@ class CurrentApp:
 
 
 class Cookie:
-    """Application Cookie type.
+    """Application Cookie parameter type.
 
     This provides the cookie value (str) when used as a parameter type on a route.
     The `name` of the parameter is the cookie name.
@@ -204,7 +204,7 @@ class Cookie:
 
 
 class Header:
-    """Request Header type.
+    """Request Header parameter type.
 
     This provides the header value (str) when used as a parameter type on a route.
     The `name` of the parameter is the header name (case insensitive, underscore for dash).
