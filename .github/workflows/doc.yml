@@ -3,8 +3,11 @@ name: FlaskSimpleAuth documentation publication on GitHub
 on: push
 
 jobs:
-  publish:
+  build:
     runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      path: docs/_build/html
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -17,11 +20,22 @@ jobs:
           python -m pip install .
       - name: Generate documentation
         run: make -C docs html
+      - name Fix permissions
+        run: |
+          find docs/_build -type d -print | xargs chmod a+rx
+          find docs/_build -type f -print | xargs chmod a+r
       - name: Deploy to GitHub Pages
-        if: success()
-        uses: crazy-max/ghaction-github-pages@v3
-        with:
-          target_branch: gh-pages
-          build_dir: docs/_build
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        uses: actions/upload-pages-artifact@v2
+  deploy:
+    needs: build
+    permissions:
+      pages: write
+      id-token: write  
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v2
