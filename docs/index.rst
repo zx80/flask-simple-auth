@@ -11,7 +11,7 @@ your routes with authentification, authorizations and parameter management.
    Introduction <README>
    Documentation <DOCUMENTATION>
    Versions <VERSIONS>
-   API <autoapi/FlaskSimpleAuth>
+   API <autoapi/FlaskSimpleAuth/>
 
 Indices and tables
 ==================
