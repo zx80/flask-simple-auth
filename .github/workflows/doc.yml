@@ -5,7 +5,7 @@ on: push
 jobs:
   build:
     runs-on: ubuntu-latest
-    environment:
+    inputs:
       name: github-pages
       path: docs/_build/html
     steps:
@@ -31,9 +31,6 @@ jobs:
     permissions:
       pages: write
       id-token: write  
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
       - name: Deploy to GitHub Pages
