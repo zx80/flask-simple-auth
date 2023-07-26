@@ -24,7 +24,8 @@ jobs:
         run: |
           find docs/_build -type d -print | xargs chmod a+rx
           find docs/_build -type f -print | xargs chmod a+r
-      - name: Deploy to GitHub Pages
+          ln -s docs/_build/html _site
+      - name: Upload to GitHub Pages
         uses: actions/upload-pages-artifact@v2
   deploy:
     needs: build
