@@ -55,8 +55,8 @@ HTTP or JSON parameters are automatically converted to the expected type.
     app.config.from_envvar("ACME_CONFIG")
 
     @app.get("/store", authorize="ALL")
-    def get_store():
-        # return the list of stores
+    def get_store(pattern: str = None):
+        # return the list of stores matching optional parameter pattern
         return fsa.jsonify(...), 200
 
     @app.post("/store/<sid>", authorize=("store", "sid", "manager"))
