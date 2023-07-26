@@ -17,7 +17,7 @@ jobs:
         run: |
           python -m pip install -U pip
           python -m pip install sphinx sphinx-autoapi sphinx-rtd-theme myst_parser
-          python -m pip install .
+          # python -m pip install .  # not needed?
       - name: Generate documentation
         run: make -C docs html
       - name: Fix permissions
