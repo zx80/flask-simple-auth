@@ -1,5 +1,5 @@
-FlaskSimpleAuth: A Secure Flask Framework
-=========================================
+FlaskSimpleAuth: The Secure Flask Framework
+===========================================
 
 FlaskSimpleAuth is a Flask wrapper to add a declarative security layer to
 routes with authentification, authorization and parameter management.
