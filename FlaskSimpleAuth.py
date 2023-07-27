@@ -1055,7 +1055,7 @@ class _AuthenticationManager:
                 self._auth_params.add(self._tm._name)
 
     def authentication(self, auth: str, hook: AuthenticationFun|None = None):
-        """Add new authentication hook."""
+        """Add new authentication hook, can be used as a decorator."""
         self._add_auth(auth)
         return self._store(self._authentication, "authentication", auth, hook)
 
@@ -1293,6 +1293,8 @@ class _CacheManager:
         self._cache_gen: Callable|None = None
         self._cache_opts: dict[str, Any] = {}
         self._cached = False
+        self._cachable: list[tuple[object, str, str]] = []
+        self._cache_prefixes: set[str] = set()
         self._initialized = False
 
     def _initialize(self):
@@ -1301,10 +1303,23 @@ class _CacheManager:
             log.warning("Cache Manager is already initialized, skipping…")
             return
 
+        log.info("initializing CacheManager")
+
+        self._cachable.extend([
+            (self._fsa._zm, "_user_in_group", "g."),
+            (self._fsa._zm, "_check_object_perms", "p."),
+            (self._fsa._am._tm, "_get_any_token_auth_exp", "t."),
+            (self._fsa._am._pm, "_get_user_pass", "u."),
+        ])
+
+        for p in [t[2] for t in self._cachable]:
+            self._cache_prefixes.add(p)
+
         conf = self._fsa._app.config
 
         cache = conf.get("FSA_CACHE", _DEFAULT_CACHE)
-        if not cache:  # pragma: no cover
+        if not cache or cache == "none":  # pragma: no cover
+            log.warning("Cache management is disactivated")
             self._cache = None
             self._cache_gen = None
             return
@@ -1374,24 +1389,45 @@ class _CacheManager:
         # done!
         self._initialized = True
 
+    def _cache_init(self):
+        """Check for cache availability."""
+
+        if not self._initialized:  # pragma: no cover
+            self._initialize()
+
+        if not self._cache_gen:  # pragma: no cover
+            raise self._Bad("Cache management is disactivated")
+
+    def _set_cache(self, prefix: str):  # pragma: no cover
+        """Decorator to cache function calls with a prefix."""
+
+        self._cache_init()
+
+        if prefix in self._cache_prefixes:
+            raise self._Bad(f"Cache prefix \"{prefix}\" is already used")
+
+        self._cache_prefixes.add(prefix)
+
+        def decorate(fun: Callable):
+            import cachetools
+            assert self._cache_gen  # mypy…
+            return cachetools.cached(cache=self._cache_gen(self._cache, prefix))(fun)
+
+        return decorate
+
     def _set_caches(self):
         """Deferred creation of caches around some functions."""
 
-        if self._cached:
+        self._cache_init()
+
+        if self._cached:  # pragma: no cover
             log.warning("Caches already set, skipping…")
             return
 
         log.info("setting up cache…")
         import CacheToolsUtils as ctu
 
-        CACHABLE = [
-            (self._fsa._zm, "_user_in_group", "g."),
-            (self._fsa._zm, "_check_object_perms", "p."),
-            (self._fsa._am._tm, "_get_any_token_auth_exp", "t."),
-            (self._fsa._am._pm, "_get_user_pass", "u."),
-        ]
-
-        for obj, meth, prefix in CACHABLE:
+        for obj, meth, prefix in self._cachable:
             if obj and hasattr(obj, meth):
                 log.debug(f"cache: caching {meth[1:]}")
                 ctu.cacheMethods(cache=self._cache, obj=obj, gen=self._cache_gen, **{meth: prefix})
@@ -2200,12 +2236,12 @@ class FlaskSimpleAuth:
         self._app = app
         self._app.config.update(**config)
         # managers
-        self._cm = _CacheManager(self)
         self._am = _AuthenticationManager(self)
         self._zm = _AuthorizationManager(self)
         self._pm = _ParameterManager(self)
         self._qm = _RequestManager(self)
         self._rm = _ResponseManager(self)
+        self._cm = _CacheManager(self)
         # fsa-generated errors
         self._server_error: int = _DEFAULT_SERVER_ERROR
         self._not_found_error: int = _DEFAULT_NOT_FOUND_ERROR
@@ -2560,7 +2596,8 @@ class FlaskSimpleAuth:
 
         # FIXME should be in a non existing ready-to-run hook
         self._am._check_auth_consistency()
-        if self._cm:
+        if self._cm and not self._cm._cached:
+            log.warning("CALLING set_caches")
             self._cm._set_caches()
 
         # normalize None to NONE

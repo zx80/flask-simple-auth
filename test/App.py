@@ -8,6 +8,7 @@ from Auth import user_in_group, get_user_pass
 from Auth import ADMIN, WRITE, READ, GROUPS, UP, UHP
 
 import logging
+logging.basicConfig(level=logging.DEBUG)
 log = logging.getLogger("app")
 
 #
@@ -28,9 +29,7 @@ app = Flask(
 # AUTH*
 #
 app.config.update(
-    # FSA_AUTH = "fake",
     FSA_AUTH=["token", "fake", "basic", "param"],
-    # FSA_TOKEN_CARRIER="param",
     FSA_GET_USER_PASS=get_user_pass,
     FSA_USER_IN_GROUP=user_in_group,
 )
@@ -49,6 +48,7 @@ def check_password_quality(_: str) -> bool:
 
 app.password_quality(None)
 
+# configure with a blueprint
 from SubApp import subapp
 app.register_blueprint(subapp, url_prefix="/b1")
 
