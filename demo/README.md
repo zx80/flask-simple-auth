@@ -2,12 +2,11 @@
 
 This app demonstrates a [REST](https://en.wikipedia.org/wiki/Representational_state_transfer)
 API implementation with [Flask](https://palletsprojects.com/p/flask/) extension
-[FlaskSimpleAuth](https://pypi.org/project/FlaskSimpleAuth/) used for authentication,
-authorization and parameter management, and sharing database object which handles the
-connection and queries using [AnoDB](https://pypi.org/project/anodb/),
+[FlaskSimpleAuth](https://pypi.org/project/FlaskSimpleAuth/) used for
+authentication, authorization and parameter management, and sharing database
+object which handles the connection and queries using [AnoDB](https://pypi.org/project/anodb/),
 [AioSQL](https://pypi.org/project/aiosql/) and [SQLite](https://sqlite.org)
 or [Postgres](https://postgresql.org).
-
 
 ## Main Application
 
@@ -28,21 +27,21 @@ if there is any, else `null`.
 
 Other routes are splitted in four blueprints which all use the shared database
 object:
- - [`stuff.py`](stuff.py) defines `/stuff` routes which simply stores string in the
-   `Stuff` table.
- - [`users.py`](users.py) defines `/users` routes for user management by admins.
- - [`scare.py`](scare.py) defines `/scare` routes for user self-care, that is
-   self registration, obtaining authentication tokens, changing one's password
-   and deleting oneself, all this in under *30* lines of code.
- - [`types_path.py`](types_path.py) defines `/types` routes which demonstrates
-   parameter types management.
- - [`oauth.py`](oauth.py) defines `/oauth` routes to demonstrates OAuth usage,
-   that is authorizations granted by some external issuer and delivered using
-   a token.
+
+- [`stuff.py`](stuff.py) defines `/stuff` routes which simply stores string in the
+  `Stuff` table.
+- [`users.py`](users.py) defines `/users` routes for user management by admins.
+- [`scare.py`](scare.py) defines `/scare` routes for user self-care, that is
+  self registration, obtaining authentication tokens, changing one's password
+  and deleting oneself, all this in under *30* lines of code.
+- [`types_path.py`](types_path.py) defines `/types` routes which demonstrates
+  parameter types management.
+- [`oauth.py`](oauth.py) defines `/oauth` routes to demonstrates OAuth usage,
+  that is authorizations granted by some external issuer and delivered using
+  a token.
 
 The next sections describe the convenient features which distinguish this
 demo compared to what would be required if only Flask was being used.
-
 
 ## Application Authentication
 
@@ -51,14 +50,14 @@ is no single trace of that in the application code. **THIS IS A GOOD THING**.
 The authentication requirements can be changed without editing any line
 of code, just by updating the configurations in [app.conf](app.conf):
 
- - Do you want parameter-based authentication? Set `FSA_AUTH` to `param`.
- - Do you rather want the application to inherit the authentication performed
-   by the web server? Set `FSA_AUTH` to `httpd`.
- - Do you want passwords stored with another scheme? Adjust `FSA_PASSWORD_SCHEME`
-   to anything `passlib` provides.
- - Do you want *JWT* authentication tokens? Set `FSA_TOKEN_TYPE` to `jwt`.
- - Do you want tokens carried by a *bearer* authentication header?
-   Set `FSA_TOKEN_CARRIER` to `bearer`.
+- Do you want parameter-based authentication? Set `FSA_AUTH` to `param`.
+- Do you rather want the application to inherit the authentication performed
+  by the web server? Set `FSA_AUTH` to `httpd`.
+- Do you want passwords stored with another scheme? Adjust `FSA_PASSWORD_SCHEME`
+  to anything `passlib` provides.
+- Do you want *JWT* authentication tokens? Set `FSA_TOKEN_TYPE` to `jwt`.
+- Do you want tokens carried by a *bearer* authentication header?
+  Set `FSA_TOKEN_CARRIER` to `bearer`.
 
 FlaskSimpleAuth passwords are retrieved with the `get_user_pass` hook,
 which must be provided.
@@ -66,7 +65,6 @@ The `pass.py` script allows to generate initial credentials for the
 demo application.
 The astute query behind `get_user_pass` allows the user to authenticate
 themselves either using their login or their email.
-
 
 ## Application Authorization
 
@@ -84,7 +82,6 @@ a finer grain permission model: both admins and the user themselves can access
 the route, which is controlled through a domain-specific function registered
 with the `object_perms` hook.
 
-
 ## API Parameters
 
 The application retrieve API parameters transparently and turns them
@@ -101,7 +98,6 @@ expected changes.
 The [types\_path.py](types_path.py) blueprint illustrates getting
 various parameter types, including the convenient `JsonData` types
 which converts a string to a JSON data structure.
-
 
 ## Database
 
@@ -124,26 +120,26 @@ This is done by running [create-db.sql](create-db.sql) for SQLite or
 `users.sql` generated with script [pass.py](pass.py)
 for initial application users.
 
- - database interactions are methods associated to the `db` object, which
-   under the hood are mapped to SQL queries defined in [queries.sql](queries.sql).
- - [database.py](database.py) holds the global `db` object, including its
-   initialization by `init_app`. The initialization consists in loading the
-   queries and creating a persistent database connection.
- - the configuration parameters are declared in [app-db.conf](app-db.conf)
-   or [app-pg.conf](app-pg.conf) with 4 `DB_*` directives which provide the
-   engine name, connection, queries and options.
- - the initialization is performed when [app.py](app.py) calls the
-   [database.py](database.py) `init_app` function, which is a clean application
-   pattern to ensure that it is done once, but which also allows to share the
-   database python file between applications.
- - the global shared `db` object is used locally in [app.py](app.py), but also in
-   [auth.py](auth.py) for user authentification and authorization hooks, and in the
-   3 blueprints [scare.py](scare.py), [users.py](users.py) and [stuff.py](stuff.py),
-   only at the price of a trivial one liner:
+- database interactions are methods associated to the `db` object, which
+  under the hood are mapped to SQL queries defined in [queries.sql](queries.sql).
+- [database.py](database.py) holds the global `db` object, including its
+  initialization by `init_app`. The initialization consists in loading the
+  queries and creating a persistent database connection.
+- the configuration parameters are declared in [app-db.conf](app-db.conf)
+  or [app-pg.conf](app-pg.conf) with 4 `DB_*` directives which provide the
+  engine name, connection, queries and options.
+- the initialization is performed when [app.py](app.py) calls the
+  [database.py](database.py) `init_app` function, which is a clean application
+  pattern to ensure that it is done once, but which also allows to share the
+  database python file between applications.
+- the global shared `db` object is used locally in [app.py](app.py), but also in
+  [auth.py](auth.py) for user authentification and authorization hooks, and in the
+  3 blueprints [scare.py](scare.py), [users.py](users.py) and [stuff.py](stuff.py),
+  only at the price of a trivial one liner:
 
-   ```python
-   from database import db
-   ```
+  ```python
+  from database import db
+  ```
 
 If someone wants to change the underlying DB, the SQL files may need to be updated
 for the SQL variant syntax, as the `DB_*` configuration directives for driver
@@ -151,22 +147,21 @@ and connection management.
 Compare [create-db.sql](create-db.sql) vs [create-pg.sql](create-pg.sql)
 and [app-db.conf](app-db.conf) vs [app-pg.conf](app-pg.conf).
 
-
 ## Demo Run
 
 A [Makefile](Makefile) is provided to ease running the demo application.
 Make macro `DB` can be set to `db` for SQLite, `pg2` and `pg` for Postgres
 with `psycopg` driver version 2 and 3.
 
- - `make venv` generates a suitable virtual environment.
- - `make check` runs `pytest` on the demonstration with SQLite.
- - `make DB=pg check` to run tests with Postgres using the psycopg 3 driver.
- - `make DB=pg run` starts the demo application, with logs in `app.log` and
-    process id in `app.pid`.
- - `make DB=pg log` runs and tails logs.
- - `make stop` stops the application.
- - `make clean` cleans generated files.
- - `make clean.venv` removes the virtual environment.
+- `make venv` generates a suitable virtual environment.
+- `make check` runs `pytest` on the demonstration with SQLite.
+- `make DB=pg check` to run tests with Postgres using the psycopg 3 driver.
+- `make DB=pg run` starts the demo application, with logs in `app.log` and
+   process id in `app.pid`.
+- `make DB=pg log` runs and tails logs.
+- `make stop` stops the application.
+- `make clean` cleans generated files.
+- `make clean.venv` removes the virtual environment.
 
 See example `curl` commands in [curl-demo.sh](curl-demo.sh).
 

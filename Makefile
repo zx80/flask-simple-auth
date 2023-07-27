@@ -33,7 +33,7 @@ check.coverage: venv
 	$(MAKE) -C test coverage
 
 check.pymarkdown:
-	pymarkdown scan *.md docs/*.md
+	pymarkdown scan *.md */*.md
 
 # just run the demo
 check.demo: venv
