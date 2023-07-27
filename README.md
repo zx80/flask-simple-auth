@@ -1,8 +1,8 @@
-# Flask Simple Auth
+# FlaskSimpleAuth: The Secure Flask Framework
 
-Simple authentication, authorization, parameter checks and utils
-for [Flask](https://flask.palletsprojects.com/), controled from
-Flask configuration and the extended `route` decorator.
+FlaskSimpleAuth is a [Flask](https://flask.palletsprojects.com/) wrapper to add
+a declarative security layer to routes with authentification, authorization and
+parameter management.
 
 ![Status](https://github.com/zx80/flask-simple-auth/actions/workflows/fsa.yml/badge.svg?branch=master&style=flat)
 ![Tests](https://img.shields.io/badge/tests-79%20✓-success)
@@ -13,119 +13,94 @@ Flask configuration and the extended `route` decorator.
 ![Badges](https://img.shields.io/badge/badges-8-informational)
 ![License](https://img.shields.io/pypi/l/flasksimpleauth?style=flat)
 
-**Contents:** [Example](#example), [Features](#features),
-[Documentation](#documentation), [License](#license), [Versions](#versions).
+With FlaskSimpleAuth, application and security are separated:
 
-## Example
+- the **application** focusses on *what* to do, and *declares* its security
+  constraints.
+- the **configuration** declares *how* the authentification and authorization
+  constraints are checked, with numerous state-of-the-art possibilities.
+- the **framework** *implements* and *enforces* the security on the application
+  routes, with safe defaults so that security cannot be overlooked.
 
-The application code below (yes, the **6** lines of code, plus arguably some
-configurations) performs *authentication*, *authorization* and *parameter* type
-checks triggered by the extended `route` decorator, or per-method shortcut
-decorators (`get`, `patch`, `post`…).
-There is no clue in the source about what kind of authentication is used,
-which is the point: authentication is managed in the configuration,
-not in the application code.
-The authorization rule is declared explicitely on each function with the
-mandatory `authorize` parameter.
-Path and HTTP/JSON parameters are type checked and converted automatically
-based on type annotations.
-Basically, you just have to implement a type-annotated Python function and
-most of the crust is managed by `FlaskSimpleAuth`.
+In the following Flask application, two routes are implemented.
+
+- the first route allows any authenticated *user* in group *employee* to
+  access the store list.
+- the second route allows an authenticated *user* which is a *manager* of
+  *store* number *sid* to add the quantity of product to the store inventory.
 
 ```python
+# file "app.py"
 from FlaskSimpleAuth import Flask
+
 app = Flask("acme")
 app.config.from_envvar("ACME_CONFIG")
 
-@app.patch("/users/<id>", authorize="admin")
-def patch_users_id(id: int, password: str, email: Email = None):
-    # Admins can patch user *id* with a mandatory *password* and
-    # an optional *email* parameter. Type conversions are performed
-    # so that invalid values are rejected with a *400* automatically.
-    return f"users {id} updated", 204
+@app.get("/store", authorize="employee")
+def get_store(pattern: str = "%"):
+    # return the list of stores matching optional parameter pattern
+    return ..., 200
+
+@app.post("/store/<sid>", authorize=("store", "sid", "manager"))
+def post_store(sid: int, product: str, quantity: int):
+    # product is added in quantity to store sid
+    return ..., 201
 ```
 
-Authentication is manage from the application flask configuration
-with `FSA_*` (Flask simple authentication) directives from
-the configuration file (`ACME_CONFIG`):
+In this code, there is *no* clue about how users are authenticated, as this is
+set from the configuration.
+Only authorizations are declared on the route with the mandatory ``authorize``
+parameter.
+How these are checked is also set from the configuration.
+HTTP or JSON parameters are automatically converted to the expected type.
+
+Here is an example of configuration for the above application:
+Users are identified either with a JWT token or with a basic authentification.
 
 ```python
-FSA_AUTH = "httpd"     # inherit web-serveur authentication
-# or others schemes such as: basic, token (eg jwt)…
-# hooks must be provided for retrieving user's passwords and
-# checking whether a user belongs to a group, if these features are used.
+# acme configuration
+import os
+
+FSA_MODE = "dev"
+FSA_AUTH = ["token", "basic"]
+FSA_TOKEN_TYPE = "jwt"
+FSA_TOKEN_SECRET = os.environ["ACME_SECRET"]
 ```
 
-If the `authorize` argument is not supplied, the security first approach
-results in the route to be forbidden (*403*).
-Various aspects of the implemented schemes can be configured with other
-directives, with reasonable defaults provided so that not much is really
-needed beyond choosing the authentication scheme.
-Look at the [demo application](demo/README.md) for a simple full-featured
-application.
+In this example, the framework needs tree callbacks: one to retrieve the salted
+hashed password for a user, one to check whether a user belong to a group, and
+one for telling whether a user can access a given store in a particular role.
 
-## Features
+```python
+# authentication and authorization callbacks
+@app.get_user_pass
+def get_user_pass(user: str) -> str|None:
+    return ...  # hashed password retrieved from somewhere
 
-The module provides a wrapper around the `Flask` class which extends its
-capabilities for managing authentication, authorization and parameters.
-This is intended for a REST API implementation serving a remote client
-application through HTTP methods called on a path, with HTTP or JSON
-parameters passed in and a JSON result is returned: this help implement
-an authenticated function call over HTTP.
+@app.user_in_group
+def user_in_group(user: str, group: str) -> bool:
+    return ...  # whether user belongs to group
 
-[**Authentication**](DOCUMENTATION.md#authentication),
-i.e. checking *who* is doing the request, is performed whenever an
-authorization is required on a route.
-The module implements inheriting the web-server authentication,
-various password authentication (HTTP Basic, or HTTP/JSON parameters),
-tokens (custom or JWT passed in headers or as a parameter),
-a fake authentication scheme useful for local application testing,
-or relying on a user provided function to check a password or code.
-It allows to have a login route to generate authentication tokens.
-For registration, support functions allow to hash new passwords consistently
-with password checks.
-Alternate password checking schemes (eg temporary code, external LDAP server)
-can be plug in easily through a hook.
-Multi-factor authentication can be implemented easily thanks to per-route
-*realms*.
+@app.object_perms("store")
+def store_permission(sid: int, user: str, role: str) -> bool|None:
+    return ...  # whether user can access store sid in role
+```
 
-[**Authorizations**](DOCUMENTATION.md#authorization),
-i.e. checking whether the above *who* can perform a request, are managed by
-mandatory permission declaration on a route (eg a role name, or an object
-access), and relies on supplied functions to check whether a user has this role
-or can access a particular object.
-Authorization can also be provided from a third party through JWT tokens
-following the [OAuth2](https://oauth.net/2/) approach.
+The framework ensures that routes are only called by authenticated users
+who have the right authorizations.
+Secure and reasonable defaults are provided, but most features can be adjusted
+or extended to particular needs through numerous directives and hooks.
+Authentication and authorization callback invocations are cached for efficiency.
 
-[**Parameters**](DOCUMENTATION.md#parameters) expected in the request can be
-declared, their presence and type checked, and they are added automatically as
-named parameters to route functions, skipping the burden of checking them in
-typical flask functions. The module manages *http*, *json* and *files*.
-In practice, importing Flask's `request` global variable is not necessary.
-The philosophy is that a REST API entry point is a function call through HTTP,
-so the route definition should be a function, avoiding relying on magic globals.
-The parameter handling based on type hints was inspired and is an extension of
-[fastapi](https://fastapi.tiangolo.com/lo/) approach.
+## More
 
-[**Utils**](DOCUMENTATION.md#utils) include the convenient `Reference` class which
-allows to share possibly thread-local data for import, error and CORS handling.
-
-It makes sense to integrate these capabilities into a Flask wrapper so that only
-one extended decorator is needed on a route, meaning that the security cannot be
-forgotten, compared to an extension which would require additional decorators.
-Also, parameters checks are relevant to security in general and interdependent
-as checking for object ownership requires accessing parameters.
-
-Note that web-oriented flask authentication modules are not really
-relevant in the REST API context, where the server does not care about
-presenting login forms or managing views, for instance.
-However, some provisions are made so that it can *also* be used for a web
-application: CORS, login page redirection…
-
-## Documentation
-
-See the [detailed documentation](DOCUMENTATION.md) for how to best take advantage
-of this module.
+- [full documentation](https://zx80.github.io/flask-simple-auth/).
+- [sources](https://github.com/zx80/flask-simple-auth) and 
+  [issues](https://github.com/zx80/flask-simple-auth/issues) on
+  [GitHub](https://github.com/).
+- install [package](https://pypi.org/project/FlaskSimpleAuth/) from
+  [PyPI](https://pypi.org/).
+- latest version is *23.2* published on 2023-07-23.
 
 ## License
 
@@ -134,16 +109,3 @@ This software is *public domain*.
 All software has bug, this is software, hence…
 Beware that you may lose your hairs or your friends because of it.
 If you like it, feel free to send a postcard to the author.
-
-## Versions
-
-[Sources](https://github.com/zx80/flask-simple-auth),
-[documentation](https://zx80.github.io/flask-simple-auth/) and
-[issues](https://github.com/zx80/flask-simple-auth/issues)
-are hosted on [GitHub](https://github.com).
-Install [package](https://pypi.org/project/FlaskSimpleAuth/) from
-[PyPI](https://pypi.org/).
-
-Latest version is *23.2* published on 2023-07-23.
-
-See [all versions](VERSIONS.md).
