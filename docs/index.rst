@@ -1,8 +1,8 @@
-FlaskSimpleAuth documentation
-=============================
+FlaskSimpleAuth: A Secure Flask Framework
+=========================================
 
 FlaskSimpleAuth is a Flask wrapper to add a declarative security layer to
-your routes with authentification, authorization and parameter management.
+routes with authentification, authorization and parameter management.
 
 .. image:: https://github.com/zx80/flask-simple-auth/actions/workflows/fsa.yml/badge.svg?branch=master&style=flat
    :alt: Status
@@ -32,29 +32,38 @@ your routes with authentification, authorization and parameter management.
    :alt: License
    :target: https://creativecommons.org/publicdomain/zero/1.0/
 
+With FlaskSimpleAuth, application and security are separated:
+
+- the **application** focusses on what to do, and *declares* its security
+  constraints.
+- the **configuration** declares *how* the authentification and authorization
+  constraints are checked, with numerous state-of-the-art possibilities.
+- the **framework** implements and enforces the security on the application
+  routes, with safe defaults so that security cannot be overlooked.
+
 In the following Flask application, two routes are implemented.
+
+- the first route allows *ALL* authenticated users to access the store list.
+- the second route allows an authenticated *user* which is a *manager* of
+  *store* number *sid* to add the quantity of product to the store inventory.
 
 .. code:: python
 
     # file "app.py"
-    import FlaskSimpleAuth as fsa
+    from FlaskSimpleAuth import Flask
 
-    app = fsa.Flask("acme")
+    app = Flask("acme")
     app.config.from_envvar("ACME_CONFIG")
 
     @app.get("/store", authorize="ALL")
     def get_store(pattern: str = "%"):
         # return the list of stores matching optional parameter pattern
-        return fsa.jsonify(...), 200
+        return ..., 200
 
     @app.post("/store/<sid>", authorize=("store", "sid", "manager"))
     def post_store(sid: int, product: str, quantity: int):
         # product is added in quantity to store sid
-        return "", 201
-
-- the first route allows *ALL* authenticated users to access the store list.
-- the second route allows an authenticated *user* which is a *manager* of
-  *store* number *sid* to add the quantity of product to the store inventory.
+        return ..., 201
 
 In this code, there is *no* clue about how users are authenticated, this is set
 from the configuration.
@@ -93,7 +102,7 @@ given store in a particular role.
 
 The framework ensures that routes are only called by authenticated users
 who have the right authorizations.
-Secured and reasonable defaults are provided, but most features can be adjusted
+Secure and reasonable defaults are provided, but most features can be adjusted
 or extended to particular needs through numerous directives and hooks.
 Authentication and authorization callback invocations are cached for efficiency.
 
@@ -104,7 +113,7 @@ Authentication and authorization callback invocations are cached for efficiency.
    Introduction <README>
    Documentation <DOCUMENTATION>
    Versions <VERSIONS>
-   API <autoapi/FlaskSimpleAuth/>
+   API <autoapi>
 
 Indices and tables
 ==================
