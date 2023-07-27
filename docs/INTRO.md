@@ -1,20 +1,10 @@
-# Flask Simple Auth
+# Introduction to FlaskSimpleAuth
 
 Simple authentication, authorization, parameter checks and utils
 for [Flask](https://flask.palletsprojects.com/), controled from
 Flask configuration and the extended `route` decorator.
 
-![Status](https://github.com/zx80/flask-simple-auth/actions/workflows/fsa.yml/badge.svg?branch=master&style=flat)
-![Tests](https://img.shields.io/badge/tests-79%20✓-success)
-![Coverage](https://img.shields.io/badge/coverage-100%25-success)
-![Issues](https://img.shields.io/github/issues/zx80/flask-simple-auth?style=flat)
-![Python](https://img.shields.io/badge/python-3-informational)
-![Version](https://img.shields.io/pypi/v/FlaskSimpleAuth)
-![Badges](https://img.shields.io/badge/badges-8-informational)
-![License](https://img.shields.io/pypi/l/flasksimpleauth?style=flat)
-
-**Contents:** [Example](#example), [Features](#features),
-[Documentation](#documentation), [License](#license), [Versions](#versions).
+**Contents:** [Example](#example), [Features](#features), [License](#license).
 
 ## Example
 
@@ -122,11 +112,6 @@ presenting login forms or managing views, for instance.
 However, some provisions are made so that it can *also* be used for a web
 application: CORS, login page redirection…
 
-## Documentation
-
-See the [detailed documentation](DOCUMENTATION.md) for how to best take advantage
-of this module.
-
 ## License
 
 This software is *public domain*.
@@ -134,16 +119,3 @@ This software is *public domain*.
 All software has bug, this is software, hence…
 Beware that you may lose your hairs or your friends because of it.
 If you like it, feel free to send a postcard to the author.
-
-## Versions
-
-[Sources](https://github.com/zx80/flask-simple-auth),
-[documentation](https://zx80.github.io/flask-simple-auth/) and
-[issues](https://github.com/zx80/flask-simple-auth/issues)
-are hosted on [GitHub](https://github.com).
-Install [package](https://pypi.org/project/FlaskSimpleAuth/) from
-[PyPI](https://pypi.org/).
-
-Latest version is *23.2* published on 2023-07-23.
-
-See [all versions](VERSIONS.md).

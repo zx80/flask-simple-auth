@@ -1,4 +1,4 @@
-# FlaskSimpleAuth Module Documentation
+# FlaskSimpleAuth Documentation
 
 This modules helps handling *authentication*, *authorizations*,
 *parameters* and provide other *utils* for
@@ -8,7 +8,6 @@ Flask configuration and the extended `route` decorator.
 ## Contents
 
 - [Motivation](#motivation),
-  [Examples and Features](#examples-and-features),
   [Installation](#install) and
   [Initialization](#initialization).
 - [Authentication](#authentication)
@@ -67,12 +66,6 @@ This module does not care much about web and application oriented features:
 it is a Flask framework extension which aims at better handling HTTP-related
 features. It could be used as a cleaner layer for other Flask
 application-oriented extensions such as Flask-Security.
-
-## Examples and Features
-
-A simple [example](README.md#example) is available on the main page.
-[Features](README.md#features) are also described there.
-Look out for the [demo](demo/) application for more fully working examples.
 
 ## Install
 
@@ -1207,6 +1200,8 @@ Todo or not todo…
 
 ### Documentation
 
+- sphinxify
+- include demo? point to demo?
 - Tutorial? Recipee?
 - comparisons with other frameworks
 - build and link API doc?
