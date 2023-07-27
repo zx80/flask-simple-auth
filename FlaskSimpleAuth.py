@@ -147,7 +147,7 @@ class string(str):
 
 # "JsonData = json.loads" would do:-)
 class JsonData:
-    """Magic JSON type.
+    """Magic JSON parameter type.
 
     This triggers interpretting a parameter as JSON when used as a parameter type on a route.
     """
