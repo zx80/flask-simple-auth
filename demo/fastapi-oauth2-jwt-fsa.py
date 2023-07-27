@@ -16,14 +16,12 @@ log = logging.getLogger("demo")
 app = fsa.Flask("demo")
 app.config.from_envvar("DEMO_CONFIG")
 
-# user db: johndoe:secret
-# NOTE 12 implies X00 ms computation on the server, you probably should not want that!
 fake_users_db = {
     "johndoe": {
         "username": "johndoe",
         "full_name": "John Doe",
         "email": "johndoe@example.com",
-        "hashed_password": "$2b$12$EixZaYVK1fsbw1ZfbX3OXePaWxn96p36WQoeG6Lruj3vjPGga31lW",
+        "hashed_password": app.hash_password("secret"),
         "disabled": False,
     }
 }
