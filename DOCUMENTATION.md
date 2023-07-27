@@ -5,7 +5,7 @@ This modules helps handling *authentication*, *authorizations*,
 [Flask](https://flask.palletsprojects.com/), controled from
 Flask configuration and the extended `route` decorator.
 
-## Table of Contents
+## Contents
 
 - [Motivation](#motivation),
   [Examples and Features](#examples-and-features),
