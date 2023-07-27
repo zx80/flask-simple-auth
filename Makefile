@@ -57,6 +57,7 @@ clean:
 	$(RM) $(F.pdf)
 	$(MAKE) -C test clean
 	$(MAKE) -C demo clean
+	$(MAKE) -C docs clean
 
 clean.venv: clean
 	$(RM) -r venv *.egg-info
