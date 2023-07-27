@@ -94,7 +94,7 @@ given store in a particular role.
     # authentication and authorization callbacks
     @app.get_user_pass
     def get_user_pass(user: str) -> str|None:
-        return ...  # hashed password retrieved from database
+        return ...  # hashed password retrieved from somewhere
 
     @app.object_perms("store")
     def store_permission(sid: int, user: str, role: str) -> bool|None:
