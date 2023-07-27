@@ -34,18 +34,6 @@ your routes with authentification, authorization and parameter management.
 
 In the following Flask application, two routes are implemented.
 
-- the first route allows *ALL* authenticated users to access the store list.
-- the second route allows an authenticated *user* which is a *manager* of
-  *store* number *sid* is allowed to add the quantity of product to
-  the store inventory.
-
-In this code, there is *no* clue about how users are authenticated, this is set
-from the configuration.
-Only authorizations are declared on the route with the mandatory ``authorize``
-parameter.
-How these are checked is also set from the configuration.
-HTTP or JSON parameters are automatically converted to the expected type.
-
 .. code:: python
 
     # file "app.py"
@@ -55,7 +43,7 @@ HTTP or JSON parameters are automatically converted to the expected type.
     app.config.from_envvar("ACME_CONFIG")
 
     @app.get("/store", authorize="ALL")
-    def get_store(pattern: str = None):
+    def get_store(pattern: str = "%"):
         # return the list of stores matching optional parameter pattern
         return fsa.jsonify(...), 200
 
@@ -63,6 +51,17 @@ HTTP or JSON parameters are automatically converted to the expected type.
     def post_store(sid: int, product: str, quantity: int):
         # product is added in quantity to store sid
         return "", 201
+
+- the first route allows *ALL* authenticated users to access the store list.
+- the second route allows an authenticated *user* which is a *manager* of
+  *store* number *sid* to add the quantity of product to the store inventory.
+
+In this code, there is *no* clue about how users are authenticated, this is set
+from the configuration.
+Only authorizations are declared on the route with the mandatory ``authorize``
+parameter.
+How these are checked is also set from the configuration.
+HTTP or JSON parameters are automatically converted to the expected type.
 
 Here is an example of configuration for the above application:
 Users are identified either with a JWT token or with a basic authentification.
@@ -77,9 +76,9 @@ Users are identified either with a JWT token or with a basic authentification.
     FSA_TOKEN_TYPE = "jwt"
     FSA_TOKEN_SECRET = os.environ["ACME_SECRET"]
 
-In this example, the framework needs two callbacks: one for retrieving the
-salted hashed password for a user, and one for telling whether a user can
-access a given store in a particular role.
+In this example, the framework needs two callbacks: one to retrieve the salted
+hashed password for a user, and one for telling whether a user can access a
+given store in a particular role.
 
 .. code:: python
 
@@ -95,7 +94,7 @@ access a given store in a particular role.
 The framework ensures that routes are only called by authenticated users
 who have the right authorizations.
 Secured and reasonable defaults are provided, but most features can be adjusted
-or extended to particular needs through directives and hooks.
+or extended to particular needs through numerous directives and hooks.
 Authentication and authorization callback invocations are cached for efficiency.
 
 .. toctree::
