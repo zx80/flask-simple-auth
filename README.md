@@ -96,7 +96,7 @@ Authentication and authorization callback invocations are cached for efficiency.
 ## More
 
 - [full documentation](https://zx80.github.io/flask-simple-auth/).
-- [sources](https://github.com/zx80/flask-simple-auth) and 
+- [sources](https://github.com/zx80/flask-simple-auth) and
   [issues](https://github.com/zx80/flask-simple-auth/issues) on
   [GitHub](https://github.com/).
 - install [package](https://pypi.org/project/FlaskSimpleAuth/) from
