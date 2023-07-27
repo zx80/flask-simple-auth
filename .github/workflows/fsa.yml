@@ -34,12 +34,12 @@ jobs:
         pip install -e .[dev,tests,demo,password,jwt,cors,httpauth,redis,memcached]
     # Checks
     - name: Check with mypy
-      run: mypy --implicit-optional FlaskSimpleAuth.py
+      run: make check.mypy
     # FIXME unwanted changes, should be filtered with "# fmt:" tags
     # - name: Check with black
     #   run: black --check CacheToolsUtils.py
     - name: Check with flake8
-      run: flake8 --ignore=E127,E227,E501,E721,F401,E402,W504 FlaskSimpleAuth.py
+      run: make check.flake8
     - name: Check with pytest
       run: pytest test/
     - name: Check with coverage
@@ -48,4 +48,4 @@ jobs:
         make -C demo COVER_DATA=../.coverage check.coverage
         coverage report --fail-under=100 --include=FlaskSimpleAuth.py
     - name: Check with pymarkdown
-      run: pymarkdown scan *.md
+      run: make check.pymarkdown
