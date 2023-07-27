@@ -2315,12 +2315,12 @@ class FlaskSimpleAuth:
         #
         # initialize managers
         #
-        self._cm._initialize()
         self._am._initialize()
         self._zm._initialize()
         self._pm._initialize()
         self._qm._initialize()
         self._rm._initialize()
+        self._cm._initialize()
         #
         # blueprint hacks
         #
