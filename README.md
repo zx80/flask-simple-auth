@@ -43,7 +43,7 @@ def get_store(pattern: str = "%"):
     return ..., 200
 
 @app.post("/store/<sid>", authorize=("store", "sid", "manager"))
-def post_store(sid: int, product: str, quantity: int):
+def post_store_sid(sid: int, product: str, quantity: int):
     # product is added in quantity to store sid
     return ..., 201
 ```
