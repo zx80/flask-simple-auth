@@ -13,7 +13,7 @@ parameter management.
 ![Badges](https://img.shields.io/badge/badges-8-informational)
 ![License](https://img.shields.io/pypi/l/flasksimpleauth?style=flat)
 
-With FlaskSimpleAuth, application and security are separated:
+With FlaskSimpleAuth, application and security concerns are separated:
 
 - the **application** focusses on *what* to do, and *declares* its security
   constraints.
