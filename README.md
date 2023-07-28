@@ -102,7 +102,7 @@ Authentication and authorization callback invocations are cached for efficiency.
   [GitHub](https://github.com/).
 - install [package](https://pypi.org/project/FlaskSimpleAuth/) from
   [PyPI](https://pypi.org/).
-- latest version is *23.2* published on 2023-07-23.
+- latest version is *24.0* published on 2023-07-28.
 
 ## License
 

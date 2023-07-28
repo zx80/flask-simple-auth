@@ -3,14 +3,15 @@
 Sources are available on [GitHub](https://github.com/zx80/flask-simple-auth)
 and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 
-## 24.0 on ?
+## 24.0 on 2023-07-28
 
 Add support for custom authentication.
 Extend `ErrorResponse` with headers and content type.
-Refactor authentication, authorization, request, parameter, response, token,
-password and cache management.
 Add auto-generated API documentation.
 Improve documentation for Sphinx with RTD theme.
+Refactor documentation management in a subdirectory.
+Refactor authentication, authorization, request, parameter, response, token,
+password and cache management code.
 
 ## 23.2 on 2023-07-23
 
