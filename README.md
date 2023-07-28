@@ -68,7 +68,7 @@ FSA_TOKEN_TYPE = "jwt"
 FSA_TOKEN_SECRET = os.environ["ACME_SECRET"]
 ```
 
-In this example, the framework needs tree callbacks: one to retrieve the salted
+In this example, the framework needs three callbacks: one to retrieve the salted
 hashed password for a user, one to check whether a user belong to a group, and
 one for telling whether a user can access a given store in a particular role.
 
