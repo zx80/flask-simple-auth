@@ -10,7 +10,9 @@
 project = "FlaskSimpleAuth"
 copyright = "2023, Calvin"
 author = "Calvin"
-release = "24.0"
+
+from importlib.metadata import version as pkg_version
+release = pkg_version("FlaskSimpleAuth")
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
