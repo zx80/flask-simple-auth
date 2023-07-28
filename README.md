@@ -16,19 +16,19 @@ parameter management.
 With FlaskSimpleAuth, application and security concerns are separated:
 
 - the **application** focusses on *what* to do, and *declares* its security
-  constraints.
+  requirements.
 - the **configuration** declares *how* the authentification and authorization
   constraints are checked, with numerous state-of-the-art possibilities made
   available through directives and hooks.
 - the **framework** *implements* and *enforces* the security on the application
   routes, with safe defaults so that security cannot be overlooked.
 
-In the following Flask application, two routes are implemented.
+The following Flask application provides two routes: 
 
-- the first route allows any authenticated *user* in group *employee* to
+- `GET /store` allows any authenticated *user* in group *employee* to
   access the store list.
-- the second route allows an authenticated *user* which is a *manager* of
-  *store* number *sid* to add the quantity of product to the store inventory.
+- `POST /store/<sid>` allows an authenticated *user* which is a *manager* of
+  *store* number *sid* to add a quantity of product to the store inventory.
 
 ```python
 # file "app.py"
@@ -69,7 +69,7 @@ FSA_TOKEN_SECRET = os.environ["ACME_SECRET"]
 ```
 
 In this example, the framework needs three callbacks: one to retrieve the salted
-hashed password for a user, one to check whether a user belong to a group, and
+hashed password for a user, one to check whether a user belongs to a group, and
 one for telling whether a user can access a given store in a particular role.
 
 ```python
@@ -89,8 +89,9 @@ def store_permission(sid: int, user: str, role: str) -> bool|None:
 
 The framework ensures that routes are only called by authenticated users
 who have the right authorizations.
-Secure and reasonable defaults are provided, but most features can be adjusted
-or extended to particular needs through numerous directives and hooks.
+Secure and reasonable defaults are provided.
+Most features can be adjusted or extended to particular needs through numerous
+directives and hooks.
 Authentication and authorization callback invocations are cached for efficiency.
 
 ## More
