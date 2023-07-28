@@ -9,7 +9,8 @@ Add support for custom authentication.
 Extend `ErrorResponse` with headers and content type.
 Refactor authentication, authorization, request, parameter, response, token,
 password and cache management.
-Improve documentation for Sphinx.
+Add auto-generated API documentation.
+Improve documentation for Sphinx with RTD theme.
 
 ## 23.2 on 2023-07-23
 
