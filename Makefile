@@ -13,7 +13,7 @@ F.pdf	= $(F.md:%.md=%.pdf)
 PYTHON	= python
 PIP		= venv/bin/pip
 
-.PHONY: check check.mypy check.flake8 check.black check.pytest check.demo check.coverage check.pymarkdown
+.PHONY: check check.mypy check.flake8 check.black check.pytest check.demo check.coverage check.docs
 check.mypy: venv
 	source venv/bin/activate
 	mypy --implicit-optional --check-untyped-defs $(MODULE).py
@@ -32,8 +32,9 @@ check.pytest: venv
 check.coverage: venv
 	$(MAKE) -C test coverage
 
-check.pymarkdown:
+check.docs:
 	pymarkdown scan *.md */*.md
+	sphinx-lint docs/
 
 # just run the demo
 check.demo: venv
@@ -45,7 +46,7 @@ check: venv
 	source venv/bin/activate
 	type $(PYTHON)
 	$(MAKE) check.mypy
-	$(MAKE) check.pymarkdown
+	$(MAKE) check.docs
 	$(MAKE) check.$(STYLE)
 	$(MAKE) check.pytest && \
 	$(MAKE) check.demo && \

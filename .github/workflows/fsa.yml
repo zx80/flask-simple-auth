@@ -44,5 +44,3 @@ jobs:
       run: make check.pytest
     - name: Check with coverage
       run: make check.coverage
-    - name: Check with pymarkdown
-      run: make check.pymarkdown
