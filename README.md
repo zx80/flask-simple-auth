@@ -27,7 +27,7 @@ The following Flask application provides two routes:
 
 - `GET /store` allows any authenticated *user* in group *employee* to
   access the store list.
-- `POST /store/<sid>` allows an authenticated *user* which is a *manager* of
+- `POST /store/<sid>` allows an authenticated *user* who is a *manager* of
   *store* number *sid* to add a quantity of product to the store inventory.
 
 ```python
