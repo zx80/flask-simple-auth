@@ -500,7 +500,8 @@ Multi-factor authentication (MFA) is supported by generating intermediate tokens
 on distinct *realms* at different stages, as illustrated in the
 [demo](demo/mfa.py) and below:
 
-- a first password-authenticated route returns an intermediate short-lived token
+- a first password-authenticated route returns an intermediate short-lived
+  10-minutes token.
 - required on a second route which generates a final token if a second
   authentication (eg code received by SMS or mail) is validated.
 - giving final access to the application.
@@ -510,7 +511,7 @@ on distinct *realms* at different stages, as illustrated in the
 @app.get("/login1", authorize="ALL", auth="basic")
 def get_login1(user: CurrentUser):
     generate_and_send_code_to_user(user)
-    return json(app.create_token(user, "stage1", delay=1.0)), 200
+    return json(app.create_token(user, "stage1", delay=10.0)), 200
 
 # Stage 2: check token1 and code parameter, return token2
 @app.get("/login2", authorize="ALL", auth="token", realm="stage1")
