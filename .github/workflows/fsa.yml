@@ -41,11 +41,8 @@ jobs:
     - name: Check with flake8
       run: make check.flake8
     - name: Check with pytest
-      run: pytest test/
+      run: make check.pytest
     - name: Check with coverage
-      run: |
-        coverage run -m pytest --log-level=debug --capture=tee-sys test/
-        make -C demo COVER_DATA=../.coverage check.coverage
-        coverage report --fail-under=100 --include=FlaskSimpleAuth.py
+      run: make check.coverage
     - name: Check with pymarkdown
       run: make check.pymarkdown
