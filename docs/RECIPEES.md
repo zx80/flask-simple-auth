@@ -103,6 +103,11 @@ returns such a value stored from a previous call.
 - use this new authentication method in `FSA_AUTH` or maybe on some route with
   an `auth="xyz"` parameter.
 
+### How-to test authentication and authorizations without any password?
+
+Use `FSA_AUTH="fake"` and pass the expected login as a request parameter
+(`FSA_FAKE_LOGIN`, defaults to `LOGIN`).
+
 ### How-to use LDAP/AD authentication?
 
 The AD password checking model is pretty strange, as it requires to send the
