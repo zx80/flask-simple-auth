@@ -6,6 +6,7 @@
    :caption: Contents
 
    Introduction <INTRO>
+   Tutorial <TUTORIAL>
    Documentation <DOCUMENTATION>
    API <autoapi>
    Versions <VERSIONS>

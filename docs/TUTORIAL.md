@@ -290,7 +290,7 @@ curl -si -X POST -u "acme:$ACME_ADMIN_PASS" \
 ```
 
 By default, any group name is accepted with `authorize`, and may fail at run
-time. It is possible to restrict the available groups with `FSA_GROUPS` so that
+time. Available groups can be explicitely declare with `FSA_GROUPS` so that
 a configuration error is raised instead:
 
 ```python

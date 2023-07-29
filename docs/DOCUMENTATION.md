@@ -1185,6 +1185,7 @@ Todo or not todo…
   how to ensure that logging is initialized?
 - the doc and implementation should clarify exception handling,
   and possible overrides.
+- add ability to catch and process any user error.
 
 ### Software Engineering
 
