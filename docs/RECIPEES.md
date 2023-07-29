@@ -82,11 +82,49 @@ have a strong opinion against it.
 The number of rounds is kept as low as allowed by the library because
 cryptographic password functions are very expensive, eg with *12* rounds,
 which is `passlib` default, results in *several 100 ms* computation time,
-which for a server is astronomically high.o
+which for a server is astronomically high.
 
 Method `app.hash_password(…)` applies hashes the passwords according to the
 current configuration. The `get_user_pass` hook will work as expected if it
 returns such a value stored from a previous call.
+
+### How-to implement my own authentication scheme?
+
+- create a hooks which returns the login based on the app and request:
+  ```python
+  def xyz_authentication(app, req):
+      # investigate the request and return the login
+      return …
+  ```
+- register this hook as an authentication scheme:
+  ```python
+  app.authentication("xyz", xyz_authentication)
+  ```
+- use this new authentication method in `FSA_AUTH` or maybe on some route with
+  an `auth="xyz"` parameter.
+
+### How-to use LDAP/AD authentication?
+
+The AD password checking model is pretty strange, as it requires to send the
+clear password to the authentication server to check whether it is accepted.
+To do that:
+
+- create a new password checking function which will do that.
+  ```python
+  def check_login_password_with_AD_server(login: str, password: str) -> bool|None:
+      import ldap
+      # connect to server… send login/pass… look for result…
+      return …
+  ```
+  - on `True`: the password is accepted
+  - on `False`: it is not
+  - on `None`: 401 (no such user)
+  - if unhappy: raise an `ErrorResponse` exception
+- register this hook
+  ```python
+  app.password_check(check_login_password_with_AD_server)
+  ```
+- you do not need to have a `get_user_pass` hook.
 
 ## Authorization
 
