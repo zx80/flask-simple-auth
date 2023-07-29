@@ -8,6 +8,7 @@
    Introduction <INTRO>
    Tutorial <TUTORIAL>
    Documentation <DOCUMENTATION>
+   Recipees <RECIPEES>
    API <autoapi>
    Versions <VERSIONS>
 
