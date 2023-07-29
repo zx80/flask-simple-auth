@@ -148,8 +148,8 @@ Create an `auth.py` file for the authentication and authorization stuff:
 from database import db
 
 # FlaskSimpleAuth password authentication hook
-def get_user_pass(user: str) -> str:
-    return db.get_user_pass(user)
+def get_user_pass(login: str) -> str:
+    return db.get_user_pass(login)
 
 # TODO MORE HOOKS
 
