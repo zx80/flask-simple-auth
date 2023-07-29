@@ -295,7 +295,7 @@ a configuration error is raised instead:
 
 ```python
 # append to "acme.conf"
-FSA_GROUPS = ["admin"]
+FSA_AUTHZ_GROUPS = ["admin"]
 ```
 
 Errors are shown as `text/plain` by default, but this can be changed to JSON:
