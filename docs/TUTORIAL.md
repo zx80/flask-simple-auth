@@ -227,7 +227,7 @@ def post_user(login: str, password: str):
     return f"user {login} added", 201
 ```
 
-This routes requires 2 mandatory parameters: `login` and `pass`.
+This routes requires 2 mandatory parameters: `login` and `password`.
 Then test:
 
 ```shell
