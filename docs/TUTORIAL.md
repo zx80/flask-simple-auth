@@ -132,7 +132,7 @@ db = fsa.Reference()
 
 # application database initialization, should probably just connect to an actual db.
 def init_app(app: fsa.Flask):
-    # initializa proxy object
+    # initialize proxy object
     db = db.set(AcmeData())
     # add an "admin" user if necessary
     if not db.user_exists("acme"):
