@@ -65,9 +65,9 @@ You must build the object yourself, based on the string user name.
   ```python
   app.special_parameter(UserObject, lambda _: get_user_object())
 
-  @app.route("/…", authorize="ALL")
+  @app.route("/...", authorize="ALL")
   def route_dotdotdot(user: UserObject)
-      …
+      ...
   ```
 
 ### How-to store login and passwords?
@@ -94,7 +94,7 @@ returns such a value stored from a previous call.
   ```python
   def xyz_authentication(app, req):
       # investigate the request and return the login or None for 401
-      return …
+      return ...
   ```
 - register this hook as an authentication scheme:
   ```python
@@ -113,8 +113,8 @@ To do that:
   ```python
   def check_login_password_with_AD_server(login: str, password: str) -> bool|None:
       import ldap
-      # connect to server… send login/pass… look for result…
-      return …
+      # connect to server... send login/pass... look for result...
+      return ...
   ```
   - on `True`: the password is accepted
   - on `False`: it is not
