@@ -111,20 +111,20 @@ class AcmeData:
     def __init__(self):
         self.users: dict[str, tuple[str, bool]] = {}
 
-    def user_exists(self, user: str) -> bool:
-        return user in db.users
+    def user_exists(self, login: str) -> bool:
+        return login in db.users
 
-    def add_user(self, user: str, pass: str, admin: bool) -> None:
-        if self.user_exists():
+    def add_user(self, login: str, password: str, admin: bool) -> None:
+        if self.user_exists(login):
             raise fsa.ErrorResponse(f"cannot overwrite existing user: {login}", 409)
         if not re.match(r"^[a-z][a-z0-9]+$", login):
             raise fsa.ErrorResponse(f"invalid login name: {login}", 400)
-        self.users[user] = (pass, admin)
+        self.users[login] = (password, admin)
 
-    def get_user_pass(self, user: str) -> str|None:
-        return self.users[user][0] if self.user_exists(user) else None
+    def get_user_pass(self, login: str) -> str|None:
+        return self.users[login][0] if self.user_exists(login) else None
 
-    def user_is_admin(self, user: str) -> bool:
+    def user_is_admin(self, login: str) -> bool:
         return self.users[user][1]
 
 # this is a proxy object to the actual database
