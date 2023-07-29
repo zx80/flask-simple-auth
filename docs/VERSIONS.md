@@ -1,4 +1,4 @@
-# Flask Simple Auth Versions
+# FlaskSimpleAuth Versions
 
 Sources are available on [GitHub](https://github.com/zx80/flask-simple-auth)
 and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
@@ -7,6 +7,7 @@ and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 
 Improve type declarations.
 Add a tutorial.
+Add recipees.
 
 ## 24.0 on 2023-07-28
 
