@@ -178,7 +178,7 @@ class Environ:
     pass
 
 
-class CurrentUser:
+class CurrentUser(str):
     """CurrentUser parameter type.
 
     This provides the authenticated user (str) when used as a parameter type on a route.
@@ -194,7 +194,7 @@ class CurrentApp:
     pass
 
 
-class Cookie:
+class Cookie(str):
     """Application Cookie parameter type.
 
     This provides the cookie value (str) when used as a parameter type on a route.
@@ -203,7 +203,7 @@ class Cookie:
     pass
 
 
-class Header:
+class Header(str):
     """Request Header parameter type.
 
     This provides the header value (str) when used as a parameter type on a route.
