@@ -93,7 +93,7 @@ returns such a value stored from a previous call.
 - create a hooks which returns the login based on the app and request:
   ```python
   def xyz_authentication(app, req):
-      # investigate the request and return the login
+      # investigate the request and return the login or None for 401
       return …
   ```
 - register this hook as an authentication scheme:
