@@ -124,7 +124,8 @@ To do that:
   ```python
   app.password_check(check_login_password_with_AD_server)
   ```
-- you do not need to have a `get_user_pass` hook.
+- you do not need to have a `get_user_pass` hook if this is the sole password
+  scheme used by your application.
 
 ## Authorization
 
