@@ -111,8 +111,11 @@ class AcmeData:
     def __init__(self):
         self.users: dict[str, tuple[str, bool]] = {}
 
-    def add_user(self, user: str, pass: str, admin: bool):
-        if user in db.users:
+    def user_exists(self, user: str) -> bool:
+        return user in db.users
+
+    def add_user(self, user: str, pass: str, admin: bool) -> None:
+        if self.user_exists():
             raise fsa.ErrorResponse(f"cannot overwrite existing user: {login}", 409)
         if not re.match(r"^[a-z][a-z0-9]+$", login):
             raise fsa.ErrorResponse(f"invalid login name: {login}", 400)
@@ -121,7 +124,7 @@ class AcmeData:
     def get_user_pass(self, user: str) -> str|None:
         return self.users[user][0] if self.user_exists(user) else None
 
-    def is_user_admin(self, user: str) -> bool:
+    def user_is_admin(self, user: str) -> bool:
         return self.users[user][1]
 
 # this is a proxy object to the actual database
@@ -204,7 +207,7 @@ Edit `auth.py`:
 # add group checking function
 def user_in_group(user: str, group: str) -> bool:
     if group == "admin":
-        return db.is_user_admin(user)
+        return db.user_is_admin(user)
     else:  # handle other groups here…
         return False
 
