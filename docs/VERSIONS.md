@@ -5,6 +5,7 @@ and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 
 ## ? on ?
 
+Add *gevent* and *eventlet* to `FSA_LOCAL`.
 Improve type declarations.
 Add a tutorial.
 Add recipees.
