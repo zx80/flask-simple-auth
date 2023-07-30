@@ -108,6 +108,9 @@ returns such a value stored from a previous call.
 Use `FSA_AUTH="fake"` and pass the expected login as a request parameter
 (`FSA_FAKE_LOGIN`, defaults to `LOGIN`).
 
+Fake authentication is **only** allowed for *localhost* connections and cannot
+be deployed on a real server.
+
 ### How-to use LDAP/AD authentication?
 
 The AD password checking model is pretty strange, as it requires to send the
@@ -188,3 +191,11 @@ For that, you must:
 ### How-to use pydantic or dataclasses in requests and responses?
 
 ### How-to ?
+
+## Miscellaneous
+
+### How-to allow non-TLS connections?
+
+The default configuration emphasizes security, so non TLS connections are
+rejected, unless running on *localhost* for tests.
+To allow non-TLS connections, set `FSA_SECURE = False`.
