@@ -137,8 +137,6 @@ To do that:
 
 ### How-to use multi-factor authentication (MFA)?
 
-See [MFA demo](https://github.com/zx80/flask-simple-auth/blob/main/demo/mfa.py).
-
 The idea is to rely on an intermediate *token* with a temporary *realm* to validate
 that an authenfication method has succeeded, and that another must still be checked. 
 
@@ -162,6 +160,8 @@ that an authenfication method has succeeded, and that another must still be chec
       return app.create_token(user), 200
   ```
 - Only allow token authentication on other routes with `FSA_AUTH = "token"`.
+
+See [MFA demo](https://github.com/zx80/flask-simple-auth/blob/main/demo/mfa.py).
 
 ## Authorization
 
