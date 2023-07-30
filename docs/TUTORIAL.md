@@ -190,8 +190,8 @@ export ACME_ADMIN_PASS="<a-good-password>"
 Restart and test the application:
 
 ```shell
-curl -si -X GET                 http://localhost:5000/hello-me  # 401
-curl -si -X GET -u "meca:Mec0!" http://localhost:5000/hello-me  # 404
+curl -si -X GET                            http://localhost:5000/hello-me  # 401
+curl -si -X GET -u "meca:Mec0!"            http://localhost:5000/hello-me  # 404
 curl -si -X GET -u "acme:$ACME_ADMIN_PASS" http://localhost:5000/hello-me  # 200
 ```
 
@@ -272,7 +272,7 @@ You should see the token as a JSON field in the response.
 Then proceed to use the token instead of the login/password:
 
 ```shell
-curl -si -X GET -H "Authorization: Bearer <token>" http://localhost:5000/hello-me
+curl -si -X GET -H "Authorization: Bearer <token>" http://localhost:5000/hello-me  # 200
 ```
 
 ## Further Improvements
@@ -290,9 +290,9 @@ After restarting the application, weak passwords are rejected:
 
 ```python
 curl -si -X POST -u "acme:$ACME_ADMIN_PASS" \
-  -d login="came" -d password="C@me" http://localhost:5000/user      # 400 (pass)
+  -d login="came" -d password="C@me"     http://localhost:5000/user  # 400 (pass length)
 curl -si -X POST -u "acme:$ACME_ADMIN_PASS" \
-  -d login="came" -d password="Cameleon" http://localhost:5000/user  # 400 (pass)
+  -d login="came" -d password="Cameleon" http://localhost:5000/user  # 400 (pass regex)
 ```
 
 By default, any group name is accepted with `authorize`, and may fail at run
