@@ -548,7 +548,7 @@ class Directives:
     """Password hash algorithm options from ``passlib``.
 
     Default for *bcrypt* is ident *2y* (132-bit salt) with *4* rounds (2⁴ hash iterations).
-    It is compatible with Apache. All *2\** are really equivalent.
+    It is compatible with Apache. All _2*_ variants are really equivalent.
     """
 
     FSA_PASSWORD_LEN: int = 0
