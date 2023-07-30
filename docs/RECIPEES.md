@@ -138,7 +138,7 @@ To do that:
 ### How-to use multi-factor authentication (MFA)?
 
 The idea is to rely on an intermediate *token* with a temporary *realm* to validate
-that an authenfication method has succeeded, and that another must still be checked. 
+that an authenfication method has succeeded, and that another must still be checked.
 
 - create a route with the *first* auth method, eg a login/password basic authentication.
   ```python
@@ -227,3 +227,17 @@ For that, you must:
 The default configuration emphasizes security, so non TLS connections are
 rejected, unless running on *localhost* for tests.
 To allow non-TLS connections, set `FSA_SECURE = False`.
+
+### How-to use a shared REDIS cache?
+
+FlaskSimpleAuth uses [`redis`](https://pypi.org/project/redis/) to deal with redis.
+
+- set `FSA_CACHE = "redis"`
+- set `FSA_CACHE_OPTS` so that the application can connect to the cache, eg:
+  ```python
+  FSA_CACHE_OPTS = { "host": "my.redis.server", "port": 6379 }
+  ```
+- if the service is shared, set `FSA_CACHE_PREFIX` to avoid cache entry collisions:
+  ```python
+  FSA_CACHE_PREFIX = "fsa."
+  ```
