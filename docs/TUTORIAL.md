@@ -56,7 +56,7 @@ FSA_MODE = "debug4"  # maximum verbosity
 Start the application in a terminal with the *werkzeug* local test server.
 
 ```shell
-export ACME_CONFIG="acme.conf"
+export ACME_CONFIG="acme.conf"  # where to find the config file
 flask --app ./app.py run --debug --reload
 # control-c to stop
 ```
@@ -81,8 +81,8 @@ Let us now add a new route with basic authentification.
 This requires:
 
 - storing user credentials somewhere.
-- providing a password hook to FlaskSimpleAuth.
-- creating an authenticated route. 
+- providing a password callback.
+- creating an authenticated route.
 
 Edit the `acme.conf` file to tell about basic authentication:
 
@@ -95,7 +95,7 @@ FSA_REALM = "acme"  # the app name is also the default
 For non trivial projects, it is good practice to split the application in
 several files. This creates an annoying chicken-and-egg issue with Python
 initializations. A common pattern is to define `init_app(app: Flask)`
-initialization functions in each file and to call from the application file,
+initialization functions in each file, to call them from the application file,
 and to use proxy objects to avoid loading ordering issues.
 
 First, create a `database.py` file which will hold our primitive database:
@@ -142,13 +142,13 @@ def init_app(app: fsa.Flask):
 Create an `auth.py` file for the authentication and authorization stuff:
 
 ```python
-# File "auth.py" 
+# File "auth.py"
 
 # we need the database!
 from database import db
 
 # FlaskSimpleAuth password authentication hook
-def get_user_pass(login: str) -> str:
+def get_user_pass(login: str) -> str|None:
     return db.get_user_pass(login)
 
 # TODO MORE HOOKS
@@ -161,7 +161,7 @@ def init_app(app: fsa.Flask):
 ```
 
 Edit the `app.py` file to initialize database and auth, and add a route
-which is open to *ALL* authenticated users: 
+which is open to *ALL* authenticated users:
 
 ```
 # insert in "app.py" initialization
@@ -197,8 +197,8 @@ curl -si -X GET -u "acme:$ACME_ADMIN_PASS" http://localhost:5000/hello-me  # 200
 
 ## Group Authorization and Parameters
 
-For group authorization, a hook must be provided to tell whether a user belongs
-to a group.
+For group authorization, a callback function must be provided to tell whether a
+user belongs to a group.
 
 Edit `auth.py`:
 
@@ -215,6 +215,7 @@ def user_in_group(user: str, group: str) -> bool:
     # register group hook
     app.user_in_group(user_in_group)
 ```
+
 Then edit `app.py` to create a route reserved to admins which inserts new users:
 
 ```python
@@ -232,9 +233,11 @@ Then test:
 
 ```shell
 curl -si -X POST -u "acme:$ACME_ADMIN_PASS" \
-  -d login="acme" -d password="Pass!" http://localhost:5000/user  # 409 (exists)
+                                      http://localhost:5000/user  # 400 (missing parameters)
 curl -si -X POST -u "acme:$ACME_ADMIN_PASS" \
-  -d login="123" -d password="Pass!" http://localhost:5000/user   # 400 (user)
+  -d login="acme" -d password="Pass!" http://localhost:5000/user  # 409 (user exists)
+curl -si -X POST -u "acme:$ACME_ADMIN_PASS" \
+  -d login="123" -d password="Pass!" http://localhost:5000/user   # 400 (bad user parameter)
 curl -si -X POST -u "acme:$ACME_ADMIN_PASS" \
   -d login="meca" -d password="Mec0!" http://localhost:5000/user  # 201
 curl -si -X GET -u "meca:Mec0!" http://localhost:5000/hello-me    # 200
