@@ -1131,6 +1131,7 @@ By contrast, *Flask Simple Auth*:
   [JavaScript Node.js](https://nodejs.org/),
   [Perl Dancer2](https://github.com/PerlDancer/Dancer2/),
   [PHP Lumen](https://lumen.laravel.com/),
+  [Postgres PostgREST](https://postgrest.org/),
   [Ruby Rails](https://rubyonrails.org/),
   [Rust Rocket](https://rocket.rs/),
   [Scala Play](https://www.playframework.com/)…
