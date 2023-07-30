@@ -161,6 +161,7 @@ that an authenfication method has succeeded, and that another must still be chec
       # else return the final token
       return app.create_token(user), 200
   ```
+- Only allow token authentication on other routes with `FSA_AUTH = "token"`.
 
 ## Authorization
 
