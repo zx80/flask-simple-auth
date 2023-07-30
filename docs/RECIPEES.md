@@ -177,7 +177,7 @@ For that, you must:
   ```
 - for detecting group name typos, declare existing groups in the configuration:
   ```python
-  FSA_AUTHZ_GROUP = [ "admin", "client", "manager", ... ]
+  FSA_AUTHZ_GROUPS = [ "admin", "client", "manager", ... ]
   ```
 
 ### How-to use object authorizations?
