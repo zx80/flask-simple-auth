@@ -1115,13 +1115,19 @@ class _PasswordManager:
         return False
 
     def check_password(self, pwd, ref) -> bool:
-        """Check whether password is ok wrt to reference."""
+        """Check whether password is ok wrt to reference.
+
+        This allows to check the prior password for a change password route.
+        """
         if not self._pass_context:  # pragma: no cover
             raise self._Err("password manager is disabled", self._fsa._server_error)
         return self._pass_context.verify(pwd, ref)
 
     def hash_password(self, pwd, check=True) -> str:
-        """Hash password according to the current password scheme."""
+        """Hash password according to the current password scheme.
+
+        Setting check to *False* disables automatic password quality checks.
+        """
         if not self._pass_context:  # pragma: no cover
             raise self._Err("password manager is disabled", self._fsa._server_error)
         if check:
@@ -1131,7 +1137,8 @@ class _PasswordManager:
     def check_user_password(self, user, pwd) -> str|None:
         """Check user/password against internal or external credentials.
 
-        Raise an exception if not ok, otherwise simply return the user."""
+        Raise an exception if not ok, otherwise simply return the user.
+        """
         # first, get user password hash if available
         if self._get_user_pass:
             try:
