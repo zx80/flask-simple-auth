@@ -237,7 +237,8 @@ FlaskSimpleAuth uses [`redis`](https://pypi.org/project/redis/) to deal with red
   ```python
   FSA_CACHE_OPTS = { "host": "my.redis.server", "port": 6379 }
   ```
-- if the service is shared, set `FSA_CACHE_PREFIX` to avoid cache entry collisions:
+- if the service is shared, set `FSA_CACHE_PREFIX` to the application name to
+  avoid cache entry collisions:
   ```python
-  FSA_CACHE_PREFIX = "fsa."
+  FSA_CACHE_PREFIX = "acme."
   ```
