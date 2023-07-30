@@ -2565,9 +2565,9 @@ class FlaskSimpleAuth:
         elif local == "werkzeug":
             from werkzeug.local import Local  # type: ignore
         elif local == "gevent":  # pragma: no cover
-            from gevent.local import local as Local
+            from gevent.local import local as Local  # type: ignore
         elif local == "eventlet":  # pragma: no cover
-            from eventlet.corolocal import local as Local
+            from eventlet.corolocal import local as Local  # type: ignore
         else:
             raise self._Bad(f"unexpected FSA_LOCAL value: {local}")
         self._local = Local()
