@@ -135,6 +135,33 @@ To do that:
 - you do not need to have a `get_user_pass` hook if this is the sole password
   scheme used by your application.
 
+### How-to use multi-factor authentication (MFA)?
+
+See [MFA demo](https://github.com/zx80/flask-simple-auth/blob/main/demo/mfa.py).
+
+The idea is to rely on an intermediate *token* with a temporary *realm* to validate
+that an authenfication method has succeeded, and that another must still be checked. 
+
+- create a route with the *first* auth method, eg a login/password basic authentication.
+  ```python
+  @app.get("/login1", authorize="ALL", auth="basic")
+  def get_login1(user: fsa.CurrentUser):
+      # trigger sending an email or SMS for a code
+      send_temporary_code_to_user(user)
+      # 10 minutes token provided with this basic authentication
+      return app.create_token(user, realm="login1", delay=10.0), 200
+  ```
+- create a route protected by the previous token, and check the email or SMS
+  code provided by the user at this stage.
+  ```python
+  @app.get("/login2", authorize="ALL", auth="token", realm="login1")
+  def get_login2(user: fsa.CurrentUser, code: str):
+      if not check_code_validity(user, code):
+          return "invalid validation code", 401
+      # else return the final token
+      return app.create_token(user), 200
+  ```
+
 ## Authorization
 
 For details, see the relevant
