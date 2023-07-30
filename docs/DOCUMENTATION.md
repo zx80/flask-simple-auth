@@ -1,9 +1,8 @@
 # FlaskSimpleAuth Documentation
 
-This modules helps handling *authentication*, *authorizations*,
-*parameters* and provide other *utils* for
-[Flask](https://flask.palletsprojects.com/), controled from
-Flask configuration and the extended `route` decorator.
+This modules helps handling *authentication*, *authorizations*, *parameters* and
+provide other *utils* for [Flask](https://flask.palletsprojects.com/), controled
+from Flask configuration and the extended `route` decorator.
 
 ## Contents
 
@@ -11,12 +10,12 @@ Flask configuration and the extended `route` decorator.
   [Installation](#install) and
   [Initialization](#initialization).
 - [Authentication](#authentication)
-  [Schemes](#authentication-schemes) (*basic*, *param*, *token*…) and
-  [Password Management](#password-management).
-- [Authorizations](#authorization) with
-  [Groups](#group-authorizations),
-  [OAuth](#oauth-authorizations) and about
-  [Objects](#object-authorizations)…
+  - [Schemes](#authentication-schemes) (*basic*, *param*, *token*…)
+  - [Password Management](#password-management).
+- [Authorizations](#authorization)
+  - [Groups](#group-authorizations)
+  - [OAuth](#oauth-authorizations)
+  - [Objects](#object-authorizations)
 - [Parameters](#parameters)
   *http*, *json* and *file* parameters are managed with type hints.
 - [Utils](#utils) such as
@@ -337,8 +336,9 @@ The available authentication schemes are:
     which the cookie/token is renewed automatically.
     Default is *0.0*, meaning no renewal.
 
-  Function `create_token(user)` creates a token for the user depending
-  on the current scheme. If `user` is not given, the current user is taken.
+  Function `create_token(user)` creates a valid token for the user depending
+  on the current scheme and detailed configuration.
+  If `user` is not given, the current user is taken.
   Other parameters can be overriden, such as `realm`, `delay`, `issuer`,
   `secret`… to allow full control if necessary, eg for MFA.
 
@@ -430,7 +430,7 @@ password checks:
   for available options, including the bad *plaintext*.
   Set to `None` to disable internal password checking.
 - `FSA_PASSWORD_OPTS` relevant options (for `passlib.CryptContext`).
-  Default is `{'bcrypt__default_rounds': 4, 'bcrypt__default_ident': '2y'}`.
+  Default is ident *2y* with *4* rounds.
 
 Beware that modern password checking is often pretty expensive in order to
 thwart password cracking if the hashed passwords are leaked, so that you
@@ -497,34 +497,8 @@ The client application will return the token as a parameter or in
 headers for authenticating later requests, till it expires.
 
 Multi-factor authentication (MFA) is supported by generating intermediate tokens
-on distinct *realms* at different stages, as illustrated in the
-[demo](demo/mfa.py) and below:
-
-- a first password-authenticated route returns an intermediate short-lived
-  10-minutes token.
-- required on a second route which generates a final token if a second
-  authentication (eg code received by SMS or mail) is validated.
-- giving final access to the application.
-
-```python
-# Stage 1: check password, return token1
-@app.get("/login1", authorize="ALL", auth="basic")
-def get_login1(user: CurrentUser):
-    generate_and_send_code_to_user(user)
-    return json(app.create_token(user, "stage1", delay=10.0)), 200
-
-# Stage 2: check token1 and code parameter, return token2
-@app.get("/login2", authorize="ALL", auth="token", realm="stage1")
-def get_login2(user: CurrentUser, code: str):
-    if not user_code_is_valid(user, code):
-        return f"invalid code for {user}", 401
-    # return token generated from default settings
-    return json(app.create_token()), 200
-
-@app.get("/logged", authorize="ALL", auth="token")
-def get_logged(user: CurrentUser):
-    return f"Hello {user}!", 200
-```
+on distinct *realms* at different stages, as discussed in [recipees](RECIPEES.md)
+and illustrated in the [demo](demo/mfa.py).
 
 Note that route-dependent realms do **not** work with `http-*` authentications
 because the realm is frozen by the external implementation in this case.
@@ -959,8 +933,8 @@ Some directives govern various details for this extension internal working.
 - `FSA_LOCAL` sets the internal object isolation level.
   It must be consistent with the module WSGI usage.
   Possible values are *process*, *thread* (several threads can be used by the
-  WSGI server) and *werkzeug* (should work with sub-thread level request
-  handling, eg greenlets).
+  WSGI server), *werkzeug* (may work with sub-thread level request
+  handling, eg greenlets), *gevent* and *eventlet*.
   Default is *thread*.
 
 - `FSA_ADD_HEADERS` allows to add headers to the generated response,
