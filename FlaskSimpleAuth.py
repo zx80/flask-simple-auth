@@ -136,12 +136,20 @@ _MODES = {
 # TYPE CASTS
 #
 class path(str):
-    """Type to distinguish str path parameters."""
+    """Type to distinguish str path parameters.
+
+    Use this type as hint for a route parameter to trigger a Flask route path
+    parameter. A path may contain ``/`` characters.
+    """
     pass
 
 
 class string(str):
-    """Type to distinguish str string parameters."""
+    """Type to distinguish str string parameters.
+
+    Use this type as hint for a route parameter to trigger a Flask route string
+    parameter. A string may not contain ``/`` characters.
+    """
     pass
 
 
@@ -149,7 +157,8 @@ class string(str):
 class JsonData:
     """Magic JSON parameter type.
 
-    This triggers interpretting a parameter as JSON when used as a parameter type on a route.
+    This triggers interpretting a parameter as JSON when used as a parameter
+    type on a route.
     """
     pass
 
@@ -655,10 +664,14 @@ class Directives:
     """Whether to activate Flask-CORS.
 
     This is needed to work around web browser security checks.
+    This implementation is delegated to the Flask-CORS extension.
     """
 
     FSA_CORS_OPTS: dict[str, Any] = {}
-    """Flask-CORS initialization options."""
+    """Flask-CORS initialization options.
+
+    See [Flask-CORS documentation](https://flask-cors.readthedocs.io/) for details.
+    """
 
 
 class _TokenManager:
@@ -1115,19 +1128,13 @@ class _PasswordManager:
         return False
 
     def check_password(self, pwd, ref) -> bool:
-        """Check whether password is ok wrt to reference.
-
-        This allows to check the prior password for a change password route.
-        """
+        """Check whether password is ok wrt to reference."""
         if not self._pass_context:  # pragma: no cover
             raise self._Err("password manager is disabled", self._fsa._server_error)
         return self._pass_context.verify(pwd, ref)
 
     def hash_password(self, pwd, check=True) -> str:
-        """Hash password according to the current password scheme.
-
-        Setting check to *False* disables automatic password quality checks.
-        """
+        """Hash password according to the current password scheme."""
         if not self._pass_context:  # pragma: no cover
             raise self._Err("password manager is disabled", self._fsa._server_error)
         if check:
@@ -2707,12 +2714,19 @@ class FlaskSimpleAuth:
         return erh
 
     def cast(self, t, cast: CastFun = None):
-        """Add a cast function associated to a type."""
+        """Add a cast function associated to a type.
+
+        This function is called for type conversion on parameters.
+        """
         self._initialize()
         return self._pm.cast(t, cast)
 
     def special_parameter(self, t, sp: SpecialParameterFun = None):
-        """Add a special parameter type."""
+        """Add a special parameter type.
+
+        These special parameters are managed by calling the hook with a
+        the parameter name as an argument.
+        """
         self._initialize()
         return self._pm.special_parameter(t, sp)
 
@@ -2761,12 +2775,18 @@ class FlaskSimpleAuth:
     # PASSWORD CHECKS
     #
     def check_password(self, pwd, ref):
-        """Verify whether a password is correct compared to a reference (eg salted hash)."""
+        """Verify whether a password is correct compared to a reference (eg salted hash).
+
+        This allows to check the prior password for a change password route.
+        """
         self._initialize()
         return self._am._pm.check_password(pwd, ref)
 
     def hash_password(self, pwd, check=True):
-        """Hash password according to the current password scheme."""
+        """Hash password according to the current password scheme.
+
+        Setting check to *False* disables automatic password quality checks.
+        """
         self._initialize()
         return self._am._pm.hash_password(pwd, check)
 
