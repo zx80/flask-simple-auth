@@ -134,8 +134,57 @@ To do that:
 
 ## Authorization
 
+For details, see the relevant
+[authorization](https://zx80.github.io/flask-simple-auth/DOCUMENTATION.html#authorization)
+section in the documentation.
+
+### How-to close a route?
+
+Use `authorize="NONE"` as a route parameter.
+This will trigger a 403 forbidden response.
+
+### How-to open a route?
+
+Use `authorize="ANY"` as a route parameter.
+*ANY*one can execute the route, without authentication.
+
+### How-to just authenticate a route?
+
+Use `authorize="ALL"` as a route parameter.
+*ALL* authenticated users can execute the route.
+
+### How-to use group authorizations?
+
+Group authorizations are permissions based on belonging to a group.
+For that, you must:
+
+- create a callback to check whether a user belongs to a group:
+  ```python
+  def user_in_group(login: str, group: str) -> bool:
+      return ... # whether user belong to the group
+  ```
+- register this callback as a `user_in_group` hook:
+  ```python
+  app.user_in_group(user_in_group)
+  ```
+- declare that the group authorization is required on a route definition:
+  ```python
+  @app.route("/admin-access", authorize="admin")
+  def ...
+  ```
+- for detecting group name typos, declare existing groups in the configuration:
+  ```python
+  FSA_AUTHZ_GROUP = [ "admin", "client", "manager", ... ]
+  ```
+
+### How-to use object authorizations?
+
+### How-to use oauth authorizations?
+
 ### How-to ?
 
 ## Parameters
+
+### How-to use pydantic or dataclasses in requests and responses?
 
 ### How-to ?
