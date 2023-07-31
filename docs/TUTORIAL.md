@@ -268,8 +268,6 @@ with two mandatory parameters: `login` and `password`.
 # append to "app.py"
 @app.post("/user", authorize="admin")
 def post_user(login: str, password: str):
-    # login checks are in "add_user"
-    # password checks are in "hash_password"
     db.add_user(login, app.hash_password(pass), False)
     return f"user {login} added", 201
 ```
