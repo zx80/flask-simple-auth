@@ -231,7 +231,7 @@ or the sender of this particular message.
   with the domain, the name of the variable which identifies the object, and
   the role.
   ```python
-  @app.patch(/stuff/<id>", authorize=("stuff", "id", "update")
+  @app.patch("/stuff/<id>", authorize=("stuff", "id", "update")
   def patch_stuff_id(id: int, ...):
       return ...
   ```
