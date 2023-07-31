@@ -8,7 +8,7 @@
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
 project = "FlaskSimpleAuth"
-copyright = "2023, Calvin"
+copyright = "2021-2023, Calvin"
 author = "Calvin"
 
 from importlib.metadata import version as pkg_version
