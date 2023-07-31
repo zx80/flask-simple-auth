@@ -128,12 +128,12 @@ class AcmeData:
 
 ## Basic Authentication
 
-Let us now add a new route with basic authentification.
+Let us now add new routes with basic authentification.
 This requires:
 
 - storing user credentials somewhere.
 - providing a password callback.
-- creating an authenticated route.
+- creating authenticated routes.
 
 Edit the `acme.conf` file to tell about basic authentication:
 
