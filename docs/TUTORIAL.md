@@ -240,7 +240,7 @@ curl -si -X POST -u "acme:$ACME_ADMIN_PASS" \
 curl -si -X GET -u "acme:$ACME_ADMIN_PASS" http://localhost:5000/stuff     # 200
 ```
 
-## Group Authorization and Parameters
+## Group Authorization
 
 For group authorization, a callback function must be provided to tell whether a
 user belongs to a group.
