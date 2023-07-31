@@ -191,8 +191,8 @@ def init_app(app: fsa.Flask):
     # TODO MORE REGISTRATIONS
 ```
 
-Edit the `app.py` file to initialize database and auth, and add a route
-which is open to *ALL* authenticated users:
+Edit the `app.py` file to initialize database and auth, and add routes which are
+open to *ALL* authenticated users:
 
 ```
 # insert in "app.py" initialization
@@ -261,7 +261,8 @@ def user_in_group(user: str, group: str) -> bool:
     app.user_in_group(user_in_group)
 ```
 
-Then edit `app.py` to create a route reserved to admins which inserts new users:
+Then edit `app.py` to create a route reserved to admins which insert new users,
+with two mandatory parameters: `login` and `password`.
 
 ```python
 # append to "app.py"
@@ -273,7 +274,6 @@ def post_user(login: str, password: str):
     return f"user {login} added", 201
 ```
 
-This routes requires 2 mandatory parameters: `login` and `password`.
 Then test:
 
 ```shell
