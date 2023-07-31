@@ -212,7 +212,7 @@ For that, you must:
 
 In most application, access permissions depend on some kind of relationship to
 the data, e.g. someone may read a message because they are either the recipient
-or the sender for this particular message.
+or the sender of this particular message.
 
 - object authorization require a per-domain callback which tells whether a
   *id*entified object of the domain can be access by a *user* in a *role*.
