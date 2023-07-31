@@ -210,6 +210,34 @@ For that, you must:
 
 ### How-to use object authorizations?
 
+In most application, access permissions depend on some kind of relationship to
+the data, e.g. someone may read a message because they are either the recipient
+or the sender for this particular message.
+
+- object authorization require a per-domain callback which tells whether a
+  *id*entified object of the domain can be access by a *user* in a *role*.
+  ```python
+  # domain "stuff" permission callback
+  def stuff_permissions(stuff_id: int, login: str, role: str):
+      return ...
+  ```
+- this callback must be registered to the application
+  ```python
+  app.object_perms("stuff", stuff_permissions)
+  ```
+  Registering can also be done with `object_perms` used as a decorator or
+  through the `FSA_OBJECT_PERMS` directive.
+- a function must require these permission by setting `authorize` to a tuple,
+  with the domain, the name of the variable which identifies the object, and
+  the role.
+  ```python
+  @app.patch(/stuff/<id>", authorize=("stuff", "id", "update")
+  def patch_stuff_id(id: int, ...):
+      return ...
+  ```
+  Convenient defaults are provided: the first parameter for the identifier,
+  *None* for the role.
+
 ### How-to use oauth authorizations?
 
 ### How-to ?

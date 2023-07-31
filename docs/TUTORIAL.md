@@ -125,7 +125,7 @@ class AcmeData:
         return self.users[login][0] if self.user_exists(login) else None
 
     def user_is_admin(self, login: str) -> bool:
-        return self.users[user][1]
+        return self.users[login][1]
 
 # this is a proxy object to the actual database
 db = fsa.Reference()
