@@ -2,7 +2,7 @@
 
 This tutorial present how to build a
 [FlaskSimpleAuth](https://pypi.org/project/flasksimpleauth) project
-with basic authentication and group authorizations.
+with basic authentication plus group and object authorizations.
 
 This is not very different from starting a Flask project, *but*
 if you start with Flask you will have to unlearn things as
