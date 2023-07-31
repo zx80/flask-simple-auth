@@ -64,16 +64,67 @@ flask --app ./app.py run --debug --reload
 Test the route, for instance using `curl` from another terminal:
 
 ```shell
-curl -si -X GET http://localhost:5000/hello
+curl -si -X GET http://localhost:5000/hello  # 200
 ```
 
 You should see a log line for the request in the application terminal, and the
 JSON response in the second, with 3 FSA-specific headers telling the request,
 the authentification and execution time.
 
-The `authorize` route parameter is mandatory.
-It declares the authorization requirements on the route.
-If not set, the route is close and the response is 403.
+The `authorize` route parameter is mandatory to declare authorization
+requirements on the route. If not set, the route is close (403).
+
+## Acme Database
+
+This incredible application has some data hold in our toy *Acme* database
+with *Users* who can own *Stuff* at a price. Create file `acme.py`:
+
+```python
+# File "acme.py"
+import re
+import FlaskSimpleAuth as fsa
+
+class AcmeData:
+
+    def __init__(self):
+        # Users: login -> (password_hash, is_admin)
+        self.users: dict[str, tuple[str, bool]] = {}
+        # Stuff: name -> (owner, price)
+        self.stuff: dict[str, tuple[str, float]] = {}
+
+    def user_exists(self, login: str) -> bool:
+        return login in db.users
+
+    def add_user(self, login: str, password: str, admin: bool) -> None:
+        if self.user_exists(login):
+            raise fsa.ErrorResponse(f"cannot overwrite existing user: {login}", 409)
+        if not re.match(r"^[a-z][a-z0-9]+$", login):
+            raise fsa.ErrorResponse(f"invalid login name: {login}", 400)
+        self.users[login] = (password, admin)
+
+    def add_stuff(self, stuff: str, login: str, price: float) -> None:
+        if stuff in self.stuff:
+            raise fsa.ErrorResponse(f"cannot overwrite existing stuff: {stuff}", 409)
+        if login not in self.users:
+            raise fsa.ErrorResponse(f"no such user: {login}", 404)
+        self.stuff[stuff] = (login, price)
+
+    def get_user_pass(self, login: str) -> str|None:
+        return self.users[login][0] if self.user_exists(login) else None
+
+    def user_is_admin(self, login: str) -> bool:
+        return self.users[login][1]
+
+    def get_user_stuff(self, login: str) -> list[tuple[str, price]]:
+        if login not in self.users:
+            raise fsa.ErrorResponse(f"no such user: {login}", 404)
+        return [ (stuff, data[1]) for row in self.stuff.items() if row[0] == login ]
+
+    def change_stuff(self, stuff: str, price: float) -> None:
+        if stuff not in self.stuff:
+            raise fsa.ErrorResponse(f"no such stuff: {stuff}", 404)
+        self.stuff[stuff][1] = price
+```
 
 ## Basic Authentication
 
@@ -102,30 +153,9 @@ First, create a `database.py` file which will hold our primitive database:
 
 ```python
 # File "database.py"
-import re
 import os
 import FlaskSimpleAuth as fsa
-
-# an incredible database
-class AcmeData:
-    def __init__(self):
-        self.users: dict[str, tuple[str, bool]] = {}
-
-    def user_exists(self, login: str) -> bool:
-        return login in db.users
-
-    def add_user(self, login: str, password: str, admin: bool) -> None:
-        if self.user_exists(login):
-            raise fsa.ErrorResponse(f"cannot overwrite existing user: {login}", 409)
-        if not re.match(r"^[a-z][a-z0-9]+$", login):
-            raise fsa.ErrorResponse(f"invalid login name: {login}", 400)
-        self.users[login] = (password, admin)
-
-    def get_user_pass(self, login: str) -> str|None:
-        return self.users[login][0] if self.user_exists(login) else None
-
-    def user_is_admin(self, login: str) -> bool:
-        return self.users[login][1]
+from acme import AcmeData
 
 # this is a proxy object to the actual database
 db = fsa.Reference()
@@ -143,6 +173,7 @@ Create an `auth.py` file for the authentication and authorization stuff:
 
 ```python
 # File "auth.py"
+import FlaskSimpleAuth as fsa
 
 # we need the database!
 from database import db
@@ -151,7 +182,7 @@ from database import db
 def get_user_pass(login: str) -> str|None:
     return db.get_user_pass(login)
 
-# TODO MORE HOOKS
+# TODO MORE CALLBACKS
 
 # application auth initialization
 def init_app(app: fsa.Flask):
@@ -176,15 +207,26 @@ auth.init_app(app)
 @app.get("hello-me", authorize="ALL")
 def get_hello_me(user: fsa.CurrentUser):
     return { "msg": "hello", "user": user }, 200
+
+# users can add stuff for themselves
+@app.post("/stuff", authorize="ALL")
+def post_stuff(stuff: str, price: float, user: fsa.CurrentUser):
+    db.add_stuff(stuff, user, price)
+    return f"stuff added: {stuff}", 201
+
+# and consult them
+@app.get("/stuff", authorize="ALL")
+def get_stuff(user: fsa.CurrentUser):
+    return fsa.jsonify(db.get_user_stuff(user)), 200
 ```
 
 The `user` parameter will be automatically filled with the name of the
 authenticated user.
 
-Add the admin password in the environment:
+Add the admin password in the environment, in each terminal:
 
 ```shell
-export ACME_ADMIN_PASS="<a-good-password>"
+export ACME_ADMIN_PASS="<a-good-admin-password>"
 ```
 
 Restart and test the application:
@@ -193,6 +235,9 @@ Restart and test the application:
 curl -si -X GET                            http://localhost:5000/hello-me  # 401
 curl -si -X GET -u "meca:Mec0!"            http://localhost:5000/hello-me  # 404
 curl -si -X GET -u "acme:$ACME_ADMIN_PASS" http://localhost:5000/hello-me  # 200
+curl -si -X POST -u "acme:$ACME_ADMIN_PASS" \
+    -d stuff=pinte -d price=6.5            http://localhost:5000/stuff     # 201
+curl -si -X GET -u "acme:$ACME_ADMIN_PASS" http://localhost:5000/stuff     # 200
 ```
 
 ## Group Authorization and Parameters
@@ -275,6 +320,47 @@ Then proceed to use the token instead of the login/password:
 curl -si -X GET -H "Authorization: Bearer <token>" http://localhost:5000/hello-me  # 200
 ```
 
+## Object Permission Authorization
+
+Object permissions link a user to some object to allow operations.
+We want to allow object owners to change the price of some stuff.
+
+```python
+# insert in "auth.py"
+def stuff_permissions(stuff: str, login: str, role: str):
+    if role == "owner" and stuff in db.stuff:
+        return db.stuff[stuff][0] == login
+    else:
+        return False 
+
+# append to "init_app"
+    # register permission callback
+    app.object_perms("stuff", stuff_permissions)
+```
+
+Then we implement the route:
+
+```python
+# append to "app.py"
+@app.patch("/stuff/<sid>", authorize=("stuff", "sid", "owner"))
+def patch_stuff_sid(sid: str, price: float):
+    db.change_stuff(sid, price)
+    return f"stuff changed: {sid}", 204
+```
+
+Then we can test:
+
+```shell
+curl -si -X POST -u "acme:$ACME_ADMIN_PASS" \
+  -d login="mace" -d password="Mac1!" http://localhost:5000/user        # 201
+curl -si -X POST -u "mace:Mac1!" \
+    -d stuff=bear -d price=2.0        http://localhost:5000/stuff       # 201
+curl -si -X PATCH -u "acme:$ACME_ADMIN_PASS" \
+                  -d price=3.0        http://localhost:5000/stuff/bear  # 403
+curl -si -X PATCH -u "mace:Mac1!" \
+                  -d price=3.0        http://localhost:5000/stuff/bear  # 204
+```
+
 ## Further Improvements
 
 Edit `acme.conf` to add minimal password strength requirements:
@@ -310,3 +396,5 @@ Errors are shown as `text/plain` by default, but this can be changed to JSON:
 # append to "acme.conf"
 FSA_ERROR_RESPONSE = "json:error"  # show errors as JSON
 ```
+
+Restart and test the application with these new settings…
