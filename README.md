@@ -18,8 +18,8 @@ With FlaskSimpleAuth, application and security concerns are separated:
 - the **application** focusses on *what* to do, and *declares* its security
   requirements.
 - the **configuration** declares *how* the authentification and authorization
-  constraints are checked, with numerous state-of-the-art possibilities made
-  available through directives and hooks.
+  constraints are checked, with numerous state-of-the-art options made available
+  through directives and hooks.
 - the **framework** *implements* and *enforces* the security on the application
   routes, with safe defaults so that security cannot be overlooked.
 

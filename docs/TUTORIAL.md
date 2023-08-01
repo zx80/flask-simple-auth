@@ -1,11 +1,11 @@
 # FlaskSimpleAuth Tutorial
 
 This tutorial present how to build a
-[FlaskSimpleAuth](https://pypi.org/project/flasksimpleauth) project
-with basic authentication plus group and object authorizations.
-This is not very different from starting a Flask project, *but*
-if you start with Flask you will have to unlearn things as
-FlaskSimpleAuth framework extends and simplifies Flask on key points.
+[FlaskSimpleAuth](https://pypi.org/project/flasksimpleauth) REST back-end
+project with basic authentication plus group and object authorizations.
+This is not very different from starting a Flask project, *but* if you start
+with Flask you will have to unlearn things as FlaskSimpleAuth framework extends
+and simplifies Flask on key points.
 
 ## Application Setup
 
@@ -70,7 +70,7 @@ curl -si -X GET http://localhost:5000/hello  # 200
 
 You should see a log line for the request in the application terminal, and the
 JSON response in the second, with 3 FSA-specific headers telling the request,
-the authentification and execution time.
+the authentication and execution time.
 
 ## Acme Database
 
@@ -126,9 +126,10 @@ class AcmeData:
 
 ## Basic Authentication
 
-Let us now add new routes with basic authentification.
+Let us now add new routes with basic authentication.
 This requires:
 
+- configuring the application
 - storing user credentials somewhere.
 - providing a password callback.
 - creating authenticated routes.
@@ -147,7 +148,8 @@ initializations. A common pattern is to define `init_app(app: Flask)`
 initialization functions in each file, to call them from the application file,
 and to use proxy objects to avoid loading ordering issues.
 
-First, create a `database.py` file which will hold our primitive database:
+Create a `database.py` file which will hold our application primitive database
+interface:
 
 ```python
 # File "database.py"
@@ -289,7 +291,7 @@ curl -si -X GET -u "meca:Mec0!" http://localhost:5000/hello-me    # 200
 
 ## Token Authentication
 
-Let us now activate token authencation.
+Let us now activate token authentication.
 This avoids sending login/passwords in each request, and is much more efficient
 for the server because cryptographic password hashing functions are *designed*
 to be very slow.
@@ -322,7 +324,7 @@ curl -si -X GET -H "Authorization: Bearer <token>" http://localhost:5000/hello-m
 ## Object Permission Authorization
 
 Object permissions link a user to some object to allow operations.
-We want to allow object owners to change the price of some stuff.
+We want to allow object owners to change the price of their stuff.
 
 ```python
 # insert in "auth.py"
