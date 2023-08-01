@@ -3,7 +3,6 @@
 This tutorial present how to build a
 [FlaskSimpleAuth](https://pypi.org/project/flasksimpleauth) project
 with basic authentication plus group and object authorizations.
-
 This is not very different from starting a Flask project, *but*
 if you start with Flask you will have to unlearn things as
 FlaskSimpleAuth framework extends and simplifies Flask on key points.
@@ -23,6 +22,8 @@ pip install FlaskSimpleAuth[password]
 
 Create the `app.py` file with an unauthenticated `GET /hello` route.
 The route is open because it is authorized to *ANY*one.
+The `authorize` route parameter is mandatory to declare authorization
+requirements on the route. If not set, the route is closed (403).
 
 ```python
 # File "app.py"
@@ -71,9 +72,6 @@ You should see a log line for the request in the application terminal, and the
 JSON response in the second, with 3 FSA-specific headers telling the request,
 the authentification and execution time.
 
-The `authorize` route parameter is mandatory to declare authorization
-requirements on the route. If not set, the route is close (403).
-
 ## Acme Database
 
 This incredible application has some data hold in our toy *Acme* database
@@ -87,20 +85,26 @@ import FlaskSimpleAuth as fsa
 class AcmeData:
 
     def __init__(self):
-        # Users: login -> (password_hash, is_admin)
-        self.users: dict[str, tuple[str, bool]] = {}
+        # Users: login -> (password_hash, email, is_admin)
+        self.users: dict[str, tuple[str, str, bool]] = {}
         # Stuff: name -> (owner, price)
         self.stuff: dict[str, tuple[str, float]] = {}
 
     def user_exists(self, login: str) -> bool:
         return login in db.users
 
-    def add_user(self, login: str, password: str, admin: bool) -> None:
+    def add_user(self, login: str, password: str, email: str, admin: bool) -> None:
         if self.user_exists(login):
             raise fsa.ErrorResponse(f"cannot overwrite existing user: {login}", 409)
         if not re.match(r"^[a-z][a-z0-9]+$", login):
             raise fsa.ErrorResponse(f"invalid login name: {login}", 400)
-        self.users[login] = (password, admin)
+        self.users[login] = (password, email, admin)
+
+    def get_user_pass(self, login: str) -> str|None:
+        return self.users[login][0] if self.user_exists(login) else None
+
+    def user_is_admin(self, login: str) -> bool:
+        return self.users[login][2]
 
     def add_stuff(self, stuff: str, login: str, price: float) -> None:
         if stuff in self.stuff:
@@ -108,12 +112,6 @@ class AcmeData:
         if login not in self.users:
             raise fsa.ErrorResponse(f"no such user: {login}", 404)
         self.stuff[stuff] = (login, price)
-
-    def get_user_pass(self, login: str) -> str|None:
-        return self.users[login][0] if self.user_exists(login) else None
-
-    def user_is_admin(self, login: str) -> bool:
-        return self.users[login][1]
 
     def get_user_stuff(self, login: str) -> list[tuple[str, price]]:
         if login not in self.users:
@@ -166,7 +164,7 @@ def init_app(app: fsa.Flask):
     db = db.set(AcmeData())
     # add an "admin" user if necessary
     if not db.user_exists("acme"):
-        db.add_user("acme", app.hash_password(os.environ["ACME_ADMIN_PASS"]), True)
+        db.add_user("acme", app.hash_password(os.environ["ACME_ADMIN_PASS"]), "acme@acme.org", True)
 ```
 
 Create an `auth.py` file for the authentication and authorization stuff:
@@ -267,9 +265,9 @@ with two mandatory parameters: `login` and `password`.
 ```python
 # append to "app.py"
 @app.post("/user", authorize="admin")
-def post_user(login: str, password: str):
-    db.add_user(login, app.hash_password(pass), False)
-    return f"user {login} added", 201
+def post_user(login: str, password: str, email: str):
+    db.add_user(login, app.hash_password(pass), email, False)
+    return f"user added: {login}", 201
 ```
 
 Then test:
@@ -280,9 +278,11 @@ curl -si -X POST -u "acme:$ACME_ADMIN_PASS" \
 curl -si -X POST -u "acme:$ACME_ADMIN_PASS" \
   -d login="acme" -d password="Pass!" http://localhost:5000/user  # 409 (user exists)
 curl -si -X POST -u "acme:$ACME_ADMIN_PASS" \
-  -d login="123" -d password="Pass!" http://localhost:5000/user   # 400 (bad user parameter)
+  -d login="123" -d email="123@acme.org" -d password="Pass!" \
+                                      http://localhost:5000/user  # 400 (bad user parameter)
 curl -si -X POST -u "acme:$ACME_ADMIN_PASS" \
-  -d login="meca" -d password="Mec0!" http://localhost:5000/user  # 201
+  -d login="meca" -d email="meca@acme.org" -d password="Mec0!" \
+                                      http://localhost:5000/user  # 201
 curl -si -X GET -u "meca:Mec0!" http://localhost:5000/hello-me    # 200
 ```
 
@@ -350,7 +350,8 @@ Then we can test:
 
 ```shell
 curl -si -X POST -u "acme:$ACME_ADMIN_PASS" \
-  -d login="mace" -d password="Mac1!" http://localhost:5000/user        # 201
+  -d login="mace" -d email="mace@acme.org" -d password="Mac1!" \
+                                      http://localhost:5000/user        # 201
 curl -si -X POST -u "mace:Mac1!" \
     -d stuff=bear -d price=2.0        http://localhost:5000/stuff       # 201
 curl -si -X PATCH -u "acme:$ACME_ADMIN_PASS" \
@@ -374,9 +375,11 @@ After restarting the application, weak passwords are rejected:
 
 ```python
 curl -si -X POST -u "acme:$ACME_ADMIN_PASS" \
-  -d login="came" -d password="C@me"     http://localhost:5000/user  # 400 (pass length)
+  -d login="came" -d email="came@acme.org" -d password="C@me" \
+                                         http://localhost:5000/user  # 400 (pass length)
 curl -si -X POST -u "acme:$ACME_ADMIN_PASS" \
-  -d login="came" -d password="Cameleon" http://localhost:5000/user  # 400 (pass regex)
+  -d login="came" -d email="came@acme.org" -d password="Cameleon" \
+                                         http://localhost:5000/user  # 400 (pass regex)
 ```
 
 By default, any group name is accepted with `authorize`, and may fail at run
