@@ -332,7 +332,7 @@ def stuff_permissions(stuff: str, login: str, role: str):
     if role == "owner" and stuff in db.stuff:
         return db.stuff[stuff][0] == login
     else:
-        return False 
+        return False
 
 # append to "init_app"
     # register permission callback
