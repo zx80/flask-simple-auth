@@ -219,7 +219,8 @@ def get_stuff(user: fsa.CurrentUser):
 ```
 
 The `user` parameter will be automatically filled with the name of the
-authenticated user.
+authenticated user. Other parameters are filled and converted from the request
+HTTP or JSON parameters.
 
 Add the admin password in the environment, in each terminal:
 
