@@ -3,6 +3,17 @@
 Here are a few task-oriented recipees with
 [FlaskSimpleAuth](https://pypi.org/project/flasksimpleauth/).
 
+## Installation
+
+### How-to install FlaskSimpleAuth?
+
+FlaskSimpleAuth is a Python module available from [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
+Install it, for instance with `pip`, with the required dependencies:
+
+```shell
+pip install FlaskSimpleAuth[password,jwt,cors,redis]
+```
+
 ## Authentication
 
 For details, see the relevant
