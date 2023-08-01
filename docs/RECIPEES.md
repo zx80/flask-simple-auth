@@ -271,6 +271,7 @@ To allow non-TLS connections, set `FSA_SECURE = False`.
 
 FlaskSimpleAuth uses [`redis`](https://pypi.org/project/redis/) to deal with redis.
 
+- if necessary, install the module: `pip install redis`
 - set `FSA_CACHE = "redis"`
 - set `FSA_CACHE_OPTS` so that the application can connect to the cache, eg:
   ```python
