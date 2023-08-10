@@ -33,7 +33,7 @@ import logging
 logging.basicConfig()
 
 # Flask initialization
-FlaskSimpleAuth as fsa
+import FlaskSimpleAuth as fsa
 app = fsa.Flask("acme")
 app.config.from_envvar("ACME_CONFIG")
 
