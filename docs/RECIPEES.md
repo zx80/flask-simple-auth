@@ -2,6 +2,7 @@
 
 Here are a few task-oriented recipees with
 [FlaskSimpleAuth](https://pypi.org/project/flasksimpleauth/).
+Feel free to submit your questions!
 
 ## Installation
 
