@@ -7,8 +7,8 @@ and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 
 Add *gevent* and *eventlet* to `FSA_LOCAL`.
 Improve type declarations.
-Add a tested tutorial.
-Add recipees.
+Add a tested tutorial and recipees, following
+[Diátaxis](https://diataxis.fr/) recommendations.
 Refactor hook type declarations.
 
 ## 24.0 on 2023-07-28
