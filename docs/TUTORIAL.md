@@ -246,7 +246,7 @@ curl -si -X GET -u "acme:$ACME_ADMIN_PASS" http://localhost:5000/stuff     # 200
 For group authorization, a callback function must be provided to tell whether a
 user belongs to a group.
 
-Edit `auth.py`:
+Edit `auth.py`: two changes !
 
 ```python
 # in "auth.py"
@@ -279,14 +279,14 @@ Then test:
 curl -si -X POST -u "acme:$ACME_ADMIN_PASS" \
                                       http://localhost:5000/user  # 400 (missing parameters)
 curl -si -X POST -u "acme:$ACME_ADMIN_PASS" \
-  -d login="acme" -d password="Pass!" http://localhost:5000/user  # 409 (user exists)
+  -d login="acme" -d email="123@acme.org" -d password='Pass!' http://localhost:5000/user  # 409 (user exists)
 curl -si -X POST -u "acme:$ACME_ADMIN_PASS" \
-  -d login="123" -d email="123@acme.org" -d password="Pass!" \
-                                      http://localhost:5000/user  # 400 (bad user parameter)
+  -d login="123" -d email="123@acme.org" -d password='Pass!' \
+                                      http://localhost:5000/user  # 400 (bad login parameter)
 curl -si -X POST -u "acme:$ACME_ADMIN_PASS" \
-  -d login="meca" -d email="meca@acme.org" -d password="Mec0!" \
+  -d login="meca" -d email="meca@acme.org" -d password='Mec0!' \
                                       http://localhost:5000/user  # 201
-curl -si -X GET -u "meca:Mec0!" http://localhost:5000/hello-me    # 200
+curl -si -X GET -u 'meca:Mec0!' http://localhost:5000/hello-me    # 200
 ```
 
 ## Token Authentication
