@@ -1162,6 +1162,7 @@ Todo or not todo…
 - the doc and implementation should clarify exception handling,
   and possible overrides.
 - add ability to catch and process any user error.
+- directive name inconsistency, `_LEN` vs `_LENGTH`…
 
 ### Software Engineering
 
