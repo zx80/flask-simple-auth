@@ -318,7 +318,7 @@ You should see the token as a JSON field in the response.
 Then proceed to use the token instead of the login/password:
 
 ```shell
-curl -si -X GET -H "Authorization: Bearer <token>" http://localhost:5000/hello-me  # 200
+curl -si -X GET -H "Authorization: Bearer <put-the-token-value-here>" http://localhost:5000/hello-me  # 200
 ```
 
 ## Object Permission Authorization
