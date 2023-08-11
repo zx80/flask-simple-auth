@@ -58,6 +58,7 @@ log = logging.getLogger("fsa")
 from importlib.metadata import version as pkg_version
 __version__ = pkg_version("FlaskSimpleAuth")
 
+
 class Hooks:
     """This class holds all hook types used by FlaskSimpleAuth."""
 
