@@ -191,10 +191,10 @@ def init_app(app: fsa.Flask):
     # TODO MORE REGISTRATIONS
 ```
 
-Edit the `app.py` file to initialize database and auth, and add routes which are
-open to *ALL* authenticated users:
+Edit the `app.py` file to initialize database and auth:
 
-```
+
+```python
 # insert in "app.py" initialization
 import database
 database.init_app(app)
@@ -202,7 +202,11 @@ db = database.db
 
 import auth
 auth.init_app(app)
+```
 
+And add routes which are open to *ALL* authenticated users:
+
+```python
 # append to "app.py" routes
 # all authentication users can access this route
 @app.get("/hello-me", authorize="ALL")
