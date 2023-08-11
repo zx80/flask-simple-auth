@@ -113,7 +113,7 @@ class AcmeData:
             raise fsa.ErrorResponse(f"no such user: {login}", 404)
         self.stuff[stuff] = (login, price)
 
-    def get_user_stuff(self, login: str) -> list[tuple[str, price]]:
+    def get_user_stuff(self, login: str) -> list[tuple[str, float]]:
         if login not in self.users:
             raise fsa.ErrorResponse(f"no such user: {login}", 404)
         return [ (stuff, data[1]) for row in self.stuff.items() if row[0] == login ]
@@ -163,7 +163,7 @@ db = fsa.Reference()
 # application database initialization, should probably just connect to an actual db.
 def init_app(app: fsa.Flask):
     # initialize proxy object
-    db = db.set(AcmeData())
+    db.set(AcmeData())
     # add an "admin" user if necessary
     if not db.user_exists("acme"):
         db.add_user("acme", app.hash_password(os.environ["ACME_ADMIN_PASS"]), "acme@acme.org", True)
@@ -198,13 +198,14 @@ open to *ALL* authenticated users:
 # insert in "app.py" initialization
 import database
 database.init_app(app)
+db = database.db
 
 import auth
 auth.init_app(app)
 
 # append to "app.py" routes
 # all authentication users can access this route
-@app.get("hello-me", authorize="ALL")
+@app.get("/hello-me", authorize="ALL")
 def get_hello_me(user: fsa.CurrentUser):
     return { "msg": "hello", "user": user }, 200
 
@@ -234,10 +235,12 @@ Restart and test the application:
 
 ```shell
 curl -si -X GET                            http://localhost:5000/hello-me  # 401
-curl -si -X GET -u "meca:Mec0!"            http://localhost:5000/hello-me  # 404
+curl -si -X GET -u 'meca:Mec0!'            http://localhost:5000/hello-me  # 401
 curl -si -X GET -u "acme:$ACME_ADMIN_PASS" http://localhost:5000/hello-me  # 200
 curl -si -X POST -u "acme:$ACME_ADMIN_PASS" \
     -d stuff=pinte -d price=6.5            http://localhost:5000/stuff     # 201
+curl -si -X POST -u "acme:$ACME_ADMIN_PASS" \
+    -d stuff=pinte -d price=6.5            http://localhost:5000/stuff     # 409
 curl -si -X GET -u "acme:$ACME_ADMIN_PASS" http://localhost:5000/stuff     # 200
 ```
 
