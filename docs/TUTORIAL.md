@@ -249,19 +249,21 @@ curl -si -X GET -u "acme:$ACME_ADMIN_PASS" http://localhost:5000/stuff     # 200
 For group authorization, a callback function must be provided to tell whether a
 user belongs to a group.
 
-Edit `auth.py`: two changes !
+First, we add the group checking function:
 
 ```python
 # in "auth.py"
-# add group checking function
 def user_in_group(user: str, group: str) -> bool:
     if group == "admin":
         return db.user_is_admin(user)
     else:  # handle other groups here…
         return False
+```
 
-# append to "init_app":
-    # register group hook
+Then when register it in the initialization:
+
+```
+# append to "init_app" in "auth.py"
     app.user_in_group(user_in_group)
 ```
 
@@ -272,7 +274,7 @@ with two mandatory parameters: `login` and `password`.
 # append to "app.py"
 @app.post("/user", authorize="admin")
 def post_user(login: str, password: str, email: str):
-    db.add_user(login, app.hash_password(pass), email, False)
+    db.add_user(login, app.hash_password(password), email, False)
     return f"user added: {login}", 201
 ```
 
@@ -282,7 +284,8 @@ Then test:
 curl -si -X POST -u "acme:$ACME_ADMIN_PASS" \
                                       http://localhost:5000/user  # 400 (missing parameters)
 curl -si -X POST -u "acme:$ACME_ADMIN_PASS" \
-  -d login="acme" -d email="123@acme.org" -d password='Pass!' http://localhost:5000/user  # 409 (user exists)
+  -d login="acme" -d email="123@acme.org" -d password='Pass!' \
+                                      http://localhost:5000/user  # 409 (user exists)
 curl -si -X POST -u "acme:$ACME_ADMIN_PASS" \
   -d login="123" -d email="123@acme.org" -d password='Pass!' \
                                       http://localhost:5000/user  # 400 (bad login parameter)
@@ -321,13 +324,15 @@ You should see the token as a JSON field in the response.
 Then proceed to use the token instead of the login/password:
 
 ```shell
-curl -si -X GET -H "Authorization: Bearer <put-the-token-value-here>" http://localhost:5000/hello-me  # 200
+curl -si -X GET -H "Authorization: Bearer <put-the-token-value-here>" \
+                                        http://localhost:5000/hello-me  # 200
 ```
 
 ## Object Permission Authorization
 
 Object permissions link a user to some object to allow operations.
 We want to allow object owners to change the price of their stuff.
+First, we create the permission verification function:
 
 ```python
 # insert in "auth.py"
@@ -336,12 +341,12 @@ def stuff_permissions(login: str, stuff: str, role: str):
         return db.stuff[stuff][0] == login
     else:
         return False
-
 ```
 
+Then we register it when the application authentication is initialized:
+
 ```python
-# append to "init_app"
-    # register permission callback
+# append to "init_app" in "auth.py"
     app.object_perms("stuff", stuff_permissions)
 ```
 

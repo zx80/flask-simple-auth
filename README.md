@@ -83,7 +83,7 @@ def user_in_group(user: str, group: str) -> bool:
     return ...  # whether user belongs to group
 
 @app.object_perms("store")
-def store_permission(sid: int, user: str, role: str) -> bool|None:
+def store_permission(user: str, sid: int, role: str) -> bool|None:
     return ...  # whether user can access store sid in role
 ```
 
