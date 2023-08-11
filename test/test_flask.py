@@ -1459,7 +1459,7 @@ def test_warnings_and_errors():
         FSA_FAKE_LOGIN="not-used-if-no-fake",
         FSA_PARAM_USER="not-used-if-no-param",
         FSA_PARAM_PASS="not-used-if-no-param",
-        FSA_PASSWORD_LEN=10,
+        FSA_PASSWORD_LENGTH=10,
         FSA_PASSWORD_RE=[r"[0-9]"],
         FSA_GET_USER_PASS=bad_gup_1,
     )

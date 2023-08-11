@@ -10,6 +10,7 @@ Improve type declarations.
 Add a tested tutorial and recipees, following
 [Diátaxis](https://diataxis.fr/) recommendations.
 Refactor hook type declarations.
+Rename `FSA_PASSWORD_LEN` to `FSA_PASSWORD_LENGTH` for consistency.
 
 ## 24.0 on 2023-07-28
 

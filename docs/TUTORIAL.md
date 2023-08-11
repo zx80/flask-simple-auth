@@ -385,7 +385,7 @@ Edit `acme.conf` to add minimal password strength requirements:
 ```python
 # append to "acme.conf"
 # passwords must contain at least 5 characters
-FSA_PASSWORD_LEN = 5
+FSA_PASSWORD_LENGTH = 5
 # including an upper case letter, a lower case letter, and a digit.
 FSA_PASSWORD_RE = [ r"[A-Z]", r"[a-z]", r"[0-9]" ]
 ```

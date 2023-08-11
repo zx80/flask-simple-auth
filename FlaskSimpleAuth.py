@@ -635,7 +635,7 @@ class Directives:
     It is compatible with Apache. All _2*_ variants are really equivalent.
     """
 
-    FSA_PASSWORD_LEN: int = 0
+    FSA_PASSWORD_LENGTH: int = 0
     """Password quality minimal length.
 
     Default is *0*, meaning no minimal length is required.
@@ -1101,7 +1101,7 @@ class _PasswordManager:
     #
     # FSA_PASSWORD_SCHEME: name of password scheme for passlib context
     # FSA_PASSWORD_OPTS: further options for passlib context
-    # FSA_PASSWORD_LEN: minimal length of provided passwords
+    # FSA_PASSWORD_LENGTH: minimal length of provided passwords
     # FSA_PASSWORD_RE: list of re a password must match
     # FSA_PASSWORD_QUALITY: hook for password strength check
     # FSA_PASSWORD_CHECK: hook for alternate password check
@@ -1160,7 +1160,7 @@ class _PasswordManager:
         self._pass_context = CryptContext(schemes=[scheme], **options)
         self._pass_check = conf.get("FSA_PASSWORD_CHECK", Directives.FSA_PASSWORD_CHECK)
         self._pass_quality = conf.get("FSA_PASSWORD_QUALITY", Directives.FSA_PASSWORD_QUALITY)
-        self._pass_len = conf.get("FSA_PASSWORD_LEN", Directives.FSA_PASSWORD_LEN)
+        self._pass_len = conf.get("FSA_PASSWORD_LENGTH", Directives.FSA_PASSWORD_LENGTH)
         self._pass_re += [re.compile(r).search for r in conf.get("FSA_PASSWORD_RE", Directives.FSA_PASSWORD_RE)]
         if "FSA_GET_USER_PASS" in conf:
             self.get_user_pass(conf["FSA_GET_USER_PASS"])

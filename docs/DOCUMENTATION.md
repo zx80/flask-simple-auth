@@ -453,7 +453,7 @@ with the current configuration, and may be used by the application for setting
 or resetting passwords.
 
 This function checks the password quality by relying on:
-- `FSA_PASSWORD_LEN` minimal password length, *0* to disable.
+- `FSA_PASSWORD_LENGTH` minimal password length, *0* to disable.
 - `FSA_PASSWORD_RE` list of regular expressions that a password must match.
 - `FSA_PASSWORD_QUALITY` hook function which returns whether the password is
   acceptable, possibly raising an exception to complain if not.
@@ -1162,7 +1162,6 @@ Todo or not todo…
 - the doc and implementation should clarify exception handling,
   and possible overrides.
 - add ability to catch and process any user error.
-- directive name inconsistency, `_LEN` vs `_LENGTH`…
 
 ### Software Engineering
 
