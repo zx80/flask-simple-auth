@@ -58,37 +58,50 @@ log = logging.getLogger("fsa")
 from importlib.metadata import version as pkg_version
 __version__ = pkg_version("FlaskSimpleAuth")
 
-#
-# hook function types
-#
-# generate an error response for message and status
-# mimics flask.Response("message", status, headers, content_type)
-ErrorResponseFun = Callable[[str, int, dict[str, str]|None, str|None], Response]
-# get password from user login, None if unknown
-GetUserPassFun = Callable[[str], str|None]
-# is user login in group (str or int): yes, no, unknown
-UserInGroupFun = Callable[[str, str|int], bool|None]
-# check object access in domain, for parameter, in mode
-ObjectPermsFun = Callable[[str, Any, str|None], bool]
-# low level check login/password validity
-PasswordCheckFun = Callable[[str, str], bool|None]
-# is this password quality suitable?
-PasswordQualityFun = Callable[[str], bool]
-# cast parameter value to some object
-CastFun = Callable[[str|Any], object]
-# generate a "special" parameter, with the parameter name
-SpecialParameterFun = Callable[[str], Any]
-# add a header to the current response
-HeaderFun = Callable[[Response], str|None]
-# before request hook, with request provided
-BeforeRequestFun = Callable[[Request], Response|None]
-# after authentication and right before exec
-BeforeExecFun = Callable[[Request, str|None, str|None], Response|None]
-# after request hook
-AfterRequestFun = Callable[[Response], Response]
-# authentication hook
-# FIXME Any is really FlaskSimpleAuth, but python lacks forward declarations
-AuthenticationFun = Callable[[Any, Request], str|None]
+class Hooks:
+    """This class holds all hook types used by FlaskSimpleAuth."""
+
+    ErrorResponseFun = Callable[[str, int, dict[str, str]|None, str|None], Response]
+    """Generate an error response for message and status.
+
+    mimics flask.Response("message", status, headers, content_type)
+    """
+    GetUserPassFun = Callable[[str], str|None]
+    """Get password from user login, None if unknown."""
+
+    UserInGroupFun = Callable[[str, str|int], bool|None]
+    """Is user login in group (str or int): yes, no, unknown."""
+
+    ObjectPermsFun = Callable[[str, Any, str|None], bool]
+    """Check object access in domain, for parameter, in mode."""
+
+    PasswordCheckFun = Callable[[str, str], bool|None]
+    """Low level check login/password validity."""
+
+    PasswordQualityFun = Callable[[str], bool]
+    """Is this password quality suitable?"""
+
+    CastFun = Callable[[str|Any], object]
+    """Cast parameter value to some object."""
+
+    SpecialParameterFun = Callable[[str], Any]
+    """Generate a "special" parameter, with the parameter name."""
+
+    HeaderFun = Callable[[Response], str|None]
+    """Add a header to the current response."""
+
+    BeforeRequestFun = Callable[[Request], Response|None]
+    """Before request hook, with request provided."""
+
+    BeforeExecFun = Callable[[Request, str|None, str|None], Response|None]
+    """After authentication and right before execution."""
+
+    AfterRequestFun = Callable[[Response], Response]
+    """After request hook."""
+
+    # FIXME Any is really FlaskSimpleAuth, but python lacks forward declarations
+    AuthenticationFun = Callable[[Any, Request], str|None]
+    """Authentication hook."""
 
 
 @dataclasses.dataclass
@@ -442,7 +455,7 @@ class Directives:
     """
 
     # register hooks
-    FSA_ERROR_RESPONSE: str|ErrorResponseFun = "plain"
+    FSA_ERROR_RESPONSE: str|Hooks.ErrorResponseFun = "plain"
     """Common hook for generating a response on errors.
 
     Same as ``error_response`` decorator.
@@ -454,7 +467,7 @@ class Directives:
       the message, the status, headers and content type.
     """
 
-    FSA_GET_USER_PASS: GetUserPassFun|None = None
+    FSA_GET_USER_PASS: Hooks.GetUserPassFun|None = None
     """Password hook for getting a user's salted hashed password.
 
     Same as ``get_user_pass`` decorator.
@@ -463,7 +476,7 @@ class Directives:
     Returning *None* will skip internal password checking.
     """
 
-    FSA_AUTHENTICATION: dict[str, AuthenticationFun] = {}
+    FSA_AUTHENTICATION: dict[str, Hooks.AuthenticationFun] = {}
     """Authentication hook for adding authentication schemes.
 
     Same as ``authentication`` decorator.
@@ -474,7 +487,7 @@ class Directives:
     The implementation may also raise an ``ErrorResponse``.
     """
 
-    FSA_USER_IN_GROUP: UserInGroupFun|None = None
+    FSA_USER_IN_GROUP: Hooks.UserInGroupFun|None = None
     """Authorization hook for checking a user group.
 
     Same as ``user_in_group`` decorator.
@@ -483,7 +496,7 @@ class Directives:
     to a group.
     """
 
-    FSA_OBJECT_PERMS: dict[str, ObjectPermsFun] = {}
+    FSA_OBJECT_PERMS: dict[str, Hooks.ObjectPermsFun] = {}
     """Authorization hook for object permissions.
 
     Same as ``authorization`` decorator.
@@ -493,19 +506,19 @@ class Directives:
     the user has this role for this object id. Return *None* for 404.
     """
 
-    FSA_CAST: dict[Any, CastFun] = {}
+    FSA_CAST: dict[Any, Hooks.CastFun] = {}
     """Parameter hook for type conversion."""
 
-    FSA_SPECIAL_PARAMETER: dict[Any, SpecialParameterFun] = {}
+    FSA_SPECIAL_PARAMETER: dict[Any, Hooks.SpecialParameterFun] = {}
     """Parameter hook for special parameters."""
 
-    FSA_BEFORE_REQUEST: list[BeforeRequestFun] = []
+    FSA_BEFORE_REQUEST: list[Hooks.BeforeRequestFun] = []
     """Request hook executed before request."""
 
-    FSA_BEFORE_EXEC: list[BeforeExecFun] = []
+    FSA_BEFORE_EXEC: list[Hooks.BeforeExecFun] = []
     """Request hook executed after authentication."""
 
-    FSA_AFTER_REQUEST: list[AfterRequestFun] = []
+    FSA_AFTER_REQUEST: list[Hooks.AfterRequestFun] = []
     """Request hook executed after request."""
 
     FSA_ADD_HEADERS: dict[str, str|Callable[[], str]] = {}
@@ -634,14 +647,14 @@ class Directives:
     Default is empty list, meaning no character constraints on passwords.
     """
 
-    FSA_PASSWORD_QUALITY: PasswordQualityFun|None = None
+    FSA_PASSWORD_QUALITY: Hooks.PasswordQualityFun|None = None
     """Password quality hook.
 
     Arbitrary password quality check.
     Given the password string, returns whether the password is valid.
     """
 
-    FSA_PASSWORD_CHECK: PasswordCheckFun|None = None
+    FSA_PASSWORD_CHECK: Hooks.PasswordCheckFun|None = None
     """Password check hook.
 
     Alternate password check function.
@@ -1111,11 +1124,11 @@ class _PasswordManager:
         self._Err = fsa._Err
         # password stuff
         self._pass_context = None
-        self._pass_check: PasswordCheckFun|None = None
-        self._pass_quality: PasswordQualityFun|None = None
+        self._pass_check: Hooks.PasswordCheckFun|None = None
+        self._pass_quality: Hooks.PasswordQualityFun|None = None
         self._pass_len: int = 0
-        self._pass_re: list[PasswordQualityFun] = []
-        self._get_user_pass: GetUserPassFun|None = None
+        self._pass_re: list[Hooks.PasswordQualityFun] = []
+        self._get_user_pass: Hooks.GetUserPassFun|None = None
         self._initialized = False
 
     def _initialize(self):
@@ -1152,7 +1165,7 @@ class _PasswordManager:
             self.get_user_pass(conf["FSA_GET_USER_PASS"])
         self._initialized = True
 
-    def get_user_pass(self, gup: GetUserPassFun):
+    def get_user_pass(self, gup: Hooks.GetUserPassFun):
         """Set `get_user_pass` helper, can be used as a decorator."""
         if self._get_user_pass:
             log.warning("overriding already defined get_user_pass hook")
@@ -1258,7 +1271,7 @@ class _AuthenticationManager:
         self._auth: list[str] = []              # order default authentications
         self._all_auth: set[str] = set()        # all authentication methods
         # map auth to their hooks
-        self._authentication: dict[str, AuthenticationFun] = {
+        self._authentication: dict[str, Hooks.AuthenticationFun] = {
             "none": lambda _a, _r: None,
             "httpd": self._get_httpd_auth,
             "token": self._get_token_auth,
@@ -1386,7 +1399,7 @@ class _AuthenticationManager:
                 assert isinstance(self._tm._name, str)
                 self._auth_params.add(self._tm._name)
 
-    def authentication(self, auth: str, hook: AuthenticationFun|None = None):
+    def authentication(self, auth: str, hook: Hooks.AuthenticationFun|None = None):
         """Add new authentication hook, can be used as a decorator."""
         self._add_auth(auth)
         return self._store(self._authentication, "authentication", auth, hook)
@@ -1782,8 +1795,8 @@ class _AuthorizationManager:
         self._Exc = fsa._Exc
         self._store = fsa._store
         # authorization stuff
-        self._user_in_group: UserInGroupFun|None = None
-        self._object_perms: dict[Any, ObjectPermsFun] = dict()
+        self._user_in_group: Hooks.UserInGroupFun|None = None
+        self._object_perms: dict[Any, Hooks.ObjectPermsFun] = dict()
         self._groups: set[str|int] = set()
         self._scopes: set[str] = set()
         self._initialized = False
@@ -1802,7 +1815,7 @@ class _AuthorizationManager:
         self._fsa._set_hooks("FSA_OBJECT_PERMS", self.object_perms)
         self._initialized = True
 
-    def object_perms(self, domain: str, checker: ObjectPermsFun = None):
+    def object_perms(self, domain: str, checker: Hooks.ObjectPermsFun = None):
         """Add an object permission helper for a given domain."""
         return self._store(self._object_perms, "object permission checker", domain, checker)
 
@@ -1983,7 +1996,7 @@ class _ParameterManager:
         self._store = fsa._store
         # parameter management
         # predefined cases, extend with cast
-        self._casts: dict[type, CastFun] = {
+        self._casts: dict[type, Hooks.CastFun] = {
             bool: lambda s: None if s is None else s.lower() not in ("", "0", "false", "f"),
             int: lambda s: int(s, base=0) if s else None,
             inspect._empty: str,
@@ -1995,7 +2008,7 @@ class _ParameterManager:
             JsonData: json.loads,
         }
         # predefined special parameter types, extend with special_parameter
-        self._special_parameters: dict[type, SpecialParameterFun] = {
+        self._special_parameters: dict[type, Hooks.SpecialParameterFun] = {
             Request: lambda _: request,
             Environ: lambda _: request.environ,
             Session: lambda _: session,
@@ -2029,11 +2042,11 @@ class _ParameterManager:
         fsa._set_hooks("FSA_SPECIAL_PARAMETER", self.special_parameter)
         self._initialized = True
 
-    def cast(self, t, cast: CastFun = None):
+    def cast(self, t, cast: Hooks.CastFun = None):
         """Add a cast function associated to a type."""
         return self._store(self._casts, "type casting", t, cast)
 
-    def special_parameter(self, t, sp: SpecialParameterFun = None):
+    def special_parameter(self, t, sp: Hooks.SpecialParameterFun = None):
         """Add a special parameter type."""
         return self._store(self._special_parameters, "special parameter", t, sp)
 
@@ -2286,8 +2299,8 @@ class _RequestManager:
         self._secure: bool = True
         self._secure_warning = True
         # request hooks
-        self._before_requests: list[BeforeRequestFun] = []
-        self._before_exec_hooks: list[BeforeExecFun] = []
+        self._before_requests: list[Hooks.BeforeRequestFun] = []
+        self._before_exec_hooks: list[Hooks.BeforeExecFun] = []
         # registered here to avoid being bypassed by user hooks, executed in order
         # FIXME not always?
         app.before_request(self._show_request)
@@ -2314,7 +2327,7 @@ class _RequestManager:
         self._initialized = True
 
     # run hooks
-    def _execute_hooks(self, path: str, what: str, fun: Callable, hooks: list[BeforeExecFun]):
+    def _execute_hooks(self, path: str, what: str, fun: Callable, hooks: list[Hooks.BeforeExecFun]):
 
         @functools.wraps(fun)
         def wrapper(*args, **kwargs) -> Response:
@@ -2414,13 +2427,13 @@ class _ResponseManager:
         self._Exc = fsa._Exc
         self._Err = fsa._Err
         # response-related stuff
-        self._error_response: ErrorResponseFun = lambda m, s, h, c: Response(m, s, h, c)
+        self._error_response: Hooks.ErrorResponseFun = lambda m, s, h, c: Response(m, s, h, c)
         self._cors: bool = False
         self._cors_opts: dict[str, Any] = {}
         self._401_redirect: str|None = None
         self._url_name: str|None = None
-        self._after_requests: list[AfterRequestFun] = []
-        self._headers: dict[str, HeaderFun|str] = {}
+        self._after_requests: list[Hooks.AfterRequestFun] = []
+        self._headers: dict[str, Hooks.HeaderFun|str] = {}
         self._initialized = False
 
     def _initialize(self):
@@ -2738,12 +2751,12 @@ class FlaskSimpleAuth:
     #
     # REGISTER HOOKS
     #
-    def get_user_pass(self, gup: GetUserPassFun) -> GetUserPassFun:
+    def get_user_pass(self, gup: Hooks.GetUserPassFun) -> Hooks.GetUserPassFun:
         """Set `get_user_pass` helper, can be used as a decorator."""
         self._initialize()
         return self._am._pm.get_user_pass(gup)
 
-    def user_in_group(self, uig: UserInGroupFun) -> UserInGroupFun:
+    def user_in_group(self, uig: Hooks.UserInGroupFun) -> Hooks.UserInGroupFun:
         """Set `user_in_group` helper, can be used as a decorator."""
         self._initialize()
         if self._zm._user_in_group:
@@ -2751,7 +2764,7 @@ class FlaskSimpleAuth:
         self._zm._user_in_group = uig
         return uig
 
-    def password_quality(self, pqc: PasswordQualityFun) -> PasswordQualityFun:
+    def password_quality(self, pqc: Hooks.PasswordQualityFun) -> Hooks.PasswordQualityFun:
         """Set `password_quality` hook."""
         self._initialize()
         if self._am._pm._pass_quality:
@@ -2759,7 +2772,7 @@ class FlaskSimpleAuth:
         self._am._pm._pass_quality = pqc
         return pqc
 
-    def password_check(self, pwc: PasswordCheckFun) -> PasswordCheckFun:
+    def password_check(self, pwc: Hooks.PasswordCheckFun) -> Hooks.PasswordCheckFun:
         """Set `password_check` hook."""
         self._initialize()
         if self._am._pm._pass_check:
@@ -2767,14 +2780,14 @@ class FlaskSimpleAuth:
         self._am._pm._pass_check = pwc
         return pwc
 
-    def error_response(self, erh: ErrorResponseFun) -> ErrorResponseFun:
+    def error_response(self, erh: Hooks.ErrorResponseFun) -> Hooks.ErrorResponseFun:
         """Set `error_response` hook."""
         self._initialize()
         log.warning("overriding error_response hook")
         self._rm._error_response = erh
         return erh
 
-    def cast(self, t, cast: CastFun = None):
+    def cast(self, t, cast: Hooks.CastFun = None):
         """Add a cast function associated to a type.
 
         This function is called for type conversion on parameters.
@@ -2782,7 +2795,7 @@ class FlaskSimpleAuth:
         self._initialize()
         return self._pm.cast(t, cast)
 
-    def special_parameter(self, t, sp: SpecialParameterFun = None):
+    def special_parameter(self, t, sp: Hooks.SpecialParameterFun = None):
         """Add a special parameter type.
 
         These special parameters are managed by calling the hook with a
@@ -2791,12 +2804,12 @@ class FlaskSimpleAuth:
         self._initialize()
         return self._pm.special_parameter(t, sp)
 
-    def object_perms(self, domain: str, checker: ObjectPermsFun = None):
+    def object_perms(self, domain: str, checker: Hooks.ObjectPermsFun = None):
         """Add an object permission helper for a given domain."""
         self._initialize()
         return self._zm.object_perms(domain, checker)
 
-    def authentication(self, auth: str, hook: AuthenticationFun|None = None):
+    def authentication(self, auth: str, hook: Hooks.AuthenticationFun|None = None):
         """Add new authentication hook."""
         self._initialize()
         return self._am.authentication(auth, hook)
@@ -2827,7 +2840,7 @@ class FlaskSimpleAuth:
                 raise self._Bad(f"header value must be a string or a callable: {type(v).__name__}")
             self._store(self._rm._headers, "header", k, v)
 
-    def before_exec(self, hook: BeforeExecFun) -> None:
+    def before_exec(self, hook: Hooks.BeforeExecFun) -> None:
         """Register an after auth/just before exec hook."""
         self._initialize()
         self._qm._before_exec_hooks.append(hook)
