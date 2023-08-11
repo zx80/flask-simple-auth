@@ -1451,7 +1451,6 @@ def test_warnings_and_errors():
         return 3.14159
     import AppFact as af
     app = af.create_app(
-        FSA_SUCH_DIRECTIVE="no-such-directive",
         FSA_AUTH=["basic", "token"],
         FSA_TOKEN_TYPE="fsa",
         FSA_TOKEN_CARRIER="param",
@@ -1503,7 +1502,7 @@ def test_warnings_and_errors():
     s = "Hello World!"
     assert app._fsa._pm._casts["foo"](s) == cast_foo(s)
     # OAuth2 warnings
-    app = af.create_app(FSA_TOKEN_SCOPE=True)
+    app = af.create_app()
     # type errors
     try:
         app = af.create_app(FSA_CAST="not a dict")
@@ -1520,6 +1519,12 @@ def test_warnings_and_errors():
         assert False, "should not get through"
     except ConfigError as e:
         assert "FSA_SPECIAL_PARAMETER must be a dict" in str(e)
+    try:
+        app = af.create_app(FSA_NO_SUCH_DIRECTIVE="no-such-directive")
+        assert False, "should not get through"
+    except ConfigError as e:
+        assert "FSA_NO_SUCH_DIRECTIVE" in str(e)
+
 
 def test_jsondata(client):
     # simple types, anything but strings
@@ -1793,7 +1798,6 @@ def test_mode():
     for debug in (True, False):
         for mode in ("debug4", "debug3", "debug2", "debug1", "debug", "dev", "prod"):
             hello(fsa.Flask("mode", debug=debug, FSA_MODE=mode))
-            hello(fsa.Flask("mode", FSA_DEBUG=debug, FSA_MODE=mode))
     try:
         app = fsa.Flask("mode", FSA_MODE="unexpected")
         app._fsa._initialize()
@@ -1853,7 +1857,7 @@ def test_user_errors():
 def test_param_params():
     app = fsa.Flask("pp",
         FSA_MODE="debug4",
-        FSA_DEBUG_LEVEL=logging.DEBUG,
+        FSA_LOGGING_LEVEL=logging.DEBUG,
         FSA_AUTH="param",
         FSA_PARAM_USER="login",
         FSA_PARAM_PASS="password"

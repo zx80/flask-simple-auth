@@ -2614,9 +2614,6 @@ class FlaskSimpleAuth:
         conf = self._app.config
 
         # running mode
-        if "FSA_DEBUG" in conf and conf["FSA_DEBUG"]:  # upward compatibility
-            self._mode = _Mode.DEBUG
-            del conf["FSA_DEBUG"]
         if self._mode and self._mode >= _Mode.DEBUG and "FSA_MODE" in conf:
             log.warning("ignoring FSA_MODE because already in debug mode")
         else:
@@ -2636,7 +2633,7 @@ class FlaskSimpleAuth:
         all_directives = set(Directives.__dict__.keys())
         for name in conf:
             if name.startswith("FSA_") and name not in all_directives:
-                log.warning(f"unexpected directive, ignored: {name}")
+                raise self._Bad(f"unexpected FSA_* directive: {name}")
         # set self._local internal holder
         local = conf.get("FSA_LOCAL", "thread")
         if local == "process":
