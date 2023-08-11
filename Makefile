@@ -32,8 +32,9 @@ check.pytest: venv
 check.coverage: venv
 	$(MAKE) -C test coverage
 
+# MD013: line length
 check.docs:
-	pymarkdown scan *.md */*.md
+	pymarkdown -d MD013 scan *.md */*.md
 	sphinx-lint docs/
 
 # just run the demo

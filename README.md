@@ -23,7 +23,7 @@ With FlaskSimpleAuth, application and security concerns are separated:
 - the **framework** *implements* and *enforces* the security on the application
   routes, with safe defaults so that security cannot be overlooked.
 
-The following Flask application provides two routes: 
+The following Flask application provides two routes:
 
 - `GET /store` allows any authenticated *user* in group *employee* to
   access the store list.

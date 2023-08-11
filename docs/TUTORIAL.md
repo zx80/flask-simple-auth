@@ -193,7 +193,6 @@ def init_app(app: fsa.Flask):
 
 Edit the `app.py` file to initialize database and auth:
 
-
 ```python
 # insert in "app.py" initialization
 import database
@@ -266,7 +265,7 @@ def user_in_group(user: str, group: str) -> bool:
 
 Then when register it in the initialization:
 
-```
+```python
 # append to "init_app" in "auth.py"
     app.user_in_group(user_in_group)
 ```
@@ -389,6 +388,7 @@ FSA_PASSWORD_LENGTH = 5
 # including an upper case letter, a lower case letter, and a digit.
 FSA_PASSWORD_RE = [ r"[A-Z]", r"[a-z]", r"[0-9]" ]
 ```
+
 After restarting the application, weak passwords are rejected:
 
 ```python

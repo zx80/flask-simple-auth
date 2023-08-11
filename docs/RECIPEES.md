@@ -68,12 +68,15 @@ There are several equivalent options:
 You must build the object yourself, based on the string user name.
 
 - with a function of your making:
+
   ```python
   def get_user_object():
       return UserObject(app.current_user())
   ```
+
 - for convenience, this function can be registered as a special parameter
   associated to the type:
+
   ```python
   app.special_parameter(UserObject, lambda _: get_user_object())
 
@@ -103,15 +106,19 @@ returns such a value stored from a previous call.
 ### How-to implement my own authentication scheme?
 
 - create a hooks which returns the login based on the app and request:
+
   ```python
   def xyz_authentication(app, req):
       # investigate the request and return the login or None for 401
       return ...
   ```
+
 - register this hook as an authentication scheme:
+
   ```python
   app.authentication("xyz", xyz_authentication)
   ```
+
 - use this new authentication method in `FSA_AUTH` or maybe on some route with
   an `auth="xyz"` parameter.
 
@@ -130,20 +137,24 @@ clear password to the authentication server to check whether it is accepted.
 To do that:
 
 - create a new password checking function which will do that.
+
   ```python
   def check_login_password_with_AD_server(login: str, password: str) -> bool|None:
       import ldap
       # connect to server... send login/pass... look for result...
       return ...
   ```
+
   - on `True`: the password is accepted
   - on `False`: it is not
   - on `None`: 401 (no such user)
   - if unhappy: raise an `ErrorResponse` exception
 - register this hook
+
   ```python
   app.password_check(check_login_password_with_AD_server)
   ```
+
 - you do not need to have a `get_user_pass` hook if this is the sole password
   scheme used by your application.
 
@@ -153,6 +164,7 @@ The idea is to rely on an intermediate *token* with a temporary *realm* to valid
 that an authenfication method has succeeded, and that another must still be checked.
 
 - create a route with the *first* auth method, eg a login/password basic authentication.
+
   ```python
   @app.get("/login1", authorize="ALL", auth="basic")
   def get_login1(user: fsa.CurrentUser):
@@ -161,8 +173,10 @@ that an authenfication method has succeeded, and that another must still be chec
       # 10 minutes token provided with this basic authentication
       return app.create_token(user, realm="login1", delay=10.0), 200
   ```
+
 - create a route protected by the previous token, and check the email or SMS
   code provided by the user at this stage.
+
   ```python
   @app.get("/login2", authorize="ALL", auth="token", realm="login1")
   def get_login2(user: fsa.CurrentUser, code: str):
@@ -171,9 +185,12 @@ that an authenfication method has succeeded, and that another must still be chec
       # else return the final token
       return app.create_token(user), 200
   ```
+
 - Only allow token authentication on other routes with `FSA_AUTH = "token"`.
 
 See [MFA demo](https://github.com/zx80/flask-simple-auth/blob/main/demo/mfa.py).
+
+### How-to ... authentication?
 
 ## Authorization
 
@@ -202,20 +219,27 @@ Group authorizations are permissions based on belonging to a group.
 For that, you must:
 
 - create a callback to check whether a user belongs to a group:
+
   ```python
   def user_in_group(login: str, group: str) -> bool:
       return ... # whether user belong to the group
   ```
+
 - register this callback as a `user_in_group` hook:
+
   ```python
   app.user_in_group(user_in_group)
   ```
+
 - declare that the group authorization is required on a route definition:
+
   ```python
   @app.route("/admin-access", authorize="admin")
   def ...
   ```
+
 - for detecting group name typos, declare existing groups in the configuration:
+
   ```python
   FSA_AUTHZ_GROUPS = [ "admin", "client", "manager", ... ]
   ```
@@ -228,37 +252,43 @@ or the sender of this particular message.
 
 - object authorization require a per-domain callback which tells whether an
   *id*entified object of the domain can be access by a *user* in a *role*.
+
   ```python
   # domain "stuff" permission callback
   def stuff_permissions(stuff_id: int, login: str, role: str):
       return ...
   ```
+
 - this callback must be registered to the application
+
   ```python
   app.object_perms("stuff", stuff_permissions)
   ```
+
   Registering can also be done with `object_perms` used as a decorator or
   through the `FSA_OBJECT_PERMS` directive.
 - a function must require these permission by setting `authorize` to a tuple,
   with the domain, the name of the variable which identifies the object, and
   the role.
+
   ```python
   @app.patch("/stuff/<id>", authorize=("stuff", "id", "update")
   def patch_stuff_id(id: int, ...):
       return ...
   ```
+
   Convenient defaults are provided: the first parameter for the identifier,
   *None* for the role.
 
 ### How-to use oauth authorizations?
 
-### How-to ?
+### How-to ... authorizations?
 
 ## Parameters
 
 ### How-to use pydantic or dataclasses in requests and responses?
 
-### How-to ?
+### How-to ... parameters?
 
 ## Miscellaneous
 
@@ -275,11 +305,14 @@ FlaskSimpleAuth uses [`redis`](https://pypi.org/project/redis/) to deal with red
 - if necessary, install the module: `pip install redis`
 - set `FSA_CACHE = "redis"`
 - set `FSA_CACHE_OPTS` so that the application can connect to the cache, eg:
+
   ```python
   FSA_CACHE_OPTS = { "host": "my.redis.server", "port": 6379 }
   ```
+
 - if the service is shared, set `FSA_CACHE_PREFIX` to the application name to
   avoid cache entry collisions:
+
   ```python
   FSA_CACHE_PREFIX = "acme."
   ```
