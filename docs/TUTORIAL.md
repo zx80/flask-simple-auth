@@ -86,9 +86,9 @@ class AcmeData:
 
     def __init__(self):
         # Users: login -> (password_hash, email, is_admin)
-        self.users: dict[str, tuple[str, str, bool]] = {}
+        self.users: dict[str, list[str, str, bool]] = {}
         # Stuff: name -> (owner, price)
-        self.stuff: dict[str, tuple[str, float]] = {}
+        self.stuff: dict[str, list[str, float]] = {}
 
     def user_exists(self, login: str) -> bool:
         return login in db.users
@@ -98,7 +98,7 @@ class AcmeData:
             raise fsa.ErrorResponse(f"cannot overwrite existing user: {login}", 409)
         if not re.match(r"^[a-z][a-z0-9]+$", login):
             raise fsa.ErrorResponse(f"invalid login name: {login}", 400)
-        self.users[login] = (password, email, admin)
+        self.users[login] = [password, email, admin]
 
     def get_user_pass(self, login: str) -> str|None:
         return self.users[login][0] if self.user_exists(login) else None
@@ -111,7 +111,7 @@ class AcmeData:
             raise fsa.ErrorResponse(f"cannot overwrite existing stuff: {stuff}", 409)
         if login not in self.users:
             raise fsa.ErrorResponse(f"no such user: {login}", 404)
-        self.stuff[stuff] = (login, price)
+        self.stuff[stuff] = [login, price]
 
     def get_user_stuff(self, login: str) -> list[tuple[str, price]]:
         if login not in self.users:
@@ -328,12 +328,15 @@ We want to allow object owners to change the price of their stuff.
 
 ```python
 # insert in "auth.py"
-def stuff_permissions(stuff: str, login: str, role: str):
+def stuff_permissions(login: str, stuff: str, role: str):
     if role == "owner" and stuff in db.stuff:
         return db.stuff[stuff][0] == login
     else:
         return False
 
+```
+
+```python
 # append to "init_app"
     # register permission callback
     app.object_perms("stuff", stuff_permissions)
@@ -353,13 +356,13 @@ Then we can test:
 
 ```shell
 curl -si -X POST -u "acme:$ACME_ADMIN_PASS" \
-  -d login="mace" -d email="mace@acme.org" -d password="Mac1!" \
+  -d login="mace" -d email="mace@acme.org" -d password='Mac1!' \
                                       http://localhost:5000/user        # 201
-curl -si -X POST -u "mace:Mac1!" \
+curl -si -X POST -u 'mace:Mac1!' \
     -d stuff=bear -d price=2.0        http://localhost:5000/stuff       # 201
 curl -si -X PATCH -u "acme:$ACME_ADMIN_PASS" \
                   -d price=3.0        http://localhost:5000/stuff/bear  # 403
-curl -si -X PATCH -u "mace:Mac1!" \
+curl -si -X PATCH -u 'mace:Mac1!' \
                   -d price=3.0        http://localhost:5000/stuff/bear  # 204
 ```
 
