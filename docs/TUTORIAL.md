@@ -412,4 +412,12 @@ Errors are shown as `text/plain` by default, but this can be changed to JSON:
 FSA_ERROR_RESPONSE = "json:error"  # show errors as JSON
 ```
 
+Finally, the very verbose debugging level is not useful anymore, thus can be
+reduces by updating `FSA_MODE` setting:
+
+```python
+# update in "acme.conf"
+FSA_MODE = "dev"
+```
+
 Restart and test the application with these new settings…

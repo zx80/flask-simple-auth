@@ -1133,7 +1133,7 @@ See [all versions](VERSIONS.md).
 
 Todo or not todo…
 
-### Authn
+### Authn/Authz
 
 - demo LDAP auth? One class plus a new `check_password`?
 - add `any` token scheme?
@@ -1144,6 +1144,7 @@ Todo or not todo…
 - add `issuer` route parameter? see `realm`.
 - authz/authn instead of authorize/auth?
 - rename ANY/ALL/NONE to something more intuitive!
+- declare scopes *per domain*?
 
 ### Params
 
