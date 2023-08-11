@@ -116,7 +116,7 @@ class AcmeData:
     def get_user_stuff(self, login: str) -> list[tuple[str, price]]:
         if login not in self.users:
             raise fsa.ErrorResponse(f"no such user: {login}", 404)
-        return [ (stuff, data[1]) for row in self.stuff.items() if row[0] == login ]
+        return [ (stuff, row[1]) for stuff,row in self.stuff.items() if row[0] == login ]
 
     def change_stuff(self, stuff: str, price: float) -> None:
         if stuff not in self.stuff:
