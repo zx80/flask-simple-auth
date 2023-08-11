@@ -59,8 +59,8 @@ If you do not really need JWT compatibility, keep the default `fsa` token type
 
 There are several equivalent options:
 
-- call `app.current_user()` on an authenticated route.
 - use a special `CurrentUser` parameter type on a route to retrieve the user name.
+- call `app.current_user()` on an authenticated route.
 - call `app.get_user()` on any route, an authentification will be attempted.
 
 ### How-to get the current user as an object?
