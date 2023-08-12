@@ -508,22 +508,60 @@ class Directives:
     """
 
     FSA_CAST: dict[Any, Hooks.CastFun] = {}
-    """Parameter hook for type conversion."""
+    """Parameter hook for type conversion.
+
+    Cast function to call on the raw parameter (usually) string value,
+    if it does not have the expected type.
+    This does not apply to special and pydantic parameters.
+
+    See also ``cast`` function/decorator.
+    """
 
     FSA_SPECIAL_PARAMETER: dict[Any, Hooks.SpecialParameterFun] = {}
-    """Parameter hook for special parameters."""
+    """Parameter hook for special parameters.
 
+    The hook is called with the parameter *name* as an argument.
+    It may access ``request`` or whatever to return some value.
+
+    See also ``special_parameter`` function/decorator.
+    """
+
+    # FIXME there should be a decorator as well?
     FSA_BEFORE_REQUEST: list[Hooks.BeforeRequestFun] = []
-    """Request hook executed before request."""
+    """Request hook executed before request.
+
+    These hooks are managed internally by FlaskSimpleAuth so that they are
+    executed *after* its own before request hooks, so as to minimize
+    interactions between user hooks registered to Flask directly and its own
+    hooks.
+    """
 
     FSA_BEFORE_EXEC: list[Hooks.BeforeExecFun] = []
-    """Request hook executed after authentication."""
+    """Request hook executed after authentication.
+
+    FlaskSimpleAuth-specific hooks executed after authentication, so that for
+    instance the current user is available.
+
+    See also ``before_exec`` function/decorator.
+    """
 
     FSA_AFTER_REQUEST: list[Hooks.AfterRequestFun] = []
-    """Request hook executed after request."""
+    """Request hook executed after request.
+
+    These hooks are managed internally by FlaskSimpleAuth so that they are
+    executed *after* its own before request hooks, so as to minimize
+    interactions between user hooks registered to Flask directly and its own
+    hooks.
+    """
 
     FSA_ADD_HEADERS: dict[str, str|Callable[[], str]] = {}
-    """Response hook for add headers."""
+    """Response hook to add headers.
+
+    Key is the header name, value is the header value or a function generating
+    the header value.
+
+    See also ``add_headers`` function.
+    """
 
     # authentication
     FSA_AUTH: str|list[str] = ["httpd"]
@@ -544,16 +582,29 @@ class Directives:
     """
 
     FSA_REALM: str = "<to be set as application name>"
-    """Authentication realm, default is application name."""
+    """Authentication realm, default is application name.
+
+    This realm is used for *basic*, *digest* and *token* authentications.
+    """
 
     FSA_FAKE_LOGIN: str = "LOGIN"
-    """Parameter name for fake authentication."""
+    """Parameter name for fake authentication.
+
+    This parameter string value is taken as the authenticated user name when
+    *fake* auth is enabled. Only for local tests, please!
+    """
 
     FSA_PARAM_USER: str = "USER"
-    """Parameter name for user for param authentication."""
+    """Parameter name for user for param authentication.
+
+    This parameter string value is the login name for *param* authentication.
+    """
 
     FSA_PARAM_PASS: str = "PASS"
-    """Parameter name for password for param authentication."""
+    """Parameter name for password for param authentication.
+
+    This parameter string value is the password for *param* authentication.
+    """
 
     FSA_TOKEN_TYPE: str|None = "fsa"
     """Type of authentication token.
@@ -568,8 +619,9 @@ class Directives:
 
     Default depends on token type.
 
-    - ``blake2s``: for *fsa* tokens
-    - ``HS256``: for *jwt* tokens
+    - ``blake2s``: for *fsa* tokens. Other values can be taken from ``hashlib``,
+      see ``hashlib.algorithms_available``.
+    - ``HS256``: for *jwt* tokens. Other values defined in the JWT standard.
     """
 
     # default algorithms depending on token type
@@ -579,10 +631,10 @@ class Directives:
     FSA_TOKEN_CARRIER: str = "bearer"
     """Token carrier, i.e. where to find the token.
 
-    - ``bearer``: in ``Authorization`` header (default)
-    - ``cookie``: in a cookie
-    - ``header``: in a header
-    - ``param``: in a parameter
+    - ``bearer``: in the ``Authorization`` header (default)
+    - ``cookie``: in a request cookie
+    - ``header``: in a custom header
+    - ``param``: in a request parameter
 
     The ``FSA_TOKEN_NAME`` directives provides the additional name.
     """
@@ -610,7 +662,8 @@ class Directives:
     FSA_TOKEN_SECRET: str = "<to be overriden>"
     """Token verification secret.
 
-    Default is a randomly generated 256-bits string.
+    Default is a randomly generated 256-bits string which only works for one
+    process.
     """
 
     FSA_TOKEN_SIGN: str|None = None
