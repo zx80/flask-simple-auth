@@ -852,6 +852,7 @@ class _TokenManager:
         self._initialized = False
 
     def _initialize(self):
+        """After-configuration initialization."""
 
         if self._initialized:  # pragma: no cover
             log.warning("Token Manager already initialized, skipping…")
@@ -975,7 +976,7 @@ class _TokenManager:
         return "%04d%02d%02d%02d%02d%02d" % ts.timetuple()[:6]
 
     def _from_timestamp(self, ts) -> dt.datetime:
-        """Parses a simplistic timestamp string."""
+        """Parse a simplistic timestamp string."""
         p = re.match(r"^(\d{4})(\d\d)(\d\d)(\d\d)(\d\d)(\d\d)$", ts)
         if not p:
             raise self._Err(f"unexpected timestamp format: {ts}", 400)
@@ -993,7 +994,7 @@ class _TokenManager:
 
     def _get_jwt_token(self, realm: str, issuer: str|None, user, delay: float,
                        secret, scope: list[str]|None = None) -> str:
-        """Json Web Token (JWT) generation.
+        """JSON Web Token (JWT) generation.
 
         - exp: expiration
         - sub: subject (the user)
@@ -1186,6 +1187,7 @@ class _PasswordManager:
         self._initialized = False
 
     def _initialize(self):
+        """After-configuration initialization."""
 
         if self._initialized:  # pragma: no cover
             log.warning("Password Manager already initialized, skipping…")
@@ -1351,6 +1353,7 @@ class _AuthenticationManager:
         self._initialized = False
 
     def _initialize(self):
+        """After-configuration initialization."""
 
         if self._initialized:  # pragma: no cover
             log.warning("Authentication Manager already initialized, skipping…")
@@ -1697,6 +1700,7 @@ class _CacheManager:
         self._initialized = False
 
     def _initialize(self):
+        """After-configuration initialization."""
 
         if self._initialized:  # pragma: no cover
             log.warning("Cache Manager is already initialized, skipping…")
@@ -1856,6 +1860,7 @@ class _AuthorizationManager:
         self._initialized = False
 
     def _initialize(self):
+        """After-configuration initialization."""
 
         if self._initialized:  # pragma: no cover
             log.warning("Authorization Manager already initialized, skipping…")
@@ -2084,6 +2089,7 @@ class _ParameterManager:
         self._initialized = False
 
     def _initialize(self):
+        """After-configuration initialization."""
 
         if self._initialized:  # pragma: no cover
             log.warning("Parameter Manager already initialized, skipping…")
@@ -2121,8 +2127,8 @@ class _ParameterManager:
             return CombinedMultiDict([MultiDict(d) if not isinstance(d, MultiDict) else d
                                       for d in (request.args, request.form)])
 
-    # just check that there are no unused parameters
     def _noparams(self, path):
+        """Check that there are no unused parameters."""
 
         def decorate(fun: Callable):
 
@@ -2364,6 +2370,7 @@ class _RequestManager:
         self._initialized = False
 
     def _initialize(self) -> None:
+        """After-configuration initialization."""
 
         if self._initialized:  # pragma: no cover
             log.warning("Request Manager already initialized, skipping…")
@@ -2382,6 +2389,7 @@ class _RequestManager:
 
     # run hooks
     def _execute_hooks(self, path: str, what: str, fun: Callable, hooks: list[Hooks.BeforeExecFun]):
+        """Run a hook, handling possible errors if necessary."""
 
         @functools.wraps(fun)
         def wrapper(*args, **kwargs) -> Response:
@@ -2491,6 +2499,7 @@ class _ResponseManager:
         self._initialized = False
 
     def _initialize(self):
+        """After-configuration initialization."""
 
         if self._initialized:  # pragma: no cover
             log.warning("Response Manager already initialized, skipping…")
@@ -2627,7 +2636,7 @@ class FlaskSimpleAuth:
     """
 
     def __init__(self, app: flask.Flask, debug: bool = False, **config):
-        """Constructor parameter: flask application to extend and FSA directives."""
+        """Constructor parameters: flask application to extend and FSA directives."""
         # A basic minimal non functional initialization.
         # Actual initializations are deferred to init_app called later,
         # so as to allow updating the configuration.
