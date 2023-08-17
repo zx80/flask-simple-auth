@@ -1960,6 +1960,7 @@ class _AuthorizationManager:
 
     # just to record that no authorization check was needed
     def _no_authz(self, path, *groups):
+        """Decorator for skipping authorizations (authorize="NONE")."""
 
         def decorate(fun: Callable):
 
@@ -2729,7 +2730,7 @@ class FlaskSimpleAuth:
         self._pm._initialize()
         self._qm._initialize()
         self._rm._initialize()
-        self._cm._initialize()
+        self._cm._initialize()  # keep last
         #
         # blueprint hacks
         #
