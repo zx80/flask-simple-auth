@@ -105,15 +105,18 @@ returns such a value stored from a previous call.
 
 ### How-to implement my own authentication scheme?
 
-- create a hooks which returns the login based on the app and request:
+You need to create a callback to handle your scheme:
+
+- create a function which returns the login based on the app and request:
 
   ```python
   def xyz_authentication(app, req):
       # investigate the request and return the login or None for 401
+      # possible raise an ErrorResponse
       return ...
   ```
 
-- register this hook as an authentication scheme:
+- register this callback as an authentication scheme:
 
   ```python
   app.authentication("xyz", xyz_authentication)
