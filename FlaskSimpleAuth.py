@@ -2030,7 +2030,7 @@ class _AuthorizationManager:
                         log.error(f"type error on on {request.method} {request.path} permission {perm} check: {type(ok)}")
                         return self._Res("internal error with permission check", fsa._server_error)
                     elif not ok:
-                        return self._Res(f"permission denied on {domain}/{val} {mode}", 403)
+                        return self._Res(f"permission denied on {domain}:{val} ({mode})", 403)
                     # else: all is well, check next!
 
                 # then call the initial function

@@ -51,10 +51,10 @@ Create the `acme.conf` configuration file:
 
 ```python
 # File "acme.conf"
-FSA_MODE = "debug4"  # maximum verbosity
+FSA_MODE = "debug1"  # debug level 1, max is 4
 ```
 
-Start the application in a terminal with the *werkzeug* local test server.
+Start the application in a terminal with the *flask* local test server.
 
 ```shell
 export ACME_CONFIG="acme.conf"  # where to find the config file
@@ -68,9 +68,26 @@ Test the route, for instance using `curl` from another terminal:
 curl -si -X GET http://localhost:5000/hello  # 200
 ```
 
-You should see a log line for the request in the application terminal, and the
-JSON response in the second, with 3 FSA-specific headers telling the request,
-the authentication and execution time.
+You should see a log line for the request in the application terminal, some
+debug output, and the JSON response in the second terminal, with 3 FSA-specific
+headers telling the request, the authentication and execution time:
+
+```http
+HTTP/1.1 200 OK
+Server: Werkzeug/... Python/...
+Date: ...
+FSA-Request: GET /hello
+FSA-User: None (None)
+FSA-Delay: 0.000668
+Content-Type: application/json
+Content-Length: 42
+Connection: close
+
+{
+  "msg": "hello",
+  "version": "24.0"
+}
+```
 
 ## Acme Database
 
@@ -91,7 +108,7 @@ class AcmeData:
         self.stuff: dict[str, list[str, float]] = {}
 
     def user_exists(self, login: str) -> bool:
-        return login in db.users
+        return login in self.users
 
     def add_user(self, login: str, password: str, email: str, admin: bool) -> None:
         if self.user_exists(login):
