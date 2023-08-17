@@ -316,3 +316,7 @@ FlaskSimpleAuth uses [`redis`](https://pypi.org/project/redis/) to deal with red
   ```python
   FSA_CACHE_PREFIX = "acme."
   ```
+
+## How-to get an anwer?
+
+Submit your question [there](https://github.com/zx80/flask-simple-auth/issues)!

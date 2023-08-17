@@ -298,7 +298,7 @@ def post_user(login: str, password: str, email: str):
     return f"user added: {login}", 201
 ```
 
-Then test:
+Then restart and test:
 
 ```shell
 curl -si -X POST -u "acme:$ACME_ADMIN_PASS" \
@@ -334,7 +334,7 @@ def get_token(user: fsa.CurrentUser):
     return { "token": app.create_token(user) }, 200
 ```
 
-Then test:
+Then restart and test:
 
 ```shell
 curl -si -X GET -u "acme:$ACME_ADMIN_PASS" http://localhost:5000/token
@@ -380,7 +380,7 @@ def patch_stuff_sid(sid: str, price: float):
     return f"stuff changed: {sid}", 204
 ```
 
-Then we can test:
+Then we can restart and test:
 
 ```shell
 curl -si -X POST -u "acme:$ACME_ADMIN_PASS" \
