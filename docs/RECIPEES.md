@@ -323,3 +323,7 @@ FlaskSimpleAuth uses [`redis`](https://pypi.org/project/redis/) to deal with red
 ## How-to get an anwer?
 
 Submit your question [there](https://github.com/zx80/flask-simple-auth/issues)!
+
+### How-to contribute?
+
+Implement a feature, improve the code, fix a bug… and submit a pull request.
