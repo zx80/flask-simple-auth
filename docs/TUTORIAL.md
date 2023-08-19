@@ -89,7 +89,7 @@ Connection: close
 }
 ```
 
-## Acme Database
+## Acme Database and Tests
 
 This incredible application has some data hold in our toy *Acme* database
 with *Users* who can own *Stuff* at a price. Create file `acme.py`:
@@ -139,6 +139,51 @@ class AcmeData:
         if stuff not in self.stuff:
             raise fsa.ErrorResponse(f"no such stuff: {stuff}", 404)
         self.stuff[stuff][1] = price
+```
+
+It is good practice to test your application, for instance with `pytest`:
+
+```python
+# file "test.py"
+import pytest
+
+from acme import AcmeData
+
+def test_acmedata():
+    db = AcmeData()
+    # users
+    assert not db.user_exists("susie")
+    db.add_user("susie", "susie-pass", "susie@acme.org", True)
+    db.add_user("calvin", "calvin-pass", "calvin@acme.org", False)
+    assert db.user_exists("susie") and db.user_exists("calvin")
+    assert db.get_user_pass("susie") == "susie-pass"
+    assert db.get_user_pass("calvin") == "calvin-pass"
+    assert db.user_is_admin("susie") and not db.user_is_admin("calvin")
+    # stuff
+    db.add_stuff("pencil", "susie", 3.12)
+    db.add_stuff("toy", "calvin", 2.72)
+    assert db.get_user_stuff("calvin") == [ ("toy", 2.72) ]
+    db.change_stuff("pencil", 3.14)
+    assert db.get_user_stuff("susie") == [ ("pencil", 3.14) ]
+
+from app import app
+
+@pytest.fixture()
+def client():
+    with app.test_client() as client:
+        yield client
+
+def test_hello(client):
+    res = client.get("/hello")
+    assert res.status_code == 200
+    assert res.json[0]["msg"] == "hello"
+```
+
+Install and run with `pytest`:
+
+```shell
+pip install pytest
+pytest test.py
 ```
 
 ## Basic Authentication
