@@ -350,8 +350,9 @@ Another common way to authenticate a user is to provide the credentials as
 request parameters.
 This is usually done once to get some *token* (bearer, cookie…) which will be
 used to access other routes.
-To enable parameter authentication as well as basic authentication, update
-`acme.conf`:
+Initialization requirements are the same as for *basic* authentication.
+To enable parameter authentication as well as *basic* authentication, simply
+update the `FSA_AUTH` configuration directive in `acme.conf`:
 
 ```python
 # update "acme.conf"
@@ -583,8 +584,9 @@ curl -si -X POST -u "acme:$ACME_ADMIN_PASS" \
 ```
 
 By default, any group name is accepted with `authorize`, and may fail at run
-time. Available groups can be explicitely declare with `FSA_AUTHZ_GROUPS` so that
-a configuration error is raised instead:
+time.
+Available groups can be explicitely declare with `FSA_AUTHZ_GROUPS` so that a
+configuration error is raised instead:
 
 ```python
 # append to "acme.conf"
