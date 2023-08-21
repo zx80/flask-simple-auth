@@ -172,7 +172,7 @@ def test_acmedata():
 
 from app import app
 
-@pytest.fixture()
+@pytest.fixture
 def client():
     with app.test_client() as client:
         yield client
@@ -315,7 +315,7 @@ curl -si -X POST -u "acme:$ACME_ADMIN_PASS" \
 curl -si -X GET -u "acme:$ACME_ADMIN_PASS" http://localhost:5000/stuff     # 200
 ```
 
-Also append these same tests to `test.py`, and run them with `pytest`.
+Also append these same tests to `test.py`, and run them with `pytest`:
 
 ```python
 import os
@@ -395,7 +395,7 @@ curl -si -X POST -u "acme:$ACME_ADMIN_PASS" \
 curl -si -X GET -u 'meca:Mec0!' http://localhost:5000/hello-me    # 200
 ```
 
-Also append these same tests to `test.py`, and run them with `pytest`.
+Also append these same tests to `test.py`, and run them with `pytest`:
 
 ```python
 def test_group_authz(client):
@@ -446,7 +446,7 @@ curl -si -X GET -H "Authorization: Bearer <put-the-token-value-here>" \
                                         http://localhost:5000/hello-me  # 200
 ```
 
-Also append these same tests to `test.py`, and run them with `pytest`.
+Also append these same tests to `test.py`, and run them with `pytest`:
 
 ```python
 def test_token_authn(client):
@@ -503,6 +503,25 @@ curl -si -X PATCH -u "acme:$ACME_ADMIN_PASS" \
                   -d price=3.0        http://localhost:5000/stuff/bear  # 403
 curl -si -X PATCH -u 'mace:Mac1!' \
                   -d price=3.0        http://localhost:5000/stuff/bear  # 204
+```
+
+Also append these same tests to `test.py`, and run them with `pytest`:
+
+```python
+MACE_PASS = "M@c1!"
+MACE_BASIC = { "Authorization": basic_auth("mace", MACE_PASS) }
+
+def test_objperm_authz(client):
+    res = client.post("/user", headers=ACME_BASIC,
+                      json={"login": "mace", "password": MACE_PASS, "email": "mace@acme.org"})
+    assert res.status_code == 201
+    res = client.post("/stuff", headers=MACE_BASIC, json={"stuff": "bear", "price": 2.0})
+    assert res.status_code == 201
+    res = client.patch("/stuff/bear", headers=ACME_BASIC, json={"price": 3.0})
+    assert res.status_code == 403
+    res = client.patch("/stuff/bear", headers=MACE_BASIC, json={"price": 3.0})
+    assert res.status_code == 204
+    # FIXME should cleanup data
 ```
 
 ## Further Improvements
