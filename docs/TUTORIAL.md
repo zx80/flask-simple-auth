@@ -118,7 +118,11 @@ class AcmeData:
         self.users[login] = [password, email, admin]
 
     def get_user_pass(self, login: str) -> str|None:
-        return self.users[login][0] if self.user_exists(login) else None
+        if self.user_exists(login)
+            return self.users[login][0]
+        else:
+            # NOTE returning None would work as well, but the result is cached
+            raise fsa.ErrorResponse(f"no such user: {login}", 401)
 
     def user_is_admin(self, login: str) -> bool:
         return self.users[login][2]
@@ -176,14 +180,16 @@ def client():
 def test_hello(client):
     res = client.get("/hello")
     assert res.status_code == 200
-    assert res.json[0]["msg"] == "hello"
+    assert res.json["msg"] == "hello"
+
+# TODO MORE TESTS
 ```
 
 Install and run with `pytest`:
 
 ```shell
-pip install pytest
-pytest test.py
+pip install pytest requests
+pytest test.py  # 2 passed
 ```
 
 ## Basic Authentication
@@ -309,6 +315,35 @@ curl -si -X POST -u "acme:$ACME_ADMIN_PASS" \
 curl -si -X GET -u "acme:$ACME_ADMIN_PASS" http://localhost:5000/stuff     # 200
 ```
 
+Also append these same tests to `test.py`, and run them with `pytest`.
+
+```python
+import os
+from requests.auth import _basic_auth_str as basic_auth
+
+ACME_BASIC = { "Authorization": basic_auth("acme", os.environ["ACME_ADMIN_PASS"]) }
+
+MECA_PASS = "Mec0!"
+MECA_BASIC = { "Authorization": basic_auth("meca", MECA_PASS) }
+
+def test_basic_authn(client):
+    res = client.get("/hello-me")
+    assert res.status_code == 401
+    res = client.get("/hello-me", headers=MECA_BASIC)
+    assert res.status_code == 401
+    res = client.get("/hello-me", headers=ACME_BASIC)
+    assert res.status_code == 200
+    assert res.json["user"] == "acme"
+    res = client.post("/stuff", headers=ACME_BASIC, json={"stuff": "pinte", "price": 6.5})
+    assert res.status_code == 201
+    res = client.post("/stuff", headers=ACME_BASIC, json={"stuff": "pinte", "price": 6.5})
+    assert res.status_code == 409
+    res = client.get("/stuff", headers=ACME_BASIC)
+    assert res.status_code == 200
+    assert res.json[0][0] == "pinte"
+    # FIXME should cleanup data
+```
+
 ## Group Authorization
 
 For group authorization, a callback function must be provided to tell whether a
@@ -349,15 +384,33 @@ Then restart and test:
 curl -si -X POST -u "acme:$ACME_ADMIN_PASS" \
                                       http://localhost:5000/user  # 400 (missing parameters)
 curl -si -X POST -u "acme:$ACME_ADMIN_PASS" \
-  -d login="acme" -d email="123@acme.org" -d password='Pass!' \
+  -d login="acme" -d email="acme@acme.org" -d password='P0ss!' \
                                       http://localhost:5000/user  # 409 (user exists)
 curl -si -X POST -u "acme:$ACME_ADMIN_PASS" \
-  -d login="123" -d email="123@acme.org" -d password='Pass!' \
+  -d login="123" -d email="123@acme.org" -d password='P1ss!' \
                                       http://localhost:5000/user  # 400 (bad login parameter)
 curl -si -X POST -u "acme:$ACME_ADMIN_PASS" \
   -d login="meca" -d email="meca@acme.org" -d password='Mec0!' \
                                       http://localhost:5000/user  # 201
 curl -si -X GET -u 'meca:Mec0!' http://localhost:5000/hello-me    # 200
+```
+
+Also append these same tests to `test.py`, and run them with `pytest`.
+
+```python
+def test_group_authz(client):
+    res = client.post("/user", headers=ACME_BASIC)
+    assert res.status_code == 400
+    res = client.post("/user", headers=ACME_BASIC, json={"login": "acme", "email": "acme@acme.org", "password": "P0ss!"})
+    assert res.status_code == 409
+    res = client.post("/user", headers=ACME_BASIC, json={"login": "123", "email": "123@acme.org", "password": "P1ss!"})
+    assert res.status_code == 400
+    res = client.post("/user", headers=ACME_BASIC, json={"login": "meca", "email": "meca@acme.org", "password": MECA_PASS})
+    assert res.status_code == 201
+    res = client.get("/hello-me", headers=MECA_BASIC)
+    assert res.status_code == 200
+    assert res.json["user"] == "meca"
+    # FIXME should cleanup data
 ```
 
 ## Token Authentication
@@ -391,6 +444,19 @@ Then proceed to use the token instead of the login/password:
 ```shell
 curl -si -X GET -H "Authorization: Bearer <put-the-token-value-here>" \
                                         http://localhost:5000/hello-me  # 200
+```
+
+Also append these same tests to `test.py`, and run them with `pytest`.
+
+```python
+def test_token_authn(client):
+    res = client.get("/token", headers=ACME_BASIC)
+    assert res.status_code == 200
+    token = res.json["token"]
+    ACME_TOKEN = { "Authorization": f"Bearer {token}" }
+    res = client.get("/hello-me", headers=ACME_TOKEN)
+    assert res.status_code == 200
+    assert res.json["user"] == "acme"
 ```
 
 ## Object Permission Authorization
