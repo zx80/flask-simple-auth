@@ -118,11 +118,10 @@ class AcmeData:
         self.users[login] = [password, email, admin]
 
     def get_user_pass(self, login: str) -> str|None:
-        if self.user_exists(login)
-            return self.users[login][0]
-        else:
+        if login not in self.users:
             # NOTE returning None would work as well, but the result is cached
-            raise fsa.ErrorResponse(f"no such user: {login}", 401)
+            raise fsa.ErrorResponse(f"no such user: {login}", 404)
+        return self.users[login][0]
 
     def user_is_admin(self, login: str) -> bool:
         return self.users[login][2]
