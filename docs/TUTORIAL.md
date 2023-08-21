@@ -344,6 +344,41 @@ def test_basic_authn(client):
     # FIXME should cleanup data
 ```
 
+## Parameter Authentication
+
+Another common way to authenticate a user is to provide the credentials as
+request parameters.
+This is usually done once to get some *token* (bearer, cookie…) which will be
+used to access other routes.
+To enable parameter authentication as well as basic authentication, update
+`acme.conf`:
+
+```python
+# update "acme.conf"
+FSA_AUTH = "password"  # allow both "param" and "basic"
+```
+
+The default parameter names are `USER` and `PASS`.
+Test from a terminal:
+
+```shell
+curl -si -X GET -d USER=acme -d PASS="$ACME_ADMIN_PASS" http://localhost:5000  # 200
+```
+
+Also append these same tests to `test.py`, and run them with `pytest`:
+
+```python
+def test_param_authn(client):
+    # HTTP parameters
+    res = client.get("/hello-me", data={"USER": "acme", "PASS": os.environ["ACME_ADMIN_PASS"]})
+    assert res.status_code == 200
+    assert res.json["user"] == "acme"
+    # also with JSON parameters
+    res = client.get("/hello-me", json={"USER": "acme", "PASS": os.environ["ACME_ADMIN_PASS"]})
+    assert res.status_code == 200
+    assert res.json["user"] == "acme"
+```
+
 ## Group Authorization
 
 For group authorization, a callback function must be provided to tell whether a
