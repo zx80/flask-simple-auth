@@ -343,13 +343,14 @@ def test_basic_authn(client):
     # FIXME should cleanup data
 ```
 
-## Parameter Authentication
+## Param Authentication
 
 Another common way to authenticate a user is to provide the credentials as
 request parameters.
 This is usually done once to get some *token* (bearer, cookie…) which will be
 used to access other routes.
-Initialization requirements are the same as for *basic* authentication.
+Initialization requirements are the same as for *basic* authentication, as
+retrieving the user password is also needed.
 To enable parameter authentication as well as *basic* authentication, simply
 update the `FSA_AUTH` configuration directive in `acme.conf`:
 
