@@ -192,7 +192,7 @@ Authentication is *always* performed on demand, either to check for a route
 authorization declared with `authorize` or when calling `get_user`.
 
 The authentication scheme attempted on a route can be altered with the `auth`
-parameter added to the `route` decorator.
+(or `authn`) parameter added to the `route` decorator.
 This may be used to restrict or change the authentication scheme on a route.
 Some combinations may or may not work depending on module internals, so this is
 only for special cases.
@@ -506,8 +506,8 @@ Also, The same shared secret is used to validate all realms.
 
 ## Authorization
 
-Authorizations are declared with the `authorize` parameter to
-the `route` decorator or its per-method shortcuts.
+Authorizations are declared with the `authorize` (or `authz`) parameter to the
+`route` decorator or its per-method shortcuts.
 The modules supports three permission models:
 
 - a group-oriented model

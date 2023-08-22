@@ -14,6 +14,7 @@ Rename `FSA_PASSWORD_LEN` to `FSA_PASSWORD_LENGTH` for consistency.
 Turn unknown `FSA_*` directives into configuration errors.
 Drop `FSA_DEBUG` compatibility.
 Improve API automatically generated documentation.
+Add route parameters `authz` and `authn` as synonymous to `authorize` and `auth`.
 
 ## 24.0 on 2023-07-28
 

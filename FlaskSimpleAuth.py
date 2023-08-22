@@ -2996,7 +2996,25 @@ class FlaskSimpleAuth:
 
     # FIXME endpoint?
     def add_url_rule(self, rule, endpoint=None, view_func=None, authorize=NONE, auth=None, realm=None, **options):
-        """Route decorator helper method."""
+        """Route decorator helper method.
+
+        - *authz* or *authorize*: authorization constraints.
+        - *authn* or *auth*: authentication constraints.
+        - *realm*: realm for this route, supercedes global settings.
+        """
+
+        # handle authz/authorize and authn/auth
+        if "authz" in options:
+            if authorize is None or authorize != NONE:
+                raise self._Bad("cannot use both authz and authorize on a route")
+            authorize = options["authz"]
+            del options["authz"]
+
+        if "authn" in options:
+            if auth is not None:
+                raise self._Bad("cannot use both authn and auth on a route")
+            auth = options["authn"]
+            del options["authn"]
 
         # lazy initialization
         self._initialize()

@@ -1065,14 +1065,29 @@ def test_bad_app():
     # bad route auth
     try:
         app = create_app()
-        @app.get("/bad-auth-type", authorize="ALL", auth=1)
+        @app.get("/bad-auth-type", authz="ALL", authn=1)
         def get_bad_auth_type():
             return None
         assert False, "bad app creation must fail"
     except ConfigError as e:
         assert "unexpected auth type" in str(e)
-    # bad add various checks
     app = create_app()
+    # incompatible route parameters
+    try:
+        @app.get("/bad-param-1", authorize="ALL", authz="NONE")
+        def get_bad_param_1():
+            return None
+        assert False, "creation must fail"
+    except ConfigError as e:
+        assert "cannot use both" in str(e)
+    try:
+        @app.get("/bad-param-2", auth="basic", authn="param")
+        def get_bad_param_2():
+            return None
+        assert False, "creation must fail"
+    except ConfigError as e:
+        assert "cannot use both" in str(e)
+    # bad add various checks
     try:
         app.add_group(["hello", "world"])
         assert False, "bad app creation must fail"
