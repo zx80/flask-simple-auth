@@ -579,13 +579,23 @@ FSA_PASSWORD_RE = [ r"[A-Z]", r"[a-z]", r"[0-9]" ]
 
 After restarting the application, weak passwords are rejected:
 
-```python
+```shell
 curl -si -X POST -u "acme:$ACME_ADMIN_PASS" \
   -d login="came" -d email="came@acme.org" -d password="C@me" \
                                          http://localhost:5000/user  # 400 (pass length)
 curl -si -X POST -u "acme:$ACME_ADMIN_PASS" \
   -d login="came" -d email="came@acme.org" -d password="Cameleon" \
                                          http://localhost:5000/user  # 400 (pass regex)
+```
+
+Also append these same tests to `test.py`, and run them with `pytest`:
+
+```python
+def test_weak_password(client):
+    res = client.post("/user", data={"login": "came", "password": "C@me", "email": "came@acme.org"})
+    assert res.status_code == 400
+    res = client.post("/user", data={"login": "came", "password": "Cameleon", "email": "came@acme.org"})
+    assert res.status_code == 400
 ```
 
 By default, any group name is accepted with `authorize`, and may fail at run
