@@ -1,10 +1,14 @@
 # FlaskSimpleAuth Tutorial
 
 This tutorial present how to build a
-[FlaskSimpleAuth](https://pypi.org/project/flasksimpleauth) REST back-end
+[FlaskSimpleAuth](https://pypi.org/project/flasksimpleauth)
+[REST](https://en.wikipedia.org/wiki/REST)
+[HTTP](https://en.wikipedia.org/wiki/HTTP)
+back-end in [Python](https://python.org/)
 project with basic or parameter authentication plus group and object
 authorizations.
-This is not very different from starting a Flask project, *but* if you start
+This is not very different from starting a
+[Flask](https://flask.palletsprojects.com/) project, *but* if you start
 with Flask you will have to unlearn things as FlaskSimpleAuth framework extends
 and simplifies Flask on key points.
 
@@ -142,7 +146,8 @@ class AcmeData:
         self.stuff[stuff][1] = price
 ```
 
-It is good practice to test your application, for instance with `pytest`:
+It is good practice to test your application, for instance with
+[`pytest`](https://pytest.org/):
 
 ```python
 # file "test.py"
