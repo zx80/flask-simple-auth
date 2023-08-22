@@ -1143,7 +1143,7 @@ Todo or not todo…
 - how to have several issuers and their signatures schemes?
 - add `issuer` route parameter? see `realm`.
 - authz/authn instead of authorize/auth?
-- rename ANY/ALL/NONE to something more intuitive!
+- rename ANY/ALL/NONE to something more intuitive?
 - declare scopes *per domain*?
 
 ### Params
@@ -1168,18 +1168,15 @@ Todo or not todo…
 - reduce sloc?
 - separate classes/projects?
 - check for more directive types (dynamically)?
-- `local` should depend on `traitlets` and others?
 - add app.log?
 - type checks: mypy vs pyright vs pyanalyze?  mypy is way too slow!
 - how to ensure that shared/pooled resources are returned even on errors?
   is an `after_request` hook enough?
-- add more examples in the documentation
 - take advantage of `TypedDict`?
 
 ### Documentation
 
-- sphinxify
+- separate explanations from reference?
+- more recipees?
 - include demo? point to demo?
-- Tutorial? Recipee?
 - comparisons with other frameworks
-- build and link API doc?

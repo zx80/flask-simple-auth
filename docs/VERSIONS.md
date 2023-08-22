@@ -12,8 +12,8 @@ recommendations.
 Refactor hook type declarations in a dummy class.
 Rename `FSA_PASSWORD_LEN` to `FSA_PASSWORD_LENGTH` for consistency.
 Turn unknown `FSA_*` directives into configuration errors.
-Drop `FSA_DEBUG`.
-Improve API documentation.
+Drop `FSA_DEBUG` compatibility.
+Improve API automatically generated documentation.
 
 ## 24.0 on 2023-07-28
 
