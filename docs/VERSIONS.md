@@ -3,7 +3,7 @@
 Sources are available on [GitHub](https://github.com/zx80/flask-simple-auth)
 and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 
-## 25.0 on ?
+## 25.0 on 2023-08-22
 
 Add *gevent* and *eventlet* to `FSA_LOCAL`.
 Improve type declarations.
