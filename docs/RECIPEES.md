@@ -44,10 +44,12 @@ This is login and password authentication passed as HTTP or JSON parameters.
 
 ### How-to configure token authentication?
 
-It is enabled by default.
+It is enabled by default if `FSA_MODE` is a scalar.
+It can be enabled explicitely with `FSA_MODE` as a list which
+contains `token`.
 
-If you do not really need JWT compatibility, keep the default `fsa` token type
-(`FSA_TOKEN_TYPE`) which is human readable, unlike JWT.
+If you do not really need [JWT](https://jwt.io/) compatibility, keep the
+default `fsa` token type (`FSA_TOKEN_TYPE`) which is human readable, unlike JWT.
 
 ### How to disable token authentication?
 
