@@ -318,6 +318,7 @@ curl -si -X GET -u "acme:$ACME_ADMIN_PASS" http://localhost:5000/stuff     # 200
 Also append these same tests to `test.py`, and run them with `pytest`:
 
 ```python
+# append to "test.py"
 import os
 from base64 import b64encode
 
@@ -374,6 +375,7 @@ curl -si -X GET -d USER=acme -d PASS="$ACME_ADMIN_PASS" http://localhost:5000  #
 Also append these same tests to `test.py`, and run them with `pytest`:
 
 ```python
+# append to "test.py"
 def test_param_authn(client):
     # HTTP parameters
     res = client.get("/hello-me", data={"USER": "acme", "PASS": os.environ["ACME_ADMIN_PASS"]})
@@ -439,6 +441,7 @@ curl -si -X GET -u 'meca:Mec0!' http://localhost:5000/hello-me    # 200
 Also append these same tests to `test.py`, and run them with `pytest`:
 
 ```python
+# append to "test.py"
 def test_group_authz(client):
     res = client.post("/user", headers=ACME_BASIC)
     assert res.status_code == 400
@@ -490,6 +493,7 @@ curl -si -X GET -H "Authorization: Bearer <put-the-token-value-here>" \
 Also append these same tests to `test.py`, and run them with `pytest`:
 
 ```python
+# append to "test.py"
 def test_token_authn(client):
     res = client.get("/token", headers=ACME_BASIC)
     assert res.status_code == 200
@@ -549,6 +553,7 @@ curl -si -X PATCH -u 'mace:Mac1!' \
 Also append these same tests to `test.py`, and run them with `pytest`:
 
 ```python
+# append to "test.py"
 MACE_PASS = "M@c1!"
 MACE_BASIC = basic_auth("mace", MACE_PASS)
 
@@ -591,6 +596,7 @@ curl -si -X POST -u "acme:$ACME_ADMIN_PASS" \
 Also append these same tests to `test.py`, and run them with `pytest`:
 
 ```python
+# append to "test.py"
 def test_weak_password(client):
     res = client.post("/user", headers=ACME_BASIC,
                       data={"login": "came", "password": "C@me", "email": "came@acme.org"})
