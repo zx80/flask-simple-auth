@@ -118,10 +118,7 @@ class AcmeData:
         self.users[login] = [password, email, admin]
 
     def get_user_pass(self, login: str) -> str|None:
-        if login not in self.users:
-            # NOTE returning None would work as well, but the result is cached
-            raise fsa.ErrorResponse(f"no such user: {login}", 404)
-        return self.users[login][0]
+        return self.users[login][0] if login in self.users else None
 
     def user_is_admin(self, login: str) -> bool:
         return self.users[login][2]
@@ -247,6 +244,9 @@ from database import db
 
 # FlaskSimpleAuth password authentication hook
 def get_user_pass(login: str) -> str|None:
+    if not db.user_exists(login)
+        # NOTE returning None would work as well, but the result is cached
+        raise fsa.ErrorResponse(f"no such user: {login}", 401)
     return db.get_user_pass(login)
 
 # TODO MORE CALLBACKS
