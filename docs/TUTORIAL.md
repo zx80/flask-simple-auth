@@ -2,7 +2,8 @@
 
 This tutorial present how to build a
 [FlaskSimpleAuth](https://pypi.org/project/flasksimpleauth) REST back-end
-project with basic authentication plus group and object authorizations.
+project with basic or parameter authentication plus group and object
+authorizations.
 This is not very different from starting a Flask project, *but* if you start
 with Flask you will have to unlearn things as FlaskSimpleAuth framework extends
 and simplifies Flask on key points.
