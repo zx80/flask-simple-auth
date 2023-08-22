@@ -185,7 +185,7 @@ def test_hello(client):
 Install and run with `pytest`:
 
 ```shell
-pip install pytest requests
+pip install pytest
 pytest test.py  # 2 passed
 ```
 
@@ -319,12 +319,16 @@ Also append these same tests to `test.py`, and run them with `pytest`:
 
 ```python
 import os
-from requests.auth import _basic_auth_str as basic_auth
+from base64 import b64encode
 
-ACME_BASIC = { "Authorization": basic_auth("acme", os.environ["ACME_ADMIN_PASS"]) }
+def basic_auth(login: str, passwd: str) -> dict[str, str]:
+    encoded = b64encode(f"{login}:{passwd}".encode("UTF8"))
+    return { "Authorization": f"Basic {encoded.decode('ascii')}" }
+
+ACME_BASIC = basic_auth("acme", os.environ["ACME_ADMIN_PASS"])
 
 MECA_PASS = "Mec0!"
-MECA_BASIC = { "Authorization": basic_auth("meca", MECA_PASS) }
+MECA_BASIC = basic_auth("meca", MECA_PASS)
 
 def test_basic_authn(client):
     res = client.get("/hello-me")
@@ -546,7 +550,7 @@ Also append these same tests to `test.py`, and run them with `pytest`:
 
 ```python
 MACE_PASS = "M@c1!"
-MACE_BASIC = { "Authorization": basic_auth("mace", MACE_PASS) }
+MACE_BASIC = basic_auth("mace", MACE_PASS)
 
 def test_objperm_authz(client):
     res = client.post("/user", headers=ACME_BASIC,
