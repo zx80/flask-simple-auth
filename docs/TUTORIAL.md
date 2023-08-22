@@ -90,7 +90,7 @@ Connection: close
 }
 ```
 
-## Acme Database and Tests
+## Acme Database and Automated Tests
 
 This incredible application has some data hold in our toy *Acme* database
 with *Users* who can own *Stuff* at a price. Create file `acme.py`:
