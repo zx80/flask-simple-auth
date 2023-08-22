@@ -592,9 +592,11 @@ Also append these same tests to `test.py`, and run them with `pytest`:
 
 ```python
 def test_weak_password(client):
-    res = client.post("/user", data={"login": "came", "password": "C@me", "email": "came@acme.org"})
+    res = client.post("/user", headers=ACME_BASIC,
+                      data={"login": "came", "password": "C@me", "email": "came@acme.org"})
     assert res.status_code == 400
-    res = client.post("/user", data={"login": "came", "password": "Cameleon", "email": "came@acme.org"})
+    res = client.post("/user", headers=ACME_BASIC,
+                      data={"login": "came", "password": "Cameleon", "email": "came@acme.org"})
     assert res.status_code == 400
 ```
 
