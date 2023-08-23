@@ -27,11 +27,10 @@ pip install FlaskSimpleAuth[password]
 Create the `app.py` file with an unauthenticated `GET /hello` route.
 The route is open because it is authorized to *ANY*one.
 The `authorize` route parameter is mandatory to declare authorization
-requirements on the route. If not set, the route is closed (403).
+requirements on the route. If not set, the route is closed (aka 403).
 
 ```python
 # file "app.py"
-
 # necessary for debug messages to show up…
 import logging
 logging.basicConfig()
