@@ -261,7 +261,7 @@ Create an `auth.py` file for the authentication and authorization callbacks:
 # file "auth.py"
 import FlaskSimpleAuth as fsa
 
-# we need the database!
+# the database is needed!
 from database import db
 
 # FlaskSimpleAuth password authentication hook
@@ -414,7 +414,7 @@ def test_param_authn(client):
 For *group* authorization, a callback function must be provided to tell whether a
 user belongs to a group.
 
-First, we add the group checking function:
+First, add the group checking function:
 
 ```python
 # in "auth.py"
@@ -425,7 +425,7 @@ def user_in_group(user: str, group: str) -> bool:
         return False
 ```
 
-Then when register it in the initialization:
+Then register it in the auth initializations:
 
 ```python
 # append to "init_app" in "auth.py"
@@ -486,8 +486,8 @@ This avoids sending login/passwords in each request, and is much more efficient
 for the server because cryptographic password hashing functions are *designed*
 to be very slow.
 
-There is nearly nothing to do: token authentication is activated by default, we
-only need to provide a route which allows to create a token:
+There is nearly nothing to do: token authentication is activated by default,
+you only need to provide a route which allows to create a token:
 
 Edit file `app.py`:
 
@@ -530,25 +530,25 @@ def test_token_authn(client):
 
 Object permissions link a user to some *objects* to allow operations.
 We want to allow object owners to change the price of their stuff.
-First, we create the permission verification function:
+First, create the permission verification function:
 
 ```python
 # insert in "auth.py"
-def stuff_permissions(login: str, stuff: str, role: str):
+def stuff_permissions(login: str, stuff: str, role: str) -> bool:
     if role == "owner" and stuff in db.stuff:
         return db.stuff[stuff][0] == login
     else:
         return False
 ```
 
-Then we register it when the application authentication is initialized:
+Then register it in the auth initializations:
 
 ```python
 # append to "init_app" in "auth.py"
     app.object_perms("stuff", stuff_permissions)
 ```
 
-Then we implement the route:
+Then implement the route:
 
 ```python
 # append to "app.py"
@@ -558,7 +558,7 @@ def patch_stuff_sid(sid: str, price: float):
     return f"stuff changed: {sid}", 204
 ```
 
-Then we can restart and test:
+Then restart and test:
 
 ```shell
 curl -si -X POST -u "acme:$ACME_ADMIN_PASS" \
