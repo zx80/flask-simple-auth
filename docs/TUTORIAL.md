@@ -11,9 +11,12 @@ This is not very different from starting a
 with Flask you will have to unlearn things as FlaskSimpleAuth framework extends
 and simplifies Flask on key points.
 
+This tutorial assumes a working knowledge of editing files, programming in
+`Python`, and interacting with a terminal.
+
 ## Application Setup
 
-Let us first create a minimal running REST application back-end without
+Let us first create a minimal running REST application back-end *without*
 authentication and authorizations.
 
 Create and activate a Python virtual environment, in a terminal:
@@ -92,9 +95,9 @@ Connection: close
 }
 ```
 
-It is good practice to test your application, for instance with
+It is good practice to automate application tests, for instance with
 [`pytest`](https://pytest.org/).
-Create a `test.py` file with *good* tests to cover all routes and results:
+Create a `test.py` file with tests to cover all routes and results:
 
 ```python
 # file "test.py"
@@ -107,7 +110,7 @@ def client():
         yield client
 
 def test_hello(client):
-    res = client.get("/hello")
+    res = client.get("/hello")         # GET /hello
     assert res.status_code == 200
     assert res.json["msg"] == "hello"
 
@@ -123,8 +126,8 @@ pytest test.py  # 1 passed
 
 ## Acme Database
 
-This incredible application has some data hold in our toy *Acme* database
-with *Users* who can own *Stuff* at a price. Create file `acme.py`:
+Our incredible application will held some data in a toy *Acme* database with
+*Users* who can own *Stuff* at a price. Create file `acme.py`:
 
 ```python
 # file "acme.py"
@@ -195,14 +198,15 @@ def test_acmedata():
     assert db.get_user_stuff("calvin") == [ ("toy", 2.72) ]
     db.change_stuff("pencil", 3.14)
     assert db.get_user_stuff("susie") == [ ("pencil", 3.14) ]
+    # FIXME should also tests errors...
 ```
 
 ## Basic Authentication
 
-Let us now add new routes with basic authentication.
+Let us now add new routes with *basic* authentication.
 This requires:
 
-- configuring the application
+- configuring the application.
 - storing user credentials somewhere.
 - providing a password callback.
 - creating authenticated routes.
@@ -212,14 +216,15 @@ Edit the `acme.conf` file to tell about basic authentication:
 ```python
 # append to "acme.conf"
 FSA_AUTH = "basic"
-FSA_REALM = "acme"  # the app name is also the default
+FSA_REALM = "acme"  # the app name, also the default
 ```
 
 For non trivial projects, it is good practice to split the application in
-several files. This creates an annoying chicken-and-egg issue with Python
-initializations. A common pattern is to define `init_app(app: Flask)`
-initialization functions in each file, to call them from the application file,
-and to use proxy objects to avoid loading ordering issues.
+several files.
+This creates an annoying chicken-and-egg issue with Python initializations.
+A common pattern is to define `init_app(app: Flask)` initialization functions
+in each file, to call them from the application file, and to use proxy objects
+to avoid loading ordering issues.
 
 Create a `database.py` file which will hold our application primitive database
 interface:
@@ -301,10 +306,11 @@ def get_stuff(user: fsa.CurrentUser):
 ```
 
 The `user` parameter will be automatically filled with the name of the
-authenticated user. Other parameters are filled and converted from the request
-HTTP or JSON parameters.
+authenticated user.
+Other parameters are filled and converted from the request HTTP or JSON
+parameters.
 
-Add the admin password in the environment, in each terminal:
+Set the admin password in the environment, in each terminal:
 
 ```shell
 export ACME_ADMIN_PASS="<a-good-admin-password>"
@@ -360,7 +366,7 @@ def test_basic_authn(client):
 ## Param Authentication
 
 Another common way to authenticate a user is to provide the credentials as
-request parameters.
+request *parameters*.
 This is usually done once to get some *token* (bearer, cookie…) which will be
 used to access other routes.
 Initialization requirements are the same as for *basic* authentication, as
@@ -397,7 +403,7 @@ def test_param_authn(client):
 
 ## Group Authorization
 
-For group authorization, a callback function must be provided to tell whether a
+For *group* authorization, a callback function must be provided to tell whether a
 user belongs to a group.
 
 First, we add the group checking function:
@@ -467,12 +473,12 @@ def test_group_authz(client):
 
 ## Token Authentication
 
-Let us now activate token authentication.
+Let us now activate *token* authentication.
 This avoids sending login/passwords in each request, and is much more efficient
 for the server because cryptographic password hashing functions are *designed*
 to be very slow.
 
-There is nearly nothing to do: token authentication is activate by default, we
+There is nearly nothing to do: token authentication is activated by default, we
 only need to provide a route which allows to create a token:
 
 Edit file `app.py`:
@@ -514,7 +520,7 @@ def test_token_authn(client):
 
 ## Object Permission Authorization
 
-Object permissions link a user to some object to allow operations.
+Object permissions link a user to some *objects* to allow operations.
 We want to allow object owners to change the price of their stuff.
 First, we create the permission verification function:
 
