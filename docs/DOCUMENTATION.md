@@ -497,7 +497,7 @@ The client application will return the token as a parameter or in
 headers for authenticating later requests, till it expires.
 
 Multi-factor authentication (MFA) is supported by generating intermediate tokens
-on distinct *realms* at different stages, as discussed in [recipees](RECIPEES.md)
+on distinct *realms* at different stages, as discussed in [recipes](RECIPES.md)
 and illustrated in the [demo](demo/mfa.py).
 
 Note that route-dependent realms do **not** work with `http-*` authentications
@@ -1177,6 +1177,6 @@ Todo or not todo…
 ### Documentation
 
 - separate explanations from reference?
-- more recipees?
+- more recipes?
 - include demo? point to demo?
 - comparisons with other frameworks

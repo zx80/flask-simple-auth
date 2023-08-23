@@ -1,6 +1,6 @@
-# FlaskSimpleAuth Recipees
+# FlaskSimpleAuth Recipes
 
-Here are a few task-oriented recipees with
+Here are a few task-oriented recipes with
 [FlaskSimpleAuth](https://pypi.org/project/flasksimpleauth/).
 Feel free to submit your questions!
 
