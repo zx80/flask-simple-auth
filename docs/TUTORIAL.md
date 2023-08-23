@@ -655,6 +655,8 @@ FSA_MODE = "dev"
 
 Restart and test the application with these new settings…
 
-You have built a secured *Flask* application by taking advantage of features
-provided by *FlaskSimpleAuth*: basic, parameter and token authentications,
-group and object permissions authorizations.
+## Colophon
+
+By following this tutorial, you have built a secured *Flask* application by
+taking advantage of features provided by *FlaskSimpleAuth*: basic, parameter and
+token authentications, group and object permissions authorizations.
