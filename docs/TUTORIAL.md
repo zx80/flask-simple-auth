@@ -93,7 +93,8 @@ Connection: close
 ```
 
 It is good practice to test your application, for instance with
-[`pytest`](https://pytest.org/):
+[`pytest`](https://pytest.org/).
+Create a `test.py` file with *good* tests to cover all routes and results:
 
 ```python
 # file "test.py"
