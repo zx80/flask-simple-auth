@@ -5,7 +5,8 @@ This tutorial present how to build a
 [REST](https://en.wikipedia.org/wiki/REST)
 [HTTP](https://en.wikipedia.org/wiki/HTTP)
 back-end in [Python](https://python.org/)
-with basic or parameter authentication plus group and object authorizations.
+with basic or parameter authentication (who is the user?) plus group and object
+authorizations (permissions associated to the authenticated *who*).
 This is not very different from starting a
 [Flask](https://flask.palletsprojects.com/) project, *but* if you start
 with Flask you will have to unlearn things as FlaskSimpleAuth framework extends
