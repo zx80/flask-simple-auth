@@ -1,6 +1,6 @@
 # FlaskSimpleAuth Tutorial
 
-This tutorial present how to build a
+In this tutorial, you will build a simple
 [FlaskSimpleAuth](https://pypi.org/project/flasksimpleauth)
 [REST](https://en.wikipedia.org/wiki/REST)
 [HTTP](https://en.wikipedia.org/wiki/HTTP)
@@ -32,7 +32,8 @@ pip install FlaskSimpleAuth[password]
 Create the `app.py` file with an unauthenticated `GET /hello` route.
 The route is open because it is authorized to *ANY*one.
 The `authorize` route parameter is mandatory to declare authorization
-requirements on the route. If not set, the route is closed (aka 403).
+requirements on the route.
+If not set, the route is closed (aka 403).
 
 ```python
 # file "app.py"
@@ -67,6 +68,7 @@ Start the application in a terminal with the *flask* local test server.
 ```shell
 export ACME_CONFIG="acme.conf"  # where to find the config file
 flask --app ./app.py run --debug --reload
+# various log traces...
 # control-c to stop
 ```
 
@@ -76,9 +78,10 @@ Test the route, for instance using `curl` from another terminal:
 curl -si -X GET http://localhost:5000/hello  # 200
 ```
 
-You should see a log line for the request in the application terminal, some
-debug output, and the JSON response in the second terminal, with 3 FSA-specific
-headers telling the request, the authentication and execution time:
+You should see a log line for the request in the application terminal,
+possibly some debug output, and the JSON response in the second terminal,
+with 3 FSA-specific headers telling the request, the authentication and
+execution time:
 
 ```http
 HTTP/1.1 200 OK
@@ -99,7 +102,7 @@ Connection: close
 
 It is good practice to automate application tests, for instance with
 [`pytest`](https://pytest.org/).
-Create a `test.py` file with tests to cover all routes and results:
+Create a `test.py` file with a test to cover this route:
 
 ```python
 # file "test.py"
@@ -129,7 +132,8 @@ pytest test.py  # 1 passed
 ## Acme Database
 
 Our incredible application will held some data in a toy *Acme* database with
-*Users* who can own *Stuff* at a price. Create file `acme.py`:
+*Users* who can own *Stuff* at a price.
+Create file `acme.py` to manage a simplistic database:
 
 ```python
 # file "acme.py"
@@ -203,15 +207,17 @@ def test_acmedata():
     # FIXME should also tests errors...
 ```
 
+Run `pytest` as before to achieve *2 passed*.
+
 ## Basic Authentication
 
 Let us now add new routes with *basic* authentication.
-This requires:
+This requires to:
 
-- configuring the application.
-- storing user credentials somewhere.
-- providing a password callback.
-- creating authenticated routes.
+- configure the application.
+- store user credentials somewhere.
+- provide a password callback.
+- create authenticated routes.
 
 Edit the `acme.conf` file to tell about basic authentication:
 
@@ -240,16 +246,16 @@ from acme import AcmeData
 # this is a proxy object to the actual database
 db = fsa.Reference()
 
-# application database initialization, should probably just connect to an actual db.
+# application database initialization
 def init_app(app: fsa.Flask):
     # initialize proxy object
     db.set(AcmeData())
-    # add an "admin" user if necessary
+    # add an "admin" user
     if not db.user_exists("acme"):
         db.add_user("acme", app.hash_password(os.environ["ACME_ADMIN_PASS"]), "acme@acme.org", True)
 ```
 
-Create an `auth.py` file for the authentication and authorization stuff:
+Create an `auth.py` file for the authentication and authorization callbacks:
 
 ```python
 # file "auth.py"
@@ -648,3 +654,7 @@ FSA_MODE = "dev"
 ```
 
 Restart and test the application with these new settings…
+
+You have built a secured *Flask* application by taking advantage of features
+provided by *FlaskSimpleAuth*: basic, parameter and token authentications,
+group and object permissions authorizations.
