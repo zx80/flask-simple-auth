@@ -11,15 +11,16 @@ This is not very different from starting a
 with Flask you will have to unlearn things as FlaskSimpleAuth framework extends
 and simplifies Flask on key points.
 
-This tutorial assumes a working knowledge of editing files, programming in
-`Python`, and interacting with a terminal.
+This tutorial assumes a working knowledge of the HTTP protocol in a REST
+API context, editing files, programming in `Python`, and interacting from a
+terminal with a shell.
 
 ## Application Setup
 
 Let us first create a minimal running REST application back-end *without*
 authentication and authorizations.
 
-Create and activate a Python virtual environment, in a terminal:
+Create and activate a Python virtual environment, in a shell terminal:
 
 ```shell
 python -m venv venv
