@@ -30,7 +30,7 @@ The `authorize` route parameter is mandatory to declare authorization
 requirements on the route. If not set, the route is closed (403).
 
 ```python
-# File "app.py"
+# file "app.py"
 
 # necessary for debug messages to show up…
 import logging
@@ -54,7 +54,7 @@ def get_hello():
 Create the `acme.conf` configuration file:
 
 ```python
-# File "acme.conf"
+# file "acme.conf"
 FSA_MODE = "debug1"  # debug level 1, max is 4
 ```
 
@@ -89,17 +89,45 @@ Connection: close
 
 {
   "msg": "hello",
-  "version": "24.0"
+  "version": "25.0"
 }
 ```
 
-## Acme Database and Automated Tests
+It is good practice to test your application, for instance with
+[`pytest`](https://pytest.org/):
+
+```python
+# file "test.py"
+import pytest
+from app import app
+
+@pytest.fixture
+def client():
+    with app.test_client() as client:
+        yield client
+
+def test_hello(client):
+    res = client.get("/hello")
+    assert res.status_code == 200
+    assert res.json["msg"] == "hello"
+
+# TODO MORE TESTS
+```
+
+Install and run with `pytest`:
+
+```shell
+pip install pytest
+pytest test.py  # 1 passed
+```
+
+## Acme Database
 
 This incredible application has some data hold in our toy *Acme* database
 with *Users* who can own *Stuff* at a price. Create file `acme.py`:
 
 ```python
-# File "acme.py"
+# file "acme.py"
 import re
 import FlaskSimpleAuth as fsa
 
@@ -145,13 +173,10 @@ class AcmeData:
         self.stuff[stuff][1] = price
 ```
 
-It is good practice to test your application, for instance with
-[`pytest`](https://pytest.org/):
+This class can be tested with `test.py`:
 
 ```python
-# file "test.py"
-import pytest
-
+# append to "test.py"
 from acme import AcmeData
 
 def test_acmedata():
@@ -170,27 +195,6 @@ def test_acmedata():
     assert db.get_user_stuff("calvin") == [ ("toy", 2.72) ]
     db.change_stuff("pencil", 3.14)
     assert db.get_user_stuff("susie") == [ ("pencil", 3.14) ]
-
-from app import app
-
-@pytest.fixture
-def client():
-    with app.test_client() as client:
-        yield client
-
-def test_hello(client):
-    res = client.get("/hello")
-    assert res.status_code == 200
-    assert res.json["msg"] == "hello"
-
-# TODO MORE TESTS
-```
-
-Install and run with `pytest`:
-
-```shell
-pip install pytest
-pytest test.py  # 2 passed
 ```
 
 ## Basic Authentication
@@ -221,7 +225,7 @@ Create a `database.py` file which will hold our application primitive database
 interface:
 
 ```python
-# File "database.py"
+# file "database.py"
 import os
 import FlaskSimpleAuth as fsa
 from acme import AcmeData
@@ -241,7 +245,7 @@ def init_app(app: fsa.Flask):
 Create an `auth.py` file for the authentication and authorization stuff:
 
 ```python
-# File "auth.py"
+# file "auth.py"
 import FlaskSimpleAuth as fsa
 
 # we need the database!
