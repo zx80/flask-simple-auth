@@ -377,7 +377,7 @@ The default parameter names are `USER` and `PASS`.
 Test from a terminal:
 
 ```shell
-curl -si -X GET -d USER=acme -d PASS="$ACME_ADMIN_PASS" http://localhost:5000  # 200
+curl -si -X GET -d USER=acme -d PASS="$ACME_ADMIN_PASS" http://localhost:5000/hello-me  # 200
 ```
 
 Also append these same tests to `test.py`, and run them with `pytest`:
