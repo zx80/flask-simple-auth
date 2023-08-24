@@ -204,7 +204,7 @@ def test_acmedata():
     assert db.get_user_stuff("calvin") == [ ("toy", 2.72) ]
     db.change_stuff("pencil", 3.14)
     assert db.get_user_stuff("susie") == [ ("pencil", 3.14) ]
-    # FIXME should also tests errors...
+    # FIXME should also test errors...
 ```
 
 Run `pytest` as before to achieve *2 passed*.
