@@ -969,7 +969,7 @@ authorization (group and per-object permissions):
 
 - `FSA_CACHE` controls the type of cache to use, set to *None* to disallow
   caches. Values for standard `cachetools` cache classes are `ttl`, `lru`,
-  `lfu`, `mru`, `fifo`, `rr` plus `dict`.
+  `tlru`, `lfu`, `mru`, `fifo`, `rr` plus `dict`.
   MemCached is supported by setting it to `memcached`, and Redis with `redis`.
   Default is `ttl`.
 

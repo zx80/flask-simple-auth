@@ -741,7 +741,7 @@ class Directives:
     """Cache type.
 
     - ``dict``: simple dictionary
-    - ``ttl``, ``lru``, ``lfu``, …: from *CacheTools*
+    - ``ttl``, ``lru``, ``tlru``, ``lfu``, …: from *CacheTools*
     - ``memcached`` and ``redis``: external shared caches
 
     Default is ``ttl``… because it is a good idea.
@@ -1735,7 +1735,7 @@ class _CacheManager:
 
         prefix: str|None = conf.get("FSA_CACHE_PREFIX", None)
 
-        if cache in ("ttl", "lru", "lfu", "mru", "fifo", "rr", "dict"):
+        if cache in ("ttl", "lru", "tlru", "lfu", "mru", "fifo", "rr", "dict"):
             maxsize = conf.get("FSA_CACHE_SIZE", Directives.FSA_CACHE_SIZE)
             # build actual storage tier
             if cache == "ttl":
@@ -1751,6 +1751,8 @@ class _CacheManager:
                 rcache = ct.FIFOCache(maxsize, **self._cache_opts)
             elif cache == "rr":
                 rcache = ct.RRCache(maxsize, **self._cache_opts)
+            elif cache == "tlru":
+                rcache = ct.TLRUCache(maxsize, **self._cache_opts)
             elif cache == "dict":
                 rcache = dict()
             else:  # pragma: no cover
