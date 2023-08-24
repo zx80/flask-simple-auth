@@ -101,9 +101,13 @@ def pop_auth(app):
     app._am._auth, app._am._tm._token, app._am._tm._carrier, app._am._tm._name = d["a"], d["t"], d["c"], d["n"]
     d.clear()
 
+def basic_auth(login: str, password: str):
+    from base64 import b64encode
+    encoded = b64encode(f"{login}:{password}".encode("UTF8"))
+    return {"Authorization": f"Basic {encoded.decode('ascii')}"}
+
 def auth_header_basic(user: str):
-    from requests.auth import _basic_auth_str as basic_auth
-    return {"Authorization": basic_auth(user, App.UP[user])}
+    return basic_auth(user, App.UP[user])
 
 def auth_header_token(user: str):
     return {"Authorization": "Bearer " + app.create_token(user)}
@@ -131,8 +135,7 @@ def all_auth(client, user, pswd, check, *args, **kwargs):
     pop_auth(app._fsa)
     # user-pass basic
     push_auth(app._fsa, ["token", "basic"], "fsa", "param", "auth")
-    from requests.auth import _basic_auth_str as basic_auth
-    BASIC = {"Authorization": basic_auth(user, pswd)}
+    BASIC = basic_auth(user, pswd)
     token_basic = json.loads(client.get("login", headers=BASIC).data)
     check(client.get(*args, **kwargs, headers=BASIC))
     check(client.get(*args, **kwargs, data={"auth": token_basic}))
@@ -821,7 +824,6 @@ def test_string(client):
     res = check(200, client.get("/string/foo"))
     assert res.data == b"foo"
 
-
 def test_www_authenticate(client):
     push_auth(app._fsa, "param")
     res = check(401, client.get("/admin"))
@@ -857,8 +859,7 @@ def app_digest():
 
 def test_http_basic(app_basic):
     check(401, app_basic.get("/basic"))
-    from requests.auth import _basic_auth_str as basic_auth
-    BASIC = {"Authorization": basic_auth("calvin", "hobbes")}
+    BASIC = basic_auth("calvin", "hobbes")
     res = check(200, app_basic.get("/basic", headers=BASIC))
     assert res.data == b"calvin"
 
@@ -895,8 +896,7 @@ def test_http_token():
 
 def test_per_route(client):
     # data for 4 various authentication schemes
-    from requests.auth import _basic_auth_str as basic_auth
-    BASIC = {"Authorization": basic_auth("calvin", App.UP["calvin"])}
+    BASIC = basic_auth("calvin", App.UP["calvin"])
     PARAM = {"USER": "calvin", "PASS": App.UP["calvin"]}
     FAKE = {"LOGIN": "calvin"}
     token = app.create_token("calvin")

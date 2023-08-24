@@ -16,13 +16,11 @@ import logging
 log = logging.getLogger("test")
 log.setLevel(logging.DEBUG)
 
-
 # authentication for tests
 def basic(login, upass):
-    return {
-        "Authorization": b"Basic " + base64.b64encode(bytes(login, "utf-8") + b":" + bytes(upass, "utf-8"))
-    }
-
+    from base64 import b64encode
+    encoded = b64encode(f"{login}:{upass}".encode("UTF8"))
+    return {"Authorization": f"Basic {encoded.decode('ascii')}"}
 
 # NOTE jwt does not seem to allow generating at+jwt type header
 def gen_jwt(sub: str, aud: str, iss: str, delay: int, scope: str, secret: str):
