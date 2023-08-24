@@ -1451,8 +1451,8 @@ def test_caches():
             with af.create_app(FSA_CACHE=cache, FSA_CACHE_PREFIX=prefix).test_client() as c:
                 run_some_checks(c)
     for prefix in ["tlru.", None]:
-        log.debug(f"testong cache type tlru")
-        with af.create_app(FSA_CACHE=cache,
+        log.debug(f"testing cache type tlru")
+        with af.create_app(FSA_CACHE="tlru",
                            FSA_CACHE_PREFIX=prefix,
                            FSA_CACHE_OPTS={"ttu": lambda _k, _v, now: now+10}).test_client() as c:
             run_some_checks(c)
