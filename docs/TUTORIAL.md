@@ -1,20 +1,25 @@
 # FlaskSimpleAuth Tutorial
 
-In this tutorial, you will build a simple
-[FlaskSimpleAuth](https://pypi.org/project/flasksimpleauth)
+In this tutorial, you will build a secure
 [REST](https://en.wikipedia.org/wiki/REST)
 [HTTP](https://en.wikipedia.org/wiki/HTTP)
-back-end in [Python](https://python.org/)
-with basic or parameter authentication (who is the user?) plus group and object
-authorizations (permissions associated to the authenticated *who*).
-This is not very different from starting a
-[Flask](https://flask.palletsprojects.com/) project, *but* if you start
+[Python](https://python.org/)
+[WSGI](https://en.wikipedia.org/wiki/Web_Server_Gateway_Interface)
+back-end using
+[FlaskSimpleAuth](https://pypi.org/project/flasksimpleauth), a
+[Flask](https://flask.palletsprojects.com/) extension.
+It will feature basic and parameter password authentication (who is the user?),
+as well as group and object authorizations (permissions associated to the
+authenticated *who*).
+This is not very different from starting a Flask project, *but* if you start
 with Flask you will have to unlearn things as FlaskSimpleAuth framework extends
 and simplifies Flask on key points.
 
 This tutorial assumes a working knowledge of the HTTP protocol in a REST
-API context, editing files, programming in `Python`, and interacting from a
-terminal with a shell.
+API context, advance programming in `Python`, and interacting from a terminal
+with a shell.
+It should work with Python 3.1x on Unix (Linux, MacOS) and possibly Windows with
+[WSL](https://en.wikipedia.org/wiki/Windows_Subsystem_for_Linux).
 
 ## Application Setup
 
@@ -24,6 +29,7 @@ authentication and authorizations.
 Create and activate a Python virtual environment, in a shell terminal:
 
 ```shell
+python --version  # must show 3.1x
 python -m venv venv
 source venv/bin/activate
 pip install FlaskSimpleAuth[password]
