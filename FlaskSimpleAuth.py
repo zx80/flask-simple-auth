@@ -65,44 +65,113 @@ class Hooks:
     ErrorResponseFun = Callable[[str, int, dict[str, str]|None, str|None], Response]
     """Generate an error response for message and status.
 
-    mimics flask.Response("message", status, headers, content_type)
+    :param description: description string of the error.
+    :param status: HTTP status code.
+    :param headers: dict of additional headers.
+    :param content_type: HTTP content type.
+
+    Must return a Response.
+
+    The function mimics flask.Response("message", status, headers, content_type).
     """
+
     GetUserPassFun = Callable[[str], str|None]
-    """Get password from user login, None if unknown."""
+    """Get password from user login, None if unknown.
+
+    :param login: user name to retrieve password for.
+
+    Returns the string, of None if no password or user.
+    """
 
     UserInGroupFun = Callable[[str, str|int], bool|None]
-    """Is user login in group (str or int): yes, no, unknown."""
+    """Is user login in group (str or int): yes, no, unknown.
+
+    :param login: user name to check for group membership.
+    :param group: group name or number to check for membership. 
+
+    Returns whether the user belongs to the group.
+    """
 
     ObjectPermsFun = Callable[[str, Any, str|None], bool]
-    """Check object access in domain, for parameter, in mode."""
+    """Check object access in domain, for parameter, in mode.
+
+    :param login: user name.
+    :param oid: object identifier, must a key.
+    :param mode: optional operation the user wants to perform on the object.
+
+    Returns whether permission is granted.
+    """
 
     PasswordCheckFun = Callable[[str, str], bool|None]
-    """Low level check login/password validity."""
+    """Low level check login/password validity.
+
+    :param login: user name.
+    :param password: the password as provided.
+
+    Returns whether password is valid for user.
+    """
 
     PasswordQualityFun = Callable[[str], bool]
-    """Is this password quality suitable?"""
+    """Is this password quality suitable?
+
+    :param password: the submitted password.
+
+    Return whether the password is acceptable.
+    """
 
     CastFun = Callable[[str|Any], object]
-    """Cast parameter value to some object."""
+    """Cast parameter value to some object.
+
+    :param data: initial data, usually a string.
+
+    Returns the converted object.
+    """
 
     SpecialParameterFun = Callable[[str], Any]
-    """Generate a "special" parameter, with the parameter name."""
+    """Generate a "special" parameter, with the parameter name.
 
-    HeaderFun = Callable[[Response], str|None]
-    """Add a header to the current response."""
+    :param name: parameter name (usually not needed).
+
+    Returns an object which will be the parameter value.
+    """
+
+    HeaderFun = Callable[[Response, str], str|None]
+    """Add a header to the current response.
+
+    :param response: response to consider.
+    :param header: name of header.
+
+    Returns the header value, or *None*.
+    """
 
     BeforeRequestFun = Callable[[Request], Response|None]
-    """Before request hook, with request provided."""
+    """Before request hook, with request provided.
+
+    :param request: current request.
+
+    Returns a response (to shortcut), or *None* to continue.
+    """
 
     BeforeExecFun = Callable[[Request, str|None, str|None], Response|None]
-    """After authentication and right before execution."""
+    """After authentication and right before execution.
+
+    :param request: current request.
+    :param login: user name of authenticated user.
+    :param auth: authentication scheme used.
+    """
 
     AfterRequestFun = Callable[[Response], Response]
     """After request hook."""
 
     # FIXME Any is really FlaskSimpleAuth, but python lacks forward declarations
     AuthenticationFun = Callable[[Any, Request], str|None]
-    """Authentication hook."""
+    """Authentication hook.
+
+    :param app: current application.
+    :param request: current request.
+
+    Returns the authenticated user name, or *None*.
+    """
 
 
 @dataclasses.dataclass
