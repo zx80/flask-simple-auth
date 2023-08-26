@@ -87,7 +87,7 @@ class Hooks:
     """Is user login in group (str or int): yes, no, unknown.
 
     :param login: user name to check for group membership.
-    :param group: group name or number to check for membership. 
+    :param group: group name or number to check for membership.
 
     Returns whether the user belongs to the group.
     """
