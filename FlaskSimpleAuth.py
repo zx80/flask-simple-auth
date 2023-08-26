@@ -1834,7 +1834,7 @@ class _CacheManager:
                 if local in ("thread", "werkzeug", "eventlet"):
                     from threading import RLock
                 elif local == "gevent":
-                    from gevent.lock import RLock
+                    from gevent.lock import RLock  # type: ignore
                 rcache = ctu.LockedCache(rcache, RLock())
             if prefix:
                 rcache = ctu.PrefixedCache(rcache, prefix)
