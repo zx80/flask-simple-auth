@@ -7,6 +7,7 @@ and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 
 Add support for `tlru` cache (Time-aware Least Recently Used).
 Add a lock consistent with `FSA_LOCAL` when caching.
+Pass header name to header-generation functions.
 Improve documentation.
 
 ## 25.0 on 2023-08-22
