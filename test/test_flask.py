@@ -1770,7 +1770,7 @@ def test_error_response():
 def test_add_headers():
     import AppFact as af
     app = af.create_app(FSA_MODE="debug",
-                        FSA_ADD_HEADERS={"Service": "FSA", "Headers": lambda r: len(r.headers)})
+                        FSA_ADD_HEADERS={"Service": "FSA", "Headers": lambda r, _: len(r.headers)})
     @app.get("/heads", authorize="ANY")
     def get_heads():
         return "", 200

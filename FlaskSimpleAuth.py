@@ -2682,7 +2682,7 @@ class _ResponseManager:
     def _add_headers(self, res: Response) -> Response:
         """Add arbitrary headers to response."""
         for name, value in self._headers.items():
-            val = value(res) if callable(value) else value
+            val = value(res, name) if callable(value) else value
             if val:
                 res.headers[name] = val
         return res
