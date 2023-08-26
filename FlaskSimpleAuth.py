@@ -1833,7 +1833,7 @@ class _CacheManager:
             else:
                 if local in ("thread", "werkzeug", "eventlet"):
                     from threading import RLock
-                elif local == "gevent":
+                elif local == "gevent":  # pragma: no cover
                     from gevent.lock import RLock  # type: ignore
                 rcache = ctu.LockedCache(rcache, RLock())
             if prefix:
