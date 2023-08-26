@@ -3,7 +3,7 @@
 Sources are available on [GitHub](https://github.com/zx80/flask-simple-auth)
 and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 
-## ? on ?
+## 25.1 on ?
 
 Add support for `tlru` cache (Time-aware Least Recently Used).
 Add a lock consistent with `FSA_LOCAL` when caching.
