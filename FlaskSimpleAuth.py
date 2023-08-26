@@ -1757,6 +1757,16 @@ class _CacheManager:
                 rcache = dict()
             else:  # pragma: no cover
                 raise self._Bad(f"unexpected simple cache type: {cache}")
+            # locking
+            local = conf.get("FSA_LOCAL", "thread")
+            if local == "process":
+                pass
+            else:
+                if local in ("thread", "werkzeug", "eventlet"):
+                    from threading import RLock
+                elif local == "gevent":
+                    from gevent.lock import RLock
+                rcache = ctu.LockedCache(rcache, RLock())
             if prefix:
                 rcache = ctu.PrefixedCache(rcache, prefix)
             self._cache = ctu.StatsCache(rcache)
