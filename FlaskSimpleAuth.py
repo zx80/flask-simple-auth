@@ -436,6 +436,10 @@ class Flask(flask.Flask):
         self.get_user = self._fsa.get_user
         self.current_user = self._fsa.current_user
         self.clear_caches = self._fsa.clear_caches
+        self.password_uncache = self._fsa.password_uncache
+        self.token_uncache = self._fsa.token_uncache
+        self.group_uncache = self._fsa.group_uncache
+        self.object_perms_uncache = self._fsa.object_perms_uncache
         # overwrite decorators ("route" done through add_url_rule above)
         setattr(self, "get", self._fsa.get)  # FIXME avoid mypy warnings
         setattr(self, "put", self._fsa.put)
@@ -1177,6 +1181,10 @@ class _TokenManager:
         return (self._get_fsa_token_auth(token, realm) if self._token == "fsa" else
                 self._get_jwt_token_auth(token, realm))
 
+    def token_uncache(self, token: str, realm: str) -> bool:
+        """Remove token entry from cache."""
+        return self._get_any_token_auth_exp.cache_del(token, realm)
+
     # NOTE the realm parameter is really only for testing purposes
     def _get_any_token_auth(self, token: str|None, realm: str|None = None) -> str|None:
         """Tell whether token is ok: return validated user or None, may raise 401."""
@@ -1378,6 +1386,10 @@ class _PasswordManager:
             else:
                 log.debug(f"AUTH (password): invalid password ({user})")
                 raise self._Err(f"invalid password for {user}", 401)
+
+    def password_uncache(self, user: str) -> bool:
+        """Remove user password entry from cache."""
+        return self._get_user_pass.cache_del(user)
 
 
 class _AuthenticationManager:
@@ -1894,9 +1906,9 @@ class _CacheManager:
         self._cache_prefixes.add(prefix)
 
         def decorate(fun: Callable):
-            import cachetools
+            import CacheToolsUtils as ctu
             assert self._cache_gen  # mypy…
-            return cachetools.cached(cache=self._cache_gen(self._cache, prefix))(fun)
+            return ctu.cached(cache=self._cache_gen(self._cache, prefix))(fun)
 
         return decorate
 
@@ -1960,10 +1972,14 @@ class _AuthorizationManager:
         """Add an object permission helper for a given domain."""
         return self._store(self._object_perms, "object permission checker", domain, checker)
 
-    def _check_object_perms(self, user, domain, oid, mode):
+    def _check_object_perms(self, domain: str, user: str, oid, mode: str|None):
         """Can user access object oid in domain for mode, cached."""
         assert domain in self._object_perms
         return self._object_perms[domain](user, oid, mode)
+
+    def object_perms_uncache(self, domain: str, user: str, oid, mode: str|None) -> bool:
+        """Remove object perm entry from cache."""
+        return self._check_object_perms.cache_del(domain, user, oid, mode)
 
     def _oauth_authz(self, path, *scopes):
         """Decorator to authorize OAuth scopes (token-provided authz)."""
@@ -2040,6 +2056,10 @@ class _AuthorizationManager:
 
         return decorate
 
+    def group_uncache(self, user: str, group: str|int) -> bool:
+        """Remove group membership entry from cache."""
+        return self._user_in_group.cache_del(user, group)
+
     # just to record that no authorization check was needed
     def _no_authz(self, path, *groups):
         """Decorator for skipping authorizations (authorize="NONE")."""
@@ -2097,7 +2117,7 @@ class _AuthorizationManager:
                     val = kwargs[name]
 
                     try:
-                        ok = self._check_object_perms(local.user, domain, val, mode)
+                        ok = self._check_object_perms(domain, local.user, val, mode)
                     except ErrorResponse as e:
                         return self._Res(e.message, e.status, e.headers, e.content_type)
                     except Exception as e:
@@ -3037,6 +3057,9 @@ class FlaskSimpleAuth:
         """Is `scope` in the `current user` scopes."""
         return self._local.scopes and scope in self._local.scopes
 
+    #
+    # UNCACHE
+    #
     def clear_caches(self) -> None:
         """Clear internal shared cache.
 
@@ -3045,12 +3068,29 @@ class FlaskSimpleAuth:
         - of the performance impact
         - for a local cache in a multi-process setup, other processes are out
 
-        The best option is to wait for cache entries to expire with a TTL.
+        The best option is to wait for cache entries to expire with a TTL,
+        or to use one of the specific ``_uncache`` methods.
         """
         if not self._cm._cache:  # pragma: no cover
             log.warning("cache is not activated, cannot be cleared, skipping…")
             return
         self._cm._cache.clear()
+
+    def password_uncache(self, user: str) -> bool:
+        """Remove user password entry from cache."""
+        return self._am._pm.password_uncache(user)
+
+    def token_uncache(self, token: str, realm: str) -> bool:
+        """Remove token entry from cache."""
+        return self._am._tm.token_uncache(token, realm)
+
+    def group_uncache(self, user: str, group: str|int) -> bool:
+        """Remove group membership entry from cache."""
+        return self._zm.group_uncache(user, group)
+
+    def object_perms_uncache(self, domain: str, user: str, oid, mode: str|None) -> bool:
+        """Remove user password entry from cache."""
+        return self._zm.object_perms_uncache(domain, user, oid, mode)
 
     #
     # INTERNAL DECORATORS

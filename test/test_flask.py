@@ -194,6 +194,10 @@ def test_perms(client):
     all_auth(client, "calvin", App.UP["calvin"], check_403, "/admin")
     assert not App.user_in_group("hobbes", App.ADMIN)
     all_auth(client, "hobbes", App.UP["hobbes"], check_403, "/admin")
+    # manual cache cleaning for "dad"
+    assert app.password_uncache("dad")
+    assert app.group_uncache("dad", App.ADMIN)
+    # full cache cleaning
     assert hasattr(app._fsa._cm._cache, "clear")
     app.clear_caches()
     # write only
@@ -284,7 +288,8 @@ def test_fsa_token():
     except fsa.ErrorResponse as e:
         assert "expired auth token" in e.message
     # again after clear cache, so the expiration is detected at fsa level
-    app.clear_caches()
+    assert app.token_uncache(calvin_token, "Test")
+    # app.clear_caches()
     try:
         user = tm._get_any_token_auth(calvin_token)
         assert False, "token must have expired"
@@ -1232,6 +1237,8 @@ def test_object_perms(client):
     check(403, client.get("/my/calvin", data={"LOGIN": "hobbes"}))
     check(403, client.get("/my/hobbes", data={"LOGIN": "calvin"}))
     check(403, client.get("/my/dad", data={"LOGIN": "calvin"}))
+    check(200, client.get("/my/calvin", data={"LOGIN": "calvin"}))
+    assert app.object_perms_uncache("users", "calvin", "calvin", None)
     check(200, client.get("/my/calvin", data={"LOGIN": "calvin"}))
     check(200, client.get("/my/hobbes", data={"LOGIN": "hobbes"}))
     # no-such-user

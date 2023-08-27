@@ -7,6 +7,8 @@ and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 
 Add support for `tlru` cache (Time-aware Least Recently Used).
 Add a lock consistent with `FSA_LOCAL` when caching.
+Add `password_uncache`, `token_uncache`, `group_uncache` and
+`object_perms_uncache` methods to remove specific cache entries.
 Pass header name to header-generation functions.
 Improve documentation.
 

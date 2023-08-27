@@ -990,6 +990,10 @@ authorization (group and per-object permissions):
 - Method `clear_caches` allows to clear internal process caches.
   This is a mostly a bad idea, you should wait for the `ttl`.
 
+- Methods `password_uncache`, `token_uncache`, `group_uncache` and
+  `object_perms_uncache` allow to remove a particular entry from the shared
+  cache, without waiting for its enventual expiration.
+
 Web-application oriented features:
 
 - `FSA_401_REDIRECT` url to redirect to on *401*.
