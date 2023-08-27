@@ -1183,7 +1183,7 @@ class _TokenManager:
 
     def token_uncache(self, token: str, realm: str) -> bool:
         """Remove token entry from cache."""
-        return self._get_any_token_auth_exp.cache_del(token, realm)
+        return self._get_any_token_auth_exp.cache_del(token, realm)  # type: ignore
 
     # NOTE the realm parameter is really only for testing purposes
     def _get_any_token_auth(self, token: str|None, realm: str|None = None) -> str|None:
@@ -1389,7 +1389,7 @@ class _PasswordManager:
 
     def password_uncache(self, user: str) -> bool:
         """Remove user password entry from cache."""
-        return self._get_user_pass.cache_del(user)
+        return self._get_user_pass.cache_del(user)  # type: ignore
 
 
 class _AuthenticationManager:
@@ -1979,7 +1979,7 @@ class _AuthorizationManager:
 
     def object_perms_uncache(self, domain: str, user: str, oid, mode: str|None) -> bool:
         """Remove object perm entry from cache."""
-        return self._check_object_perms.cache_del(domain, user, oid, mode)
+        return self._check_object_perms.cache_del(domain, user, oid, mode)  # type: ignore
 
     def _oauth_authz(self, path, *scopes):
         """Decorator to authorize OAuth scopes (token-provided authz)."""
@@ -2058,7 +2058,7 @@ class _AuthorizationManager:
 
     def group_uncache(self, user: str, group: str|int) -> bool:
         """Remove group membership entry from cache."""
-        return self._user_in_group.cache_del(user, group)
+        return self._user_in_group.cache_del(user, group)  # type: ignore
 
     # just to record that no authorization check was needed
     def _no_authz(self, path, *groups):
