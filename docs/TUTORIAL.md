@@ -546,7 +546,7 @@ def stuff_permissions(login: str, stuff: str, role: str) -> bool:
         return False
 ```
 
-Then register it in the auth initializations:
+Then register it in the auth initializations, associated to domain `stuff`:
 
 ```python
 # append to "init_app" in "auth.py"
