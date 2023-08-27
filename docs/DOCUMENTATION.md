@@ -992,7 +992,7 @@ authorization (group and per-object permissions):
 
 - Methods `password_uncache`, `token_uncache`, `group_uncache` and
   `object_perms_uncache` allow to remove a particular entry from the shared
-  cache, without waiting for its enventual expiration.
+  cache, without waiting for its eventual expiration.
 
 Web-application oriented features:
 
