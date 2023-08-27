@@ -1826,16 +1826,6 @@ class _CacheManager:
                 rcache = dict()
             else:  # pragma: no cover
                 raise self._Bad(f"unexpected simple cache type: {cache}")
-            # locking
-            local = conf.get("FSA_LOCAL", "thread")
-            if local == "process":
-                pass
-            else:
-                if local in ("thread", "werkzeug", "eventlet"):
-                    from threading import RLock
-                elif local == "gevent":  # pragma: no cover
-                    from gevent.lock import RLock  # type: ignore
-                rcache = ctu.LockedCache(rcache, RLock())
             if prefix:
                 rcache = ctu.PrefixedCache(rcache, prefix)
             self._cache = ctu.StatsCache(rcache)
@@ -1869,6 +1859,17 @@ class _CacheManager:
             self._cache_gen = ctu.PrefixedRedisCache
         else:
             raise self._Bad(f"unexpected FSA_CACHE: {cache}")
+
+        # locking
+        local = conf.get("FSA_LOCAL", "thread")
+        if local == "process":
+            pass
+        else:
+            if local in ("thread", "werkzeug", "eventlet"):
+                from threading import RLock
+            elif local == "gevent":  # pragma: no cover
+                from gevent.lock import RLock  # type: ignore
+            self._cache = ctu.LockedCache(self._cache, RLock())
 
         # done!
         self._initialized = True
