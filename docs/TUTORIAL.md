@@ -414,6 +414,53 @@ def test_param_authn(client):
     assert res.json["user"] == "acme"
 ```
 
+## Token Authentication
+
+Let us now activate *token* authentication.
+This avoids sending login/passwords in each request, and is much more efficient
+for the server because cryptographic password hashing functions are *designed*
+to be very slow.
+
+There is nearly nothing to do: token authentication is activated by default,
+you only need to provide a route which allows to create a token:
+
+Edit file `app.py`:
+
+```python
+# append to "app.py"
+@app.get("/token", authorize="ALL")
+def get_token(user: fsa.CurrentUser):
+    return { "token": app.create_token(user) }, 200
+```
+
+Then restart and test:
+
+```shell
+curl -si -X GET -u "acme:$ACME_ADMIN_PASS" http://localhost:5000/token
+```
+
+You should see the token as a JSON field in the response.
+Then proceed to use the token instead of the login/password:
+
+```shell
+curl -si -X GET -H "Authorization: Bearer <put-the-token-value-here>" \
+                                        http://localhost:5000/hello-me  # 200
+```
+
+Also append these same tests to `test.py`, and run them with `pytest`:
+
+```python
+# append to "test.py"
+def test_token_authn(client):
+    res = client.get("/token", headers=ACME_BASIC)
+    assert res.status_code == 200
+    token = res.json["token"]
+    ACME_TOKEN = { "Authorization": f"Bearer {token}" }
+    res = client.get("/hello-me", headers=ACME_TOKEN)
+    assert res.status_code == 200
+    assert res.json["user"] == "acme"
+```
+
 ## Group Authorization
 
 For *group* authorization, a callback function must be provided to tell whether a
@@ -482,53 +529,6 @@ def test_group_authz(client):
     assert res.status_code == 200
     assert res.json["user"] == "meca"
     # FIXME should cleanup data
-```
-
-## Token Authentication
-
-Let us now activate *token* authentication.
-This avoids sending login/passwords in each request, and is much more efficient
-for the server because cryptographic password hashing functions are *designed*
-to be very slow.
-
-There is nearly nothing to do: token authentication is activated by default,
-you only need to provide a route which allows to create a token:
-
-Edit file `app.py`:
-
-```python
-# append to "app.py"
-@app.get("/token", authorize="ALL")
-def get_token(user: fsa.CurrentUser):
-    return { "token": app.create_token(user) }, 200
-```
-
-Then restart and test:
-
-```shell
-curl -si -X GET -u "acme:$ACME_ADMIN_PASS" http://localhost:5000/token
-```
-
-You should see the token as a JSON field in the response.
-Then proceed to use the token instead of the login/password:
-
-```shell
-curl -si -X GET -H "Authorization: Bearer <put-the-token-value-here>" \
-                                        http://localhost:5000/hello-me  # 200
-```
-
-Also append these same tests to `test.py`, and run them with `pytest`:
-
-```python
-# append to "test.py"
-def test_token_authn(client):
-    res = client.get("/token", headers=ACME_BASIC)
-    assert res.status_code == 200
-    token = res.json["token"]
-    ACME_TOKEN = { "Authorization": f"Bearer {token}" }
-    res = client.get("/hello-me", headers=ACME_TOKEN)
-    assert res.status_code == 200
-    assert res.json["user"] == "acme"
 ```
 
 ## Object Permission Authorization
