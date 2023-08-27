@@ -553,7 +553,9 @@ Then register it in the auth initializations, associated to domain `stuff`:
     app.object_perms("stuff", stuff_permissions)
 ```
 
-Then implement the route:
+Then implement the route, with the `authorize` tuple telling that the *user*
+must have *owner* access permission to the object identified by variable `sid`
+value in domain *stuff*:
 
 ```python
 # append to "app.py"
