@@ -8,9 +8,9 @@ In this tutorial, you will build a secure
 back-end using
 [FlaskSimpleAuth](https://pypi.org/project/flasksimpleauth), a
 [Flask](https://flask.palletsprojects.com/) extension.
-It will feature basic and parameter password authentication (who is the user?),
-as well as group and object authorizations (permissions associated to the
-authenticated *who*).
+It will feature basic and parameter password **authentication** (who is the
+user?), as well as group and object **authorizations** (permissions associated
+to the authenticated *who*).
 This is not very different from starting a Flask project, *but* if you start
 with Flask you will have to unlearn things as FlaskSimpleAuth framework extends
 and simplifies Flask on key points.
