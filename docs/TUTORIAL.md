@@ -257,8 +257,7 @@ def init_app(app: fsa.Flask):
     # initialize proxy object
     db.set(AcmeData())
     # add an "admin" user
-    if not db.user_exists("acme"):
-        db.add_user("acme", app.hash_password(os.environ["ACME_ADMIN_PASS"]), "acme@acme.org", True)
+    db.add_user("acme", app.hash_password(os.environ["ACME_ADMIN_PASS"]), "acme@acme.org", True)
 ```
 
 Create an `auth.py` file for the authentication and authorization callbacks:
