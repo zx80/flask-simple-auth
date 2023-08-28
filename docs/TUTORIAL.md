@@ -389,10 +389,11 @@ update the `FSA_AUTH` configuration directive in `acme.conf`:
 
 ```python
 # update "acme.conf"
-FSA_AUTH = "password"  # allow both "param" and "basic"
+FSA_AUTH = "password"    # allow both "param" and "basic"
+FSA_PARAM_USER = "USER"  # param for the user name (default value)
+FSA_PARAM_PASS = "PASS"  # param for the password (default value)
 ```
 
-The default parameter names are `USER` and `PASS`.
 Test from a terminal:
 
 ```shell
