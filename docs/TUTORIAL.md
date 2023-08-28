@@ -463,10 +463,16 @@ def test_token_authn(client):
 
 ## Group Authorization
 
-For *group* authorization, a callback function must be provided to tell whether a
-user belongs to a group.
+For *group* authorization, we need to:
 
-First, add the group checking function:
+- store group membership information somewhere
+- provide a callback to check for membership
+- define a route which requires some group membership.
+
+Whether a user belongs to the *admin* group is defined as a boolean
+in the user profile managed by *AcmeData*.
+
+Then write the group checking function:
 
 ```python
 # in "auth.py"
@@ -485,7 +491,7 @@ Then register it in the auth initializations:
 ```
 
 Then edit `app.py` to create a route reserved to admins which insert new users,
-with two mandatory parameters: `login` and `password`.
+with three mandatory parameters: `login`, `password` and `email`:
 
 ```python
 # append to "app.py"
@@ -531,7 +537,7 @@ def test_group_authz(client):
     # FIXME should cleanup data
 ```
 
-## Object Permission Authorization
+## Object Authorization
 
 Object permissions link a user to some *objects* to allow operations.
 We want to allow object owners to change the price of their stuff.
