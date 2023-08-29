@@ -128,7 +128,7 @@ def test_hello(client):
 # TODO MORE TESTS
 ```
 
-Install and run with `pytest`:
+Install and run `pytest`:
 
 ```shell
 pip install pytest
@@ -423,9 +423,20 @@ for the server because cryptographic password hashing functions are *designed*
 to be very slow.
 
 There is nearly nothing to do: token authentication is activated by default,
-you only need to provide a route which allows to create a token:
+you only need to provide a token secret and route which allows to create a token:
 
-Edit file `app.py`:
+Edit file `acme.conf` to add the secret of your chosing:
+
+```python
+# append to "acme.conf"
+# NOTE: if not set, a random default is used instead
+FSA_TOKEN_SECRET = "<some-good-and-long-secret-for-token-signature>"
+```
+
+In a more realistic setting, the token secret would probably not be directly
+in the configuration, but passed to it or loaded by it.
+
+Then edit file `app.py`:
 
 ```python
 # append to "app.py"
@@ -441,6 +452,8 @@ curl -si -X GET -u "acme:$ACME_ADMIN_PASS" http://localhost:5000/token
 ```
 
 You should see the token as a JSON field in the response.
+The default token type is *fsa*, with a easy-to-understand human-readable
+format.
 Then proceed to use the token instead of the login/password:
 
 ```shell
@@ -461,6 +474,7 @@ def test_token_authn(client):
     assert res.status_code == 200
     assert res.json["user"] == "acme"
 ```
+
 
 ## Group Authorization
 
@@ -657,6 +671,15 @@ Errors are shown as `text/plain` by default, but this can be changed to JSON:
 ```python
 # append to "acme.conf"
 FSA_ERROR_RESPONSE = "json:error"  # show errors as JSON
+```
+
+You may want to use standard *JWT* (*JSON Web Token*) instead of *fsa* tokens.
+For that, install package dependencies `pip install FlaskSimpleAuth[jwt]` and
+update the application configuration:
+
+```python
+# append to "acme.conf"
+FSA_TOKEN_TYPE = "jwt"  # default is "fsa"
 ```
 
 Finally, if the debugging level is not useful anymore, it can be
