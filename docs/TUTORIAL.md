@@ -429,8 +429,9 @@ Edit file `acme.conf` to add the secret of your chosing:
 
 ```python
 # append to "acme.conf"
-# NOTE: if not set, a random default is used instead
+# Unix 256+ bits random secret in ASCII: head -c 33 /dev/random | base64
 FSA_TOKEN_SECRET = "<some-good-and-long-secret-for-token-signature>"
+# NOTE: if not set, a random default is used instead
 ```
 
 In a more realistic setting, the token secret would probably not be directly
