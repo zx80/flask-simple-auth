@@ -667,9 +667,11 @@ def test_weak_password(client):
     res = client.post("/user", headers=ACME_BASIC,
                       data={"login": "came", "password": "C@me", "email": "came@acme.org"})
     assert res.status_code == 400
+    assert "too short" in res.json["error"]
     res = client.post("/user", headers=ACME_BASIC,
                       data={"login": "came", "password": "Cameleon", "email": "came@acme.org"})
     assert res.status_code == 400
+    assert "must match" in res.json["error"]
 ```
 
 By default, any group name is accepted with `authorize`, and may fail at run
