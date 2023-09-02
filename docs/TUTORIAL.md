@@ -401,7 +401,8 @@ Test from a terminal:
 curl -si -X GET -d USER=acme -d PASS="$ACME_ADMIN_PASS" http://localhost:5000/hello-me  # 200
 ```
 
-Also append these same tests to `test.py`, and run them with `pytest`:
+Also append these same tests to `test.py`, and run them with `pytest` to
+achieve *4 passed*:
 
 ```python
 # append to "test.py"
@@ -463,7 +464,8 @@ curl -si -X GET -H "Authorization: Bearer <put-the-token-value-here>" \
                                         http://localhost:5000/hello-me  # 200
 ```
 
-Also append these same tests to `test.py`, and run them with `pytest`:
+Also append these same tests to `test.py`, and run them with `pytest` to
+achieve *5 passed*:
 
 ```python
 # append to "test.py"
@@ -476,7 +478,6 @@ def test_token_authn(client):
     assert res.status_code == 200
     assert res.json["user"] == "acme"
 ```
-
 
 ## Group Authorization
 
@@ -535,7 +536,8 @@ curl -si -X POST -u "acme:$ACME_ADMIN_PASS" \
 curl -si -X GET -u 'meca:Mec0!' http://localhost:5000/hello-me    # 200
 ```
 
-Also append these same tests to `test.py`, and run them with `pytest`:
+Also append these same tests to `test.py`, and run them with `pytest` to
+achieve *6 passed*:
 
 ```python
 # append to "test.py"
@@ -602,7 +604,8 @@ curl -si -X PATCH -u 'mace:Mac1!' \
                   -d price=3.0        http://localhost:5000/stuff/bear  # 204
 ```
 
-Also append these same tests to `test.py`, and run them with `pytest`:
+Also append these same tests to `test.py`, and run them with `pytest` to
+achieve *7 passed*:
 
 ```python
 # append to "test.py"
