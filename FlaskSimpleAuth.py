@@ -116,7 +116,7 @@ class Hooks:
 
     :param password: the submitted password.
 
-    Return whether the password is acceptable.
+    Returns whether the password is acceptable.
     """
 
     CastFun = Callable[[str|Any], object]
@@ -871,7 +871,7 @@ class Directives:
     FSA_CORS_OPTS: dict[str, Any] = {}
     """Flask-CORS initialization options.
 
-    See [Flask-CORS documentation](https://flask-cors.readthedocs.io/) for details.
+    See `Flask-CORS documentation <https://flask-cors.readthedocs.io/>`_ for details.
     """
 
 
