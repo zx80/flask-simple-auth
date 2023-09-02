@@ -271,7 +271,7 @@ from database import db
 
 # FlaskSimpleAuth password authentication hook
 def get_user_pass(login: str) -> str|None:
-    if not db.user_exists(login)
+    if not db.user_exists(login):
         # NOTE returning None would work as well, but the result is cached
         raise fsa.ErrorResponse(f"no such user: {login}", 401)
     return db.get_user_pass(login)
@@ -342,7 +342,8 @@ curl -si -X POST -u "acme:$ACME_ADMIN_PASS" \
 curl -si -X GET -u "acme:$ACME_ADMIN_PASS" http://localhost:5000/stuff     # 200
 ```
 
-Also append these same tests to `test.py`, and run them with `pytest`:
+Also append these same tests to `test.py`, and run them with `pytest` to
+achieve *3 passed*:
 
 ```python
 # append to "test.py"
