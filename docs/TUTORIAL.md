@@ -627,7 +627,16 @@ def test_objperm_authz(client):
 
 ## Further Improvements
 
-Edit `acme.conf` to add minimal password strength requirements:
+Let us edit `acme.conf` to activate or change some features.
+
+Errors are shown as `text/plain` by default, but this can be changed to JSON:
+
+```python
+# append to "acme.conf"
+FSA_ERROR_RESPONSE = "json:error"  # show errors as JSON
+```
+
+You can add minimal password strength requirements:
 
 ```python
 # append to "acme.conf"
@@ -637,7 +646,8 @@ FSA_PASSWORD_LENGTH = 5
 FSA_PASSWORD_RE = [ r"[A-Z]", r"[a-z]", r"[0-9]" ]
 ```
 
-After restarting the application, weak passwords are rejected:
+After restarting the application, weak passwords are rejected, and error
+messages as shown as JSON objects:
 
 ```shell
 curl -si -X POST -u "acme:$ACME_ADMIN_PASS" \
@@ -648,7 +658,8 @@ curl -si -X POST -u "acme:$ACME_ADMIN_PASS" \
                                          http://localhost:5000/user  # 400 (pass regex)
 ```
 
-Also append these same tests to `test.py`, and run them with `pytest`:
+Also append these same tests to `test.py`, and run them with `pytest` to
+achieve *8 passed*:
 
 ```python
 # append to "test.py"
@@ -669,13 +680,6 @@ configuration error is raised instead:
 ```python
 # append to "acme.conf"
 FSA_AUTHZ_GROUPS = ["admin"]
-```
-
-Errors are shown as `text/plain` by default, but this can be changed to JSON:
-
-```python
-# append to "acme.conf"
-FSA_ERROR_RESPONSE = "json:error"  # show errors as JSON
 ```
 
 You may want to use standard *JWT* (*JSON Web Token*) instead of *fsa* tokens.
