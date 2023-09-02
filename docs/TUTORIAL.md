@@ -385,6 +385,7 @@ This is usually done once to get some *token* (bearer, cookie…) which will be
 used to access other routes.
 Initialization requirements are the same as for *basic* authentication, as
 retrieving the user password is also needed.
+
 To enable parameter authentication as well as *basic* authentication, simply
 update the `FSA_AUTH` configuration directive in `acme.conf`:
 
