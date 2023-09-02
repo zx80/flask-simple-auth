@@ -229,7 +229,7 @@ Edit the `acme.conf` file to tell about basic authentication:
 
 ```python
 # append to "acme.conf"
-FSA_AUTH = "basic"
+FSA_AUTH = ["basic"]
 FSA_REALM = "acme"  # the app name, also the default
 ```
 
@@ -390,9 +390,16 @@ update the `FSA_AUTH` configuration directive in `acme.conf`:
 
 ```python
 # update "acme.conf"
-FSA_AUTH = "password"    # allow both "param" and "basic"
-FSA_PARAM_USER = "USER"  # param for the user name (default value)
-FSA_PARAM_PASS = "PASS"  # param for the password (default value)
+FSA_AUTH = ["basic", "param"]  # allow both "param" and "basic"
+```
+
+Which parameters are used for authentication is also configurable in
+`acme.conf`:
+
+```python
+# append to "acme.conf"
+FSA_PARAM_USER = "USER"        # param for the user name (default value)
+FSA_PARAM_PASS = "PASS"        # param for the password (default value)
 ```
 
 Test from a terminal:
@@ -424,9 +431,15 @@ This avoids sending login/passwords in each request, and is much more efficient
 for the server because cryptographic password hashing functions are *designed*
 to be very slow.
 
-There is nearly nothing to do: token authentication is activated by default,
-you only need to provide a token secret and route which allows to create a token:
+Token authentication can be activated explicitely by prepending *token* to
+`FSA_AUTH` in `acme.conf`:
 
+```python
+# update "acme.conf"
+FSA_AUTH = ["token", "basic", "param"]
+```
+
+Then we need token secret and route which allows to create a token.
 Edit file `acme.conf` to add the secret of your chosing:
 
 ```python
