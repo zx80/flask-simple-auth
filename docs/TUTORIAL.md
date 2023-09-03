@@ -326,6 +326,7 @@ parameters.
 Set the admin password in the environment, in each terminal:
 
 ```shell
+# hint for 64+ bit random password: head -c 9 /dev/random | base64
 export ACME_ADMIN_PASS="<a-good-admin-password>"
 ```
 
@@ -391,7 +392,7 @@ update the `FSA_AUTH` configuration directive in `acme.conf`:
 
 ```python
 # update "acme.conf"
-FSA_AUTH = ["basic", "param"]  # allow both "param" and "basic"
+FSA_AUTH = ["basic", "param"]
 ```
 
 Which parameters are used for authentication is also configurable in
@@ -399,8 +400,8 @@ Which parameters are used for authentication is also configurable in
 
 ```python
 # append to "acme.conf"
-FSA_PARAM_USER = "USER"        # param for the user name (default value)
-FSA_PARAM_PASS = "PASS"        # param for the password (default value)
+FSA_PARAM_USER = "USER"  # parameter for the user name (default value)
+FSA_PARAM_PASS = "PASS"  # parameter for the password (default value)
 ```
 
 Test from a terminal:
@@ -468,13 +469,13 @@ Then restart and test:
 curl -si -X GET -u "acme:$ACME_ADMIN_PASS" http://localhost:5000/token
 ```
 
-You should see the token as a JSON field in the response.
+You should see the token as a JSON property in the response.
 The default token type is *fsa*, with a easy-to-understand human-readable
 format.
 Then proceed to use the token instead of the login/password:
 
 ```shell
-curl -si -X GET -H "Authorization: Bearer <put-the-token-value-here>" \
+curl -si -X GET -H "Authorization: Bearer <put-the-raw-token-value-here>" \
                                         http://localhost:5000/hello-me  # 200
 ```
 
@@ -580,7 +581,7 @@ First, create the permission verification function:
 # insert in "auth.py"
 def stuff_permissions(login: str, stuff: str, role: str) -> bool:
     if role == "owner" and stuff in db.stuff:
-        return db.stuff[stuff][0] == login
+        return db.stuff[stuff][0] == login  # current user is the owner
     else:
         return False
 ```
@@ -601,7 +602,7 @@ value in domain *stuff*:
 @app.patch("/stuff/<sid>", authorize=("stuff", "sid", "owner"))
 def patch_stuff_sid(sid: str, price: float):
     db.change_stuff(sid, price)
-    return f"stuff changed: {sid}", 204
+    return f"stuff changed: {sid}", 200
 ```
 
 Then restart and test:
@@ -615,7 +616,7 @@ curl -si -X POST -u 'mace:Mac1!' \
 curl -si -X PATCH -u "acme:$ACME_ADMIN_PASS" \
                   -d price=3.0        http://localhost:5000/stuff/bear  # 403
 curl -si -X PATCH -u 'mace:Mac1!' \
-                  -d price=3.0        http://localhost:5000/stuff/bear  # 204
+                  -d price=3.0        http://localhost:5000/stuff/bear  # 200
 ```
 
 Also append these same tests to `test.py`, and run them with `pytest` to
@@ -635,7 +636,7 @@ def test_objperm_authz(client):
     res = client.patch("/stuff/bear", headers=ACME_BASIC, json={"price": 3.0})
     assert res.status_code == 403
     res = client.patch("/stuff/bear", headers=MACE_BASIC, json={"price": 3.0})
-    assert res.status_code == 204
+    assert res.status_code == 200
     # FIXME should cleanup data
 ```
 
@@ -707,7 +708,7 @@ update the application configuration:
 FSA_TOKEN_TYPE = "jwt"  # default is "fsa"
 ```
 
-Finally, if the debugging level is not useful anymore, it can be
+Finally, as the debugging level is not useful anymore, it can be
 reduced by updating `FSA_MODE` setting:
 
 ```python
