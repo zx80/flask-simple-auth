@@ -708,6 +708,15 @@ update the application configuration:
 FSA_TOKEN_TYPE = "jwt"  # default is "fsa"
 ```
 
+The authentication configuration can be simplified to the same effect by
+setting it to *password*, which stands for both *basic* and *param*, and the
+fact that *token* is added implicitely when the configuration is a scalar:
+
+```python
+# update "acme.conf"
+FSA_AUTH = "password"
+```
+
 Finally, as the debugging level is not useful anymore, it can be
 reduced by updating `FSA_MODE` setting:
 
