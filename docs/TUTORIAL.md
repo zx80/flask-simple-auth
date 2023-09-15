@@ -140,7 +140,7 @@ pytest test.py  # 1 passed
 Our incredible application will held some data in a toy *Acme* database with
 *Users* who can own *Stuff* at a price.
 Create file `acme.py` to manage a simplistic in-memory database implemented
-as the `Acme` class:
+as the `AcmeData` class:
 
 ```python
 # file "acme.py"
