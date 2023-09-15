@@ -139,7 +139,8 @@ pytest test.py  # 1 passed
 
 Our incredible application will held some data in a toy *Acme* database with
 *Users* who can own *Stuff* at a price.
-Create file `acme.py` to manage a simplistic database:
+Create file `acme.py` to manage a simplistic in-memory database implemented
+as the `Acme` class:
 
 ```python
 # file "acme.py"
@@ -168,7 +169,7 @@ class AcmeData:
         return self.users[login][0] if login in self.users else None
 
     def user_is_admin(self, login: str) -> bool:
-        return self.users[login][2]
+        return self.users[login][2] if login in self.users else False
 
     def add_stuff(self, stuff: str, login: str, price: float) -> None:
         if stuff in self.stuff:
@@ -192,10 +193,10 @@ This class can be tested with `test.py`:
 
 ```python
 # append to "test.py"
-from acme import AcmeData
+import acme
 
 def test_acmedata():
-    db = AcmeData()
+    db = acme.AcmeData()
     # users
     assert not db.user_exists("susie")
     db.add_user("susie", "susie-pass", "susie@acme.org", True)
@@ -247,7 +248,7 @@ interface:
 # file "database.py"
 import os
 import FlaskSimpleAuth as fsa
-from acme import AcmeData
+import acme
 
 # this is a proxy object to the actual database
 db = fsa.Reference()
@@ -255,7 +256,7 @@ db = fsa.Reference()
 # application database initialization
 def init_app(app: fsa.Flask):
     # initialize proxy object
-    db.set(AcmeData())
+    db.set(acme.AcmeData())
     # add an "admin" user
     db.add_user("acme", app.hash_password(os.environ["ACME_ADMIN_PASS"]), "acme@acme.org", True)
 ```
