@@ -45,17 +45,18 @@ from flask import (
     stream_template, stream_template_string, stream_with_context,
 )
 
-if flask.__version__.startswith("2.2."):  # pragma: no cover
+from importlib.metadata import version as pkg_version
+
+if pkg_version("flask").startswith("2.2."):  # pragma: no cover
     from flask import escape, Markup
-# 2.3: they are in markupsafe
+# 2.3 and 3.0: they are in markupsafe
 
 from werkzeug.datastructures import FileStorage
 
 import logging
 log = logging.getLogger("fsa")
 
-# get module version
-from importlib.metadata import version as pkg_version
+# get module version (should it be deprecated?)
 __version__ = pkg_version("FlaskSimpleAuth")
 
 
