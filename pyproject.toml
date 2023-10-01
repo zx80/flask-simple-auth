@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "FlaskSimpleAuth"
-version = "25.1"
+version = "25.2"
 authors = [ { name = "Fabien Coelho", email = "flask.auth@coelho.net" } ]
 description = "Simple authentication, authorization and parameters for Flask, emphasizing configurability"
 readme = "README.md"
@@ -43,7 +43,7 @@ doc = [ "sphinx", "sphinx_rtd_theme", "sphinx-autoapi", "sphinx-lint", "myst_par
 tests = [ "requests", "pydantic>=2.0" ]
 demo = [ "anodb", "psycopg", "psycopg2", "pymemcache", "redis", "types-redis", "types-cachetools" ]
 # password management
-password = [ "passlib", "bcrypt",  ]
+password = [ "passlib", "bcrypt" ]
 # cache options
 redis = [ "redis" ]
 memcached = [ "pymemcache" ]

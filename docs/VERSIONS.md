@@ -3,8 +3,9 @@
 Sources are available on [GitHub](https://github.com/zx80/flask-simple-auth)
 and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 
-## ? on ?
+## 25.2 on 2023-10-01
 
+Minor update for Flask 3.0 `__version__` deprecation.
 Improve tutorial and API documentation.
 
 ## 25.1 on 2023-08-27
