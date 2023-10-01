@@ -9,7 +9,7 @@ authors = [ { name = "Fabien Coelho", email = "flask.auth@coelho.net" } ]
 description = "Simple authentication, authorization and parameters for Flask, emphasizing configurability"
 readme = "README.md"
 license = { text = "CC0" }
-# Flask 2.3 requires Python 3.9
+# Flask 2.3 requires Python 3.9 (3.8?) and is compatible with 3.12
 # I'm tired of verbose type hints such as Optional[foo]
 requires-python = ">=3.10"
 dependencies = [
