@@ -13,8 +13,7 @@ jobs:
       matrix:
         # FIXME although pypy 3.10 seems to exist, github actions do not know that
         # 3.12 mypy: TypeError: type 'typing.TypeVar' is not an acceptable base type
-        # TODO "3.12-dev"
-        python-version: [ "3.10", "3.11" ]
+        python-version: [ "3.10", "3.11", "3.12" ]
     steps:
     # Setup
     - name: Git Checkout
