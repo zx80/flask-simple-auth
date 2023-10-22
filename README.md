@@ -55,39 +55,42 @@ parameter.
 How these are checked is also set from the configuration.
 HTTP or JSON parameters are automatically converted to the expected type.
 
+Authentication and authorizations are provided to the framework with callback functions.
+For our example, we will need to retrieve the salted hashed password for a user,
+to check whether a user belongs to a group, and
+to tell whether a user can access a given store in a particular role:
+
+```python
+# file "auth.py"
+
+def get_user_pass(user: str) -> str|None:
+    return ...  # hashed password retrieved from somewhere
+
+def user_in_group(user: str, group: str) -> bool:
+    return ...  # whether user belongs to group
+
+def store_perms(user: str, sid: int, role: str) -> bool|None:
+    return ...  # whether user can access store sid in role
+```
+
 Here is an example of configuration for the above application:
 Users are identified either with a JWT token or with a basic authentification.
 
 ```python
 # acme configuration
 import os
+import auth
 
 FSA_MODE = "dev"
 FSA_AUTH = ["token", "basic"]
 FSA_TOKEN_TYPE = "jwt"
 FSA_TOKEN_SECRET = os.environ["ACME_SECRET"]
+FSA_GET_USER_PASS = auth.get_user_pass
+FSA_USER_IN_GROUP = auth.user_in_group
+FSA_OBJECT_PERMS = { "store": auth.store_perms }
 ```
 
-In this example, the framework needs three callbacks: one to retrieve the salted
-hashed password for a user, one to check whether a user belongs to a group, and
-one for telling whether a user can access a given store in a particular role.
-
-```python
-# authentication and authorization callbacks
-@app.get_user_pass
-def get_user_pass(user: str) -> str|None:
-    return ...  # hashed password retrieved from somewhere
-
-@app.user_in_group
-def user_in_group(user: str, group: str) -> bool:
-    return ...  # whether user belongs to group
-
-@app.object_perms("store")
-def store_permission(user: str, sid: int, role: str) -> bool|None:
-    return ...  # whether user can access store sid in role
-```
-
-The framework ensures that routes are only called by authenticated users
+The framework will ensure that routes are only called by authenticated users
 who have the right authorizations.
 Secure and reasonable defaults are provided.
 Most features can be adjusted or extended to particular needs through numerous
