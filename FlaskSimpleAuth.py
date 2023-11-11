@@ -3090,7 +3090,7 @@ class FlaskSimpleAuth:
         return self._zm.group_uncache(user, group)
 
     def object_perms_uncache(self, domain: str, user: str, oid, mode: str|None) -> bool:
-        """Remove user password entry from cache."""
+        """Remove permission entry from cache."""
         return self._zm.object_perms_uncache(domain, user, oid, mode)
 
     #
