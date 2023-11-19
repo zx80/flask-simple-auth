@@ -11,11 +11,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # FIXME although pypy 3.10 seems to exist, github actions do not know that
-        # 3.12 mypy: TypeError: type 'typing.TypeVar' is not an acceptable base type
         python-version: [ "3.10", "3.11", "3.12" ]
     steps:
-    # Setup
+    # General Setup
     - name: Git Checkout
       uses: actions/checkout@v3
     - name: Set up Redis
@@ -26,7 +24,6 @@ jobs:
       uses: actions/setup-python@v4
       with:
         python-version: ${{ matrix.python-version }}
-    # Dependencies
     - name: Install Python Dependencies
       run: |
         pip install -U pip

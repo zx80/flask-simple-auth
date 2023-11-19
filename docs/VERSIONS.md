@@ -3,7 +3,7 @@
 Sources are available on [GitHub](https://github.com/zx80/flask-simple-auth)
 and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 
-## ? on ?
+## 25.3 on 2023-11-19
 
 Improve documentation.
 Add Python _3.12_ support.

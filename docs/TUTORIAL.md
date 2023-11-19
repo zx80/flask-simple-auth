@@ -102,7 +102,7 @@ Connection: close
 
 {
   "msg": "hello",
-  "version": "25.2"
+  "version": "25.3"
 }
 ```
 
