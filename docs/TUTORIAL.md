@@ -443,13 +443,14 @@ FSA_AUTH = ["token", "basic", "param"]
 ```
 
 Then we need token secret and route which allows to create a token.
-Edit file `acme.conf` to add the secret of your chosing:
+Edit file `acme.conf` to add the secret and delay of your chosing:
 
 ```python
 # append to "acme.conf"
 # Unix 256+ bits random secret in ASCII: head -c 33 /dev/random | base64
 FSA_TOKEN_SECRET = "<some-good-and-long-secret-for-token-signature>"
 # NOTE: if not set, a random default is used instead
+FSA_TOKEN_DELAY = 10.0  # set token expiration to 10 minutes (default is 1 hour)
 ```
 
 In a more realistic setting, the token secret would probably not be directly
