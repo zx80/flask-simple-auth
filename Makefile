@@ -79,6 +79,7 @@ $(MODULE).egg-info: venv
 
 # generate source and built distribution
 dist:
+	source venv/bin/activate
 	$(PYTHON) -m build
 
 .PHONY: publish
