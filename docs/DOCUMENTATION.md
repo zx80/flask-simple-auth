@@ -1149,6 +1149,7 @@ Todo or not todo…
 - authz/authn instead of authorize/auth?
 - rename ANY/ALL/NONE to something more intuitive?
 - declare scopes *per domain*?
+- drop token if their validity is too long?
 
 ### Params
 
