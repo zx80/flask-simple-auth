@@ -1167,6 +1167,8 @@ Todo or not todo…
 - the doc and implementation should clarify exception handling,
   and possible overrides.
 - add ability to catch and process any user error.
+- force generating JSON responses?
+- default to generate JSON responses?
 
 ### Software Engineering
 
