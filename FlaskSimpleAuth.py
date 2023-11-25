@@ -13,6 +13,7 @@ This code is public domain.
 
 # TODO refactoring
 # - clarify manager public/private interfaces
+# - allow more caching, eg TwoLevelCache
 
 import sys
 from typing import Callable, MutableMapping, Any
@@ -391,6 +392,8 @@ class Flask(flask.Flask):
       parameters transparently.
     - per-methods shortcut decorators allow to handle root for a given
       method: `get`, `post`, `put`, `patch`, `delete`.
+    - `make_response` slightly extends its parent to allow changing
+      the default content type.
     - several additional methods are provided: `get_user_pass`,
       `user_in_group`, `check_password`, `hash_password`, `create_token`,
       `get_user`, `current_user`, `clear_caches`, `cast`, `object_perms`,
@@ -448,9 +451,19 @@ class Flask(flask.Flask):
         setattr(self, "patch", self._fsa.patch)
         setattr(self, "delete", self._fsa.delete)
 
+    def make_response(self, rv) -> Response:
+        """Create a Response."""
+        res = super().make_response(rv)
+        # possibly override Content-Type header
+        if self._fsa._rm._default_type:
+            if type(rv) in (bytes, str):
+                res.content_type = self._fsa._rm._default_type
+            elif isinstance(rv, tuple) and isinstance(rv[0], (str, tuple)):
+                res.content_type = self._fsa._rm._default_type
+        return res
+
 
 # significant default settings are centralized here
-
 class Directives:
     """Documentation for configuration directives.
 
@@ -540,6 +553,12 @@ class Directives:
     - ``json:msg``: generate a JSON object with property ``msg``.
     - *callback*: give full control to a callback which is passed
       the message, the status, headers and content type.
+    """
+
+    FSA_DEFAULT_CONTENT_TYPE: str|None = None
+    """Set default content type for str or bytes responses.
+
+    Default (*None*) is to use Flask's defaults.
     """
 
     FSA_GET_USER_PASS: Hooks.GetUserPassFun|None = None
@@ -2600,6 +2619,7 @@ class _ResponseManager:
         self._url_name: str|None = None
         self._after_requests: list[Hooks.AfterRequestFun] = []
         self._headers: dict[str, Hooks.HeaderFun|str] = {}
+        self._default_type: str|None = None
         self._initialized = False
 
     def _initialize(self):
@@ -2611,6 +2631,9 @@ class _ResponseManager:
 
         fsa, app, conf = self._fsa, self._fsa._app, self._fsa._app.config
 
+        # default content type
+        self._default_type = conf.get("FSA_DEFAULT_CONTENT_TYPE", Directives.FSA_DEFAULT_CONTENT_TYPE)
+        # FIXME should check default_type type?
         # generate response on errors
         error = conf.get("FSA_ERROR_RESPONSE", Directives.FSA_ERROR_RESPONSE)
         if error is None:

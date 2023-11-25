@@ -946,6 +946,10 @@ Some directives govern various details for this extension internal working.
   arguments.
   Default is empty.
 
+- `FSA_DEFAULT_CONTENT_TYPE` allows to replace the default `text/html` header
+  added for string or byte responses.
+  Default is *None*, meaning no replacement.
+
 - `FSA_BEFORE_REQUEST` and `FSA_AFTER_REQUEST` allow to add a list of before
   and after request hooks from the configuration instead of the actual
   application code.
@@ -1169,6 +1173,7 @@ Todo or not todo…
 - add ability to catch and process any user error.
 - force generating JSON responses?
 - default to generate JSON responses?
+- how to allow TwoLevelCache?
 
 ### Software Engineering
 

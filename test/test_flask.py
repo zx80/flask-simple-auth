@@ -2202,3 +2202,24 @@ def test_custom_authentication():
         assert res.headers["Oops"] == "missing Code"
         res = check(200, c.get("/hello", headers={"Code": "hobbes"}))
         assert res.json == "hobbes"
+
+def test_default_type():
+    app = fsa.Flask("default-type", FSA_DEFAULT_CONTENT_TYPE="application/xml")
+    @app.get("/hello", authorize="ANY")
+    def get_hello():
+        return fsa.jsonify("hello"), 200
+    @app.get("/bonjour", authorize="ANY")
+    def get_bonjour():
+        return "<x>bonjour</x>", 200
+    @app.get("/guttentag", authorize="ANY")
+    def get_guttentag():
+        return "<X>Gutten Tag</X>"
+    with app.test_client() as c:
+        res = check(200, c.get("/hello"))
+        assert res.json == "hello"
+        res = check(200, c.get("/bonjour"))
+        assert res.data == b"<x>bonjour</x>"
+        assert res.headers["Content-Type"] == "application/xml"
+        res = check(200, c.get("/guttentag"))
+        assert res.data == b"<X>Gutten Tag</X>"
+        assert res.headers["Content-Type"] == "application/xml"
