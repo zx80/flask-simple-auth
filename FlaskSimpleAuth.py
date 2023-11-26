@@ -388,17 +388,17 @@ class Flask(flask.Flask):
 
     The class behaves mostly as a Flask class, but supports extensions:
 
-    - the `route` decorator manages authentication, authorization and
+    - the ``route`` decorator manages authentication, authorization and
       parameters transparently.
     - per-methods shortcut decorators allow to handle root for a given
-      method: `get`, `post`, `put`, `patch`, `delete`.
-    - `make_response` slightly extends its parent to allow changing
-      the default content type.
-    - several additional methods are provided: `get_user_pass`,
-      `user_in_group`, `check_password`, `hash_password`, `create_token`,
-      `get_user`, `current_user`, `clear_caches`, `cast`, `object_perms`,
-      `user_scope`, `password_quality`, `password_check`, `add_group`,
-      `add_scope`, `add_headers`, `error_response`, `authentication`…
+      method: ``get``, ``post``, ``put``, ``patch``, ``delete``.
+    - ``make_response`` slightly extends its parent to allow changing
+      the default content type and handle _None_ body.
+    - several additional methods are provided: ``get_user_pass``,
+      ``user_in_group``, ``check_password``, ``hash_password``, ``create_token``,
+      ``get_user``, ``current_user``, ``clear_caches``, ``cast``, ``object_perms``,
+      ``user_scope``, ``password_quality``, `password_check``, ``add_group``,
+      ``add_scope``, ``add_headers``, ``error_response``, ``authentication``…
 
     See ``FlaskSimpleAuth`` class documentation about these methods.
     """
