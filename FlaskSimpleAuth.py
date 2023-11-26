@@ -364,8 +364,9 @@ def jsonify(a: Any):
     elif hasattr(a, "__dataclass_fields__"):  # standard dataclass
         return dataclasses.asdict(a)
     elif inspect.isgenerator(a) or type(a) in (map, filter, range):
+        # FIXME should it be a generator itself?
         return flask.jsonify(list(a))
-    else:
+    else:  # use flask standard json converter
         return flask.jsonify(a)
 
 
