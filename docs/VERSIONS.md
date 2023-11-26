@@ -6,6 +6,7 @@ and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 ## ? on ?
 
 Add `FSA_DEFAULT_CONTENT_TYPE` configuration directive.
+Improve documentation.
 
 ## 25.3 on 2023-11-19
 
