@@ -114,7 +114,7 @@ You need to create a callback to handle your scheme:
   ```python
   def xyz_authentication(app, req):
       # investigate the request and return the login or None for 401
-      # possible raise an ErrorResponse
+      # possibly raise an ErrorResponse
       return ...
   ```
 
