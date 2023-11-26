@@ -2214,6 +2214,12 @@ def test_default_type():
     @app.get("/guttentag", authorize="ANY")
     def get_guttentag():
         return "<X>Gutten Tag</X>"
+    @app.get("/ola", authorize="ANY")
+    def get_ola():
+        return None
+    @app.get("/ciao", authorize="ANY")
+    def get_ciao():
+        return (None, 204)
     with app.test_client() as c:
         res = check(200, c.get("/hello"))
         assert res.json == "hello"
@@ -2222,4 +2228,10 @@ def test_default_type():
         assert res.headers["Content-Type"] == "application/xml"
         res = check(200, c.get("/guttentag"))
         assert res.data == b"<X>Gutten Tag</X>"
+        assert res.headers["Content-Type"] == "application/xml"
+        res = check(200, c.get("/ola"))
+        assert res.data == b""
+        assert res.headers["Content-Type"] == "application/xml"
+        res = check(204, c.get("/ciao"))
+        assert res.data == b""
         assert res.headers["Content-Type"] == "application/xml"

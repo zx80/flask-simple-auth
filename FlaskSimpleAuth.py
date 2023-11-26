@@ -452,13 +452,23 @@ class Flask(flask.Flask):
         setattr(self, "delete", self._fsa.delete)
 
     def make_response(self, rv) -> Response:
-        """Create a Response."""
+        """Create a Response.
+
+        This method handles overriding the default ``Content-Type`` and accepts
+        a *None* body.
+        """
+        # handle None body as empty
+        if rv is None:
+            rv = ("", 200)
+        elif isinstance(rv, tuple) and rv[0] is None:
+            rv = ("",) + rv[1:]
+        # use flask to create a response
         res = super().make_response(rv)
         # possibly override Content-Type header
         if self._fsa._rm._default_type:
-            if type(rv) in (bytes, str):
+            if type(rv) in (bytes, str, typing.Generator, typing.Iterator):
                 res.content_type = self._fsa._rm._default_type
-            elif isinstance(rv, tuple) and isinstance(rv[0], (str, tuple)):
+            elif isinstance(rv, tuple) and isinstance(rv[0], (bytes, str, typing.Generator, typing.Iterator)):
                 res.content_type = self._fsa._rm._default_type
         return res
 
