@@ -456,7 +456,8 @@ FSA_TOKEN_DELAY = 10.0  # set token expiration to 10 minutes (default is 1 hour)
 In a more realistic setting, the token secret would probably not be directly
 in the configuration, but passed to it or loaded by it.
 
-Then edit file `app.py`:
+Then edit file `app.py` to add a new route to create a token for the current
+user authenticated by password:
 
 ```python
 # append to "app.py"
@@ -474,7 +475,8 @@ curl -si -X GET -u "acme:$ACME_ADMIN_PASS" http://localhost:5000/token
 You should see the token as a JSON property in the response.
 The default token type is *fsa*, with a easy-to-understand human-readable
 format.
-Then proceed to use the token instead of the login/password:
+Then proceed to use the token instead of the login/password to authenticate
+the user on a route:
 
 ```shell
 curl -si -X GET -H "Authorization: Bearer <put-the-raw-token-value-here>" \
