@@ -3154,9 +3154,9 @@ class FlaskSimpleAuth:
     def add_url_rule(self, rule, endpoint=None, view_func=None, authorize=NONE, auth=None, realm=None, **options):
         """Route decorator helper method.
 
-        - *authz* or *authorize*: authorization constraints.
-        - *authn* or *auth*: authentication constraints.
-        - *realm*: realm for this route, supercedes global settings.
+        - ``authz`` or ``authorize``: authorization constraints.
+        - ``authn`` or ``auth``: authentication constraints.
+        - ``realm``: realm for this route, supercedes global settings.
         """
 
         # handle authz/authorize and authn/auth
