@@ -397,7 +397,7 @@ class Flask(flask.Flask):
     - several additional methods are provided: ``get_user_pass``,
       ``user_in_group``, ``check_password``, ``hash_password``, ``create_token``,
       ``get_user``, ``current_user``, ``clear_caches``, ``cast``, ``object_perms``,
-      ``user_scope``, ``password_quality``, `password_check``, ``add_group``,
+      ``user_scope``, ``password_quality``, ``password_check``, ``add_group``,
       ``add_scope``, ``add_headers``, ``error_response``, ``authentication``…
 
     See ``FlaskSimpleAuth`` class documentation about these methods.
