@@ -394,7 +394,7 @@ class Flask(flask.Flask):
     - per-methods shortcut decorators allow to handle root for a given
       method: ``get``, ``post``, ``put``, ``patch``, ``delete``.
     - ``make_response`` slightly extends its parent to allow changing
-      the default content type and handle _None_ body.
+      the default content type and handle *None* body.
     - several additional methods are provided: ``get_user_pass``,
       ``user_in_group``, ``check_password``, ``hash_password``, ``create_token``,
       ``get_user``, ``current_user``, ``clear_caches``, ``cast``, ``object_perms``,
