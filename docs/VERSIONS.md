@@ -3,7 +3,7 @@
 Sources are available on [GitHub](https://github.com/zx80/flask-simple-auth)
 and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 
-## ? on ?
+## 26.0 on 2023-11-30
 
 Add `FSA_DEFAULT_CONTENT_TYPE` configuration directive.
 Improve documentation.
