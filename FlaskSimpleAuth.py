@@ -1792,7 +1792,13 @@ class _AuthenticationManager:
     #
     def _get_token_auth(self, app, req) -> str|None:
         """Authenticate with current token."""
-        return self._tm._get_any_token_auth(self._tm._get_token()) if self._tm else None
+        login = None
+        if self._tm:
+            token = self._tm._get_token()
+            login = self._tm._get_any_token_auth(token)
+            if login:  # keep track of token
+                self._fsa._local.token = token
+        return login
 
 
 class _CacheManager:
@@ -2582,6 +2588,7 @@ class _RequestManager:
         local.token_realm = fsa._am._tm._realm if fsa._am._tm else None
         local.scopes = None              # current oauth scopes
         local.params = None              # json|http parameters
+        local.token = None               # current token if any
 
     def _show_request(self) -> None:
         """Show request in logs when in debug mode."""
