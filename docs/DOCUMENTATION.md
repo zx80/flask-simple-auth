@@ -161,6 +161,12 @@ Various decorators/functions allow to register hooks, such as:
 def get_user_pass(user: str) -> str|None:
     return ...
 
+# return whether user belong to some group (see with FSA_GROUP_CHECK)
+@app.group_check("admin")
+def user_is_admin(user: str) -> bool:
+    return ...
+
+# or alternative catch-all dynamic approach
 # return whether user is in group (see with FSA_USER_IN_GROUP)
 @app.user_in_group
 def user_in_group(user: str, group: str) -> bool:
@@ -526,9 +532,14 @@ that is *all* conditions must be met.
 ### Group Authorizations
 
 A group or role is identified as an integer or a string.
-The `user_in_group(user, group)` function is called to check whether the
-authenticated user belongs to a given group.
-Because this function is cached by default, the cache expiration must
+There are three approaches to check for group membership:
+
+- use predefined group special values `NONE ANY ALL`.
+- associate a group membership function to each group name.
+- use the `user_in_group(user, group)` function to check whether the
+  authenticated user belongs to a given group.
+
+Because these functions are cached by default, the cache expiration must
 be reached so that changes take effect, or the cache must be cleared
 manually, which may impair application performance.
 
