@@ -218,7 +218,7 @@ Use `authorize="ANY"` as a route parameter.
 Use `authorize="ALL"` as a route parameter.
 *ALL* authenticated users can execute the route.
 
-### How-to use group authorizations?
+### How-to use simple group authorizations?
 
 Group authorizations are permissions based on belonging to a group.
 For that, you must:
@@ -226,14 +226,14 @@ For that, you must:
 - create a callback to check whether a user belongs to a group:
 
   ```python
-  def user_in_group(login: str, group: str) -> bool:
-      return ... # whether user belong to the group
+  def user_is_admin(login: str) -> bool:
+      return ... # whether user belong to the admin group
   ```
 
-- register this callback as a `user_in_group` hook:
+- register this callback as a `group_check` hook:
 
   ```python
-  app.user_in_group(user_in_group)
+  app.group_check("admin", user_is_admin)
   ```
 
 - declare that the group authorization is required on a route definition:
@@ -248,6 +248,10 @@ For that, you must:
   ```python
   FSA_AUTHZ_GROUPS = [ "admin", "client", "manager", ... ]
   ```
+
+### How-to factor-out all group authorizations?
+
+Use the generic `user_in_group` hook instead of per-group checks.
 
 ### How-to use object authorizations?
 
