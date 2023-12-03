@@ -503,8 +503,8 @@ def test_token_authn(client):
 For *group* authorization, we need to:
 
 - store group membership information somewhere
-- provide a callback to check for membership
-- define a route which requires some group membership.
+- provide callbacks to check for membership to groups
+- define a route which requires some group membership
 
 Whether a user belongs to the *admin* group is defined as a boolean
 in the user profile managed by *AcmeData*.
@@ -513,18 +513,15 @@ Then write the group checking function:
 
 ```python
 # in "auth.py"
-def user_in_group(user: str, group: str) -> bool:
-    if group == "admin":
-        return db.user_is_admin(user)
-    else:  # handle other groups here…
-        return False
+def user_is_admin(user: str) -> bool:
+    return db.user_is_admin(user)
 ```
 
 Then register it in the auth initializations:
 
 ```python
 # append to "init_app" in "auth.py"
-    app.user_in_group(user_in_group)
+    app.group_check("admin", user_is_admin)
 ```
 
 Then edit `app.py` to create a route reserved to admins which insert new users,
