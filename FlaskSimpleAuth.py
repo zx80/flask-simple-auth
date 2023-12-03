@@ -85,6 +85,15 @@ class Hooks:
     Returns the string, of None if no password or user.
     """
 
+    GroupCheckFun = Callable[[str], bool]
+    """Tell whether a user belongs to some group.
+
+    :param login: user name.
+
+    Returns whether the user belongs to some group by calling
+    the appropriate callback.
+    """
+
     UserInGroupFun = Callable[[str, str|int], bool|None]
     """Is user login in group (str or int): yes, no, unknown.
 
@@ -92,6 +101,7 @@ class Hooks:
     :param group: group name or number to check for membership.
 
     Returns whether the user belongs to the group.
+    This is a fallback for the previous per-group method.
     """
 
     ObjectPermsFun = Callable[[str, Any, str|None], bool]
@@ -190,7 +200,10 @@ class ErrorResponse(BaseException):
 
 
 class ConfigError(BaseException):
-    """FSA User Configuration Error."""
+    """FSA User Configuration Error.
+
+    This error is raised on errors detected while initializing the application.
+    """
     pass
 
 
@@ -396,10 +409,11 @@ class Flask(flask.Flask):
     - ``make_response`` slightly extends its parent to allow changing
       the default content type and handle *None* body.
     - several additional methods are provided: ``get_user_pass``,
-      ``user_in_group``, ``check_password``, ``hash_password``, ``create_token``,
-      ``get_user``, ``current_user``, ``clear_caches``, ``cast``, ``object_perms``,
-      ``user_scope``, ``password_quality``, ``password_check``, ``add_group``,
-      ``add_scope``, ``add_headers``, ``error_response``, ``authentication``…
+      ``user_in_group``, ``group_check``, ``check_password``, ``hash_password``,
+      ``create_token``, ``get_user``, ``current_user``, ``clear_caches``,
+      ``cast``, ``object_perms``, ``user_scope``, ``password_quality``,
+      ``password_check``, ``add_group``, ``add_scope``, ``add_headers``,
+      ``error_response``, ``authentication``…
 
     See ``FlaskSimpleAuth`` class documentation about these methods.
     """
@@ -422,6 +436,7 @@ class Flask(flask.Flask):
         self.error_response = self._fsa.error_response
         self.get_user_pass = self._fsa.get_user_pass
         self.user_in_group = self._fsa.user_in_group
+        self.group_check = self._fsa.group_check
         self.object_perms = self._fsa.object_perms
         self.user_scope = self._fsa.user_scope
         # decorators
@@ -590,6 +605,15 @@ class Directives:
     request, and should return the authenticated user login (str).
     Returning *None* suggests a 401 for this scheme.
     The implementation may also raise an ``ErrorResponse``.
+    """
+
+    FSA_GROUP_CHECK: dict[str, Hooks.GroupCheckFun] = {}
+    """Authorization hook for checking whether a user is some groups.
+
+    Same as ``group_check`` decorator.
+
+    For each group name, associate a callback which given a login returns
+    whether the user belongs to this group.
     """
 
     FSA_USER_IN_GROUP: Hooks.UserInGroupFun|None = None
@@ -1827,6 +1851,7 @@ class _CacheManager:
         log.info("initializing CacheManager")
 
         self._cachable.extend([
+	        (self._fsa._zm, "_check_groups", "c."),
             (self._fsa._zm, "_user_in_group", "g."),
             (self._fsa._zm, "_check_object_perms", "p."),
             (self._fsa._am._tm, "_get_any_token_auth_exp", "t."),
@@ -1984,8 +2009,9 @@ class _AuthorizationManager:
         self._Exc = fsa._Exc
         self._store = fsa._store
         # authorization stuff
-        self._user_in_group: Hooks.UserInGroupFun|None = None
+        self._group_checks: dict[int|str, Hooks.GroupCheckFun] = dict()
         self._object_perms: dict[Any, Hooks.ObjectPermsFun] = dict()
+        self._user_in_group: Hooks.UserInGroupFun|None = None
         self._groups: set[str|int] = set()
         self._scopes: set[str] = set()
         self._initialized = False
@@ -2000,16 +2026,31 @@ class _AuthorizationManager:
         conf = self._fsa._app.config
         self._groups.update(conf.get("FSA_AUTHZ_GROUPS", []))
         self._scopes.update(conf.get("FSA_AUTHZ_SCOPES", []))
+        self._fsa._set_hooks("FSA_GROUP_CHECK", self.group_check)
+        self._fsa._set_hooks("FSA_OBJECT_PERMS", self.object_perms)
         if "FSA_USER_IN_GROUP" in conf:
             self._user_in_group = conf["FSA_USER_IN_GROUP"]
-        self._fsa._set_hooks("FSA_OBJECT_PERMS", self.object_perms)
         self._initialized = True
+
+    def group_check(self, group: str|int, checker: Hooks.GroupCheckFun = None):
+        """Add a check hook for a group."""
+        return self._store(self._group_checks, "group authz checker", group, checker)
+
+    def _check_groups(self, login: str, group: str|int) -> bool|None:
+        """Return whether login belongs to group, or *None* if no group check hook."""
+        return self._group_checks[group](login) if group in self._group_checks else None
+
+    def group_uncache(self, user: str, group: str|int) -> bool:
+        """Remove group membership entry from cache."""
+        r1 = self._check_groups.cache_del(user, group)  # type: ignore
+        r2 = self._user_in_group.cache_del(user, group)  # type: ignore
+        return r1 or r2
 
     def object_perms(self, domain: str, checker: Hooks.ObjectPermsFun = None):
         """Add an object permission helper for a given domain."""
         return self._store(self._object_perms, "object permission checker", domain, checker)
 
-    def _check_object_perms(self, domain: str, user: str, oid, mode: str|None):
+    def _check_object_perms(self, domain: str, user: str, oid, mode: str|None) -> bool:
         """Can user access object oid in domain for mode, cached."""
         assert domain in self._object_perms
         return self._object_perms[domain](user, oid, mode)
@@ -2071,19 +2112,22 @@ class _AuthorizationManager:
                 # check against all authorized groups/roles
                 for grp in groups:
                     try:
-                        assert self._user_in_group  # please mypy
-                        ok = self._user_in_group(local.user, grp)
+                        if grp in self._group_checks:
+                            ok = self._check_groups(local.user, grp)
+                        else:
+                            assert self._user_in_group  # please mypy
+                            ok = self._user_in_group(local.user, grp)
                     except ErrorResponse as e:
                         return self._Res(e.message, e.status, e.headers, e.content_type)
                     except Exception as e:
-                        log.error(f"user_in_group failed: {e}")
+                        log.error(f"group check failed: {e}")
                         if self._Exc(e):  # pragma: no cover
                             raise
-                        return self._Res("internal error in user_in_group", fsa._server_error)
+                        return self._Res(f"internal error while checking group {grp}", fsa._server_error)
                     if not isinstance(ok, bool):
-                        log.error(f"type error in user_in_group: {ok}: {type(ok)}, must return a boolean")
-                        return self._Res("internal error with user_in_group", fsa._server_error)
-                    if not ok:
+                        log.error(f"type error in group check: {ok}: {type(ok)}, must return a boolean")
+                        return self._Res(f"internal error in group check for {grp}", fsa._server_error)
+                    elif not ok:
                         return self._Res(f'not in group "{grp}"', 403)
 
                 # all groups are ok, proceed to call underlying function
@@ -2092,10 +2136,6 @@ class _AuthorizationManager:
             return wrapper
 
         return decorate
-
-    def group_uncache(self, user: str, group: str|int) -> bool:
-        """Remove group membership entry from cache."""
-        return self._user_in_group.cache_del(user, group)  # type: ignore
 
     # just to record that no authorization check was needed
     def _no_authz(self, path, *groups):
@@ -3008,6 +3048,11 @@ class FlaskSimpleAuth:
         """
         self._initialize()
         return self._pm.special_parameter(t, sp)
+
+    def group_check(self, group: str|int, checker: Hooks.GroupCheckFun = None):
+        """Add a group helper for a given group."""
+        self._initialize()
+        return self._zm.group_check(group, checker)
 
     def object_perms(self, domain: str, checker: Hooks.ObjectPermsFun = None):
         """Add an object permission helper for a given domain."""

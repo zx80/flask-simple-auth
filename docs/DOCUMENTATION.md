@@ -140,10 +140,12 @@ authentication-dependent data, for instance:
 
 Various decorators/functions allow to register hooks, such as:
 
-- `user_in_group`, `get_user_pass` and `object_perms` functions/decorators to
-  register authentication and authorization helper functions:
+- `user_in_group`, `group_check`, `get_user_pass` and `object_perms`
+  functions/decorators to register authentication and authorization helper
+  functions:
   - a function to retrieve the password hash from the user name.
-  - a function which tells whether a user is in a group or role.
+  - a function which tells whether a user belong to some group.
+  - a function which tells whether a user is in a provided group or role.
   - functions which define object ownership and access permissions.
 - `password_quality` a function/decorator to register a function to check for
   password quality.

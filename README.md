@@ -5,7 +5,7 @@ a declarative security layer to routes with authentification, authorization and
 parameter management.
 
 ![Status](https://github.com/zx80/flask-simple-auth/actions/workflows/fsa.yml/badge.svg?branch=master&style=flat)
-![Tests](https://img.shields.io/badge/tests-80%20✓-success)
+![Tests](https://img.shields.io/badge/tests-81%20✓-success)
 ![Coverage](https://img.shields.io/badge/coverage-100%25-success)
 ![Issues](https://img.shields.io/github/issues/zx80/flask-simple-auth?style=flat)
 ![Python](https://img.shields.io/badge/python-3-informational)
@@ -65,8 +65,8 @@ to tell whether a user can access a given store in a particular role:
 def get_user_pass(user: str) -> str|None:
     return ...  # hashed password retrieved from somewhere
 
-def user_in_group(user: str, group: str) -> bool:
-    return ...  # whether user belongs to group
+def user_is_employee(user: str) -> bool:
+    return ...  # whether user belongs to group employee
 
 def store_perms(user: str, sid: int, role: str) -> bool|None:
     return ...  # whether user can access store sid in role
@@ -85,7 +85,7 @@ FSA_AUTH = ["token", "basic"]
 FSA_TOKEN_TYPE = "jwt"
 FSA_TOKEN_SECRET = os.environ["ACME_SECRET"]
 FSA_GET_USER_PASS = auth.get_user_pass
-FSA_USER_IN_GROUP = auth.user_in_group
+FSA_GROUP_CHECK = { "employee": auth.user_is_employee }
 FSA_OBJECT_PERMS = { "store": auth.store_perms }
 ```
 

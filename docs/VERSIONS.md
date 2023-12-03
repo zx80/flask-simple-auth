@@ -5,6 +5,8 @@ and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 
 ## ? on ?
 
+Add `FSA_GROUP_CHECK` configuration directive and
+corresponding `group_check` decorator.
 Keep track of valid authenticated token.
 
 ## 26.0 on 2023-11-30

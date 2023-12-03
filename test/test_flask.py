@@ -1175,7 +1175,7 @@ def test_bad_3(bad3):
     check(200, bad3.get("/any"))
     check(200, bad3.get("/all", data={"LOGIN": "calvin"}))
     res = check(500, bad3.get("/fail", data={"LOGIN": "calvin"}))
-    assert b"internal error in user_in_group" == res.data
+    assert b"internal error while checking group" in res.data
 
 # test a bad route function
 @pytest.fixture
@@ -1385,7 +1385,7 @@ def test_group_errors():
     res = c.get("/ex", data={"LOGIN": "calvin"})
     assert res.status_code == 518 and b"exception in user_in_group" in res.data
     res = c.get("/float", data={"LOGIN": "calvin"})
-    assert res.status_code == 500 and b"internal error with user_in_group" in res.data
+    assert res.status_code == 500 and b"internal error in group check" in res.data
 
 def test_scope_errors():
     import AppFact as af
@@ -2235,3 +2235,20 @@ def test_default_type():
         res = check(204, c.get("/ciao"))
         assert res.data == b""
         assert res.headers["Content-Type"] == "application/xml"
+
+def test_group_check():
+    app = fsa.Flask("group-check", FSA_AUTH="fake", FSA_GROUP_CHECK={"foo": lambda u: u == "calvin"})
+    @app.group_check("bla")
+    def group_bla_check(login):
+        return login in ("calvin", "hobbes")
+    @app.get("/foo", authorize="foo")
+    def get_foo():
+        return "", 200
+    @app.get("/bla", authorize="bla")
+    def get_bla():
+        return "", 200
+    with app.test_client() as c:
+        check(200, c.get("/foo", json={"LOGIN": "calvin"}))
+        check(200, c.get("/bla", data={"LOGIN": "calvin"}))
+        check(403, c.get("/foo", data={"LOGIN": "hobbes"}))
+        check(200, c.get("/bla", json={"LOGIN": "hobbes"}))
