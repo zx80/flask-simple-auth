@@ -614,6 +614,7 @@ class Directives:
 
     For each group name, associate a callback which given a login returns
     whether the user belongs to this group.
+    The group name is also registered in passing.
     """
 
     FSA_USER_IN_GROUP: Hooks.UserInGroupFun|None = None
@@ -2034,6 +2035,7 @@ class _AuthorizationManager:
 
     def group_check(self, group: str|int, checker: Hooks.GroupCheckFun = None):
         """Add a check hook for a group."""
+        self._groups.add(group)
         return self._store(self._group_checks, "group authz checker", group, checker)
 
     def _check_groups(self, login: str, group: str|int) -> bool|None:
