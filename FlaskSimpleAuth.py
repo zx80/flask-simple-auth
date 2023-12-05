@@ -1851,7 +1851,7 @@ class _CacheManager:
         log.info("initializing CacheManager")
 
         self._cachable.extend([
-	        (self._fsa._zm, "_check_groups", "c."),
+            (self._fsa._zm, "_check_groups", "c."),
             (self._fsa._zm, "_user_in_group", "g."),
             (self._fsa._zm, "_check_object_perms", "p."),
             (self._fsa._am._tm, "_get_any_token_auth_exp", "t."),
