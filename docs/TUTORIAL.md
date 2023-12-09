@@ -690,16 +690,6 @@ def test_weak_password(client):
     assert "must match" in res.json["error"]
 ```
 
-By default, any group name is accepted with `authorize`, and may fail at run
-time.
-Available groups can be explicitely declare with `FSA_AUTHZ_GROUPS` so that a
-configuration error is raised instead:
-
-```python
-# append to "acme.conf"
-FSA_AUTHZ_GROUPS = ["admin"]
-```
-
 You may want to use standard *JWT* (*JSON Web Token*) instead of *fsa* tokens.
 For that, install package dependencies `pip install FlaskSimpleAuth[jwt]` and
 update the application configuration:
