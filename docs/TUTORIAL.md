@@ -503,7 +503,7 @@ def test_token_authn(client):
 For *group* authorization, we need to:
 
 - store group membership information somewhere
-- provide callbacks to check for membership to groups
+- provide callbacks to check for group membership
 - define a route which requires some group membership
 
 Whether a user belongs to the *admin* group is defined as a boolean
