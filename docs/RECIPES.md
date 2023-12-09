@@ -243,12 +243,6 @@ For that, you must:
   def ...
   ```
 
-- for detecting group name typos, declare existing groups in the configuration:
-
-  ```python
-  FSA_AUTHZ_GROUPS = [ "admin", "client", "manager", ... ]
-  ```
-
 ### How-to factor-out all group authorizations?
 
 Use the generic `user_in_group` hook instead of per-group checks.
