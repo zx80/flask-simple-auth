@@ -3,6 +3,10 @@
 Sources are available on [GitHub](https://github.com/zx80/flask-simple-auth)
 and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 
+## 27.1 on ?
+
+Improved documentation.
+
 ## 27.0 on 2023-12-09
 
 Add `FSA_GROUP_CHECK` configuration directive and
