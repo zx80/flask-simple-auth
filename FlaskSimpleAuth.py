@@ -1105,7 +1105,7 @@ class _TokenManager:
         return "%04d%02d%02d%02d%02d%02d" % ts.timetuple()[:6]
 
     def _from_timestamp(self, ts) -> dt.datetime:
-        """Parse a simplistic timestamp string."""
+        """Parse a simplistic "YYYYMMDDHHmmSS" timestamp string."""
         p = re.match(r"^(\d{4})(\d\d)(\d\d)(\d\d)(\d\d)(\d\d)$", ts)
         if not p:
             raise self._Err(f"unexpected timestamp format: {ts}", 400)
