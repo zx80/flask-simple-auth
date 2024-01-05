@@ -6,6 +6,7 @@ and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 ## 27.1 on ?
 
 Improved documentation.
+Add some resilience to passlib failures.
 
 ## 27.0 on 2023-12-09
 

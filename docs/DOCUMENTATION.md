@@ -137,6 +137,7 @@ authentication-dependent data, for instance:
   authorizations.
 - `hash_password` and `check_password` hash or check a password.
 - `create_token` computes a new authentication token for the current user.
+- `check_user_password` recheck a password for a user.
 
 Various decorators/functions allow to register hooks, such as:
 

@@ -451,6 +451,7 @@ class Flask(flask.Flask):
         self.authentication = self._fsa.authentication
         # forward methods
         self.check_password = self._fsa.check_password
+        self.check_user_password = self._fsa.check_user_password
         self.hash_password = self._fsa.hash_password
         self.create_token = self._fsa.create_token
         self.get_user = self._fsa.get_user
@@ -1394,7 +1395,11 @@ class _PasswordManager:
         """Check whether password is ok wrt to reference."""
         if not self._pass_context:  # pragma: no cover
             raise self._Err("password manager is disabled", self._fsa._server_error)
-        return self._pass_context.verify(pwd, ref)
+        try:
+            return self._pass_context.verify(pwd, ref)
+        except Exception as e:
+            log.error(f"passlib verify: {e}")
+            return False
 
     def hash_password(self, pwd, check=True) -> str:
         """Hash password according to the current password scheme."""
@@ -3100,6 +3105,14 @@ class FlaskSimpleAuth:
     #
     # PASSWORD CHECKS
     #
+    def check_user_password(self, user, pwd):
+        """Verify whether a user password is correct.
+
+        This allows to check the prior password for a change password route.
+        """
+        self._initialize()
+        return self._am._pm.check_user_password(user, pwd)
+
     def check_password(self, pwd, ref):
         """Verify whether a password is correct compared to a reference (eg salted hash).
 

@@ -406,6 +406,7 @@ def test_password_check(client):
     ref = app.hash_password("hello")
     assert app.check_password("hello", ref)
     assert not app.check_password("bad-pass", ref)
+    assert not app.check_password("hello", "bad-ref")
     # password alternate hook
     assert pm._pass_check is None
     def test_check_pass(user, pwd):
@@ -420,9 +421,9 @@ def test_password_check(client):
         else:
              raise Exception("oops!")
     pm._pass_check = test_check_pass
-    assert pm.check_user_password("calvin", "hobbes") == "calvin"
-    assert pm.check_user_password("susie", "magic") == "susie"
-    assert pm.check_user_password("moe", "magic") == "moe"
+    assert app.check_user_password("calvin", "hobbes") == "calvin"
+    assert app.check_user_password("susie", "magic") == "susie"
+    assert app.check_user_password("moe", "magic") == "moe"
     try:
         pm.check_user_password("boo", "none")
         assert False, "should have raised an error"
