@@ -421,9 +421,10 @@ def test_password_check(client):
         else:
              raise Exception("oops!")
     pm._pass_check = test_check_pass
-    assert app.check_user_password("calvin", "hobbes") == "calvin"
-    assert app.check_user_password("susie", "magic") == "susie"
-    assert app.check_user_password("moe", "magic") == "moe"
+    assert app.check_user_password("calvin", "hobbes")
+    assert app.check_user_password("susie", "magic")
+    assert app.check_user_password("moe", "magic")
+    assert not app.check_user_password("moe", "bad-password")
     try:
         pm.check_user_password("boo", "none")
         assert False, "should have raised an error"

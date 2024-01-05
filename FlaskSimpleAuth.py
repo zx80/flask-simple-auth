@@ -3105,13 +3105,16 @@ class FlaskSimpleAuth:
     #
     # PASSWORD CHECKS
     #
-    def check_user_password(self, user, pwd):
-        """Verify whether a user password is correct.
+    def check_user_password(self, user, pwd) -> bool:
+        """Verify whether a user password is correct according to internals.
 
         This allows to check the prior password for a change password route.
         """
         self._initialize()
-        return self._am._pm.check_user_password(user, pwd)
+        try:
+            return user == self._am._pm.check_user_password(user, pwd)
+        except ErrorResponse:  # silently ignore auth failures.
+            return False
 
     def check_password(self, pwd, ref):
         """Verify whether a password is correct compared to a reference (eg salted hash).
