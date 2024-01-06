@@ -1241,6 +1241,9 @@ class _TokenManager:
 
     def token_uncache(self, token: str, realm: str) -> bool:
         """Remove token entry from cache."""
+        if not self._fsa._cm._cache_gen:  # pragma: no cover
+            log.debug("cache is not activated, cannot uncache token, skipping…")
+            return False
         return self._get_any_token_auth_exp.cache_del(token, realm)  # type: ignore
 
     # NOTE the realm parameter is really only for testing purposes
@@ -1451,6 +1454,9 @@ class _PasswordManager:
 
     def password_uncache(self, user: str) -> bool:
         """Remove user password entry from cache."""
+        if not self._fsa._cm._cache_gen:  # pragma: no cover
+            log.debug("cache is not activated, cannot uncache password, skipping…")
+            return False
         return self._get_user_pass.cache_del(user)  # type: ignore
 
 
@@ -1832,6 +1838,22 @@ class _AuthenticationManager:
         return login
 
 
+class _EmptyCache:
+    """Empty cache."""
+
+    def __init__(self):
+        pass
+
+    def __len__(self):
+        return 0
+
+    def hits(self):
+        return 0.0
+
+    def clear(self):  # pragma: no cover
+        return
+
+
 class _CacheManager:
     """Internal cache management."""
 
@@ -1840,7 +1862,7 @@ class _CacheManager:
         self._fsa = fsa
         self._Bad = fsa._Bad
         # caching stuff
-        self._cache: MutableMapping[str, str]|None = None
+        self._cache: MutableMapping[str, str]|_EmptyCache|None = None
         self._cache_gen: Callable|None = None
         self._cache_opts: dict[str, Any] = {}
         self._cached = False
@@ -1871,9 +1893,10 @@ class _CacheManager:
         conf = self._fsa._app.config
 
         cache = conf.get("FSA_CACHE", Directives.FSA_CACHE)
-        if not cache or cache == "none":  # pragma: no cover
+        if not cache or cache == "none":
             log.warning("Cache management is disactivated")
-            self._cache = None
+            self._initialized = True
+            self._cache = _EmptyCache()
             self._cache_gen = None
             return
 
@@ -1941,7 +1964,7 @@ class _CacheManager:
         else:
             raise self._Bad(f"unexpected FSA_CACHE: {cache}")
 
-        # locking
+        # cache locking
         local = conf.get("FSA_LOCAL", "thread")
         if local == "process":
             pass
@@ -1960,9 +1983,6 @@ class _CacheManager:
 
         if not self._initialized:  # pragma: no cover
             self._initialize()
-
-        if not self._cache_gen:  # pragma: no cover
-            raise self._Bad("Cache management is disactivated")
 
     def _set_cache(self, prefix: str):  # pragma: no cover
         """Decorator to cache function calls with a prefix."""
@@ -1985,6 +2005,11 @@ class _CacheManager:
         """Deferred creation of caches around some functions."""
 
         self._cache_init()
+
+        if self._cache_gen is None:
+            log.warning("Cache is disabled, cannot set caches")
+            self._cached = True  # Hmmm…
+            return
 
         if self._cached:  # pragma: no cover
             log.warning("Caches already set, skipping…")
@@ -2050,6 +2075,9 @@ class _AuthorizationManager:
 
     def group_uncache(self, user: str, group: str|int) -> bool:
         """Remove group membership entry from cache."""
+        if not self._fsa._cm._cache_gen:  # pragma: no cover
+            log.debug("cache is not activated, cannot uncache group, skipping…")
+            return False
         r1 = self._check_groups.cache_del(user, group)  # type: ignore
         r2 = self._user_in_group.cache_del(user, group)  # type: ignore
         return r1 or r2
@@ -2065,6 +2093,9 @@ class _AuthorizationManager:
 
     def object_perms_uncache(self, domain: str, user: str, oid, mode: str|None) -> bool:
         """Remove object perm entry from cache."""
+        if not self._fsa._cm._cache_gen:  # pragma: no cover
+            log.debug("cache is not activated, cannot uncache object perms, skipping…")
+            return False
         return self._check_object_perms.cache_del(domain, user, oid, mode)  # type: ignore
 
     def _oauth_authz(self, path, *scopes):

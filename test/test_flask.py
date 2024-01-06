@@ -1431,7 +1431,7 @@ def run_some_checks(c, n=10):
     res = check(200, c.get("/hits", data={"LOGIN": "dad"}))
     size, hits = json.loads(res.data)
     log.info(f"cache: {size} {hits}")
-    if n > 5:  # hmmm…
+    if size > 0 and n > 5:  # hmmm…
         assert hits > (n-4) / n
 
 @pytest.mark.skipif(not has_service(port=11211), reason="no local memcached service available for testing")
@@ -1454,7 +1454,7 @@ def test_redis_cache():
 
 def test_caches():
     import AppFact as af
-    for cache in ["ttl", "lru", "lfu", "mru", "fifo", "rr", "dict"]:
+    for cache in ["ttl", "lru", "lfu", "mru", "fifo", "rr", "dict", "none"]:
         for prefix in [cache + ".", None]:
             log.debug(f"testing cache type {cache}")
             with af.create_app(FSA_CACHE=cache, FSA_CACHE_PREFIX=prefix).test_client() as c:
