@@ -1838,8 +1838,8 @@ class _AuthenticationManager:
         return login
 
 
-class _EmptyCache:
-    """Empty cache."""
+class _NoCache:
+    """No cache class."""
 
     def __init__(self):
         pass
@@ -1862,7 +1862,7 @@ class _CacheManager:
         self._fsa = fsa
         self._Bad = fsa._Bad
         # caching stuff
-        self._cache: MutableMapping[str, str]|_EmptyCache|None = None
+        self._cache: MutableMapping[str, str]|_NoCache|None = None
         self._cache_gen: Callable|None = None
         self._cache_opts: dict[str, Any] = {}
         self._cached = False
@@ -1895,9 +1895,9 @@ class _CacheManager:
         cache = conf.get("FSA_CACHE", Directives.FSA_CACHE)
         if not cache or cache == "none":
             log.warning("Cache management is disactivated")
-            self._initialized = True
-            self._cache = _EmptyCache()
+            self._cache = _NoCache()
             self._cache_gen = None
+            self._initialized = True
             return
 
         self._cache_opts.update(conf.get("FSA_CACHE_OPTS", Directives.FSA_CACHE_OPTS))
