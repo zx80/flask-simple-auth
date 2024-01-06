@@ -64,7 +64,7 @@ FSA_ERROR_RESPONSE = "json:error"  # plain (default), json, json:<property-name>
 
 # password quality settings
 #
-# FSA_PASSWORD_LENGTH = 0  # minimal length
+FSA_PASSWORD_LENGTH = 8  # minimal length, default is 0
 # FSA_PASSWORD_RE = []  # re to match
 # FSA_PASSWORD_QUALITY = None  # external hook
 # FSA_PASSWORD_CHECK = None  # alternate password checking hook
