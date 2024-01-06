@@ -580,11 +580,13 @@ First, create the permission verification function:
 
 ```python
 # insert in "auth.py"
-def stuff_permissions(login: str, stuff: str, role: str) -> bool:
-    if role == "owner" and stuff in db.stuff:
-        return db.stuff[stuff][0] == login  # current user is the owner
-    else:
-        return False
+def stuff_permissions(login: str, stuff: str, role: str) -> bool|None:
+    if stuff not in db.stuff:  # if no stuff, trigger a 404
+        return None
+    elif role == "owner":  # tell whether current user is the owner
+        return db.stuff[stuff][0] == login
+    else:  # pragma: no cover
+        raise fsa.ErrorResponse(f"unexpected stuff role {role}", 500)
 ```
 
 Then register it in the auth initializations, associated to domain *stuff*:
