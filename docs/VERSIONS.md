@@ -7,6 +7,8 @@ and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 
 Remove underserved configuration error when `user_in_group` is not set.
 This is a short term fix, rPobably too lax for now.
+Improved documentation.
+Rename an internal class.
 
 ## 27.3 on 2024-01-06
 
