@@ -10,13 +10,16 @@ Here is a sample configuration file for FlaskSimpleAuth application:
 # General
 #
 
-# by increasing verbosity: prod (default), dev (recommanded), debug1 to debug4
-FSA_MODE = "dev"
-
+FSA_MODE = "dev"  # by increasing verbosity: prod (default), dev (recommended), debug1-4
 # FSA_LOGGING_LEVEL = logging.INFO  # logging verbosity, set to logging.DEBUG for debug
 # FSA_SECURE = True  # require TLS
+# FSA_CORS = False  # CORS handling
+# FSA_CORS_OPTS = {}  # initialization parameters
+# FSA_DEFAULT_CONTENT_TYPE = None  # set content type if unknown
+# FSA_LOCAL = "thread"  # isolation: process, thread, werkzeug, gevent, eventlet
 
-# error handling:
+#
+# Error handling:
 #
 # FSA_SERVER_ERROR = 500
 # FSA_NOT_FOUND_ERROR = 404
@@ -24,13 +27,7 @@ FSA_MODE = "dev"
 # FSA_KEEP_USER_ERRORS = False
 # FSA_401_REDIRECT = None  # URL for web authn redirection
 # FSA_URL_NAME = "URL"  # parameter for url return target
-# FSA_CORS = False  # CORS handling
-# FSA_CORS_OPTS = {}  # initialization parameters
-
 FSA_ERROR_RESPONSE = "json:error"  # plain (default), json, json:<property-name>
-
-# FSA_DEFAULT_CONTENT_TYPE = None  # set content type if unknown
-# FSA_LOCAL = "thread"  # isolation: process, thread, werkzeug, gevent, eventlet
 
 #
 # Authentication
@@ -39,14 +36,11 @@ FSA_ERROR_RESPONSE = "json:error"  # plain (default), json, json:<property-name>
 # FSA_AUTH = "none"  # list: none, httpd, basic, param, password, token, fake, oauth…
 # FSA_REALM = <application-name>
 
-# parameter name for fake authentication
+# parameter names
 #
-# FSA_FAKE_LOGIN = "LOGIN"
-
-# parameter names for param authentication
-#
-# FSA_PARAM_USER = "USER"
-# FSA_PARAM_PASS = "PASS"
+# FSA_FAKE_LOGIN = "LOGIN"  # parameter name for fake authn
+# FSA_PARAM_USER = "USER"  # user parameter name for param authn
+# FSA_PARAM_PASS = "PASS"  # password parameter name for param authn
 
 # token authentication
 #
@@ -68,18 +62,17 @@ FSA_ERROR_RESPONSE = "json:error"  # plain (default), json, json:<property-name>
 # FSA_PASSWORD_SCHEME = "bcrypt"
 # FSA_PASSWORD_OPTS = {}  # passlib initialization
 
-# quality settings
+# password quality settings
 #
 # FSA_PASSWORD_LENGTH = 0  # minimal length
 # FSA_PASSWORD_RE = []  # re to match
 # FSA_PASSWORD_QUALITY = None  # external hook
 # FSA_PASSWORD_CHECK = None  # alternate password checking hook
 
-# external HTTPAuth authentication
-# FSA_HTTP_AUTH_OPTS = {}
-
-# advanced hooks to add new authentication methods…
-# FSA_AUTHENTICATION = {}
+# misc
+#
+# FSA_HTTP_AUTH_OPTS = {}  # external HTTPAuth authn
+# FSA_AUTHENTICATION = {}  # advanced hooks to add new authn methods…
 
 #
 # Authorizations
@@ -95,7 +88,6 @@ FSA_ERROR_RESPONSE = "json:error"  # plain (default), json, json:<property-name>
 # Parameters
 #
 
-# parameter hooks
 # FSA_CAST = {}  # type -> callable[[str], any]
 # FSA_SPECIAL_PARAMETERS = {}  # type -> callable
 # FSA_REJECT_UNEXPECTED_PARAMS = True
@@ -104,14 +96,13 @@ FSA_ERROR_RESPONSE = "json:error"  # plain (default), json, json:<property-name>
 # Cache
 #
 
-# none, internal dict, or from cachetools, or redis, or memcached
-# FSA_CACHE = "ttl"
+# FSA_CACHE = "ttl"  # none, internal dict, or from cachetools, or redis, or memcached
 # FSA_CACHE_OPTS = {}  # initialization options
 # FSA_CACHE_SIZE = 262144
 # FSA_CACHE_PREFIX = None
 
 #
-# Other Hooks and directives
+# Other Hooks and Directives
 #
 
 # FSA_BEFORE_REQUEST = []
