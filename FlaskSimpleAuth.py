@@ -870,6 +870,7 @@ class Directives:
     FSA_CACHE: str = "ttl"
     """Cache type.
 
+    - ``none``: disactivate caching
     - ``dict``: simple dictionary
     - ``ttl``, ``lru``, ``tlru``, ``lfu``, …: from *CacheTools*
     - ``memcached`` and ``redis``: external shared caches
