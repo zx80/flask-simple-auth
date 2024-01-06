@@ -2129,13 +2129,11 @@ class _AuthorizationManager:
             if grp in groups:
                 raise self._Bad(f"unexpected predefined {grp}")
 
+        # FIXME this is not so clear
         if self._groups:
             for grp in groups:
                 if grp not in self._groups:
                     raise self._Bad(f"unexpected group {grp}")
-
-        if not self._user_in_group:  # pragma: no cover
-            raise self._Bad(f"user_in_group callback needed for group authorization on {path}")
 
         def decorate(fun: Callable):
 

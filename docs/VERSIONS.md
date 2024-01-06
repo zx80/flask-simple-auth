@@ -3,6 +3,11 @@
 Sources are available on [GitHub](https://github.com/zx80/flask-simple-auth)
 and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 
+## 27.4 on 2024-01-06
+
+Remove underserved configuration error when `user_in_group` is not set.
+This is a short term fix, rPobably too lax for now.
+
 ## 27.3 on 2024-01-06
 
 Improved documentation, including a sample configuration.
