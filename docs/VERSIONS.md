@@ -3,7 +3,7 @@
 Sources are available on [GitHub](https://github.com/zx80/flask-simple-auth)
 and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 
-## 27.3 on ?
+## 27.3 on 2024-01-06
 
 Improved documentation, including a sample configuration.
 Allow running an application without caching.

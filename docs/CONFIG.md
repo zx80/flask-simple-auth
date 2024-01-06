@@ -84,7 +84,7 @@ FSA_ERROR_RESPONSE = "json:error"  # plain (default), json, json:<property-name>
 # FSA_AUTHZ_GROUPS = []  # declare group names
 # FSA_AUTHZ_SCOPES = []  # declare scope names (for oauth)
 
-# 
+#
 # Parameters
 #
 
