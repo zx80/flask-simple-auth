@@ -26,16 +26,20 @@ It should work with Python 3.1x on Unix (Linux, MacOS) and possibly Windows with
 Let us first create a minimal running REST application back-end *without*
 authentication and authorizations.
 
-Create and activate a Python virtual environment, in a shell terminal:
+Create and activate a Python virtual environment in a new directory, from a
+shell terminal:
 
 ```shell
 python --version  # must show 3.1x
+mkdir fsa-tuto
+cd fsa-tuto
 python -m venv venv
 source venv/bin/activate
 pip install FlaskSimpleAuth[password]
 ```
 
-Create the `app.py` file with an unauthenticated `GET /hello` route.
+Create in the `fsa-tuto` directory the `app.py` file with an unauthenticated
+`GET /hello` route.
 The route is open because it is authorized to *ANY*one.
 The `authorize` route parameter is mandatory to declare authorization
 requirements on the route.
