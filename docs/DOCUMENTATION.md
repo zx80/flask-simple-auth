@@ -368,6 +368,11 @@ The available authentication schemes are:
   Internally token checks are cached so that even with slow JWT public-key schemes
   the performance impact should be low.
 
+  Note: it is possible to switch from an expiration model (the token tells when
+  it expires) to a validity model (the token tells when it was generated) by
+  setting `FSA_TOKEN_DELAY` to zero and `FSA_TOKEN_GRACE` to the amount of time
+  a token should be considered valid.
+
 - `oauth`
 
   Synonymous to `token`, but to be used on a route so as to trigger JWT *scope*
