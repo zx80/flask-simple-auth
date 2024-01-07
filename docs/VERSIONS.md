@@ -3,7 +3,7 @@
 Sources are available on [GitHub](https://github.com/zx80/flask-simple-auth)
 and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 
-## 27.5 on ?
+## 27.5 on 2024-01-07
 
 Improve configuration-time detection of uncheckable groups.
 Improved documentation.
