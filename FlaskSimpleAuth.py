@@ -1459,7 +1459,10 @@ class _PasswordManager:
         if not self._fsa._cm._cache_gen:  # pragma: no cover
             log.debug("cache is not activated, cannot uncache password, skipping…")
             return False
-        return self._get_user_pass.cache_del(user)  # type: ignore
+        elif self._get_user_pass and hasattr(self._get_user_pass, "cache_del"):
+            return self._get_user_pass.cache_del(user)  # type: ignore
+        else:
+            return False
 
 
 class _AuthenticationManager:
@@ -2081,7 +2084,10 @@ class _AuthorizationManager:
             log.debug("cache is not activated, cannot uncache group, skipping…")
             return False
         r1 = self._check_groups.cache_del(user, group)  # type: ignore
-        r2 = self._user_in_group.cache_del(user, group)  # type: ignore
+        if self._user_in_group and hasattr(self._user_in_group, "cache_del"):
+            r2 = self._user_in_group.cache_del(user, group)  # type: ignore
+        else:
+            r2 = False
         return r1 or r2
 
     def object_perms(self, domain: str, checker: Hooks.ObjectPermsFun = None):

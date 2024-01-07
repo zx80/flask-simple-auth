@@ -3,6 +3,10 @@
 Sources are available on [GitHub](https://github.com/zx80/flask-simple-auth)
 and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 
+## 27.6 on 2024-01-07
+
+Improve resilience of `*_uncache` when some hooks are not set.
+
 ## 27.5 on 2024-01-07
 
 Improve configuration-time detection of uncheckable groups.
