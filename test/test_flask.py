@@ -2254,3 +2254,12 @@ def test_group_check():
         check(200, c.get("/bla", data={"LOGIN": "calvin"}))
         check(403, c.get("/foo", data={"LOGIN": "hobbes"}))
         check(200, c.get("/bla", json={"LOGIN": "hobbes"}))
+    # no way to check for group membership
+    app = fsa.Flask("gc2", FSA_AUTH="fake", FSA_AUTHZ_GROUPS=["foo"])
+    try:
+        @app.get("/foo", authorize="foo")
+        def get_foo():
+            return "should not get there", 200
+        assert False, "should not get there"
+    except ConfigError as e:
+        assert "cannot check group foo authz" in str(e)

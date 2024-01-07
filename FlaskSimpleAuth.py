@@ -2019,10 +2019,10 @@ class _CacheManager:
         import CacheToolsUtils as ctu
 
         for obj, meth, prefix in self._cachable:
-            if obj and hasattr(obj, meth):
+            if obj and hasattr(obj, meth) and getattr(obj, meth) is not None:
                 log.debug(f"cache: caching {meth[1:]}")
                 ctu.cacheMethods(cache=self._cache, obj=obj, gen=self._cache_gen, **{meth: prefix})
-            else:  # pragma: no cover
+            else:
                 log.info(f"cache: skipping {meth[1:]}")
 
         # do not process again!
@@ -2125,15 +2125,19 @@ class _AuthorizationManager:
     def _group_authz(self, path, *groups):
         """Decorator to authorize user groups."""
 
+        # predefs cannot be mixed with other groups
         for grp in _PREDEFS:
             if grp in groups:
                 raise self._Bad(f"unexpected predefined {grp}")
 
-        # FIXME this is not so clear
-        if self._groups:
+        if self._groups:  # check against declared groups
             for grp in groups:
                 if grp not in self._groups:
                     raise self._Bad(f"unexpected group {grp}")
+
+        for grp in groups:  # check whether it can be tested
+            if grp not in self._group_checks and not self._user_in_group:
+                raise self._Bad(f"cannot check group {grp} authz")
 
         def decorate(fun: Callable):
 
@@ -2143,7 +2147,7 @@ class _AuthorizationManager:
                 fsa = self._fsa
                 local = fsa._local
 
-                # track that some autorization check was performed
+                # track that some authorization check was performed
                 local.need_authorization = False
 
                 # check against all authorized groups/roles
@@ -2152,7 +2156,7 @@ class _AuthorizationManager:
                         if grp in self._group_checks:
                             ok = self._check_groups(local.user, grp)
                         else:
-                            assert self._user_in_group  # please mypy
+                            assert self._user_in_group  # redundant, please mypy
                             ok = self._user_in_group(local.user, grp)
                     except ErrorResponse as e:
                         return self._Res(e.message, e.status, e.headers, e.content_type)

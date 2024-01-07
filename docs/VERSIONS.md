@@ -3,6 +3,10 @@
 Sources are available on [GitHub](https://github.com/zx80/flask-simple-auth)
 and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 
+## 27.5 on ?
+
+Improve configuration-time detection of uncheckable groups.
+
 ## 27.4 on 2024-01-06
 
 Remove underserved configuration error when `user_in_group` is not set.
