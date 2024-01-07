@@ -552,7 +552,7 @@ class Directives:
     """Whether to handle all 4xx and 5xx Flask-generated errors.
 
     - on *True*: override Flask error processing to use FlaskSimpleAuth
-      response generation with FSA internal error handler (FSA_ERROR_HANDLER).
+      response generation with FSA internal error handler (FSA_ERROR_RESPONSE).
     - on *False*: some errors may generate their own response in any format
       based on Flask default error response generator.
     """
@@ -844,6 +844,8 @@ class Directives:
     Alternate password check function.
     Given the login and clear password, returns whether the authentication is valid.
     This allows to take full control of password checking, eg for LDAP/AD authentication.
+
+    Consider adding a new authentication scheme, see FSA_AUTHENTICATION.
     """
 
     FSA_HTTP_AUTH_OPTS: dict[str, Any] = {}
