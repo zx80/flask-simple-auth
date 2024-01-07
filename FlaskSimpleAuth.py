@@ -1019,7 +1019,7 @@ class _TokenManager:
         if self._carrier == "param":
             assert isinstance(self._name, str)
         # auth and token realm and possible issuer…
-        realm: str = conf.get("FSA_REAM", self._fsa._app.name)
+        realm: str = conf.get("FSA_REALM", self._fsa._app.name)
         if self._token == "fsa":  # simplify realm for fsa
             keep_char = re.compile(r"[-A-Za-z0-9]").match
             realm = "".join(c if keep_char(c) else "-" for c in realm)
@@ -1242,11 +1242,27 @@ class _TokenManager:
                 self._get_jwt_token_auth(token, realm))
 
     def token_uncache(self, token: str, realm: str) -> bool:
-        """Remove token entry from cache."""
+        """Remove token entry from cache, if token is known."""
         if not self._fsa._cm._cache_gen:  # pragma: no cover
             log.debug("cache is not activated, cannot uncache token, skipping…")
             return False
         return self._get_any_token_auth_exp.cache_del(token, realm)  # type: ignore
+
+    # Hmmm… keep track of last seen token to help cache invalidation?
+    # def _user_token_cache(self, user: str, realm: str, token: str):
+    #     """Manually memoize a token associated to a user/realm."""
+    #     if self._token_cache:
+    #         self._token_cache[f"{user}:{realm}"] = token
+
+    # def user_token_uncache(self, user: str, realm: str) -> bool:
+    #     """Remove cached token associated to a user/realm."""
+    #     if self._token_cache:
+    #         user_realm = f"{user}:{realm}"
+    #         token = self._token_cache[user_realm]
+    #         if token:
+    #             del self._token_cache[user_realm]
+    #             return self.token_uncache(token, realm)
+    #     return False
 
     # NOTE the realm parameter is really only for testing purposes
     def _get_any_token_auth(self, token: str|None, realm: str|None = None) -> str|None:

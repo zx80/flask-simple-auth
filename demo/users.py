@@ -25,8 +25,7 @@ def get_users_login(login: str):
 @users.post("/users", authorize="ADMIN")
 def post_users(login: str, email: str, _pass: str, admin: bool = False):
     res = db.add_user(login=login, email=email, upass=app.hash_password(_pass), admin=admin)
-    # NOTE bad, should rather wait for cache expiration
-    app.clear_caches()
+    app.password_uncache(login)
     return json(res), 201
 
 
@@ -40,8 +39,8 @@ def patch_users_login(login: str, email: str|None = None,
         db.upd_user_email(login=login, email=email)
     if admin is not None:
         db.upd_user_admin(login=login, admin=admin)
-    # NOTE bad, should rather wait for cache expiration
-    app.clear_caches()
+    app.password_uncache(login)
+    app.clear_caches()  # FIXME?
     return "", 204
 
 
@@ -52,6 +51,6 @@ def delete_users_login(login: str):
     if not res:
         return "", 404
     db.del_user_login(login=login)
-    # NOTE bad, should rather wait for cache expiration
-    app.clear_caches()
+    app.password_uncache(login)
+    # app.clear_caches()  # FIXME
     return "", 204
