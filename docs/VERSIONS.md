@@ -7,6 +7,7 @@ and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 
 Improve configuration-time detection of uncheckable groups.
 Improved documentation.
+Improved tests.
 
 ## 27.4 on 2024-01-06
 
