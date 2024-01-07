@@ -27,12 +27,15 @@ stop:
 check:
 	$(PYTEST) $(PYTOPT)
 
+# coverage
+COVER   = 100
+
 .PHONY: coverage
 coverage:
 	coverage run -m $(PYTEST) $(PYTOPT)
 	$(MAKE) -C ../demo check.coverage
 	coverage html ../FlaskSimpleAuth.py
-	coverage report --fail-under=100 --show-missing --precision=1 --include='*/FlaskSimpleAuth.py'
+	coverage report --fail-under=$(COVER) --show-missing --precision=1 --include='*/FlaskSimpleAuth.py'
 
 # not very usefull
 # .PHONY: profile
