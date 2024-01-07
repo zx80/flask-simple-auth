@@ -1014,8 +1014,9 @@ authorization (group and per-object permissions):
   This is a mostly a bad idea, you should wait for the `ttl`.
 
 - Methods `password_uncache`, `token_uncache`, `user_token_uncache`,
-  `group_uncache`, `object_perms_uncache` allow to remove a particular entry
-  from the shared cache, without waiting for its eventual expiration.
+  `group_uncache`, `object_perms_uncache` and `auth_uncache` allow to remove a
+  particular entry from the shared cache, without waiting for its eventual
+  expiration.
 
   Note that uncaching features are on a best-effort basis, and may not work
   as expected especially with multi-process or multi-level cache settings.

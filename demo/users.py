@@ -61,8 +61,6 @@ def delete_users_login(login: str):
         return "", 404
     assert login in res[:2], "login is either login or email"
     db.del_user_login(login=login)
-    app.password_uncache(res[0])
-    app.password_uncache(res[1])  # email as a login
-    app.user_token_uncache(res[0], app.name)
-    app.user_token_uncache(res[1], app.name)
+    app.auth_uncache(res[0])
+    app.auth_uncache(res[1])  # email as a login
     return "", 204

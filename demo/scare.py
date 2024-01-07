@@ -61,8 +61,6 @@ def delete_scare():
     res = db.get_user_data(login=login)
     db.del_user_login(login=login)
     # manual cache cleanup
-    app.password_uncache(login)
-    app.password_uncache(res[1])  # email as a login
-    app.user_token_uncache(login, app.name)
-    app.user_token_uncache(res[1], app.name)
+    app.auth_uncache(login)
+    app.auth_uncache(res[1])  # email as a login
     return "", 204

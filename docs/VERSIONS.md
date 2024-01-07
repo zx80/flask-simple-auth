@@ -7,6 +7,8 @@ and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 
 Add `user_token_uncache` to remove a cached user token without knowing the
 actual token value.
+Add `auth_uncache` to attempt to remove all user cached authentication and
+authorization entries.
 Extend demo tests to use this feature (what a pain!).
 
 ## 27.6 on 2024-01-07

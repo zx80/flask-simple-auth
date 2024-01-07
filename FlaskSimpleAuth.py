@@ -462,6 +462,7 @@ class Flask(flask.Flask):
         self.group_uncache = self._fsa.group_uncache
         self.object_perms_uncache = self._fsa.object_perms_uncache
         self.user_token_uncache = self._fsa.user_token_uncache
+        self.auth_uncache = self._fsa.auth_uncache
         # overwrite decorators ("route" done through add_url_rule above)
         setattr(self, "get", self._fsa.get)  # FIXME avoid mypy warnings
         setattr(self, "put", self._fsa.put)
@@ -3274,6 +3275,20 @@ class FlaskSimpleAuth:
     def object_perms_uncache(self, domain: str, user: str, oid, mode: str|None) -> bool:
         """Remove permission entry from cache."""
         return self._zm.object_perms_uncache(domain, user, oid, mode)
+
+    def auth_uncache(self, user: str) -> int:
+        """Attempt at removing all user authn and authz cache entries."""
+        dones = 0
+        if self.password_uncache(user):
+            dones += 1
+        if self.user_token_uncache(user, self._app.name):
+            dones += 1
+        if self._zm._groups:
+            for grp in self._zm._groups:
+                if self.group_uncache(user, grp):
+                    dones += 1
+        # cannot really do object perms…
+        return dones
 
     #
     # INTERNAL DECORATORS
