@@ -6,6 +6,9 @@ and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 ## 27.6 on 2024-01-07
 
 Improve resilience of `*_uncache` when some hooks are not set.
+Fix mispelled directive when retrieving the token realm.
+Improve demo.
+WIP about actual token uncaching.
 
 ## 27.5 on 2024-01-07
 
