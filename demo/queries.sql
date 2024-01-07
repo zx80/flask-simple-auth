@@ -21,6 +21,7 @@ DELETE FROM Stuff WHERE sid = :sid;
 -- name: upd_stuff_sid!
 UPDATE Stuff SET sname = :sname WHERE sid = :sid;
 
+-- we accept the email as an alternate login… with implication of caching
 -- name: get_user_data^
 SELECT login, email, upass, admin
 FROM Auth WHERE :login IN (login, email);

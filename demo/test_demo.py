@@ -149,6 +149,7 @@ def test_scare(client):
     res = check(200, client.get("/scare", headers=BLA_BASIC))
     assert b"bla" in res.data and b"foo" not in res.data
     res = check(200, client.get("/scare/token", headers=FOO_BASIC))
+    # token auth
     if app._fsa._am._tm._token == "fsa":
         assert b"demo:foo:" in res.data
     foo_token = json.loads(res.data)
@@ -159,6 +160,7 @@ def test_scare(client):
         assert b"foo" in res.data
         bad_token = foo_token[:-1] + "z"
         check(401, client.get("/scare", data={"AUTH": bad_token}))
+    # does not exist yet, created afterwards
     check(401, client.get("/stuff", headers=TMP_BASIC))
     check(
         201,
@@ -208,8 +210,12 @@ def test_scare(client):
             "/scare", data={"opass": "tmp", "npass": "!.?"}, headers=TMP_BASIC
         ),
     )
-    # cleanup
-    check(204, client.delete("/scare", headers=TMP_BASIC))
+    # cleanup, possibly with an auth token
+    tmp_token = json.loads(check(200, client.get("/scare/token", headers=TMP_BASIC)).data)
+    if app._fsa._am._tm._carrier == "param":
+        check(204, client.delete("/scare", json={"AUTH": tmp_token}))
+    else:
+        check(204, client.delete("/scare", headers=TMP_BASIC))
     check(401, client.get("/scare", headers=TMP_BASIC))
 
 
@@ -219,6 +225,7 @@ def test_users(client):
     assert b"foo" in res.data and b"bla" in res.data
     res = check(200, client.get("/users/foo", headers=BLA_BASIC))
     assert b"foo" in res.data and b"bla" not in res.data
+    # tmp re-created on the next call
     check(401, client.get("/stuff/1", headers=TMP_BASIC))
     check(
         201,
@@ -239,8 +246,10 @@ def test_users(client):
     check(403, client.get("/users", headers=TMP_BASIC_3))
     check(403, client.get("/users/foo", headers=TMP_BASIC))  # not self!
     check(200, client.get("/users/tmp", headers=TMP_BASIC))  # self!
+    # switch tmp to admin
     check(204, client.patch("/users/tmp", data={"admin": True}, headers=FOO_BASIC))
     check(200, client.get("/users", headers=TMP_BASIC))
+    # if cached: check(403, client.get("/users", headers=TMP_BASIC_3))
     check(200, client.get("/users", headers=TMP_BASIC_3))
     check(204, client.patch("/users/tmp", data={"pass": "TMP"}, headers=FOO_BASIC))
     check(401, client.get("/users", headers=TMP_BASIC))
@@ -257,6 +266,7 @@ def test_users(client):
     check(401, client.get("/users", headers=TMP_BASIC))
     check(401, client.get("/users", headers=TMP_BASIC_3))
     check(401, client.get("/users", headers=TMP_BASIC_4))
+    # cleanup
     check(204, client.delete("/users/tmp", headers=FOO_BASIC))
     check(404, client.get("/users/tmp", headers=FOO_BASIC))
 

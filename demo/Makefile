@@ -123,7 +123,7 @@ log.pg2:
 #
 
 F.py	= $(wildcard *.py)
-PYTEST  = pytest --log-level=debug --capture=tee-sys
+PYTEST  = pytest --log-level=debug --capture=tee-sys -v
 PYTOPT	=
 
 .PHONY: check

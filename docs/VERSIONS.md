@@ -3,6 +3,12 @@
 Sources are available on [GitHub](https://github.com/zx80/flask-simple-auth)
 and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 
+## 28.0 on ?
+
+Add `user_token_uncache` to remove a cached user token without knowing the
+actual token value.
+Extend demo tests to use this feature (what a pain!).
+
 ## 27.6 on 2024-01-07
 
 Improve resilience of `*_uncache` when some hooks are not set.

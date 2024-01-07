@@ -461,6 +461,7 @@ class Flask(flask.Flask):
         self.token_uncache = self._fsa.token_uncache
         self.group_uncache = self._fsa.group_uncache
         self.object_perms_uncache = self._fsa.object_perms_uncache
+        self.user_token_uncache = self._fsa.user_token_uncache
         # overwrite decorators ("route" done through add_url_rule above)
         setattr(self, "get", self._fsa.get)  # FIXME avoid mypy warnings
         setattr(self, "put", self._fsa.put)
@@ -982,6 +983,7 @@ class _TokenManager:
         self._sign: str|None = None
         self._algo: str = Directives.FSA_TOKEN_ALGO
         self._siglen: int = Directives.FSA_TOKEN_LENGTH
+        self._token_cache = None
         self._initialized = False
 
     def _initialize(self):
@@ -1074,6 +1076,8 @@ class _TokenManager:
                 raise self._Bad("oauth token authorizations require JWT")
             if not self._issuer:
                 raise self._Bad("oauth token authorizations require FSA_TOKEN_ISSUER")
+
+        self._initialized = True
 
     def _set_auth_cookie(self, res: Response) -> Response:
         """After request hook to set a cookie if needed and none was sent."""
@@ -1249,27 +1253,31 @@ class _TokenManager:
         return self._get_any_token_auth_exp.cache_del(token, realm)  # type: ignore
 
     # Hmmm… keep track of last seen token to help cache invalidation?
-    # def _user_token_cache(self, user: str, realm: str, token: str):
-    #     """Manually memoize a token associated to a user/realm."""
-    #     if self._token_cache:
-    #         self._token_cache[f"{user}:{realm}"] = token
+    def _user_token_cache(self, user: str, realm: str, token: str):
+        """Manually memoize a token associated to a user/realm."""
+        if self._token_cache:
+            self._token_cache[f"{user}/{realm}"] = token
 
-    # def user_token_uncache(self, user: str, realm: str) -> bool:
-    #     """Remove cached token associated to a user/realm."""
-    #     if self._token_cache:
-    #         user_realm = f"{user}:{realm}"
-    #         token = self._token_cache[user_realm]
-    #         if token:
-    #             del self._token_cache[user_realm]
-    #             return self.token_uncache(token, realm)
-    #     return False
+    def user_token_uncache(self, user: str, realm: str) -> bool:
+        """Remove cached token associated to a user/realm."""
+        if self._token_cache:
+            user_realm = f"{user}/{realm}"
+            try:
+                token = self._token_cache[user_realm]
+                if token:
+                    del self._token_cache[user_realm]
+                    return self.token_uncache(token, realm)
+            except KeyError:
+                pass
+        return False
 
     # NOTE the realm parameter is really only for testing purposes
     def _get_any_token_auth(self, token: str|None, realm: str|None = None) -> str|None:
         """Tell whether token is ok: return validated user or None, may raise 401."""
         if not token:
             raise self._Err("missing token", 401)
-        user, exp, scopes = self._get_any_token_auth_exp(token, realm or self._fsa._local.token_realm)
+        realm = realm or self._fsa._local.token_realm
+        user, exp, scopes = self._get_any_token_auth_exp(token, realm)
         # must recheck token expiration
         now = dt.datetime.now(dt.timezone.utc) - dt.timedelta(minutes=self._grace)
         if now > exp:
@@ -1278,6 +1286,9 @@ class _TokenManager:
             raise self._Err(f"expired auth token: {token}", 401)
         # store current available scopes for oauth
         self._fsa._local.scopes = scopes
+        # memoize?
+        if user and realm and token:
+            self._user_token_cache(user, realm, token)
         return user
 
     def _get_token(self) -> str|None:
@@ -1906,6 +1917,7 @@ class _CacheManager:
             (self._fsa._zm, "_check_object_perms", "p."),
             (self._fsa._am._tm, "_get_any_token_auth_exp", "t."),
             (self._fsa._am._pm, "_get_user_pass", "u."),
+            # see also _token_cache
         ])
 
         for p in [t[2] for t in self._cachable]:
@@ -2045,6 +2057,10 @@ class _CacheManager:
                 ctu.cacheMethods(cache=self._cache, obj=obj, gen=self._cache_gen, **{meth: prefix})
             else:
                 log.info(f"cache: skipping {meth[1:]}")
+
+        # manual cache: user/realm -> last seen token
+        # FIXME prefixes?
+        self._fsa._am._tm._token_cache = self._cache_gen(cache=self._cache, prefix="T.")
 
         # do not process again!
         self._cached = True
@@ -3246,6 +3262,10 @@ class FlaskSimpleAuth:
     def token_uncache(self, token: str, realm: str) -> bool:
         """Remove token entry from cache."""
         return self._am._tm.token_uncache(token, realm)
+
+    def user_token_uncache(self, user: str, realm: str) -> bool:
+        """Remove token associated to user/realm from cache."""
+        return self._am._tm.user_token_uncache(user, realm)
 
     def group_uncache(self, user: str, group: str|int) -> bool:
         """Remove group membership entry from cache."""
