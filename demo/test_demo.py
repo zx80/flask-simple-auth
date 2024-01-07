@@ -216,7 +216,11 @@ def test_scare(client):
         check(204, client.delete("/scare", json={"AUTH": tmp_token}))
     else:
         check(204, client.delete("/scare", headers=TMP_BASIC))
+    # this check that the cache was somehow cleaned up
     check(401, client.get("/scare", headers=TMP_BASIC))
+    check(401, client.get("/scare", headers=TMP_BASIC_2))
+    check(401, client.get("/scare", headers=TMP_BASIC_3))
+    check(401, client.get("/scare", headers=TMP_BASIC_4))
 
 
 # GET POST PATCH DELETE /users
