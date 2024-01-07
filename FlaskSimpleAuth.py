@@ -1921,9 +1921,6 @@ class _CacheManager:
             # see also _token_cache
         ])
 
-        for p in [t[2] for t in self._cachable]:
-            self._cache_prefixes.add(p)
-
         conf = self._fsa._app.config
 
         cache = conf.get("FSA_CACHE", Directives.FSA_CACHE)
@@ -2018,20 +2015,26 @@ class _CacheManager:
         if not self._initialized:  # pragma: no cover
             self._initialize()
 
+    # wrap _cache_gen by checking that prefix is not used yet
+    def _cache_new(self, cache, prefix: str) -> MutableMapping[str, str]:
+        """Create a new unique prefix cache."""
+
+        assert self._initialized and self._cache_gen
+
+        if prefix in self._cache_prefixes:  # pragma: no cover
+            raise self._Bad(f"Cache prefix \"{prefix}\" is already used")
+
+        self._cache_prefixes.add(prefix)
+        return self._cache_gen(cache=self._cache, prefix=prefix)
+
     def _set_cache(self, prefix: str):  # pragma: no cover
         """Decorator to cache function calls with a prefix."""
 
         self._cache_init()
 
-        if prefix in self._cache_prefixes:
-            raise self._Bad(f"Cache prefix \"{prefix}\" is already used")
-
-        self._cache_prefixes.add(prefix)
-
         def decorate(fun: Callable):
             import CacheToolsUtils as ctu
-            assert self._cache_gen  # mypy…
-            return ctu.cached(cache=self._cache_gen(self._cache, prefix))(fun)
+            return ctu.cached(cache=self._cache_new(self._cache, prefix))(fun)
 
         return decorate
 
@@ -2055,13 +2058,12 @@ class _CacheManager:
         for obj, meth, prefix in self._cachable:
             if obj and hasattr(obj, meth) and getattr(obj, meth) is not None:
                 log.debug(f"cache: caching {meth[1:]}")
-                ctu.cacheMethods(cache=self._cache, obj=obj, gen=self._cache_gen, **{meth: prefix})
+                ctu.cacheMethods(cache=self._cache, obj=obj, gen=self._cache_new, **{meth: prefix})
             else:
                 log.info(f"cache: skipping {meth[1:]}")
 
         # manual cache: user/realm -> last seen token
-        # FIXME prefixes?
-        self._fsa._am._tm._token_cache = self._cache_gen(cache=self._cache, prefix="T.")
+        self._fsa._am._tm._token_cache = self._cache_new(cache=self._cache, prefix="T.")
 
         # do not process again!
         self._cached = True
