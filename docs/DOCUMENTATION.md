@@ -1017,6 +1017,10 @@ authorization (group and per-object permissions):
   `object_perms_uncache` allow to remove a particular entry from the shared
   cache, without waiting for its eventual expiration.
 
+  Note that uncaching features are on a best-effort basis, and may not work
+  as expected especially with multi-process or multi-level cache settings.
+  You should really wait for the `ttl`.
+
 Web-application oriented features:
 
 - `FSA_401_REDIRECT` url to redirect to on *401*.
