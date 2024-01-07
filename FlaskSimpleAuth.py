@@ -1461,7 +1461,7 @@ class _PasswordManager:
             return False
         elif self._get_user_pass and hasattr(self._get_user_pass, "cache_del"):
             return self._get_user_pass.cache_del(user)  # type: ignore
-        else:
+        else:  # pragma: no cover
             return False
 
 
@@ -2086,7 +2086,7 @@ class _AuthorizationManager:
         r1 = self._check_groups.cache_del(user, group)  # type: ignore
         if self._user_in_group and hasattr(self._user_in_group, "cache_del"):
             r2 = self._user_in_group.cache_del(user, group)  # type: ignore
-        else:
+        else:  # pragma: no cover
             r2 = False
         return r1 or r2
 
