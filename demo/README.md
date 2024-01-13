@@ -195,5 +195,6 @@ This later version is **52%** shorter (including the configuration, less than
 half), illustrating that security is better handled by the framework than by
 the application itself.
 Parameter handling, the main forte of FastAPI, is managed as efficiently by FSA.
+Behind the scene, permission checks are actually cached for efficiency.
 
 To test this applications, run `make fastapi-oauth2-jwt-fsa.demo`.
