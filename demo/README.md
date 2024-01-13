@@ -181,7 +181,7 @@ to test all methods and paths.
 To test this applications, run `make flask-restful-todos-fsa.demo`.
 
 The key take away is that the FlaskSimpleAuth-based code is both shorter and
-clearer that the initial implementation.
+clearer than the initial implementation.
 
 ## JWT Application
 
