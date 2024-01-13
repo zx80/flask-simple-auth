@@ -53,7 +53,7 @@ Only authorizations are declared on the route with the mandatory ``authorize``
 parameter.
 How these are checked is also set from the configuration.
 HTTP or JSON parameters are automatically converted to the expected type,
-with features on par with [fastapi](https://fastapi.tiangolo.com/).
+with features on par with [FastAPI](https://fastapi.tiangolo.com/).
 
 Authentication and authorizations are provided to the framework with callback functions.
 For our example, we will need to retrieve the salted hashed password for a user,
