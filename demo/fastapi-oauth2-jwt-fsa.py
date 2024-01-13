@@ -47,9 +47,9 @@ def get_user_pass(login: str):
        return fake_users_db[login]["hashed_password"]
     # else None, implies 401
 
-@app.user_in_group
-def user_in_group(login: str, group: str):
-    return group == "ENABLED" and login in fake_users_db and not fake_users_db[login]["disabled"]
+@app.group_check("ENABLED")
+def user_is_enabled(login: str):
+    return login in fake_users_db and not fake_users_db[login]["disabled"]
 
 # from a REST perspective, it should really be GET…
 # however OAuth web-oriented view prescribes POST on "username" and "password"
