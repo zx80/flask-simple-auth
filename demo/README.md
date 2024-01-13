@@ -1,7 +1,7 @@
-# FlaskSimpleAuth Demonstration Application
+# FlaskSimpleAuth Demonstration Applications
 
-This app demonstrates a [REST](https://en.wikipedia.org/wiki/Representational_state_transfer)
-API implementation with [Flask](https://palletsprojects.com/p/flask/) extension
+These apps demonstrate [REST](https://en.wikipedia.org/wiki/Representational_state_transfer)
+API implementations with [Flask](https://palletsprojects.com/p/flask/) extension
 [FlaskSimpleAuth](https://pypi.org/project/FlaskSimpleAuth/) used for
 authentication, authorization and parameter management, and sharing database
 object which handles the connection and queries using [AnoDB](https://pypi.org/project/anodb/),
@@ -43,7 +43,7 @@ object:
 The next sections describe the convenient features which distinguish this
 demo compared to what would be required if only Flask was being used.
 
-## Application Authentication
+### Application Authentication
 
 The application uses *fsa* tokens or *HTTP basic* authentication… but there
 is no single trace of that in the application code. **THIS IS A GOOD THING**.
@@ -82,7 +82,7 @@ a finer grain permission model: both admins and the user themselves can access
 the route, which is controlled through a domain-specific function registered
 with the `object_perms` hook.
 
-## API Parameters
+### API Parameters
 
 The application retrieve API parameters transparently and turns them
 into typed function parameters at the python level. The application code
@@ -99,7 +99,7 @@ The [types\_path.py](types_path.py) blueprint illustrates getting
 various parameter types, including the convenient `JsonData` types
 which converts a string to a JSON data structure.
 
-## Database
+### Database
 
 Flask, because Python memory management requires a global lock (GIL) which
 is a pain, enforces a one thread process which relies on global
@@ -147,7 +147,7 @@ and connection management.
 Compare [create-db.sql](create-db.sql) vs [create-pg.sql](create-pg.sql)
 and [app-db.conf](app-db.conf) vs [app-pg.conf](app-pg.conf).
 
-## Demo Run
+### Demo Run
 
 A [Makefile](Makefile) is provided to ease running the demo application.
 Make macro `DB` can be set to `db` for SQLite, `pg2` and `pg` for Postgres
@@ -170,12 +170,28 @@ See example `curl` commands in [curl-demo.sh](curl-demo.sh).
 The simplistic `todos` application from Flask-RESTful documentation is proposed
 in two flavors:
 
-- [`todos-frf.py`](todos-frf.py) is a copy of the
+- [`todos-frf.py`](flask-restful-todos-init.py) is a copy of the
   [initial version](https://github.com/flask-restful/flask-restful/blob/master/examples/todo.py).
-- [`todos-fsa.py`](todos-fsa.py) is a reimplementation with *Flask Simple Auth*
+- [`todos-fsa.py`](flask-restful-todos-fsa.py) is a reimplementation with *Flask Simple Auth*
   which is shorter, simpler and IMO more elegant, that is better.
-  It is initialized with file [`todos.conf`](todos.conf).
+  It is initialized with file [`todos.conf`](flask-restful-todos-fsa.conf).
 
-The [`curl-todos.sh`](curl-todos.sh) script provides simple `curl` requests
+The [`curl-todos.sh`](flask-restful-todos-curl.sh) script provides simple `curl` requests
 to test all methods and paths.
 To test this applications, run `make todos-fsa.demo`.
+
+The key take away is that the FlaskSimpleAuth-based code is both shorter and
+clearer that the initial implementation.
+
+## JWT Application
+
+This demo application is taken from the
+[FastAPI tutorial](https://fastapi.tiangolo.com/tutorial/security/oauth2-jwt/).
+Compare the [initial code](fastapi-oauth2-jwt-init.py) to the
+[FSA version](fastapi-oauth2-jwt-fsa.py) and its
+[configuration](fastapi-oauth2-jwt-fsa.conf).
+
+This later version is **52%** shorter (including the configuration, less than
+half), illustrating that security is better handled by the framework than by
+the application itself.
+Parameter handling, the main forte of FastAPI, is managed as efficiently by FSA.
