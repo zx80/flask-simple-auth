@@ -170,15 +170,15 @@ See example `curl` commands in [curl-demo.sh](curl-demo.sh).
 The simplistic `todos` application from Flask-RESTful documentation is proposed
 in two flavors:
 
-- [`todos-frf.py`](flask-restful-todos-init.py) is a copy of the
+- [Flask RESTful version](flask-restful-todos-init.py) is a copy of the
   [initial version](https://github.com/flask-restful/flask-restful/blob/master/examples/todo.py).
-- [`todos-fsa.py`](flask-restful-todos-fsa.py) is a reimplementation with *Flask Simple Auth*
+- [FSA version](flask-restful-todos-fsa.py) is a reimplementation with *Flask Simple Auth*
   which is shorter, simpler and IMO more elegant, that is better.
-  It is initialized with file [`todos.conf`](flask-restful-todos-fsa.conf).
+  It is initialized from [this file](flask-restful-todos-fsa.conf).
 
-The [`curl-todos.sh`](flask-restful-todos-curl.sh) script provides simple `curl` requests
+The [curl script](flask-restful-todos-curl.sh) provides simple `curl` requests
 to test all methods and paths.
-To test this applications, run `make todos-fsa.demo`.
+To test this applications, run `make flask-restful-todos-fsa.demo`.
 
 The key take away is that the FlaskSimpleAuth-based code is both shorter and
 clearer that the initial implementation.
@@ -195,3 +195,5 @@ This later version is **52%** shorter (including the configuration, less than
 half), illustrating that security is better handled by the framework than by
 the application itself.
 Parameter handling, the main forte of FastAPI, is managed as efficiently by FSA.
+
+To test this applications, run `make fastapi-oauth2-jwt-fsa.demo`.
