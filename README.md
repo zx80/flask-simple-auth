@@ -52,7 +52,8 @@ set from the configuration.
 Only authorizations are declared on the route with the mandatory ``authorize``
 parameter.
 How these are checked is also set from the configuration.
-HTTP or JSON parameters are automatically converted to the expected type.
+HTTP or JSON parameters are automatically converted to the expected type,
+with features on par with [fastapi](https://fastapi.tiangolo.com/).
 
 Authentication and authorizations are provided to the framework with callback functions.
 For our example, we will need to retrieve the salted hashed password for a user,
@@ -95,7 +96,8 @@ Secure and reasonable defaults are provided.
 Most features can be adjusted or extended to particular needs through numerous
 directives and hooks.
 Authentication and authorization callback invocations are cached for efficiency.
-Also, pydantic or dataclass parameters are supported out of the box.
+Also, [pydantic](https://docs.pydantic.dev/) or dataclass parameters are
+supported out of the box.
 
 ## More
 
