@@ -1511,14 +1511,16 @@ class _AuthenticationManager:
         # map auth to their hooks
         self._authentication: dict[str, Hooks.AuthenticationFun] = {
             "none": lambda _a, _r: None,
+            # internal authentication
             "httpd": self._get_httpd_auth,
             "token": self._get_token_auth,
             "oauth": self._get_token_auth,
             "fake": self._get_fake_auth,
             "basic": self._get_basic_auth,
-            "digest": self._get_httpauth,
             "param": self._get_param_auth,
             "password": self._get_password_auth,
+            # HTTPAuth-dependent authentication
+            "digest": self._get_httpauth,
             "http-basic": self._get_httpauth,
             "http-digest": self._get_httpauth,
             "http-token": self._get_httpauth,
