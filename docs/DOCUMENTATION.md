@@ -1207,6 +1207,7 @@ Todo or not todo…
 - how to ensure that shared/pooled resources are returned even on errors?
   is an `after_request` hook enough?
 - take advantage of `TypedDict`?
+- consider `jose` as a JWT provided?
 
 ### Documentation
 
