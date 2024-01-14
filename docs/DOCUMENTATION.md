@@ -1208,6 +1208,7 @@ Todo or not todo…
   is an `after_request` hook enough?
 - take advantage of `TypedDict`?
 - consider `jose` as a JWT provided?
+  PyJWT has 125 Mdls/mo, Python-JOSE under 6 Mdls/mo
 
 ### Documentation
 
