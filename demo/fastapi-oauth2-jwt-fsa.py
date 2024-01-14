@@ -2,7 +2,7 @@
 #
 # https://fastapi.tiangolo.com/tutorial/security/oauth2-jwt/
 #
-# Hey, about 50 lines to get there!
+# About 50 lines to get there, half FastAPI version!
 #
 
 import logging
@@ -31,16 +31,17 @@ class User(BaseModel):
     username: str
     email: str|None = None
     full_name: str|None = None
-    disabled: bool|None = None
+    disabled: bool|None = None  # I'm afraid that None means enabled
 
 
+# parameter type User triggers building a User instance
 def get_user(db, username: str) -> User|None:
     if username in db:
         return User(**db[username])
 
-# parameter type User triggers building a User instance
 app.special_parameter(User, lambda _: get_user(fake_users_db, app.current_user()))
 
+# password and group hooks
 @app.get_user_pass
 def get_user_pass(login: str):
     if login in fake_users_db:
