@@ -20,6 +20,8 @@ API context, advance programming in `Python`, and interacting from a terminal
 with a shell.
 It should work with Python 3.1x on Unix (Linux, MacOS) and possibly Windows with
 [WSL](https://en.wikipedia.org/wiki/Windows_Subsystem_for_Linux).
+It is advisable to use a version control tool such as `git` to commit the
+tutorial state after each section.
 
 ## Application Setup
 
@@ -38,12 +40,12 @@ source venv/bin/activate
 pip install FlaskSimpleAuth[password]
 ```
 
-Create in the `fsa-tuto` directory the `app.py` file with an unauthenticated
-`GET /hello` route.
+Using your favorite text editor, create in the `fsa-tuto` directory the `app.py`
+file with an _unauthenticated_ `GET /hello` route.
 The route is open because it is authorized to *ANY*one.
-The `authorize` route parameter is mandatory to declare authorization
+The `authorize` route parameter is **mandatory** to declare authorization
 requirements on the route.
-If not set, the route is closed (aka 403).
+If not set, the route would be closed (aka 403).
 
 ```python
 # file "app.py"
