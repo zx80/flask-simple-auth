@@ -18,6 +18,10 @@ check.mypy: venv
 	source venv/bin/activate
 	mypy --implicit-optional --check-untyped-defs $(MODULE).py
 
+check.pyright: venv
+	source venv/bin/activate
+	pyright $(MODULE).py
+
 check.flake8: venv
 	source venv/bin/activate
 	flake8 --ignore=E127,E227,E402,E501,E721,F401,F811,W504 $(MODULE).py

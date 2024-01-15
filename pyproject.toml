@@ -37,7 +37,7 @@ package = "https://pypi.org/project/FlaskSimpleAuth/"
 
 [project.optional-dependencies]
 # various dev tools
-dev = [ "mypy", "flake8", "black", "pytest", "coverage", "pymarkdownlnt!=0.9.5", "build", "twine", "wheel" ]
+dev = [ "mypy", "pyright", "flake8", "black", "pytest", "coverage", "pymarkdownlnt!=0.9.5", "build", "twine", "wheel", "types-flask" ]
 # documentation generation
 doc = [ "sphinx", "sphinx_rtd_theme", "sphinx-autoapi", "sphinx-lint", "myst_parser" ]
 # NOTE also: password jwt cors httpauth
