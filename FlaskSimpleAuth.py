@@ -43,7 +43,8 @@ from flask import (
     abort, redirect, url_for, after_this_request, send_file, current_app, g,
     send_from_directory, render_template, get_flashed_messages,
     has_app_context, has_request_context, render_template_string,
-    stream_template, stream_template_string, stream_with_context,
+    stream_with_context,
+    # NOT in 3.x: stream_template, stream_template_string,
 )
 
 from importlib.metadata import version as pkg_version
