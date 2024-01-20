@@ -44,7 +44,6 @@ from flask import (
     send_from_directory, render_template, get_flashed_messages,
     has_app_context, has_request_context, render_template_string,
     stream_with_context,
-    # NOT in 3.x: stream_template, stream_template_string,
 )
 
 from importlib.metadata import version as pkg_version
@@ -124,7 +123,7 @@ class Hooks:
     Returns whether password is valid for user.
     """
 
-    PasswordQualityFun = Callable[[str], bool]
+    PasswordQualityFun = Callable[[str], bool|Any]
     """Is this password quality suitable?
 
     :param password: the submitted password.
@@ -345,7 +344,7 @@ def _typeof(p: inspect.Parameter):
                 return a.__args__[0]
             elif hasattr(a, "__name__") and a.__name__ == "Optional":
                 return a.__args__[0]
-            elif hasattr(a, "__origin__") and a.__origin__ is typing.Union and len(a.__args__) == 2:
+            elif hasattr(a, "__origin__") and a.__origin__ is typing.Union and len(a.__args__) == 2:  # type: ignore
                 return a.__args__[0]
             else:
                 return a
@@ -985,7 +984,7 @@ class _TokenManager:
         self._sign: str|None = None
         self._algo: str = Directives.FSA_TOKEN_ALGO
         self._siglen: int = Directives.FSA_TOKEN_LENGTH
-        self._token_cache = None
+        self._token_cache: MutableMapping[str, str]|None = None
         self._initialized = False
 
     def _initialize(self):
@@ -1163,8 +1162,9 @@ class _TokenManager:
             self._token == "jwt" and self._algo[0] in ("R", "E", "P") and not self._sign
         )
 
-    def create_token(self, user: str = None, realm: str = None, issuer: str = None,
-                     delay: float = None, secret: str = None, **kwargs) -> str:
+    def create_token(self, user: str|None = None, realm: str|None = None,
+                     issuer: str|None = None, delay: float|None = None,
+                     secret: str|None = None, **kwargs) -> str:
         """Create a new token for user depending on the configuration."""
         assert self._token
         user = user or self._fsa.get_user()
@@ -1172,6 +1172,7 @@ class _TokenManager:
         issuer = issuer or self._issuer
         delay = delay or self._delay
         secret = secret or (self._secret if self._token == "fsa" else self._sign)
+        assert realm is not None  # help type check
         return (
             self._get_fsa_token(realm, issuer, user, delay, secret, **kwargs) if self._token == "fsa" else
             self._get_jwt_token(realm, issuer, user, delay, secret, **kwargs)
@@ -1279,6 +1280,7 @@ class _TokenManager:
         if not token:
             raise self._Err("missing token", 401)
         realm = realm or self._fsa._local.token_realm
+        assert realm is not None  # help type check
         user, exp, scopes = self._get_any_token_auth_exp(token, realm)
         # must recheck token expiration
         now = dt.datetime.now(dt.timezone.utc) - dt.timedelta(minutes=self._grace)
@@ -1385,7 +1387,9 @@ class _PasswordManager:
         self._pass_check = conf.get("FSA_PASSWORD_CHECK", Directives.FSA_PASSWORD_CHECK)
         self._pass_quality = conf.get("FSA_PASSWORD_QUALITY", Directives.FSA_PASSWORD_QUALITY)
         self._pass_len = conf.get("FSA_PASSWORD_LENGTH", Directives.FSA_PASSWORD_LENGTH)
-        self._pass_re += [re.compile(r).search for r in conf.get("FSA_PASSWORD_RE", Directives.FSA_PASSWORD_RE)]
+        self._pass_re += [
+            re.compile(r).search for r in conf.get("FSA_PASSWORD_RE", Directives.FSA_PASSWORD_RE)
+        ]  # type: ignore
         if "FSA_GET_USER_PASS" in conf:
             self.get_user_pass(conf["FSA_GET_USER_PASS"])
         self._initialized = True
@@ -1793,17 +1797,18 @@ class _AuthenticationManager:
         """Delegate user authentication to HTTPAuth."""
         assert self._http_auth
         auth = self._http_auth.get_auth()
+        assert auth is not None  # help type check
         password = self._http_auth.get_auth_password(auth) if "http-token" not in self._fsa._local.auth else None
         try:
             # NOTE "authenticate" signature is not very clean…
             user = self._http_auth.authenticate(auth, password)
             if user is not None and user is not False:
                 return auth.username if user is True else user
-        except ErrorResponse as e:
+        except ErrorResponse as e:  # pragma: no cover
             log.debug(f"AUTH (http-*): bad authentication {e}")
             raise e
-        log.debug("AUTH (http-*): bad authentication")
-        raise self._Err("failed HTTP authentication", 401)
+        log.debug("AUTH (http-*): bad authentication")  # pragma: no cover
+        raise self._Err("failed HTTP authentication", 401)  # pragma: no cover
 
     #
     # HTTP BASIC AUTH
@@ -2007,6 +2012,8 @@ class _CacheManager:
                 from threading import RLock
             elif local == "gevent":  # pragma: no cover
                 from gevent.lock import RLock  # type: ignore
+            else:  # pragma: no cover
+                raise self._Bad(f"unexpected FSA_LOCAL: {local}")
             self._cache = ctu.LockedCache(self._cache, RLock())
 
         # done!
@@ -2058,6 +2065,8 @@ class _CacheManager:
         log.info("setting up cache…")
         import CacheToolsUtils as ctu
 
+        assert isinstance(self._cache, MutableMapping)  # help type check
+
         for obj, meth, prefix in self._cachable:
             if obj and hasattr(obj, meth) and getattr(obj, meth) is not None:
                 log.debug(f"cache: caching {meth[1:]}")
@@ -2107,7 +2116,7 @@ class _AuthorizationManager:
             self._user_in_group = conf["FSA_USER_IN_GROUP"]
         self._initialized = True
 
-    def group_check(self, group: str|int, checker: Hooks.GroupCheckFun = None):
+    def group_check(self, group: str|int, checker: Hooks.GroupCheckFun|None = None):
         """Add a check hook for a group."""
         self._groups.add(group)
         return self._store(self._group_checks, "group authz checker", group, checker)
@@ -2128,7 +2137,7 @@ class _AuthorizationManager:
             r2 = False
         return r1 or r2
 
-    def object_perms(self, domain: str, checker: Hooks.ObjectPermsFun = None):
+    def object_perms(self, domain: str, checker: Hooks.ObjectPermsFun|None = None):
         """Add an object permission helper for a given domain."""
         return self._store(self._object_perms, "object permission checker", domain, checker)
 
@@ -2265,7 +2274,7 @@ class _AuthorizationManager:
             # check perms wrt fun signature
             for domain, name, mode in perms:
                 if name not in fun.__code__.co_varnames:
-                    raise self._Bad(f"missing function parameter {name} for {perm} on {path}")
+                    raise self._Bad(f"missing function parameter {name} for {perms} on {path}")
                 # FIXME should parameter type be restricted to int or str?
 
             @functools.wraps(fun)
@@ -2285,7 +2294,7 @@ class _AuthorizationManager:
                     except ErrorResponse as e:
                         return self._Res(e.message, e.status, e.headers, e.content_type)
                     except Exception as e:
-                        log.error(f"internal error on {request.method} {request.path} permission {perm} check: {e}")
+                        log.error(f"internal error on {request.method} {request.path} permission {perms} check: {e}")
                         if self._Exc(e):  # pragma: no cover
                             raise
                         return self._Res("internal error in permission check", fsa._server_error)
@@ -2294,7 +2303,7 @@ class _AuthorizationManager:
                         log.warning(f"none object permission on {domain} {val} {mode}")
                         return self._Res("object not found", fsa._not_found_error)
                     elif not isinstance(ok, bool):  # paranoid?
-                        log.error(f"type error on on {request.method} {request.path} permission {perm} check: {type(ok)}")
+                        log.error(f"type error on on {request.method} {request.path} permission {perms} check: {type(ok)}")
                         return self._Res("internal error with permission check", fsa._server_error)
                     elif not ok:
                         return self._Res(f"permission denied on {domain}:{val} ({mode})", 403)
@@ -2369,11 +2378,11 @@ class _ParameterManager:
         fsa._set_hooks("FSA_SPECIAL_PARAMETER", self.special_parameter)
         self._initialized = True
 
-    def cast(self, t, cast: Hooks.CastFun = None):
+    def cast(self, t, cast: Hooks.CastFun|None = None):
         """Add a cast function associated to a type."""
         return self._store(self._casts, "type casting", t, cast)
 
-    def special_parameter(self, t, sp: Hooks.SpecialParameterFun = None):
+    def special_parameter(self, t, sp: Hooks.SpecialParameterFun|None = None):
         """Add a special parameter type."""
         return self._store(self._special_parameters, "special parameter", t, sp)
 
@@ -2447,11 +2456,11 @@ class _ParameterManager:
                 if n not in types and p.kind not in (p.VAR_KEYWORD, p.VAR_POSITIONAL):
                     # guess and store parameter type
                     t = _typeof(p)
-                    types[n] = t
+                    types[n] = t  # type: ignore
                     # typings: how to actually build the parameter
                     if t in self._special_parameters:
                         # this is really managed elsewhere
-                        typings[n] = t
+                        typings[n] = t  # type: ignore
                     elif (self._pydantic_base_model is not None and
                           isinstance(t, type) and
                           issubclass(t, self._pydantic_base_model) or
@@ -2463,10 +2472,10 @@ class _ParameterManager:
                                 val = json.loads(val)
                             if not isinstance(val, dict):  # JSON parameters
                                 raise self._Err(f"unexpected value {val} for dict", 400)
-                            return t(**val)
+                            return t(**val)  # type: ignore
                         typings[n] = datacast
                     else:
-                        typings[n] = self._casts.get(t, t)
+                        typings[n] = self._casts.get(t, t)  # type: ignore
                     # check that type can be isinstance and is castable
                     try:
                         isinstance("", t)
@@ -2856,7 +2865,7 @@ class _ResponseManager:
                 return self._Res("missing authorization check", fsa._server_error)
         return res
 
-    def _possible_redirect(self, res: Response):
+    def _possible_redirect(self, res: Response) -> Response:
         """After request hook to turn a 401 into a redirect."""
         if res.status_code == 401 and self._401_redirect:
             location = self._401_redirect
@@ -2866,7 +2875,7 @@ class _ResponseManager:
 
                 sep = "&" if "?" in self._url_name else "?"
                 location += sep + urlencode({self._url_name: request.url})
-            return redirect(location, 307)
+            return redirect(location, 307)  # type: ignore
         return res
 
     def _add_headers(self, res: Response) -> Response:
@@ -3038,13 +3047,13 @@ class FlaskSimpleAuth:
             setattr(exc, "_fsa_traced", True)
         return exc if self._keep_user_errors else None
 
-    def _Err(self, msg: str, code: int, exc: Exception = None) -> BaseException:
+    def _Err(self, msg: str, code: int, exc: Exception|None = None) -> BaseException:
         """Build and trace an ErrorResponse exception with a message."""
         if self._mode >= _Mode.DEBUG3:
             log.debug(f"error: {code} {msg}")
         return self._Exc(exc) or ErrorResponse(msg, code)
 
-    def _Bad(self, msg: str, misc: str = None) -> ConfigError:
+    def _Bad(self, msg: str, misc: str|None = None) -> ConfigError:
         """Build and trace an exception on a bad configuration."""
         if misc:
             msg += "\n" + misc
@@ -3052,7 +3061,10 @@ class FlaskSimpleAuth:
         return ConfigError(msg)
 
     def _store(self, store: dict[Any, Any], what: str, key: Any, val: Callable|None = None):
-        """Add a function associated to something in a dict."""
+        """Add a function associated to something in a dict.
+
+        This can be used as a decorator if the last parameter is None.
+        """
         if self._mode >= _Mode.DEBUG2:
             log.debug(f"registering {what} for {key} ({val})")
         if val:  # direct
@@ -3119,7 +3131,7 @@ class FlaskSimpleAuth:
         self._rm._error_response = erh
         return erh
 
-    def cast(self, t, cast: Hooks.CastFun = None):
+    def cast(self, t, cast: Hooks.CastFun|None = None):
         """Add a cast function associated to a type.
 
         This function is called for type conversion on parameters.
@@ -3127,7 +3139,7 @@ class FlaskSimpleAuth:
         self._initialize()
         return self._pm.cast(t, cast)
 
-    def special_parameter(self, t, sp: Hooks.SpecialParameterFun = None):
+    def special_parameter(self, t, sp: Hooks.SpecialParameterFun|None = None):
         """Add a special parameter type.
 
         These special parameters are managed by calling the hook with a
@@ -3136,12 +3148,12 @@ class FlaskSimpleAuth:
         self._initialize()
         return self._pm.special_parameter(t, sp)
 
-    def group_check(self, group: str|int, checker: Hooks.GroupCheckFun = None):
+    def group_check(self, group: str|int, checker: Hooks.GroupCheckFun|None = None):
         """Add a group helper for a given group."""
         self._initialize()
         return self._zm.group_check(group, checker)
 
-    def object_perms(self, domain: str, checker: Hooks.ObjectPermsFun = None):
+    def object_perms(self, domain: str, checker: Hooks.ObjectPermsFun|None = None):
         """Add an object permission helper for a given domain."""
         self._initialize()
         return self._zm.object_perms(domain, checker)
@@ -3175,7 +3187,7 @@ class FlaskSimpleAuth:
                 raise self._Bad(f"header name must be a string: {type(k).__name__}")
             if not (isinstance(v, str) or callable(v)):
                 raise self._Bad(f"header value must be a string or a callable: {type(v).__name__}")
-            self._store(self._rm._headers, "header", k, v)
+            self._store(self._rm._headers, "header", k, v)  # type: ignore
 
     def before_exec(self, hook: Hooks.BeforeExecFun) -> None:
         """Register an after auth/just before exec hook."""
@@ -3412,7 +3424,7 @@ class FlaskSimpleAuth:
         # add the expected type to path sections, if available
         # flask converters: string (default), int, float, path, uuid
         # NOTE it can be extended (`url_map`), but we are managing through annotations
-        sig = inspect.signature(view_func)
+        sig = inspect.signature(view_func)  # type: ignore
 
         splits = rule.split("<")
         for i, s in enumerate(splits):
@@ -3449,10 +3461,10 @@ class FlaskSimpleAuth:
                 # else spec includes a type that we keep…
         newpath = "<".join(splits)
 
-        # special shortcut for NONE, override the user function
+        # special shortcut for NONE, override the user function entirely
         if NONE in predefs:
 
-            @functools.wraps(view_func)
+            @functools.wraps(view_func)  # type: ignore
             def r403():
                 self._local.routed = True
                 return "currently closed route", 403
@@ -3460,6 +3472,7 @@ class FlaskSimpleAuth:
             return flask.Flask.add_url_rule(self._app, newpath, endpoint=endpoint, view_func=r403, **options)
 
         fun = view_func
+        assert fun is not None
 
         # else only add needed filters on top of "fun", in reverse order
         need_authenticate = ALL in predefs or groups or perms
@@ -3474,7 +3487,7 @@ class FlaskSimpleAuth:
             if not need_parameters:
                 raise self._Bad("permissions require some parameters")
             assert need_authenticate and need_parameters
-            first = fun.__code__.co_varnames[0]
+            first = fun.__code__.co_varnames[0]  # type: ignore
             fun = self._zm._perm_authz(newpath, first, *perms)(fun)
         if need_parameters:
             fun = self._pm._parameters(newpath)(fun)

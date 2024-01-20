@@ -31,6 +31,8 @@ jobs:
     # Checks
     - name: Check with mypy
       run: make check.mypy
+    - name: Check with pyright
+      run: make check.pyright
     # FIXME unwanted changes, should be filtered with "# fmt:" tags
     # - name: Check with black
     #   run: black --check CacheToolsUtils.py

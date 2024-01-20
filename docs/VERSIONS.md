@@ -6,7 +6,7 @@ and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 ## ? on ?
 
 Improved documentation.
-Improved type checks.
+Improved type hints and type checks.
 
 ## 28.0 on 2024-01-07
 

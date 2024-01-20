@@ -51,6 +51,7 @@ check: venv
 	source venv/bin/activate
 	type $(PYTHON)
 	$(MAKE) check.mypy
+	$(MAKE) check.pyright
 	$(MAKE) check.docs
 	$(MAKE) check.$(STYLE)
 	$(MAKE) check.pytest && \
