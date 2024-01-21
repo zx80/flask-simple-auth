@@ -73,7 +73,7 @@ Create the `acme.conf` configuration file:
 ```python
 # file "acme.conf"
 FSA_MODE = "debug1"  # debug level 1, max is 4
-FSA_ADD_HEADERS = {"Application": "Acme"}
+FSA_ADD_HEADERS = { "Application": "Acme" }
 ```
 
 Start the application in a terminal with the *flask* local test server.
@@ -360,6 +360,7 @@ achieve *3 passed*:
 import os
 import base64
 
+# NOTE basic auth should be managed by the test client…
 def basic_auth(login: str, passwd: str) -> dict[str, str]:
     encoded = base64.b64encode(f"{login}:{passwd}".encode("UTF8"))
     return { "Authorization": f"Basic {encoded.decode('ascii')}" }
@@ -499,8 +500,7 @@ achieve *5 passed*:
 def test_token_authn(client):
     res = client.get("/token", headers=ACME_BASIC)
     assert res.status_code == 200
-    token = res.json["token"]
-    ACME_TOKEN = { "Authorization": f"Bearer {token}" }
+    ACME_TOKEN = { "Authorization": f"Bearer {res.json['token']}" }
     res = client.get("/hello-me", headers=ACME_TOKEN)
     assert res.status_code == 200
     assert res.json["user"] == "acme"
