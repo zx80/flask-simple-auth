@@ -104,7 +104,7 @@ class Hooks:
     This is a fallback for the previous per-group method.
     """
 
-    ObjectPermsFun = Callable[[str, Any, str|None], bool]
+    ObjectPermsFun = Callable[[str, Any, str|None], bool|None]
     """Check object access in domain, for parameter, in mode.
 
     :param login: user name.
@@ -1401,7 +1401,7 @@ class _PasswordManager:
         self._get_user_pass = gup
         return gup
 
-    def _check_quality(self, pwd) -> None:
+    def _check_quality(self, pwd: str) -> None:
         """Check password quality, raising issues or proceeding."""
         if len(pwd) < self._pass_len:
             raise self._Err(f"password is too short, must be at least {self._pass_len}", 400)
@@ -1416,7 +1416,7 @@ class _PasswordManager:
                 raise self._Err(f"password quality too low: {e}", 400, e)
         # done, quality is okay
 
-    def _check_with_hook(self, user, pwd):
+    def _check_with_hook(self, user: str, pwd: str):
         """Check user/password with external hook."""
         if self._pass_check:
             try:
@@ -1430,17 +1430,17 @@ class _PasswordManager:
                 return False
         return False
 
-    def check_password(self, pwd, ref) -> bool:
+    def check_password(self, pwd: str, ref: str) -> bool:
         """Check whether password is ok wrt to reference."""
         if not self._pass_context:  # pragma: no cover
             raise self._Err("password manager is disabled", self._fsa._server_error)
         try:
             return self._pass_context.verify(pwd, ref)
-        except Exception as e:
+        except Exception as e:  # ignore passlib issues
             log.error(f"passlib verify: {e}")
             return False
 
-    def hash_password(self, pwd, check=True) -> str:
+    def hash_password(self, pwd: str, check=True) -> str:
         """Hash password according to the current password scheme."""
         if not self._pass_context:  # pragma: no cover
             raise self._Err("password manager is disabled", self._fsa._server_error)
@@ -1448,7 +1448,7 @@ class _PasswordManager:
             self._check_quality(pwd)
         return self._pass_context.hash(pwd)
 
-    def check_user_password(self, user, pwd) -> str|None:
+    def check_user_password(self, user: str, pwd: str) -> str:
         """Check user/password against internal or external credentials.
 
         Raise an exception if not ok, otherwise simply return the user.
@@ -1650,7 +1650,7 @@ class _AuthenticationManager:
         self._add_auth(auth)
         return self._store(self._authentication, "authentication", auth, hook)
 
-    def _set_www_authenticate(self, res: Response):
+    def _set_www_authenticate(self, res: Response) -> Response:
         """Set WWW-Authenticate response header depending on current scheme."""
         if res.status_code == 401:
             schemes = set()
@@ -1706,7 +1706,7 @@ class _AuthenticationManager:
 
         return local.user
 
-    def _authenticate(self, path, auth=None, realm=None):
+    def _authenticate(self, path: str, auth: str|list[str]|None = None, realm: str|None = None):
         """Decorator to authenticate current user."""
 
         # check auth parameter
@@ -1769,7 +1769,7 @@ class _AuthenticationManager:
     #
     # INHERITED HTTP AUTH
     #
-    def _get_httpd_auth(self, app, req) -> str|None:
+    def _get_httpd_auth(self, app, req: Request) -> str|None:
         """Inherit HTTP server authentication."""
         return req.remote_user
 
@@ -1780,7 +1780,7 @@ class _AuthenticationManager:
     #
     # FSA_FAKE_LOGIN: name of parameter holding the login ("LOGIN")
     #
-    def _get_fake_auth(self, app, req):
+    def _get_fake_auth(self, app, req: Request) -> str:
         """Return fake user. Only for local tests."""
         assert req.remote_addr.startswith("127.") or req.remote_addr == "::1", \
             "fake auth only on localhost"
@@ -1793,7 +1793,7 @@ class _AuthenticationManager:
     #
     # FLASK HTTP AUTH (BASIC, DIGEST, TOKEN)
     #
-    def _get_httpauth(self, app, req):
+    def _get_httpauth(self, app, req: Request) -> str:
         """Delegate user authentication to HTTPAuth."""
         assert self._http_auth
         auth = self._http_auth.get_auth()
@@ -1803,7 +1803,11 @@ class _AuthenticationManager:
             # NOTE "authenticate" signature is not very clean…
             user = self._http_auth.authenticate(auth, password)
             if user is not None and user is not False:
-                return auth.username if user is True else user
+                if isinstance(user, bool) and user:  # pragma: no cover
+                    assert isinstance(auth.username, str)  # help type check
+                    return auth.username
+                else:
+                    return user
         except ErrorResponse as e:  # pragma: no cover
             log.debug(f"AUTH (http-*): bad authentication {e}")
             raise e
@@ -1813,7 +1817,7 @@ class _AuthenticationManager:
     #
     # HTTP BASIC AUTH
     #
-    def _get_basic_auth(self, app, req):
+    def _get_basic_auth(self, app, req: Request) -> str:
         """Get user with basic authentication."""
         auth = req.headers.get("Authorization", None)
         if not auth:
@@ -1840,7 +1844,7 @@ class _AuthenticationManager:
     # FSA_PARAM_USER: parameter name for login ("USER")
     # FSA_PARAM_PASS: parameter name for password ("PASS")
     #
-    def _get_param_auth(self, app, req):
+    def _get_param_auth(self, app, req: Request) -> str:
         """Get user with parameter authentication."""
         fsa = self._fsa
         assert fsa._pm  # mypy…
@@ -1858,7 +1862,7 @@ class _AuthenticationManager:
     #
     # HTTP BASIC OR PARAM AUTH
     #
-    def _get_password_auth(self, app, req) -> str|None:
+    def _get_password_auth(self, app, req: Request) -> str:
         """Get user from basic or param authentication."""
         try:
             return self._get_basic_auth(app, req)
@@ -1868,7 +1872,7 @@ class _AuthenticationManager:
     #
     # TOKEN AUTH
     #
-    def _get_token_auth(self, app, req) -> str|None:
+    def _get_token_auth(self, app, req: Request) -> str|None:
         """Authenticate with current token."""
         login = None
         if self._tm:
@@ -2141,7 +2145,7 @@ class _AuthorizationManager:
         """Add an object permission helper for a given domain."""
         return self._store(self._object_perms, "object permission checker", domain, checker)
 
-    def _check_object_perms(self, domain: str, user: str, oid, mode: str|None) -> bool:
+    def _check_object_perms(self, domain: str, user: str, oid, mode: str|None) -> bool|None:
         """Can user access object oid in domain for mode, cached."""
         assert domain in self._object_perms
         return self._object_perms[domain](user, oid, mode)
@@ -3509,7 +3513,7 @@ class FlaskSimpleAuth:
             assert perms
         if need_authenticate:
             assert perms or groups or ALL in predefs
-            fun = self._am._authenticate(newpath, auth=auth, realm=realm)(fun)
+            fun = self._am._authenticate(newpath, auth=auth, realm=realm)(fun)  # type: ignore
         else:  # "ANY" case deserves a warning
             log.warning(f"no authenticate on {newpath}")
 
