@@ -73,6 +73,7 @@ Create the `acme.conf` configuration file:
 ```python
 # file "acme.conf"
 FSA_MODE = "debug1"  # debug level 1, max is 4
+FSA_ADD_HEADERS = {"Application": "Acme"}
 ```
 
 Start the application in a terminal with the *flask* local test server.
@@ -99,6 +100,7 @@ execution time:
 HTTP/1.1 200 OK
 Server: Werkzeug/... Python/...
 Date: ...
+Application: Acme
 FSA-Request: GET /hello
 FSA-User: None (None)
 FSA-Delay: 0.000666
