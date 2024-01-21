@@ -7,6 +7,7 @@
 
 import logging
 from pydantic import BaseModel
+from typing import Any
 import FlaskSimpleAuth as fsa
 
 json = fsa.jsonify
@@ -16,7 +17,7 @@ log = logging.getLogger("demo")
 app = fsa.Flask("demo")
 app.config.from_envvar("DEMO_CONFIG")
 
-fake_users_db = {
+fake_users_db: dict[str, dict[str, Any]] = {
     "johndoe": {
         "username": "johndoe",
         "full_name": "John Doe",
@@ -35,21 +36,22 @@ class User(BaseModel):
 
 
 # set parameter type User to trigger building a User instance
-def get_user(db, username: str) -> User|None:
-    if username in db:
+def get_user(db: dict[str, dict[str, Any]], username: str|None) -> User|None:
+    if username and username in db:
         return User(**db[username])
 
-app.special_parameter(User, lambda _: get_user(fake_users_db, app.current_user()))
+app.special_parameter(User, lambda _: get_user(fake_users_db, app.get_user()))
 
 # password and group hooks
 @app.get_user_pass
-def get_user_pass(login: str):
-    if login in fake_users_db:
-        return fake_users_db[login]["hashed_password"]
-    # else None, implies 401
+def get_user_pass(login: str) -> str|None:
+    if login not in fake_users_db:
+        return None  # 401
+    return fake_users_db[login]["hashed_password"]
 
+# NOTE disabled is None semantics is doubtful
 @app.group_check("ENABLED")
-def user_is_enabled(login: str):
+def user_is_enabled(login: str) -> bool:
     return login in fake_users_db and not fake_users_db[login]["disabled"]
 
 # from a REST perspective, it should really be GET…
