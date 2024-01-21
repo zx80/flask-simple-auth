@@ -358,10 +358,10 @@ achieve *3 passed*:
 ```python
 # append to "test.py"
 import os
-from base64 import b64encode
+import base64
 
 def basic_auth(login: str, passwd: str) -> dict[str, str]:
-    encoded = b64encode(f"{login}:{passwd}".encode("UTF8"))
+    encoded = base64.b64encode(f"{login}:{passwd}".encode("UTF8"))
     return { "Authorization": f"Basic {encoded.decode('ascii')}" }
 
 ACME_BASIC = basic_auth("acme", os.environ["ACME_ADMIN_PASS"])
