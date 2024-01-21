@@ -41,4 +41,4 @@ jobs:
     - name: Check with pytest
       run: make check.pytest
     - name: Check with coverage
-      run: make check.coverage
+      run: make COVER=100 check.coverage

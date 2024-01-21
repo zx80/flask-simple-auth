@@ -28,7 +28,16 @@ check:
 	$(PYTEST) $(PYTOPT)
 
 # coverage
-COVER   = 100
+has_redis   = $(shell netcat -z 0.0.0.0 6379 && echo 1)
+has_memcached = $(shell netcat -z 0.0.0.0 11211 && echo 1)
+
+ifndef COVER
+  ifeq ($(has_redis)$(has_memcached),11)
+  COVER   = 100
+  else
+  COVER   = 99
+  endif
+endif
 
 .PHONY: coverage
 coverage:
