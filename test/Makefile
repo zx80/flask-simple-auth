@@ -33,9 +33,9 @@ has_memcached = $(shell netcat -z 0.0.0.0 11211 && echo 1)
 
 ifndef COVER
   ifeq ($(has_redis)$(has_memcached),11)
-  COVER   = 100.0
+    COVER   = 100.0
   else
-  COVER   = 99.1
+    COVER   = 99.1
   endif
 endif
 
