@@ -34,7 +34,7 @@ class User(BaseModel):
     disabled: bool|None = None  # I'm afraid that None means enabled
 
 
-# parameter type User triggers building a User instance
+# set parameter type User to trigger building a User instance
 def get_user(db, username: str) -> User|None:
     if username in db:
         return User(**db[username])
@@ -45,7 +45,7 @@ app.special_parameter(User, lambda _: get_user(fake_users_db, app.current_user()
 @app.get_user_pass
 def get_user_pass(login: str):
     if login in fake_users_db:
-       return fake_users_db[login]["hashed_password"]
+        return fake_users_db[login]["hashed_password"]
     # else None, implies 401
 
 @app.group_check("ENABLED")
