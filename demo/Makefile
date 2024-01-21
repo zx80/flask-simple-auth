@@ -138,9 +138,13 @@ check.pytest: stuff.$(DB)
 check.mypy:
 	mypy --ignore-missing-imports $(F.py)
 
+.PHONY: check.pyright
+check.pyright:
+	pyright $(F.py)
+
 .PHONY: check.flake8
 check.flake8:
-	flake8 --ignore=E227,E402,E501 $(F.py)
+	flake8 --ignore=E227,E302,E305,E402,E501 $(F.py)
 
 .PHONY: check.pg
 check.pg:

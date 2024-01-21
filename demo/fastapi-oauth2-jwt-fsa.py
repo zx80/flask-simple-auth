@@ -37,8 +37,9 @@ class User(BaseModel):
 
 # set parameter type User to trigger building a User instance
 def get_user(db: dict[str, dict[str, Any]], username: str|None) -> User|None:
-    if username and username in db:
-        return User(**db[username])
+    if not username or username not in db:
+        return None
+    return User(**db[username])
 
 app.special_parameter(User, lambda _: get_user(fake_users_db, app.get_user()))
 
