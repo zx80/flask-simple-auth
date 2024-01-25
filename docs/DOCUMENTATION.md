@@ -1196,6 +1196,7 @@ Todo or not todo…
   and possible overrides.
 - add ability to catch and process any user error.
 - how to allow TwoLevelCache?
+  give freedom to cache backend, eg by providing the cache?
 
 ### Software Engineering
 
