@@ -1187,16 +1187,12 @@ Todo or not todo…
 
 ### Features
 
-- clear cache per type? entry??
 - how to add a timeout? or manage an outside one?
-- how to manage automatic return of ressources?
 - `logging` default behavior is a *pain* and the maintainer is self satisfied.
   how to ensure that logging is initialized?
 - the doc and implementation should clarify exception handling,
   and possible overrides.
 - add ability to catch and process any user error.
-- how to allow TwoLevelCache?
-  give freedom to cache backend, eg by providing the cache?
 
 ### Software Engineering
 
@@ -1215,6 +1211,7 @@ Todo or not todo…
 
 - separate explanations from reference?
 - more recipes?
+- add pydantic parameters to recipees and tutorial.
 - include demo? point to demo?
 - comparisons with other frameworks
 - improve sample configuration
