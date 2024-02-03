@@ -377,6 +377,7 @@ def _json_prepare(a: Any):
     else:  # do nothing, rely on flask's jsonify
         return a
 
+
 def _json_stream(gen):
     """Stream a generator output as a JSON array."""
     yield "["
