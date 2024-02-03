@@ -191,7 +191,7 @@ that an authenfication method has succeeded, and that another must still be chec
       return app.create_token(user), 200
   ```
 
-- Only allow token authentication on other routes with `FSA_AUTH = "token"`.
+- only allow token authentication on other routes with `FSA_AUTH = "token"`.
 
 See [MFA demo](https://github.com/zx80/flask-simple-auth/blob/main/demo/mfa.py).
 
@@ -290,6 +290,37 @@ or the sender of this particular message.
 ## Parameters
 
 ### How-to use pydantic or dataclasses in requests and responses?
+
+Pydantic and dataclass classes are well integrated both for input parameters
+and route outputs:
+
+- request parameters work out of the box with through JSON:
+
+  ```python
+  import pydantic
+
+  # this also works with pydantic and standard dataclasses
+  class User(pydantic.BaseModel):
+      login: str
+      firstname: str
+      lastname: str
+
+  @app.post("/users", authorize="ADMIN")
+  def post_users(user: User):
+      # user.login, user.firtname, user.lastname…
+      return "", 201
+  ```
+
+- responses must be processed through FlaskSimpleAuth's `jsonify`:
+
+  ```python
+  @app.get("/users/<uid>", authorize="ADMIN")
+  def get_users_uid(uid: int):
+      user: User = whatever(uid)
+      return fsa.jsonify(user), 200
+  ```
+
+See [types demo](https://github.com/zx80/flask-simple-auth/blob/main/demo/types_path.py).
 
 ### How-to ... parameters?
 
