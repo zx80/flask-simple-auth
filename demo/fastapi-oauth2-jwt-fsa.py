@@ -65,4 +65,4 @@ def read_users_me(user: User):
 
 @app.get("/users/me/items", authorize="ENABLED")
 def get_users_me_items(user: User):
-    return json([{"item_id": "Foo", "owner": user.username}]), 200
+    return [{"item_id": "Foo", "owner": user.username}], 200
