@@ -3,6 +3,7 @@
 # https://fastapi.tiangolo.com/tutorial/security/oauth2-jwt/
 #
 # About 50 lines to get there, half FastAPI version!
+# Note that **ALL** functions are one liners…
 #
 
 import logging
@@ -44,9 +45,7 @@ def get_current_user(_) -> User:
 # password and group hooks
 @app.get_user_pass
 def get_user_pass(login: str) -> str|None:
-    if login not in fake_users_db:
-        return None  # 401
-    return fake_users_db[login]["hashed_password"]
+    return fake_users_db[login]["hashed_password"] if login in fake_users_db else None
 
 # NOTE disabled is None semantics is doubtful
 @app.group_check("ENABLED")
