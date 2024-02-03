@@ -365,22 +365,43 @@ def _get_file_storage(p: str) -> FileStorage:
     return request.files[p]
 
 
-def jsonify(a: Any):
-    """Jsonify something, including generators, dataclasses and pydantic stuff.
-
-    This is an extension of Flask own jsonify.
-    """
+def _json_prepare(a: Any):
+    """Extended JSON conversion for Flask."""
+    # special cases for data structures
     if hasattr(a, "model_dump"):  # Pydantic BaseModel
         return a.model_dump()
     elif hasattr(a, "__pydantic_fields__"):  # Pydantic dataclass
         return dataclasses.asdict(a)
     elif hasattr(a, "__dataclass_fields__"):  # standard dataclass
         return dataclasses.asdict(a)
-    elif inspect.isgenerator(a) or type(a) in (map, filter, range):
-        # FIXME should it be a generator itself?
-        return flask.jsonify(list(a))
-    else:  # use flask standard json converter
-        return flask.jsonify(a)
+    else:  # do nothing, rely on flask's jsonify
+        return a
+
+def _json_stream(gen):
+    """Stream a generator output as a JSON array."""
+    yield "["
+    comma = False
+    for i in gen:
+        if comma:
+            yield ","
+        else:
+            comma = True
+        yield flask.json.dumps(_json_prepare(i))
+    yield "]\n"
+
+
+def jsonify(a: Any) -> Response:
+    """Jsonify something, including generators, dataclasses and pydantic stuff.
+
+    This is somehow an extension of Flask own jsonify.
+
+    NOTE on generators, the generator output is json-streamed instead of being
+    treated as a string or bytes generator.
+    """
+    if inspect.isgenerator(a) or type(a) in (map, filter, range):
+        return Response(_json_stream(a), mimetype="application/json")
+    else:
+        return flask.jsonify(_json_prepare(a))
 
 
 class Reference(ppp.Proxy):

@@ -7,6 +7,7 @@ and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 
 Improve demo code and comments.
 Add coverage test resilience.
+Make jsonify on generators a string generator.
 
 ## 28.2 on 2024-01-21
 
