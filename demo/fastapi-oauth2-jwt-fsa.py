@@ -38,9 +38,7 @@ class User(BaseModel):
 
 # set parameter type User to trigger building a User instance
 # NOTE fails if no auth, exists if auth because password was retrieved
-@app.special_parameter(User)
-def get_current_user(_) -> User:
-    return User(**fake_users_db[app.get_user()])
+app.special_parameter(User, lambda _: User(**fake_users_db[app.get_user()]))
 
 # password and group hooks
 @app.get_user_pass
