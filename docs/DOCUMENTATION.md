@@ -1195,6 +1195,7 @@ Todo or not todo…
 - the doc and implementation should clarify exception handling,
   and possible overrides.
 - add ability to catch and process any user error.
+- json mode: generate json in more cases?
 
 ### Software Engineering
 
