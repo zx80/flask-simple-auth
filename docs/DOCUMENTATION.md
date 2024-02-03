@@ -995,6 +995,8 @@ authorization (group and per-object permissions):
   `tlru`, `lfu`, `mru`, `fifo`, `rr` plus `dict`.
   MemCached is supported by setting it to `memcached`, and Redis with `redis`.
   Default is `ttl`.
+  The directive can also be set to a `MutableMapping` instance to take direct
+  control over the cache.
 
 - `FSA_CACHE_OPTS` sets internal cache options with a dictionary.
   This must contain the expected connection parameters for `pymemcache.Client`

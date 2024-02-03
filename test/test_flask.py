@@ -1454,16 +1454,20 @@ def test_redis_cache():
 
 def test_caches():
     import AppFact as af
+    import CacheToolsUtils as ctu
     for cache in ["ttl", "lru", "lfu", "mru", "fifo", "rr", "dict", "none"]:
         for prefix in [cache + ".", None]:
             log.debug(f"testing cache type {cache}")
             with af.create_app(FSA_CACHE=cache, FSA_CACHE_PREFIX=prefix).test_client() as c:
                 run_some_checks(c)
     for prefix in ["tlru.", None]:
-        log.debug(f"testing cache type tlru")
+        log.debug(f"testing cache type tlru and custom")
         with af.create_app(FSA_CACHE="tlru",
                            FSA_CACHE_PREFIX=prefix,
                            FSA_CACHE_OPTS={"ttu": lambda _k, _v, now: now+10}).test_client() as c:
+            run_some_checks(c)
+        with af.create_app(FSA_CACHE=ctu.DictCache(),
+                           FSA_CACHE_PREFIX=prefix).test_client() as c:
             run_some_checks(c)
 
 def test_no_such_cache():

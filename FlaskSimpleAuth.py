@@ -16,7 +16,7 @@ This code is public domain.
 # - allow more caching, eg TwoLevelCache
 
 import sys
-from typing import Callable, MutableMapping, Any
+from typing import Callable, Any
 import typing
 import types
 
@@ -342,7 +342,7 @@ def _typeof(p: inspect.Parameter):
         if sys.version_info >= (3, 10):  # pragma: no cover
             if isinstance(a, types.UnionType) and len(a.__args__) == 2 and a.__args__[1] == type(None):
                 return a.__args__[0]
-            elif hasattr(a, "__name__") and a.__name__ == "Optional":
+            elif hasattr(a, "__name__") and a.__name__ == "Optional":  # type: ignore
                 return a.__args__[0]
             elif hasattr(a, "__origin__") and a.__origin__ is typing.Union and len(a.__args__) == 2:  # type: ignore
                 return a.__args__[0]
@@ -892,7 +892,7 @@ class Directives:
     """Whether to reject unexpected parameters."""
 
     # internal caching
-    FSA_CACHE: str = "ttl"
+    FSA_CACHE: str|typing.MutableMapping = "ttl"
     """Cache type.
 
     - ``none``: disactivate caching
@@ -1005,7 +1005,7 @@ class _TokenManager:
         self._sign: str|None = None
         self._algo: str = Directives.FSA_TOKEN_ALGO
         self._siglen: int = Directives.FSA_TOKEN_LENGTH
-        self._token_cache: MutableMapping[str, str]|None = None
+        self._token_cache: typing.MutableMapping[str, str]|None = None
         self._initialized = False
 
     def _initialize(self):
@@ -1928,7 +1928,7 @@ class _CacheManager:
         self._fsa = fsa
         self._Bad = fsa._Bad
         # caching stuff
-        self._cache: MutableMapping[str, str]|_NoCache|None = None
+        self._cache: typing.MutableMapping[str, str]|_NoCache|None = None
         self._cache_gen: Callable|None = None
         self._cache_opts: dict[str, Any] = {}
         self._cached = False
@@ -1957,7 +1957,7 @@ class _CacheManager:
         conf = self._fsa._app.config
 
         cache = conf.get("FSA_CACHE", Directives.FSA_CACHE)
-        if not cache or cache == "none":
+        if cache is None or cache == "none":
             log.warning("Cache management is disactivated")
             self._cache = _NoCache()
             self._cache_gen = None
@@ -1972,12 +1972,18 @@ class _CacheManager:
 
         prefix: str|None = conf.get("FSA_CACHE_PREFIX", None)
 
-        if cache in ("ttl", "lru", "tlru", "lfu", "mru", "fifo", "rr", "dict"):
+        if isinstance(cache, typing.MutableMapping):
+            log.info("CacheManager cache shorcut")
+            if prefix:
+                cache = ctu.PrefixedCache(cache, prefix)
+            self._cache = ctu.StatsCache(cache)
+            self._cache_gen = ctu.PrefixedCache
+        elif cache in ("ttl", "lru", "tlru", "lfu", "mru", "fifo", "rr", "dict"):
             maxsize = conf.get("FSA_CACHE_SIZE", Directives.FSA_CACHE_SIZE)
             # build actual storage tier
             if cache == "ttl":
                 ttl = self._cache_opts.pop("ttl", Directives._FSA_CACHE_TTL)
-                rcache: MutableMapping = ct.TTLCache(maxsize, **self._cache_opts, ttl=ttl)
+                rcache: typing.MutableMapping = ct.TTLCache(maxsize, **self._cache_opts, ttl=ttl)
             elif cache == "lru":
                 rcache = ct.LRUCache(maxsize, **self._cache_opts)
             elif cache == "lfu":
@@ -2051,7 +2057,7 @@ class _CacheManager:
             self._initialize()
 
     # wrap _cache_gen by checking that prefix is not used yet
-    def _cache_new(self, cache, prefix: str) -> MutableMapping[str, str]:
+    def _cache_new(self, cache, prefix: str) -> typing.MutableMapping[str, str]:
         """Create a new unique prefix cache."""
 
         assert self._initialized and self._cache_gen
@@ -2090,7 +2096,7 @@ class _CacheManager:
         log.info("setting up cache…")
         import CacheToolsUtils as ctu
 
-        assert isinstance(self._cache, MutableMapping)  # help type check
+        assert isinstance(self._cache, typing.MutableMapping)  # help type check
 
         for obj, meth, prefix in self._cachable:
             if obj and hasattr(obj, meth) and getattr(obj, meth) is not None:
@@ -3480,7 +3486,7 @@ class FlaskSimpleAuth:
                     t = _typeof(sig.parameters[spec])
                     # Flask supports 5 types, with string the default?
                     if t in (int, float, UUID, path):
-                        splits[i] = f"{t.__name__.lower()}:{spec}>{remainder}"
+                        splits[i] = f"{t.__name__.lower()}:{spec}>{remainder}"  # type: ignore
                     else:
                         splits[i] = f"string:{spec}>{remainder}"
                 # else spec includes a type that we keep…
