@@ -55,8 +55,8 @@ def user_is_enabled(login: str) -> bool:
 # from a REST perspective, it should really be GET…
 # however OAuth web-oriented view prescribes POST on "username" and "password"
 @app.post("/token", authorize="ALL", auth="param")
-def post_token(user: fsa.CurrentUser):
-    return {"access_token": app.create_token(user), "token_type": "bearer"}, 200
+def post_token(user: User):
+    return {"access_token": app.create_token(user.username), "token_type": "bearer"}, 200
 
 @app.get("/users/me", authorize="ENABLED")
 def read_users_me(user: User):
