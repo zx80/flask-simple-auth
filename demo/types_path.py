@@ -50,3 +50,16 @@ def post_char(char: Character):
 @types.post("/pers", authorize="ANY")
 def post_pers(pers: Personnage):
     return {"name": pers.name, "age": pers.age}, 201
+
+
+class ListOfStr(list):
+    """A list of strings."""
+    def __init__(self, l: list[str]):
+        if not isinstance(l, list) or not all(isinstance(i, str) for i in l):
+            raise ValueError("expecting list[str]")
+        super().__init__(l)
+
+
+@types.get("/ls", authorize="ANY")
+def post_ls(l: ListOfStr):
+    return {"len": len(l), "all": "/".join(l)}, 200

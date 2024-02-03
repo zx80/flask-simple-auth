@@ -312,6 +312,10 @@ def test_types(client):
     assert b"Calvin" in res.data
     res = check(400, client.post("/types/pers", json={"pers": ERROR}))
     assert b"type error on json parameter \"pers\"" in res.data
+    res = check(400, client.get("/types/ls", json={"l": ["hello", 2]}))
+    assert b"expecting list" in res.data
+    res = check(200, client.get("/types/ls", json={"l": ["hello", "world"]})).json
+    assert res["len"] == 2 and res["all"] == "hello/world"
 
 
 def test_jwt_oauth(client):
