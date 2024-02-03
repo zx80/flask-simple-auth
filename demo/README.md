@@ -191,8 +191,8 @@ Compare the [initial code](fastapi-oauth2-jwt-init.py) to the
 [FSA version](fastapi-oauth2-jwt-fsa.py) and its
 [configuration](fastapi-oauth2-jwt-fsa.conf).
 
-This later version is **52%** shorter (including the configuration, less than
-half), illustrating that security is better handled by the framework than by
+This later version is **50%** shorter (including the configuration,
+illustrating that security is better handled by the framework than by
 the application itself.
 Parameter handling, the main forte of FastAPI, is managed as efficiently by FSA.
 Behind the scene, permission checks are actually cached for efficiency.
