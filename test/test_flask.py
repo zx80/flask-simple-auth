@@ -1965,6 +1965,10 @@ def test_file_storage():
     def post_empty():
         return "nothing", 200
 
+    @app.post("/optional", authorize="ANY")
+    def post_optional(file: fsa.FileStorage|None = None):
+        return file.filename if file else "no file"
+
     client = app.test_client()
 
     # /upload
@@ -1992,6 +1996,12 @@ def test_file_storage():
     assert b"nothing" in res.data
     res = check(400, client.post("/empty", data={"foo": bfile(b"hello foo!\n"), "bla": bfile(b"hello bla!\n")}))
     assert b"unexpected file parameters: bla foo" in res.data
+
+    # /optional
+    res = check(200, client.post("/optional", data={"file": bfile(b"hello opt!\n")}))
+    assert res.data == b"foo.txt"
+    res = check(200, client.post("/optional", data={}))
+    assert res.data == b"no file"
 
 
 def test_param_types():

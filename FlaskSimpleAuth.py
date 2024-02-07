@@ -2563,7 +2563,12 @@ class _ParameterManager:
                         try:
                             kwargs[p] = self._special_parameters[tf](pn)  # type: ignore
                         except ErrorResponse as e:
-                            if e.status == 400:
+                            # FIXME adhoc kludge, should be a particular exception?
+                            if "missing file parameter" in e.message and p in defaults:
+                                # handle FileStorage|None = ...
+                                kwargs[p] = defaults[p]
+                                continue
+                            elif e.status == 400:
                                 e400(f"error when retrieving special parameter \"{pn}\": {e.message}")
                                 continue
                             else:  # pragma: no cover

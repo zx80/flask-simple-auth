@@ -3,6 +3,11 @@
 Sources are available on [GitHub](https://github.com/zx80/flask-simple-auth)
 and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 
+## 28.4 in 2024-02-07
+
+Fix to handle `FileStorage|None` special parameters.
+Improved recipes.
+
 ## 28.3 on 2024-02-03
 
 Improve demo code and comments.
