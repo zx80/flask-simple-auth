@@ -336,9 +336,9 @@ def _is_optional(t) -> bool:
         # T | None
         (isinstance(t, types.UnionType) and len(t.__args__) == 2 and t.__args__[1] == type(None)) or
         # Optional[T]
-        (hasattr(t, "__name__") and t.__name__ == "Optional") or
+        (hasattr(t, "__name__") and t.__name__ == "Optional") or  # type: ignore
         # Union[T, None]
-        (hasattr(t, "__origin__") and t.__origin__ is typing.Union and
+        (hasattr(t, "__origin__") and t.__origin__ is typing.Union and  # type: ignore
          len(t.__args__) == 2 and t.__args__[1] == type(None))
     )
 
@@ -386,8 +386,7 @@ def _check_type(t, v) -> bool:
             assert len(t.__args__) == 2
             key_type, val_type = t.__args__
             return isinstance(v, dict) and all(
-                _check_type(key_type, key) and _check_type(val_type, val)
-                    for key, val in v.items())
+                _check_type(key_type, key) and _check_type(val_type, val) for key, val in v.items())
         # TODO set? tuple?
         else:  # pragma: no cover
             raise ValueError(f"unsupported generic type: {t.__name__}")
