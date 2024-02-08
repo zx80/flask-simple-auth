@@ -330,6 +330,78 @@ ANY, ALL, NONE = "ANY", "ALL", "NONE"
 _PREDEFS = (ANY, ALL, NONE)
 
 
+def _is_optional(t) -> bool:
+    """Tell whether type is marked as optional."""
+    return (
+        # T | None
+        (isinstance(t, types.UnionType) and len(t.__args__) == 2 and t.__args__[1] == type(None)) or
+        # Optional[T]
+        (hasattr(t, "__name__") and t.__name__ == "Optional") or
+        # Union[T, None]
+        (hasattr(t, "__origin__") and t.__origin__ is typing.Union and
+         len(t.__args__) == 2 and t.__args__[1] == type(None))
+    )
+
+
+def _valid_type(t) -> bool:
+    """Return if type t is consistent with _check_type expectations."""
+    if t in (None, bool, int, float, str, types.NoneType):
+        return True
+    elif isinstance(t, types.GenericAlias):
+        if t.__name__ == "list":
+            assert len(t.__args__) == 1
+            return _valid_type(t.__args__[0])
+        elif t.__name__ == "dict":
+            assert len(t.__args__) == 2
+            # FIXME key is only str when coming from JSON?
+            return _valid_type(t.__args__[0]) and _valid_type(t.__args__[1])
+        else:  # TODO tuple set named-dict (?)
+            return False
+    elif isinstance(t, types.UnionType):
+        return all(_valid_type(a) for a in t.__args__)
+    elif hasattr(t, "__origin__") and t.__origin__ is typing.Union:  # pragma: no cover
+        return any(_valid_type(a) for a in t.__args__)
+    elif hasattr(t, "__name__") and t.__name__ == "Optional":  # type: ignore  # pragma: no cover
+        assert len(t.__args__) == 1
+        return _valid_type(t.__args__[0])
+    else:  # pragma: no cover
+        return False
+
+
+# TODO convert? rename?
+def _check_type(t, v) -> bool:
+    """Dynamically and recursively check whether v is compatible with t."""
+    if t is None:
+        return v is None
+    elif t == int:
+        return isinstance(v, int) and not isinstance(v, bool)
+    elif t in (bool, float, str, types.NoneType):  # simple types
+        return isinstance(v, t)
+    elif isinstance(t, types.GenericAlias):  # generic types
+        if t.__name__ == "list":
+            assert len(t.__args__) == 1
+            item_type, = t.__args__
+            return isinstance(v, list) and all(_check_type(item_type, i) for i in v)
+        elif t.__name__ == "dict":
+            assert len(t.__args__) == 2
+            key_type, val_type = t.__args__
+            return isinstance(v, dict) and all(
+                _check_type(key_type, key) and _check_type(val_type, val)
+                    for key, val in v.items())
+        # TODO set? tuple?
+        else:  # pragma: no cover
+            raise ValueError(f"unsupported generic type: {t.__name__}")
+    elif isinstance(t, types.UnionType):  # |
+        return any(_check_type(a, v) for a in t.__args__)
+    elif hasattr(t, "__origin__") and t.__origin__ is typing.Union:  # Union  # pragma: no cover
+        return any(_check_type(a, v) for a in t.__args__)
+    elif hasattr(t, "__name__") and t.__name__ == "Optional":  # type: ignore  # pragma: no cover
+        assert len(t.__args__) == 1
+        return v is None or _check_type(t.__args__[0], v)
+    else:  # pragma: no cover
+        raise ValueError(f"unexpected type: {t}")
+
+
 def _typeof(p: inspect.Parameter):
     """Guess parameter type, possibly with some type inference."""
     if p.kind is inspect.Parameter.VAR_KEYWORD:  # **kwargs
@@ -338,19 +410,24 @@ def _typeof(p: inspect.Parameter):
         return list
     elif p.annotation is not inspect._empty:
         a = p.annotation
-        # FIXME how to recognize reliably an Optional[?] across versions
-        if sys.version_info >= (3, 10):  # pragma: no cover
-            if isinstance(a, types.UnionType) and len(a.__args__) == 2 and a.__args__[1] == type(None):
-                return a.__args__[0]
-            elif hasattr(a, "__name__") and a.__name__ == "Optional":  # type: ignore
-                return a.__args__[0]
-            elif hasattr(a, "__origin__") and a.__origin__ is typing.Union and len(a.__args__) == 2:  # type: ignore
-                return a.__args__[0]
-            else:
-                return a
-        elif hasattr(a, "__origin__") and a.__origin__ is typing.Union and len(a.__args__) == 2:  # pragma: no cover
-            return a.__args__[0]
-        else:  # pragma: no cover
+        # skip optional (3 forms)
+        if _is_optional(a):
+            a = a.__args__[0]
+        # handle generic types: list[str], dict[str, int], T|T
+        if isinstance(a, (types.GenericAlias, types.UnionType)):
+            # FIXME must check that a is a simple generic consistent with _check_type
+            if not _valid_type(a):
+                raise ConfigError(f"unsupported parameter type: {a}")
+
+            # return a specially handled test function
+            def check_annotation(v):
+                # FIXME what about passing str through json.loads?
+                if not _check_type(a, v):
+                    raise ValueError(f"unexpected value {v} for type {a}")
+                return v
+            setattr(check_annotation, "_is_type_check_fun", True)  # YUK!
+            return check_annotation
+        else:
             return a
     elif p.default and p.default is not inspect._empty:
         return type(p.default)
@@ -2510,7 +2587,8 @@ class _ParameterManager:
                         typings[n] = self._casts.get(t, t)  # type: ignore
                     # check that type can be isinstance and is castable
                     try:
-                        isinstance("", t)
+                        if not hasattr(t, "_is_type_check_fun"):
+                            isinstance("", t)  # type: ignore
                     except TypeError as e:
                         raise self._Bad(f"parameter {n} type {t} is not (yet) supported: {e}", where)
                     except Exception as e:  # pragma: no cover
@@ -2595,10 +2673,12 @@ class _ParameterManager:
                                 continue
                     else:  # parameter not yet encountered
                         if pn in params:
+                            tp = types[p]
                             val = params[pn]
-                            is_json = types[p] == JsonData
+                            # special JsonData handling on str
+                            is_json = tp == JsonData
                             if is_json and isinstance(val, str) or \
-                               not is_json and not isinstance(val, types[p]):
+                               not is_json and (hasattr(tp, "_is_type_check_fun") or not isinstance(val, tp)):
                                 try:
                                     kwargs[p] = tf(val)
                                 except Exception as e:

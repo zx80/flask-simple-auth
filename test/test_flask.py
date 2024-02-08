@@ -5,9 +5,7 @@
 
 import io
 import re
-
-# TODO drop once min version is 3.9
-from typing import List, Tuple
+import typing
 
 import pytest
 import App
@@ -2009,7 +2007,7 @@ def test_param_types():
 
     try:
         @app.post("/list-str", authorize="ANY")
-        def post_list_str(ls: List[str]):
+        def post_list_str(ls: typing.List[str]):
             return json(len(ls)), 201
         assert False, "should raise a config error"
     except ConfigError as e:
@@ -2017,7 +2015,7 @@ def test_param_types():
 
     try:
         @app.post("/list", authorize="ANY")
-        def post_list(l: List):
+        def post_list(l: typing.List):
             return json(len(l)), 201
         assert False, "should raise a config error"
     except ConfigError as e:
@@ -2055,10 +2053,11 @@ def test_pydantic_models():
     import pydantic
     app = fsa.Flask("pyda-1")
     # pydantic class
+    # FIXME List -> list?
     class Foo(pydantic.BaseModel):
         f0: str
-        f1: List[int]
-        f2: Tuple[str, float]
+        f1: typing.List[int]
+        f2: typing.Tuple[str, float]
     # JSON-like values
     FOO_OK = {"f0": "ok", "f1": [1, 2], "f2": ["hello", 1.0]}
     FOO_KO = {"f0": "ok", "f1": [1, 2]}  # missing f2
@@ -2072,7 +2071,7 @@ def test_pydantic_models():
     # pydantic dataclass
     @pydantic.dataclasses.dataclass
     class Bla:
-        b0: List[str]
+        b0: typing.List[str]
         b1: int
     BLA_OK = {"b0": ["hello", "world"], "b1": 5432}
     BLA_KO = {"b0": [], "b1": "forty-two"}  # bad b1
@@ -2085,7 +2084,7 @@ def test_pydantic_models():
     import dataclasses
     @dataclasses.dataclass
     class Dim:
-        d0: Tuple[str, int]
+        d0: typing.Tuple[str, int]
         d1: int
     # dim values, with a tuple and dict
     DIM_OK = {"d0": ["Calvin", 6], "d1": 5432}
@@ -2277,3 +2276,107 @@ def test_group_check():
         assert False, "should not get there"
     except ConfigError as e:
         assert "cannot check group foo authz" in str(e)
+
+def test_generics():
+    app = fsa.Flask("generics", FSA_AUTH="none")
+    # simple generic
+    @app.get("/ls", authorize="ANY")
+    def get_ls(l: list[str]):
+        return f"len: {len(l)}", 200
+    # optionals
+    @app.get("/l0s", authorize="ANY")
+    def get_l0s(l: list[str]|None = None):
+        return "none" if l is None else "list"
+    @app.get("/l0s2", authorize="ANY")
+    def get_l0s2(l: typing.Optional[list[str]] = None):
+        return "none" if l is None else "list"
+    @app.get("/l0s3", authorize="ANY")
+    def get_l0s3(l: typing.Union[list[str], None] = None):
+        return "none" if l is None else "list"
+    # NOTE only str keys are allowed from JSON
+    @app.get("/dsi", authorize="ANY")
+    def get_dsi(d: dict[str, int]):
+        return f"len: {len(d)}", 200
+    @app.get("/dsl", authorize="ANY")
+    def get_dsl(d: dict[str, list[int]]):
+        return f"len: {len(d)}", 200
+    @app.get("/lsi", authorize="ANY")
+    def get_lsi(l: list[str]|list[int]):
+        return f"len: {len(l)}", 200
+    @app.get("/ln", authorize="ANY")
+    def get_none(l: list[None]):
+        return f"len: {len(l)}", 200
+    with app.test_client() as c:
+        # list[str]
+        check(200, c.get("/ls", json={"l": ["hello", "world"]}))
+        check(200, c.get("/ls", json={"l": []}))
+        check(400, c.get("/ls", json={}))
+        check(400, c.get("/ls", json={"l": ["hello", 2]}))
+        check(400, c.get("/ls", json={"l": "a list of strings"}))
+        # list[str]|None and variantz
+        check(200, c.get("/l0s", json={"l": ["hello", "world"]}))
+        check(200, c.get("/l0s", json={"l": []}))
+        check(200, c.get("/l0s", json={}))
+        check(400, c.get("/l0s", json={"l": ["hello", 2]}))
+        check(400, c.get("/l0s", json={"l": "a list of strings"}))
+        check(200, c.get("/l0s2", json={"l": ["hello", "world"]}))
+        check(200, c.get("/l0s2", json={"l": []}))
+        check(200, c.get("/l0s2", json={}))
+        check(400, c.get("/l0s2", json={"l": ["hello", 2]}))
+        check(400, c.get("/l0s2", json={"l": "a list of strings"}))
+        check(200, c.get("/l0s3", json={"l": ["hello", "world"]}))
+        check(200, c.get("/l0s3", json={"l": []}))
+        check(200, c.get("/l0s3", json={}))
+        check(400, c.get("/l0s3", json={"l": ["hello", 2]}))
+        check(400, c.get("/l0s3", json={"l": "a list of strings"}))
+        # dict[str, int]
+        check(200, c.get("/dsi", json={"d": {"a": 1, "b": 2}}))
+        check(200, c.get("/dsi", json={"d": {}}))
+        check(400, c.get("/dsi", json={}))
+        check(400, c.get("/dsi", json={"d": {"a": 1, "b": 3.14159}}))
+        check(400, c.get("/dsi", json={"d": {"a": False, "b": 3}}))
+        check(400, c.get("/dsi", json={"d": []}))
+        check(400, c.get("/dsi", json={"d": "dict of str to int"}))
+        check(400, c.get("/dsi", json={"d": 3.1415927}))
+        # dict[str, list[int]]
+        check(200, c.get("/dsl", json={"d": {"a": [], "b": [1, 2]}}))
+        check(200, c.get("/dsl", json={"d": {}}))
+        check(400, c.get("/dsl", json={"d": None}))
+        check(400, c.get("/dsl", json={"d": "hello world"}))
+        check(400, c.get("/dsl", json={"d": ["hello", "world"]}))
+        check(400, c.get("/dsl", json={"d": {"a": [], "b": 1}}))
+        check(400, c.get("/dsl", json={"d": {"a": [True], "b": [1, 2]}}))
+        check(400, c.get("/dsl", json={"d": {"a": [], "b": [1.5, 2]}}))
+        # list[str]|list[int]
+        check(200, c.get("/lsi", json={"l": [1, 2, 3]}))
+        check(200, c.get("/lsi", json={"l": ["one", "two"]}))
+        check(200, c.get("/lsi", json={"l": []}))
+        check(400, c.get("/lsi", json={"l": None}))
+        check(400, c.get("/lsi", json={"l": True}))
+        check(400, c.get("/lsi", json={"l": [1, "two"]}))
+        check(400, c.get("/lsi", json={"l": [True, 2.5]}))
+        # list[None]
+        check(200, c.get("/ln", json={"l": []}))
+        check(200, c.get("/ln", json={"l": [None]}))
+        check(200, c.get("/ln", json={"l": [None, None, None]}))
+        check(400, c.get("/ln", json={"l": "list of nones"}))
+        check(400, c.get("/ln", json={"l": [0]}))
+        check(400, c.get("/ln", json={"l": ["nope"]}))
+    # failures
+    class Stuff(str):
+        pass
+    app = fsa.Flask("generics", FSA_AUTH="none")
+    try:
+        @app.get("/nope", authorize="ANY")
+        def get_nope(l: tuple[str, int]):
+            return "no"
+        assert False, "should not get there"
+    except ConfigError as e:
+        assert "unsupported parameter type" in str(e)
+    try:
+        @app.get("/nope", authorize="ANY")
+        def get_nope(l: list[Stuff]):
+            return "no"
+        assert False, "should not get there"
+    except ConfigError as e:
+        assert "unsupported parameter type" in str(e)

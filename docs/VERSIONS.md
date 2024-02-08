@@ -3,8 +3,10 @@
 Sources are available on [GitHub](https://github.com/zx80/flask-simple-auth)
 and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 
-## ? on ?
+## 28.5 on 2024-02-08
 
+Add experimental support for generic types such as `list[str]` or `dict[str, int]`,
+where _all_ types are simple python types.
 Fix typo.
 
 ## 28.4 on 2024-02-07

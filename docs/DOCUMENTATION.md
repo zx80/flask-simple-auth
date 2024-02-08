@@ -1212,6 +1212,7 @@ Todo or not todo…
 
 ### Documentation
 
+- add precise doc about generic type support
 - separate explanations from reference?
 - more recipes?
 - add pydantic parameters to recipees and tutorial.
