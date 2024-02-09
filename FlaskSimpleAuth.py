@@ -403,8 +403,8 @@ def _check_type(t, v) -> bool:
 
 def _is_generic_type(p: inspect.Parameter) -> bool:
     """Tell whether parameter is a generic type."""
-    if p.kind in (inspect.Parameter.VAR_KEYWORD, inspect.Parameter.VAR_POSITIONAL):
-        return False
+    # if p.kind in (inspect.Parameter.VAR_KEYWORD, inspect.Parameter.VAR_POSITIONAL):
+    #     return False
     a = p.annotation
     if a is inspect._empty:
         return False

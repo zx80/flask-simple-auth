@@ -2310,10 +2310,11 @@ def test_generics():
         # list[str]
         check(200, c.get("/ls", json={"l": ["hello", "world"]}))
         check(200, c.get("/ls", json={"l": []}))
+        # TODO test repeated parameters
         check(400, c.get("/ls", json={}))
         check(400, c.get("/ls", json={"l": ["hello", 2]}))
         check(400, c.get("/ls", json={"l": "a list of strings"}))
-        # list[str]|None and variantz
+        # list[str]|None and variants
         check(200, c.get("/l0s", json={"l": ["hello", "world"]}))
         check(200, c.get("/l0s", json={"l": []}))
         check(200, c.get("/l0s", json={}))
