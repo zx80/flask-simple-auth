@@ -373,7 +373,7 @@ def _check_type(t, v) -> bool:
     """Dynamically and recursively check whether v is compatible with t."""
     if t is None:
         return v is None
-    elif t == int:
+    elif t == int:  # beware that bool is also an int
         return isinstance(v, int) and not isinstance(v, bool)
     elif t in (bool, float, str, types.NoneType):  # simple types
         return isinstance(v, t)
@@ -401,6 +401,18 @@ def _check_type(t, v) -> bool:
         raise ValueError(f"unexpected type: {t}")
 
 
+def _is_generic_type(p: inspect.Parameter) -> bool:
+    """Tell whether parameter is a generic type."""
+    if p.kind in (inspect.Parameter.VAR_KEYWORD, inspect.Parameter.VAR_POSITIONAL):
+        return False
+    a = p.annotation
+    if a is inspect._empty:
+        return False
+    elif _is_optional(a):
+        a = a.__args__[0]
+    return isinstance(a, (types.GenericAlias, types.UnionType))
+
+
 def _typeof(p: inspect.Parameter):
     """Guess parameter type, possibly with some type inference."""
     if p.kind is inspect.Parameter.VAR_KEYWORD:  # **kwargs
@@ -412,22 +424,7 @@ def _typeof(p: inspect.Parameter):
         # skip optional (3 forms)
         if _is_optional(a):
             a = a.__args__[0]
-        # handle generic types: list[str], dict[str, int], T|T
-        if isinstance(a, (types.GenericAlias, types.UnionType)):
-            # FIXME must check that a is a simple generic consistent with _check_type
-            if not _valid_type(a):
-                raise ConfigError(f"unsupported parameter type: {a}")
-
-            # return a specially handled test function
-            def check_annotation(v):
-                # FIXME what about passing str through json.loads?
-                if not _check_type(a, v):
-                    raise ValueError(f"unexpected value {v} for type {a}")
-                return v
-            setattr(check_annotation, "_is_type_check_fun", True)  # YUK!
-            return check_annotation
-        else:
-            return a
+        return a
     elif p.default and p.default is not inspect._empty:
         return type(p.default)
     else:
@@ -2440,8 +2437,8 @@ class _ParameterManager:
         # parameter management
         # predefined cases, extend with cast
         self._casts: dict[type, Hooks.CastFun] = {
-            bool: lambda s: None if s is None else s.lower() not in ("", "0", "false", "f"),
-            int: lambda s: int(s, base=0) if s else None,
+            bool: lambda s: s.lower() not in ("", "0", "false", "f") if isinstance(s, str) else s,
+            int: lambda s: int(s, base=0) if isinstance(s, str) else s,
             inspect._empty: str,
             path: str,
             string: str,
@@ -2563,8 +2560,9 @@ class _ParameterManager:
                 names[n], names[sn] = sn, n
                 if n not in types and p.kind not in (p.VAR_KEYWORD, p.VAR_POSITIONAL):
                     # guess and store parameter type
-                    t = _typeof(p)
-                    types[n] = t  # type: ignore
+                    types[n] = t = _typeof(p)  # type: ignore
+                    check_instanceof = True
+
                     # typings: how to actually build the parameter
                     if t in self._special_parameters:
                         # this is really managed elsewhere
@@ -2582,18 +2580,38 @@ class _ParameterManager:
                                 raise self._Err(f"unexpected value {val} for dict", 400)
                             return t(**val)  # type: ignore
                         typings[n] = datacast
+                    elif _is_generic_type(p):
+
+                        log.warning(f"generic type: {t}")
+                        # check that a is a simple generic consistent with _check_type
+                        if not _valid_type(t):
+                            raise ConfigError(f"unsupported parameter type: {t}")
+
+                        # return a specially handled test function
+                        def check_annotation(v):
+                            # FIXME what about passing str through json.loads?
+                            if not _check_type(t, v):
+                                raise ValueError(f"unexpected value {v} for type {t}")
+                            return v
+
+                        setattr(check_annotation, "_no_instanceof", True)
+                        typings[n] = check_annotation
+                        check_instanceof = False
                     else:
                         typings[n] = self._casts.get(t, t)  # type: ignore
+
                     # check that type can be isinstance and is castable
-                    try:
-                        if not hasattr(t, "_is_type_check_fun"):
+                    if check_instanceof:
+                        try:
                             isinstance("", t)  # type: ignore
-                    except TypeError as e:
-                        raise self._Bad(f"parameter {n} type {t} is not (yet) supported: {e}", where)
-                    except Exception as e:  # pragma: no cover
-                        raise self._Bad(f"parameter {n} type {t} is not (yet) supported: {e}", where)
+                        except TypeError as e:
+                            raise self._Bad(f"parameter {n} type {t} is not (yet) supported: {e}", where)
+                        except Exception as e:  # pragma: no cover
+                            raise self._Bad(f"parameter {n} type {t} is not (yet) supported: {e}", where)
+
                     if not callable(typings[n]) or typings[n].__module__ == "typing":
                         raise self._Bad(f"parameter {n} type cast {typings[n]} is not callable", where)
+
                 if p.default != inspect._empty:
                     defaults[n] = p.default
                 if p.kind == p.VAR_KEYWORD:
@@ -2677,7 +2695,7 @@ class _ParameterManager:
                             # special JsonData handling on str
                             is_json = tp == JsonData
                             if is_json and isinstance(val, str) or \
-                               not is_json and (hasattr(tp, "_is_type_check_fun") or not isinstance(val, tp)):
+                               not is_json and (not hasattr(tp, "_no_instanceof") or not isinstance(val, tp)):
                                 try:
                                     kwargs[p] = tf(val)
                                 except Exception as e:
