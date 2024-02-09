@@ -2567,22 +2567,9 @@ class _ParameterManager:
                     if t in self._special_parameters:
                         # this is really managed elsewhere
                         typings[n] = t  # type: ignore
-                    elif (self._pydantic_base_model is not None and
-                          isinstance(t, type) and
-                          issubclass(t, self._pydantic_base_model) or
-                          hasattr(t, "__dataclass_fields__")):
-                        # create a convenient cast for pydantic classes or dataclasses
-                        # we assume that named-parameters are passed
-                        def datacast(val):
-                            if isinstance(val, str):  # HTTP parameters
-                                val = json.loads(val)
-                            if not isinstance(val, dict):  # JSON parameters
-                                raise self._Err(f"unexpected value {val} for dict", 400)
-                            return t(**val)  # type: ignore
-                        typings[n] = datacast
                     elif _is_generic_type(p):
 
-                        log.warning(f"generic type: {t}")
+                        log.debug(f"generic type: {t}")
                         # check that a is a simple generic consistent with _check_type
                         if not _valid_type(t):
                             raise ConfigError(f"unsupported parameter type: {t}")
@@ -2594,9 +2581,24 @@ class _ParameterManager:
                                 raise ValueError(f"unexpected value {v} for type {t}")
                             return v
 
-                        setattr(check_annotation, "_no_instanceof", True)
+                        setattr(check_annotation, "_no_isinstance", True)
                         typings[n] = check_annotation
                         check_instanceof = False
+                    elif (self._pydantic_base_model is not None and
+                          isinstance(t, type) and
+                          issubclass(t, self._pydantic_base_model) or
+                          hasattr(t, "__dataclass_fields__")):
+
+                        # create a convenient cast for pydantic classes or dataclasses
+                        # we assume that named-parameters are passed
+                        def datacast(val):
+                            if isinstance(val, str):  # HTTP parameters
+                                val = json.loads(val)
+                            if not isinstance(val, dict):  # JSON parameters
+                                raise self._Err(f"unexpected value {val} for dict", 400)
+                            return t(**val)  # type: ignore
+
+                        typings[n] = datacast
                     else:
                         typings[n] = self._casts.get(t, t)  # type: ignore
 
@@ -2695,7 +2697,7 @@ class _ParameterManager:
                             # special JsonData handling on str
                             is_json = tp == JsonData
                             if is_json and isinstance(val, str) or \
-                               not is_json and (not hasattr(tp, "_no_instanceof") or not isinstance(val, tp)):
+                               not is_json and (not hasattr(tp, "_no_isinstance") or not isinstance(val, tp)):
                                 try:
                                     kwargs[p] = tf(val)
                                 except Exception as e:
