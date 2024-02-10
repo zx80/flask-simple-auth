@@ -714,7 +714,7 @@ Type `JsonData` is a special type to convert, if necessary, a string value
 to JSON, expecting a list or a dictionary.
 
 If one parameter is a dict of keyword arguments, all remaining request
-parameters are provided into it, as shown below:
+parameters are added to it, as shown below:
 
 ```python
 @app.put("/awesome", authorize="ALL")
@@ -738,6 +738,15 @@ class Search:
 
 @app.get("/search", authorize="ANY")
 def get_search(q: Search):
+    ...
+```
+
+Generic types can be used, although with restrictions: `list` and `dict` of
+simple Python types are supported and checked for JSON parameters only:
+
+```python
+@app.get("/question", authorize="ANY")
+def get_question(q: list[str]):
     ...
 ```
 
