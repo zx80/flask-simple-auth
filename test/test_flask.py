@@ -2283,6 +2283,9 @@ def test_generics():
     @app.get("/ls", authorize="ANY")
     def get_ls(l: list[str]):
         return f"len: {len(l)}", 200
+    @app.get("/li", authorize="ANY")
+    def get_li(l: list[int]):
+        return f"len: {len(l)}", 200
     # optionals
     @app.get("/l0s", authorize="ANY")
     def get_l0s(l: list[str]|None = None):
@@ -2315,6 +2318,13 @@ def test_generics():
         check(400, c.get("/ls", json={"l": "a list of strings"}))
         # repeated parameters
         check(200, c.get("/ls?l=hello&l=world"))
+        # list[int]
+        check(200, c.get("/li", json={"l": [1, 2]}))
+        check(200, c.get("/li", json={"l": []}))
+        check(400, c.get("/li", json={}))
+        check(400, c.get("/li", json={"l": [True, 2]}))
+        check(400, c.get("/li", json={"l": "a list of ints"}))
+        # what about repeated parameters?
         # list[str]|None and variants
         check(200, c.get("/l0s", json={"l": ["hello", "world"]}))
         check(200, c.get("/l0s", json={"l": []}))
