@@ -6,6 +6,7 @@ and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 ## ? on ?
 
 Refactor generic type handling.
+Handle repeated HTTP parameters as `list[str]`.
 
 ## 28.5 on 2024-02-08
 

@@ -2693,7 +2693,11 @@ class _ParameterManager:
                     else:  # parameter not yet encountered
                         if pn in params:
                             tp = types[p]
-                            val = params[pn]
+                            # FIXME tmp hack, should handle list[*]
+                            if tp == list[str] and self._fsa._local.params == "http":
+                                val = params.getlist(pn)
+                            else:
+                                val = params[pn]
                             # special JsonData handling on str
                             is_json = tp == JsonData
                             if is_json and isinstance(val, str) or \
