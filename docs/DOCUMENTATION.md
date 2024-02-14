@@ -1212,6 +1212,7 @@ Todo or not todo…
 
 ### Software Engineering
 
+- refactor parameter handling: http vs json, list vs no-lists, optional…
 - reduce sloc?
 - separate classes/projects?
 - check for more directive types (dynamically)?
@@ -1221,7 +1222,7 @@ Todo or not todo…
   is an `after_request` hook enough?
 - take advantage of `TypedDict`?
 - consider `jose` as a JWT provided?
-  PyJWT has 125 Mdls/mo, Python-JOSE under 6 Mdls/mo
+  PyJWT has 125 M.dls/mo, Python-JOSE under 6 M.dls/mo
 
 ### Documentation
 
