@@ -1176,6 +1176,11 @@ See [all versions](VERSIONS.md).
 
 Todo or not todo…
 
+### Bugs
+
+- on before request failures, after request hooks do not run?
+  this feature may prevent returning resources.
+
 ### Authn/Authz
 
 - demo LDAP auth? One class plus a new `check_password`?
