@@ -3,9 +3,11 @@
 Sources are available on [GitHub](https://github.com/zx80/flask-simple-auth)
 and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 
-## ? on ?
+## 28.6 on ?
 
-Refactor generic type handling.
+Add `FSA_JSON_STREAMING` option to work around database connections staying as
+_idle in transaction_.
+Refactor generic type handling, to be continued.
 Handle repeated HTTP parameters as `list[str]`.
 
 ## 28.5 on 2024-02-08

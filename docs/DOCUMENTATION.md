@@ -978,6 +978,11 @@ Some directives govern various details for this extension internal working.
   added for string or byte responses.
   Default is *None*, meaning no replacement.
 
+- `FSA_JSON_STREAMING` allows to force `jsonify` to generate a string instead of
+  a string generator when serializing a generator.
+  Default _True_ is to stream the JSON output, which may interact badly with the
+  database transactions in some cases depending on the driver and WSGI server.
+
 - `FSA_BEFORE_REQUEST` and `FSA_AFTER_REQUEST` allow to add a list of before
   and after request hooks from the configuration instead of the actual
   application code.

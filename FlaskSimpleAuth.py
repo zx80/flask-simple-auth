@@ -452,7 +452,12 @@ def _json_prepare(a: Any):
 
 
 def _json_stream(gen):
-    """Stream a generator output as a JSON array."""
+    """Stream a generator output as a JSON array.
+
+    This may or may not be a good idea depending on the database driver and
+    WSGI server behavior. To ensure a direct string output, consider setting
+    ``FSA_JSON_STREAMING`` to false.
+    """
     yield "["
     comma = False
     for i in gen:
@@ -464,6 +469,9 @@ def _json_stream(gen):
     yield "]\n"
 
 
+_fsa_json_streaming = True
+
+
 def jsonify(a: Any) -> Response:
     """Jsonify something, including generators, dataclasses and pydantic stuff.
 
@@ -473,7 +481,10 @@ def jsonify(a: Any) -> Response:
     treated as a string or bytes generator.
     """
     if inspect.isgenerator(a) or type(a) in (map, filter, range):
-        return Response(_json_stream(a), mimetype="application/json")
+        out = _json_stream(a)
+        if not _fsa_json_streaming:  # switch to string
+            out = "".join(out)
+        return Response(out, mimetype="application/json")
     else:
         return flask.jsonify(_json_prepare(a))
 
@@ -677,12 +688,6 @@ class Directives:
     - ``json:msg``: generate a JSON object with property ``msg``.
     - *callback*: give full control to a callback which is passed
       the message, the status, headers and content type.
-    """
-
-    FSA_DEFAULT_CONTENT_TYPE: str|None = None
-    """Set default content type for str or bytes responses.
-
-    Default (*None*) is to use Flask's defaults.
     """
 
     FSA_GET_USER_PASS: Hooks.GetUserPassFun|None = None
@@ -961,7 +966,22 @@ class Directives:
     Declaring scopes allows to detect scope name typos at configuration time.
     """
 
-    # parameter handing
+    # parameter and return handing
+    FSA_DEFAULT_CONTENT_TYPE: str|None = None
+    """Set default content type for str or bytes responses.
+
+    Default (*None*) is to use Flask's defaults.
+    """
+
+    FSA_JSON_STREAMING: bool = True
+    """Whether to stream JSON output on generators.
+
+    Default (*True*) is to stream, which may interact badly with driver
+    transactions depending on how the WSGI server works.
+    Setting this to *False* ensures that JSON is returned as a string by
+    FlaskSimpleAuth's ``jsonify``.
+    """
+
     FSA_REJECT_UNEXPECTED_PARAM: bool = True
     """Whether to reject unexpected parameters."""
 
@@ -2927,6 +2947,10 @@ class _ResponseManager:
 
         # default content type
         self._default_type = conf.get("FSA_DEFAULT_CONTENT_TYPE", Directives.FSA_DEFAULT_CONTENT_TYPE)
+
+        global _fsa_json_streaming
+        _fsa_json_streaming = conf.get("FSA_JSON_STREAMING", Directives.FSA_JSON_STREAMING)
+
         # FIXME should check default_type type?
         # generate response on errors
         error = conf.get("FSA_ERROR_RESPONSE", Directives.FSA_ERROR_RESPONSE)

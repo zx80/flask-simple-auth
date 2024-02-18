@@ -2392,3 +2392,24 @@ def test_generics():
         assert False, "should not get there"
     except ConfigError as e:
         assert "unsupported parameter type" in str(e)
+
+def test_streaming():
+
+    for streaming in (True, False):
+
+        app = fsa.Flask("stream", FSA_JSON_STREAMING=streaming)
+
+        @app.get("/stream", authorize="ANY")
+        def get_stream(n: int = 3):
+            return fsa.jsonify(range(n))
+
+        with app.test_client() as c:
+            res = c.get("/stream")
+            assert res.status_code == 200
+            assert res.json == [0, 1, 2]
+            res = c.get("/stream", json={"n": 0})
+            assert res.status_code == 200
+            assert res.json == []
+            res = c.get("/stream", data={"n": 1})
+            assert res.status_code == 200
+            assert res.json == [0]
