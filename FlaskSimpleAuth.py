@@ -402,8 +402,6 @@ def _check_type(t, v) -> bool:
 
 def _is_generic_type(p: inspect.Parameter) -> bool:
     """Tell whether parameter is a generic type."""
-    # if p.kind in (inspect.Parameter.VAR_KEYWORD, inspect.Parameter.VAR_POSITIONAL):
-    #     return False
     a = p.annotation
     if a is inspect._empty:
         return False
@@ -2430,6 +2428,220 @@ class _AuthorizationManager:
         return decorate
 
 
+class _ParameterHandler:
+    """Internal handler for one parameter.
+
+    Handle a request parameter depending on its type hint.
+    """
+
+    def __init__(self, pm, name: str, hint: inspect.Parameter, where: str):
+
+        assert hint.kind not in (inspect.Parameter.VAR_KEYWORD, inspect.Parameter.VAR_POSITIONAL)
+
+        self._pm = pm  # parameter manager
+
+        # python and request names
+        self._name = name
+        self._rname = name[1:] if len(name) > 1 and name[0] == "_" else name
+
+        # expected type
+        self._type = _typeof(hint)
+        self._type_is_json = self._type == JsonData
+        self._type_is_optional = self._type_is_json or _is_optional(hint.annotation)
+        self._type_is_generic = _is_generic_type(hint)
+        # TODO generic handling?
+        self._type_is_list = self._type in (list[str], list[FileStorage])
+
+        # default value if any
+        self._has_default = hint.default != inspect._empty
+        self._default_value = hint.default if self._has_default else None
+
+        if self._type_is_json:  # anything converted from JSON, really
+            self._type_isinstance = None
+        else:
+            try:
+                isinstance("", self._type)
+                self._type_isinstance = lambda v: self._type_is_optional and v is None or isinstance(v, self._type)
+            except Exception:  # FIXME TypeError instead?
+                self._type_isinstance = None
+
+        # typing
+        self._extract: Hooks.SpecialParameterFun|None
+        self._convert_para: Callable[[str], Any]|None
+        self._convert_json: Callable[[Any], Any]|None
+        self._caster: Hooks.CastFun|None
+        self._checker: Callable[[Any], bool]|None
+
+        self._type_list_item = None
+        self._type_list_item_caster = None
+
+        # build extract/convert/check functions as necessary
+        if self._type in self._pm._special_parameters:
+            # directly get the parameter from wherever
+
+            self._extract = self._pm._special_parameters[self._type]
+            self._convert_para = None
+            self._convert_json = None
+            self._caster = None
+            self._checker = None
+
+        elif self._type_is_json:
+
+            self._extract = None
+            self._convert_para = json.loads
+            self._convert_json = lambda v: v
+            self._caster = None
+            self._checker = None
+
+        elif self._type_is_list:
+
+            # FIXME for http we assumre b=1&b=2
+
+            def not_provided(_):  # pragma: no cover
+                raise self._pm._Err("not provided")
+
+            self._extract = None
+            self._convert_para = not_provided
+            self._convert_json = lambda v: v
+            self._caster = None
+            self._checker = lambda v: _check_type(self._type, v)
+
+            self._type_list_item = (
+                str if self._type == list[str] else
+                int if self._type == list[int] else
+                bool if self._type == list[bool] else
+                float if self._type == list[float] else
+                FileStorage if self._type == list[FileStorage] else
+                None
+            )
+            if self._type_list_item is None:  # pragma: no cover
+                raise self._pm._Bad(f"unsupported list item type for {self._type}")
+            self._type_list_item_caster = self._pm._casts.get(self._type, None)
+
+        elif self._type_is_generic:
+            # only handle generics on simple types
+
+            # check that a is a simple generic consistent with _check_type
+            if not _valid_type(self._type):
+                raise self._pm._Bad(f"unsupported generic type {self._type}", where)
+
+            self._extract = None
+            self._convert_para = json.loads
+            self._convert_json = lambda v: v
+            self._caster = None
+            self._checker = lambda v: _check_type(self._type, v)
+
+        elif (self._pm._pydantic_base_model is not None and
+              isinstance(self._type, type) and
+              issubclass(self._type, self._pm._pydantic_base_model) or
+              hasattr(self._type, "__dataclass_fields__")):
+
+            def is_dict(val):
+                if not isinstance(val, dict):
+                    raise self._pm._Err(f"unexpected value {val} for dict", 400)
+                return val
+
+            self._extract = None
+            self._convert_para = json.loads
+            self._convert_json = is_dict
+            self._caster = lambda v: self._type(**v)  # type: ignore
+            self._checker = None
+
+        elif self._type == FileStorage:  # special case
+
+            def no_json(_):  # pragma: no cover
+                raise self._pm._Err("cannot upload files as JSON", 400)
+
+            assert self._type_isinstance is not None
+            self._extract = None
+            self._convert_para = lambda v: v
+            self._convert_json = no_json
+            self._caster = None
+            self._checker = None
+
+        else:  # default
+
+            self._extract = None
+            self._convert_para = self._convert_json = lambda x: x
+            self._caster = self._pm._casts.get(self._type, self._type)
+            self._checker = None
+
+        log.debug(f"name: {name}, type: {self._type}, cast: {self._caster}, isinstance: {self._type_isinstance}")
+
+        if self._caster and (not callable(self._caster) or self._caster.__module__ == "typing"):
+            raise self._pm._Bad(f"parameter {name} type cast {self._caster} is not callable", where)
+
+    def __call__(self, req, params, kwargs, e400):
+        """Extract value for parameters."""
+
+        # special parameters are handled directly
+        if self._extract:
+            if self._rname in params:
+                e400(f"unexpected request parameter \"{self._rname}\"")
+                return None
+            return self._extract(self._rname)
+
+        # path & request parameter
+        if self._rname in params and self._name in kwargs:
+            e400(f"parameter \"{self._rname}\" both from path and request")
+            return None
+
+        # missing/default parameters
+        if self._rname not in params and self._name not in kwargs:
+            if not self._has_default:
+                e400(f"parameter \"{self._rname}\" is missing")
+                return None
+            return self._default_value
+
+        # get parameter raw value
+        if self._name in kwargs:  # path parameter
+            val = kwargs[self._name]
+        else:  # rname in params: request parameter
+            assert self._convert_json and self._convert_para  # mypy
+            if self._type_is_list and not req.is_json:
+                # FIXME unconvincing adhoc partial implementation
+                val = params.getlist(self._rname)
+                # check items
+                for i in range(len(val)):
+                    if not isinstance(val[i], self._type_list_item):  # type: ignore  # pragma: no cover
+                        try:
+                            val[i] = self._type_list_item_caster(val[i])  # type: ignore
+                        except Exception as e:
+                            e400(f"parameter \"{self._rname}\" item {i} type error: {e}")
+                            return None
+                    # else ok!
+            else:
+                try:
+                    val = (self._convert_json if req.is_json else self._convert_para)(params[self._rname])
+                except Exception as e:  # pragma: no cover
+                    e400(f"parameter \"{self._rname}\" conversion error: {e}")
+                    return None
+
+        # cast? also for path parameters??
+        if self._caster:
+            try:
+                if self._type_isinstance:
+                    if not self._type_isinstance(val):
+                        val = self._caster(val)
+                    # else just keep it as is!
+                else:  # blind cast  # pragma: no cover
+                    val = self._caster(val)
+            except Exception as e:
+                e400(f"parameter \"{self._rname}\" cast error on {val}: {e}")
+                return None
+        elif self._type_isinstance:
+            if not self._type_isinstance(val):
+                e400(f"parameter \"{self._rname}\" type error on {val} for {self._type}")
+                return None
+
+        # check value if needed, exceptions are sent upwards
+        if self._checker and not self._checker(val):
+            e400(f"parameter \"{self._rname}\" unexpected value {val} for type {self._type}")
+            return None
+
+        return val
+
+
 class _ParameterManager:
     """Internal parameter management."""
 
@@ -2442,18 +2654,34 @@ class _ParameterManager:
         self._Exc = fsa._Exc
         self._Res = fsa._Res
         self._store = fsa._store
+
         # parameter management
+        def bool_cast(s):
+            if isinstance(s, bool):  # pragma: no cover
+                return s
+            if isinstance(s, str):
+                return s.lower() not in ("", "0", "false", "f")
+            raise self._Err(f"cannot cast to bool: {type(s)}", 400)  # pragma: no cover
+
+        def int_cast(s):
+            if isinstance(s, bool):  # pragma: no cover
+                raise self._Err("will not cast bool to int", 400)
+            if isinstance(s, int):  # pragma: no cover
+                return s
+            if isinstance(s, str):
+                return int(s, base=0)
+            raise self._Err(f"cannot cast to int: {type(s)}", 400)  # pragma: no cover
+
         # predefined cases, extend with cast
         self._casts: dict[type, Hooks.CastFun] = {
-            bool: lambda s: s.lower() not in ("", "0", "false", "f") if isinstance(s, str) else s,
-            int: lambda s: int(s, base=0) if isinstance(s, str) else s,
+            bool: bool_cast,
+            int: int_cast,
             inspect._empty: str,
             path: str,
             string: str,
             dt.date: dt.date.fromisoformat,
             dt.time: dt.time.fromisoformat,
             dt.datetime: dt.datetime.fromisoformat,
-            JsonData: json.loads,
         }
         # predefined special parameter types, extend with special_parameter
         self._special_parameters: dict[type, Hooks.SpecialParameterFun] = {
@@ -2505,7 +2733,7 @@ class _ParameterManager:
             # FIXME should it be forbidden?
             if request.files or request.args or request.form:
                 log.error("unexpected JSON and HTTP parameter mix")
-                raise ErrorResponse("Cannot mix JSON and HTTP parameters", 400)
+                raise self._Err("cannot mix JSON and HTTP parameters", 400)
             return request.json
         else:
             self._fsa._local.params = "http"
@@ -2550,106 +2778,51 @@ class _ParameterManager:
 
         def decorate(fun: Callable):
 
-            # for each parameter name: type, cast, default value, http param name
-            types: dict[str, type] = {}
-            typings: dict[str, Callable[[str], Any]] = {}
-            defaults: dict[str, Any] = {}
+            # how to handle parameters
+            handlers: dict[str, _ParameterHandler] = {}
             names: dict[str, str] = {}
+            has_kwargs = False
 
             # parameters types/casts and defaults taken from signature
-            sig, keywords = inspect.signature(fun), False
-
+            sigs = inspect.signature(fun)
             where = f"{fun.__name__}() at {fun.__code__.co_filename}:{fun.__code__.co_firstlineno}"
 
             # build helpers
-            for n, p in sig.parameters.items():
-                sn = n[1:] if n[0] == "_" and len(n) > 1 else n
-                names[n], names[sn] = sn, n
-                if n not in types and p.kind not in (p.VAR_KEYWORD, p.VAR_POSITIONAL):
-                    # guess and store parameter type
-                    types[n] = t = _typeof(p)  # type: ignore
-                    check_instanceof = True
-
-                    # typings: how to actually build the parameter
-                    if t in self._special_parameters:
-                        # this is really managed elsewhere
-                        typings[n] = t  # type: ignore
-                    elif _is_generic_type(p):
-
-                        log.debug(f"generic type: {t}")
-                        # check that a is a simple generic consistent with _check_type
-                        if not _valid_type(t):
-                            raise ConfigError(f"unsupported parameter type: {t}")
-
-                        # return a specially handled test function
-                        def check_annotation(v):
-                            # FIXME what about passing str through json.loads?
-                            if not _check_type(t, v):
-                                raise ValueError(f"unexpected value {v} for type {t}")
-                            return v
-
-                        setattr(check_annotation, "_no_isinstance", True)
-                        typings[n] = check_annotation
-                        check_instanceof = False
-                    elif (self._pydantic_base_model is not None and
-                          isinstance(t, type) and
-                          issubclass(t, self._pydantic_base_model) or
-                          hasattr(t, "__dataclass_fields__")):
-
-                        # create a convenient cast for pydantic classes or dataclasses
-                        # we assume that named-parameters are passed
-                        def datacast(val):
-                            if isinstance(val, str):  # HTTP parameters
-                                val = json.loads(val)
-                            if not isinstance(val, dict):  # JSON parameters
-                                raise self._Err(f"unexpected value {val} for dict", 400)
-                            return t(**val)  # type: ignore
-
-                        typings[n] = datacast
-                    else:
-                        typings[n] = self._casts.get(t, t)  # type: ignore
-
-                    # check that type can be isinstance and is castable
-                    if check_instanceof:
-                        try:
-                            isinstance("", t)  # type: ignore
-                        except TypeError as e:
-                            raise self._Bad(f"parameter {n} type {t} is not (yet) supported: {e}", where)
-                        except Exception as e:  # pragma: no cover
-                            raise self._Bad(f"parameter {n} type {t} is not (yet) supported: {e}", where)
-
-                    if not callable(typings[n]) or typings[n].__module__ == "typing":
-                        raise self._Bad(f"parameter {n} type cast {typings[n]} is not callable", where)
-
-                if p.default != inspect._empty:
-                    defaults[n] = p.default
-                if p.kind == p.VAR_KEYWORD:
-                    keywords = True
+            for name, param in sigs.parameters.items():
+                if name in handlers or name in names:
+                    raise self._Bad("parameter name collision on {name}", where)
+                elif param.kind == inspect.Parameter.VAR_KEYWORD:
+                    has_kwargs = True
+                elif param.kind == inspect.Parameter.VAR_POSITIONAL:
+                    raise self._Bad(f"unsupported positional parameter: {name}", where)
+                else:
+                    handler = _ParameterHandler(self, name, param, where)
+                    handlers[name] = handler
+                    names[handler._rname] = name
 
             # debug helpers
             def getNames(pl):
-                return sorted(map(lambda n: names[n], pl))
+                return sorted(map(lambda n: handlers[n]._rname, pl))
 
-            mandatory = getNames(filter(lambda n: n not in defaults, types.keys()))
-            optional = getNames(filter(lambda n: n in defaults, types.keys()))
+            mandatory = getNames(filter(lambda n: not handlers[n]._has_default, handlers.keys()))
+            optional = getNames(filter(lambda n: handlers[n]._has_default, handlers.keys()))
             signature = f"{fun.__name__}({', '.join(mandatory)}, [{', '.join(optional)}])"
 
             def debugParam():
                 params = sorted(self._params().keys())
-                files = sorted(request.files.keys())
                 mtype = request.headers.get("Content-Type", "?")
-                return f"{signature}: {' '.join(params)}/{' '.join(files)} [{mtype}]"
+                return f"{signature}: {' '.join(params)} [{mtype}]"
 
+            # translate request parameters to named function parameters
             @functools.wraps(fun)
             def wrapper(*args, **kwargs):
-                # NOTE *args and **kwargs are empty before being filled in from HTTP
+                # NOTE *args and **kwargs are more or less empty before being filled in from HTTP
 
                 fsa = self._fsa
                 am = fsa._am
                 local = fsa._local
                 assert am  # mypy…
 
-                # translate request parameters to named function parameters
                 params = self._params()  # HTTP or JSON params
 
                 # detect all possible 400 errors before returning
@@ -2657,97 +2830,43 @@ class _ParameterManager:
                 e400 = error_400.append
 
                 # process all expected parameters
-                for p, tf in typings.items():
-                    pn = names[p]
-                    if tf in self._special_parameters:  # force specials
-                        if p in params:
-                            e400(f'unexpected {local.params} parameter "{pn}"')
+                for name, handler in handlers.items():
+                    rname = handler._rname
+                    # TODO list[str] ?
+                    # if tp == list[str] and self._fsa._local.params == "http":
+                    #     val = params.getlist(pn)
+                    # else:
+                    #     val = params[pn]
+                    try:
+                        kwargs[name] = handler(request, params, kwargs, e400)
+                    except ErrorResponse as e:
+                        if e.status == 400:
+                            e400(f"error on parameter \"{rname}\": {e.message}")
                             continue
-                        try:
-                            kwargs[p] = self._special_parameters[tf](pn)  # type: ignore
-                        except ErrorResponse as e:
-                            if e.status == 400:
-                                e400(f"error when retrieving special parameter \"{pn}\": {e.message}")
-                                continue
-                            else:  # pragma: no cover
-                                raise  # rethrow?
-                        except Exception as e:
-                            if self._Exc(e):  # pragma: no cover
-                                raise
-                            # this is some unexpected internal error
-                            return self._Res(f"unexpected error when retrieving special parameter \"{pn}\" ({e})",
-                                             fsa._server_error)
-                        # other exception would pass through
-                    elif p in kwargs:  # path parameter, or already seen?
-                        if p in params:
-                            e400(f'unexpected {local.params} parameter "{pn}"')
-                            continue
-                        val = kwargs[p]
-                        if not isinstance(val, types[p]):
-                            try:
-                                kwargs[p] = tf(val)
-                            except Exception as e:
-                                if self._Exc(e):  # pragma: no cover
-                                    raise
-                                e400(f'type error on path parameter "{p}": "{val}" ({e})')
-                                continue
-                    elif pn in params:  # parameter not yet encountered
-                        tp = types[p]
-                        # FIXME tmp hack, should handle list[*]
-                        if tp == list[str] and self._fsa._local.params == "http":
-                            val = params.getlist(pn)
-                        else:
-                            val = params[pn]
-
-                        # special JsonData handling on str
-                        is_json = tp == JsonData
-
-                        if tf == FileStorage:
-                            if not isinstance(val, FileStorage):
-                                e400(f'type error on {local.params} parameter "{pn}": expecting a file')
-                                continue
-                            else:
-                                kwargs[p] = val
-                        elif isinstance(val, FileStorage):
-                            e400(f'type error on {local.params} parameter "{pn}": got an unexpected file')
-                            continue
-                        elif is_json and isinstance(val, str) or \
-                           not is_json and (not hasattr(tp, "_no_isinstance") or not isinstance(val, tp)):
-                            log.debug(f"casting parameter {p} {type(val)} with {tf}")
-                            try:
-                                kwargs[p] = tf(val)
-                            except Exception as e:
-                                if self._Exc(e):  # pragma: no cover
-                                    raise
-                                e400(f'type error on {local.params} parameter "{pn}": "{val}" ({e})')
-                                continue
-                        else:
-                            kwargs[p] = val
-
-                    elif p in defaults:  # not found anywhere, set default value if any
-                        kwargs[p] = defaults[p]
-                    else:  # missing mandatory (no default) parameter
-                        if fsa._mode >= _Mode.DEBUG2:
-                            log.info(debugParam())
-                        e400(f'missing parameter "{pn}"')
-                        continue
+                        else:  # pragma: no cover
+                            raise  # rethrow?
+                    except Exception as e:
+                        if self._Exc(e):  # pragma: no cover
+                            raise
+                        # this is some unexpected internal error
+                        return self._Res(f"unexpected error on parameter \"{rname}\" ({e})",
+                                         self._fsa._server_error)
 
                 # possibly add others, without shadowing already provided ones
-                if keywords:  # handle **kwargs
-                    for p in params:
-                        if p not in kwargs and p not in am._auth_params:
-                            kwargs[p] = params[p]  # FIXME names[p]?
+                if has_kwargs:  # handle **kwargs
+                    for rname in params:
+                        if rname not in kwargs and rname not in am._auth_params:
+                            kwargs[rname] = params[rname]  # cold copy
                 elif fsa._mode >= _Mode.DEBUG or self._reject_param:
                     # detect unused parameters and warn or reject them
-                    for p in params:
-                        # NOTE we silently ignore special authentication params
-                        if p not in names and p not in am._auth_params:
+                    for rname in params:
+                        if rname not in names and rname not in am._auth_params:
                             if fsa._mode >= _Mode.DEBUG:
-                                log.debug(f"unexpected {local.params} parameter \"{p}\"")
+                                log.debug(f"unexpected {local.params} parameter \"{rname}\"")
                                 if fsa._mode >= _Mode.DEBUG2:
                                     log.debug(debugParam())
                             if self._reject_param:
-                                e400(f"unexpected {local.params} parameter \"{p}\"")
+                                e400(f"unexpected {local.params} parameter \"{rname}\"")
                                 continue
 
                 if error_400:

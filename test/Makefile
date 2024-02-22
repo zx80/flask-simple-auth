@@ -35,7 +35,7 @@ ifndef COVER
   ifeq ($(has_redis)$(has_memcached),11)
     COVER   = 100.0
   else
-    COVER   = 99.1
+    COVER   = 99.2
   endif
 endif
 

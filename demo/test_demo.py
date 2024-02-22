@@ -306,12 +306,12 @@ def test_types(client):
     res = check(201, client.post("/types/char", json={"char": CALVIN}))
     assert b"Calvin" in res.data
     res = check(400, client.post("/types/char", json={"char": ERROR}))
-    assert b"type error on json parameter \"char\"" in res.data
+    assert b"cast error" in res.data
     # pydantic dataclass
     res = check(201, client.post("/types/pers", json={"pers": CALVIN}))
     assert b"Calvin" in res.data
     res = check(400, client.post("/types/pers", json={"pers": ERROR}))
-    assert b"type error on json parameter \"pers\"" in res.data
+    assert b"cast error" in res.data
     res = check(400, client.get("/types/ls", json={"l": ["hello", 2]}))
     assert b"expecting list" in res.data
     res = check(200, client.get("/types/ls", json={"l": ["hello", "world"]})).json

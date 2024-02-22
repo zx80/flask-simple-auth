@@ -1108,6 +1108,18 @@ def test_bad_app():
         assert False, "bad app creation must fail"
     except ConfigError as e:
         assert "header value" in str(e)
+    try:
+        @app.get("/bad-param-col", authorize="ANY")
+        def get_bad_param_col(_x: int, x: int):
+            return _x + x, 200
+    except ConfigError as e:
+        assert "collision" in str(e)
+    try:
+        @app.get("/bad-param-pos", authorize="ANY")
+        def get_bad_param_pos(*args):
+            return len(args)
+    except ConfigError as e:
+        assert "position" in str(e)
 
 
 class PK():
@@ -1562,41 +1574,29 @@ def test_jsondata(client):
     # simple types, anything but strings
     res = client.get("/json", data={"j": "null"})
     assert res.status_code == 200 and res.data == b"NoneType: null"
-    res = client.get("/json", json={"j": "null"})
-    assert res.status_code == 200 and res.data == b"NoneType: null"
     res = client.get("/json", json={"j": None})
     assert res.status_code == 200 and res.data == b"NoneType: null"
     res = client.get("/json", data={"j": "5432"})
     assert res.status_code == 200 and res.data == b"int: 5432"
-    res = client.get("/json", json={"j": "9876"})
-    assert res.status_code == 200 and res.data == b"int: 9876"
     res = client.get("/json", json={"j": 1234})
     assert res.status_code == 200 and res.data == b"int: 1234"
     res = client.get("/json", data={"j": "false"})
     assert res.status_code == 200 and res.data == b"bool: false"
-    res = client.get("/json", json={"j": "true"})
-    assert res.status_code == 200 and res.data == b"bool: true"
     res = client.get("/json", json={"j": True})
     assert res.status_code == 200 and res.data == b"bool: true"
     res = client.get("/json", data={"j": "54.3200"})
     assert res.status_code == 200 and res.data == b"float: 54.32"
-    res = client.get("/json", json={"j": "32.10"})
-    assert res.status_code == 200 and res.data == b"float: 32.1"
     res = client.get("/json", json={"j": 1.0000})
     assert res.status_code == 200 and res.data == b"float: 1.0"
     # note: complex is not json serializable
     # list
     res = client.get("/json", data={"j": "[1, 2]"})
     assert res.status_code == 200 and res.data == b"list: [1, 2]"
-    res = client.get("/json", json={"j": "[3, 4]"})
-    assert res.status_code == 200 and res.data == b"list: [3, 4]"
     res = client.get("/json", json={"j": [4, 5]})
     assert res.status_code == 200 and res.data == b"list: [4, 5]"
     # dict
     res = client.get("/json", data={"j": '{"n":1}'})
     assert res.status_code == 200 and res.data == b'dict: {"n": 1}'
-    res = client.get("/json", json={"j": '{"m":2}'})
-    assert res.status_code == 200 and res.data == b'dict: {"m": 2}'
     res = client.get("/json", json={"j": {"p": 3}})
     assert res.status_code == 200 and res.data == b'dict: {"p": 3}'
     # mixed types
@@ -1604,6 +1604,19 @@ def test_jsondata(client):
     assert res.status_code == 200 and res.data == b'list: [false, true, [3, 14.0], {"q": 4}]'
     res = client.get("/json", json={"j": {"a": {"b": {"c": 3}}}})
     assert res.status_code == 200 and res.data == b'dict: {"a": {"b": {"c": 3}}}'
+    # strings looking like special values
+    res = client.get("/json", json={"j": "null"})
+    assert res.status_code == 200 and res.data == b"str: \"null\""
+    res = client.get("/json", json={"j": "true"})
+    assert res.status_code == 200 and res.data == b"str: \"true\""
+    res = client.get("/json", json={"j": "9876"})
+    assert res.status_code == 200 and res.data == b"str: \"9876\""
+    res = client.get("/json", json={"j": "32.10"})
+    assert res.status_code == 200 and res.data == b"str: \"32.10\""
+    res = client.get("/json", json={"j": "[3, 4]"})
+    assert res.status_code == 200 and res.data == b"str: \"[3, 4]\""
+    res = client.get("/json", json={"j": '{"m": 2}'})
+    assert res.status_code == 200 and res.data == b'str: \"{\\"m\\": 2}\"'
 
 def test_www_authenticate_priority(client):
     # save current status
@@ -1974,11 +1987,11 @@ def test_file_storage():
     res = check(201, client.post("/upload", data={"file": bfile(b"hello file!\n")}))
     assert b"file=foo.txt" in res.data
     res = check(400, client.post("/upload", data={"stuff": bfile(b"hello stuff!\n")}))
-    assert b"missing parameter \"file\"" in res.data
+    assert b"parameter \"file\" is missing" in res.data
     res = check(400, client.post("/upload", data={"file": bfile(b"hello file!\n"), "stuff": bfile(b"hello stuff!\n")}))
     assert b"unexpected http parameter \"stuff\"" in res.data
     res = check(400, client.post("/upload", data={"file": "bla.txt"}))
-    assert b"type error on http parameter \"file\"" in res.data
+    assert b"parameter \"file\" type error" in res.data
 
     # /uploads
     res = check(201, client.post("/uploads", data={"foo": bfile(b"hello foo!\n"), "bla": bfile(b"hello bla!\n")}))
@@ -1988,7 +2001,7 @@ def test_file_storage():
     res = check(201, client.post("/mix", data={"data": 42, "file": bfile(b"hello file!\n")}))
     assert b"data=42 file=foo.txt" in res.data
     res = check(400, client.post("/mix", data={"data": bfile(b"hello data!\n"), "file": bfile(b"hello file!\n")}))
-    assert b"type error on http parameter \"data\": got an unexpected file" in res.data
+    assert b"cannot cast to int" in res.data
 
     # /empty
     res = check(200, client.post("/empty"))
@@ -2012,7 +2025,7 @@ def test_param_types():
             return json(len(ls)), 201
         assert False, "should raise a config error"
     except ConfigError as e:
-        assert "not (yet) supported" in str(e)
+        assert "not callable" in str(e)
 
     try:
         @app.post("/list", authorize="ANY")
@@ -2109,21 +2122,21 @@ def test_pydantic_models():
         # Foo
         r = check(201, c.post("/foo", json={"f": FOO_OK}))
         r = check(400, c.post("/foo", json={"f": FOO_KO}))
-        assert b"type error on json parameter" in r.data
+        assert b"cast error" in r.data
         r = check(400, c.post("/foo", json={"f": 5432}))
         assert b"unexpected value 5432 for dict" in r.data
         r = check(201, c.post("/foo", data={"f": json.dumps(FOO_OK)}))
         r = check(400, c.post("/foo", data={"f": json.dumps(FOO_KO)}))
-        assert b"type error on http parameter" in r.data
+        assert b"cast error" in r.data
         r = check(400, c.post("/foo", data={"f": 1234}))
-        assert b"unexpected value 1234 for dict" in r.data
+        assert b"cast error on 1234" in r.data
         r = check(200, c.get("/foo"))
         assert r.json == FOO_OK
         # Bla
         r = check(201, c.post("/bla", json={"b": BLA_OK}))
         assert r.json == BLA_OK
         r = check(400, c.post("/bla", json={"b": BLA_KO}))
-        assert b"type error on json parameter" in r.data
+        assert b"cast error on " in r.data
         r = check(400, c.post("/bla", json={"b": True}))
         assert b"unexpected value True for dict" in r.data
         r = check(201, c.post("/bla", data={"b": json.dumps(BLA_OK)}))
@@ -2385,14 +2398,14 @@ def test_generics():
             return "no"
         assert False, "should not get there"
     except ConfigError as e:
-        assert "unsupported parameter type" in str(e)
+        assert "unsupported generic type" in str(e)
     try:
         @app.get("/nope", authorize="ANY")
         def get_nope(l: list[Stuff]):
             return "no"
         assert False, "should not get there"
     except ConfigError as e:
-        assert "unsupported parameter type" in str(e)
+        assert "unsupported generic type" in str(e)
 
 def test_streaming():
 
