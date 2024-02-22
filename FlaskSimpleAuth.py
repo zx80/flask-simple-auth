@@ -13,7 +13,6 @@ This code is public domain.
 
 # TODO refactoring
 # - clarify manager public/private interfaces
-# - allow more caching, eg TwoLevelCache
 
 import sys
 from typing import Callable, Any
@@ -496,10 +495,6 @@ class Reference(ppp.Proxy):
     """
 
     def __init__(self, *args, close: str|None = "close", **kwargs):
-        # NOTE max_delay is just here for backward compatibility
-        # TODO remove at some point
-        # if max_delay is not None and ppp.__version__ >= (4, 0):  # pragma: no cover
-        #    kwargs["max_avail_delay"] = max_delay
         super().__init__(*args, close=close, **kwargs)
 
 
