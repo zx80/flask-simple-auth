@@ -31,18 +31,22 @@ check.black: venv
 	black --check $(MODULE).py
 
 check.pytest: venv
+	source venv/bin/activate
 	$(MAKE) -C test check
 
 check.coverage: venv
+	source venv/bin/activate
 	$(MAKE) -C test coverage
 
 # MD013: line length
 check.docs:
+	source venv/bin/activate
 	pymarkdown -d MD013 scan *.md */*.md
 	sphinx-lint docs/
 
 # just run the demo
 check.demo: venv
+	source venv/bin/activate
 	$(MAKE) -C demo check.pgall
 
 STYLE	= flake8
