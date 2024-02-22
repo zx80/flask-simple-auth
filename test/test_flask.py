@@ -1942,13 +1942,11 @@ def test_param_params():
 
 def test_file_storage():
 
-    def bfile(contents: bytes, name: str = "foo.txt", ct: str = "text/plain"):
-        return (io.BytesIO(contents), name, ct)
-
     app = fsa.Flask("file-storage", FSA_MODE="debug4")
 
     @app.post("/upload", authorize="ANY")
     def post_upload(file: fsa.FileStorage):
+        assert isinstance(file, fsa.FileStorage)
         return f"file={file.filename}", 201
 
     @app.post("/uploads", authorize="ANY")
@@ -1969,15 +1967,18 @@ def test_file_storage():
 
     client = app.test_client()
 
+    def bfile(contents: bytes, name: str = "foo.txt", ct: str = "text/plain"):
+        return (io.BytesIO(contents), name, ct)
+
     # /upload
     res = check(201, client.post("/upload", data={"file": bfile(b"hello file!\n")}))
     assert b"file=foo.txt" in res.data
     res = check(400, client.post("/upload", data={"stuff": bfile(b"hello stuff!\n")}))
-    assert b"missing file parameter \"file\"" in res.data
+    assert b"missing parameter \"file\"" in res.data
     res = check(400, client.post("/upload", data={"file": bfile(b"hello file!\n"), "stuff": bfile(b"hello stuff!\n")}))
-    assert b"unexpected file parameter \"stuff\"" in res.data
+    assert b"unexpected http parameter \"stuff\"" in res.data
     res = check(400, client.post("/upload", data={"file": "bla.txt"}))
-    assert b"unexpected http parameter \"file\"" in res.data
+    assert b"type error on http parameter \"file\"" in res.data
 
     # /uploads
     res = check(201, client.post("/uploads", data={"foo": bfile(b"hello foo!\n"), "bla": bfile(b"hello bla!\n")}))
@@ -1987,13 +1988,13 @@ def test_file_storage():
     res = check(201, client.post("/mix", data={"data": 42, "file": bfile(b"hello file!\n")}))
     assert b"data=42 file=foo.txt" in res.data
     res = check(400, client.post("/mix", data={"data": bfile(b"hello data!\n"), "file": bfile(b"hello file!\n")}))
-    assert b"missing parameter \"data\"" in res.data
+    assert b"type error on http parameter \"data\": got an unexpected file" in res.data
 
     # /empty
     res = check(200, client.post("/empty"))
     assert b"nothing" in res.data
     res = check(400, client.post("/empty", data={"foo": bfile(b"hello foo!\n"), "bla": bfile(b"hello bla!\n")}))
-    assert b"unexpected file parameters: bla foo" in res.data
+    assert b"unexpected http parameters: bla foo" in res.data
 
     # /optional
     res = check(200, client.post("/optional", data={"file": bfile(b"hello opt!\n")}))
@@ -2413,3 +2414,27 @@ def test_streaming():
             res = c.get("/stream", data={"n": 1})
             assert res.status_code == 200
             assert res.json == [0]
+
+def test_mixing():
+    # test *non* mixing of http & json
+
+    app = fsa.Flask("mixing")
+    @app.get("/mixing", authorize="ANY")
+    def get_mixing(a: int, b: int):
+        return fsa.jsonify(a + b)
+
+    with app.test_client() as c:
+        # ok
+        res = c.get("/mixing?a=40&b=2")
+        assert res.status_code == 200
+        assert res.json == 42
+        res = c.get("/mixing", data={"a": 39, "b": 3})
+        assert res.status_code == 200
+        assert res.json == 42
+        res = c.get("/mixing", json={"a": 37, "b": 5})
+        assert res.status_code == 200
+        assert res.json == 42
+        # bad
+        res = c.get("/mixing?a=35", json={"b": 7})
+        assert res.status_code == 400
+        assert b"not mix" in res.data

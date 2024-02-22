@@ -33,6 +33,8 @@ except ModuleNotFoundError:
 
 import flask
 import werkzeug.exceptions as exceptions
+from werkzeug.datastructures import FileStorage
+
 import ProxyPatternPool as ppp  # type: ignore
 
 # for local use & forwarding
@@ -50,8 +52,6 @@ from importlib.metadata import version as pkg_version
 if pkg_version("flask").startswith("2.2."):  # pragma: no cover
     from flask import escape, Markup
 # 2.3 and 3.0: they are in markupsafe
-
-from werkzeug.datastructures import FileStorage
 
 import logging
 log = logging.getLogger("fsa")
@@ -428,13 +428,6 @@ def _typeof(p: inspect.Parameter):
         return type(p.default)
     else:
         return str
-
-
-def _get_file_storage(p: str) -> FileStorage:
-    """Extract file parameter from request, or generate 400."""
-    if p not in request.files:
-        raise ErrorResponse(f"missing file parameter \"{p}\"", 400)
-    return request.files[p]
 
 
 def _json_prepare(a: Any):
@@ -2470,7 +2463,6 @@ class _ParameterManager:
             Globals: lambda _: g,
             CurrentUser: lambda _: fsa.current_user(),
             CurrentApp: lambda _: current_app,
-            FileStorage: _get_file_storage,
             Cookie: lambda p: request.cookies[p],
             Header: lambda p: request.headers[p],
         }
@@ -2510,6 +2502,10 @@ class _ParameterManager:
         """Get request parameters wherever they are."""
         if request.is_json:
             self._fsa._local.params = "json"
+            # FIXME should it be forbidden?
+            if request.files or request.args or request.form:
+                log.error("unexpected JSON and HTTP parameter mix")
+                raise ErrorResponse("Cannot mix JSON and HTTP parameters", 400)
             return request.json
         else:
             self._fsa._local.params = "http"
@@ -2518,10 +2514,9 @@ class _ParameterManager:
             # the logic of web-targetted HTTP does not make sense for a REST API
             # https://github.com/pallets/werkzeug/pull/2037
             # https://github.com/pallets/flask/issues/4120
-            from werkzeug.datastructures import CombinedMultiDict, MultiDict
+            from werkzeug.datastructures import CombinedMultiDict
 
-            return CombinedMultiDict([MultiDict(d) if not isinstance(d, MultiDict) else d
-                                      for d in (request.args, request.form)])
+            return CombinedMultiDict([request.args, request.form, request.files])
 
     def _noparams(self, path):
         """Check that there are no unused parameters."""
@@ -2543,9 +2538,6 @@ class _ParameterManager:
                         if not sparams.issubset(am._auth_params):
                             bads = ' '.join(sorted(list(sparams - am._auth_params)))
                             return f"unexpected {local.params} parameters: {bads}", 400
-                    fparams = request.files
-                    if fparams:
-                        return f"unexpected file parameters: {' '.join(sorted(fparams.keys()))}", 400
 
                 return fsa._safe_call(path, "no params", fun, *args, **kwargs)
 
@@ -2659,13 +2651,12 @@ class _ParameterManager:
 
                 # translate request parameters to named function parameters
                 params = self._params()  # HTTP or JSON params
-                fparams = request.files  # FILE params
 
                 # detect all possible 400 errors before returning
                 error_400: list[str] = []
                 e400 = error_400.append
 
-                # process all expected "standard" parameters
+                # process all expected parameters
                 for p, tf in typings.items():
                     pn = names[p]
                     if tf in self._special_parameters:  # force specials
@@ -2675,12 +2666,7 @@ class _ParameterManager:
                         try:
                             kwargs[p] = self._special_parameters[tf](pn)  # type: ignore
                         except ErrorResponse as e:
-                            # FIXME adhoc kludge, should be a particular exception?
-                            if "missing file parameter" in e.message and p in defaults:
-                                # handle FileStorage|None = ...
-                                kwargs[p] = defaults[p]
-                                continue
-                            elif e.status == 400:
+                            if e.status == 400:
                                 e400(f"error when retrieving special parameter \"{pn}\": {e.message}")
                                 continue
                             else:  # pragma: no cover
@@ -2705,44 +2691,52 @@ class _ParameterManager:
                                     raise
                                 e400(f'type error on path parameter "{p}": "{val}" ({e})')
                                 continue
-                    else:  # parameter not yet encountered
-                        if pn in params:
-                            tp = types[p]
-                            # FIXME tmp hack, should handle list[*]
-                            if tp == list[str] and self._fsa._local.params == "http":
-                                val = params.getlist(pn)
-                            else:
-                                val = params[pn]
-                            # special JsonData handling on str
-                            is_json = tp == JsonData
-                            if is_json and isinstance(val, str) or \
-                               not is_json and (not hasattr(tp, "_no_isinstance") or not isinstance(val, tp)):
-                                try:
-                                    kwargs[p] = tf(val)
-                                except Exception as e:
-                                    if self._Exc(e):  # pragma: no cover
-                                        raise
-                                    e400(f'type error on {local.params} parameter "{pn}": "{val}" ({e})')
-                                    continue
+                    elif pn in params:  # parameter not yet encountered
+                        tp = types[p]
+                        # FIXME tmp hack, should handle list[*]
+                        if tp == list[str] and self._fsa._local.params == "http":
+                            val = params.getlist(pn)
+                        else:
+                            val = params[pn]
+
+                        # special JsonData handling on str
+                        is_json = tp == JsonData
+
+                        if tf == FileStorage:
+                            if not isinstance(val, FileStorage):
+                                e400(f'type error on {local.params} parameter "{pn}": expecting a file')
+                                continue
                             else:
                                 kwargs[p] = val
-                        else:  # not found anywhere, set default value if any
-                            if p in defaults:
-                                kwargs[p] = defaults[p]
-                            else:  # missing mandatory (no default) parameter
-                                if fsa._mode >= _Mode.DEBUG2:
-                                    log.info(debugParam())
-                                e400(f'missing parameter "{pn}"')
+                        elif isinstance(val, FileStorage):
+                            e400(f'type error on {local.params} parameter "{pn}": got an unexpected file')
+                            continue
+                        elif is_json and isinstance(val, str) or \
+                           not is_json and (not hasattr(tp, "_no_isinstance") or not isinstance(val, tp)):
+                            log.debug(f"casting parameter {p} {type(val)} with {tf}")
+                            try:
+                                kwargs[p] = tf(val)
+                            except Exception as e:
+                                if self._Exc(e):  # pragma: no cover
+                                    raise
+                                e400(f'type error on {local.params} parameter "{pn}": "{val}" ({e})')
                                 continue
+                        else:
+                            kwargs[p] = val
+
+                    elif p in defaults:  # not found anywhere, set default value if any
+                        kwargs[p] = defaults[p]
+                    else:  # missing mandatory (no default) parameter
+                        if fsa._mode >= _Mode.DEBUG2:
+                            log.info(debugParam())
+                        e400(f'missing parameter "{pn}"')
+                        continue
 
                 # possibly add others, without shadowing already provided ones
                 if keywords:  # handle **kwargs
                     for p in params:
                         if p not in kwargs and p not in am._auth_params:
                             kwargs[p] = params[p]  # FIXME names[p]?
-                    for p in fparams:
-                        if p not in kwargs and p not in am._auth_params:
-                            kwargs[p] = fparams[p]  # FIXME?
                 elif fsa._mode >= _Mode.DEBUG or self._reject_param:
                     # detect unused parameters and warn or reject them
                     for p in params:
@@ -2754,15 +2748,6 @@ class _ParameterManager:
                                     log.debug(debugParam())
                             if self._reject_param:
                                 e400(f"unexpected {local.params} parameter \"{p}\"")
-                                continue
-                    for p in fparams:
-                        if p not in names:
-                            if fsa._mode >= _Mode.DEBUG:
-                                log.debug(f"unexpected file parameter \"{p}\"")
-                                if fsa._mode >= _Mode.DEBUG2:
-                                    log.debug(debugParam())
-                            if self._reject_param:
-                                e400(f"unexpected file parameter \"{p}\"")
                                 continue
 
                 if error_400:
@@ -2892,10 +2877,12 @@ class _RequestManager:
             params = fsa._pm._params()
             if params:
                 rpp += " - params: " + ", ".join(sorted(params.keys())) + "\n"
-            if request.files:
-                rpp += " - files: " + ", ".join(sorted(request.files.keys())) + "\n"
-            if not params and not request.files:
-                rpp += " - no params, no files\n"
+            else:
+                rpp += " - no params\n"
+            # detailed parameter sources
+            # rpp += " - args: " + ", ".join(sorted(request.args.keys())) + "\n"
+            # rpp += " - form: " + ", ".join(sorted(request.form.keys())) + "\n"
+            # rpp += " - files: " + ", ".join(sorted(request.files.keys())) + "\n"
             rpp += f"\t{r.method} {r.path} HTTP/?\n\t" + \
                 "\n\t".join(f"{k}: {v}" for k, v in r.headers.items()) + "\n"
             log.debug(rpp)
