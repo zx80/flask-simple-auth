@@ -8,6 +8,7 @@ and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 Refactor and rework parameter handling, including http list support.
 Forbid mixing http and json parameters.
 Improve and fix some tests.
+Improve documentation, tutorial and recipes.
 
 ## 28.6 on 2024-02-18
 
