@@ -96,8 +96,8 @@ Secure and reasonable defaults are provided.
 Most features can be adjusted or extended to particular needs through numerous
 directives and hooks.
 Authentication and authorization callback invocations are cached for efficiency.
-Also, [pydantic](https://docs.pydantic.dev/) or dataclass parameters are
-supported out of the box.
+Also, [pydantic](https://docs.pydantic.dev/), dataclass and generic type
+parameters are supported out of the box.
 
 ## More
 
