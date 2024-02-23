@@ -352,8 +352,8 @@ def _valid_type(t) -> bool:
             return _valid_type(t.__args__[0])
         elif t.__name__ == "dict":
             assert len(t.__args__) == 2
-            # FIXME key is only str when coming from JSON?
-            return _valid_type(t.__args__[0]) and _valid_type(t.__args__[1])
+            ktype, vtype = t.__args__
+            return issubclass(ktype, str) and _valid_type(ktype) and _valid_type(vtype)
         else:  # TODO tuple set named-dict (?)
             return False
     elif isinstance(t, types.UnionType):
@@ -363,11 +363,11 @@ def _valid_type(t) -> bool:
     elif hasattr(t, "__name__") and t.__name__ == "Optional":  # type: ignore  # pragma: no cover
         assert len(t.__args__) == 1
         return _valid_type(t.__args__[0])
-    else:  # pragma: no cover
+    else:  # FIXME should accept reasonable types? Allow convertion?
         return False
 
 
-# TODO convert? rename?
+# TODO caster?
 def _check_type(t, v) -> bool:
     """Dynamically and recursively check whether v is compatible with t."""
     if t is None:
@@ -396,8 +396,17 @@ def _check_type(t, v) -> bool:
     elif hasattr(t, "__name__") and t.__name__ == "Optional":  # type: ignore  # pragma: no cover
         assert len(t.__args__) == 1
         return v is None or _check_type(t.__args__[0], v)
-    else:  # pragma: no cover
-        raise ValueError(f"unexpected type: {t}")
+    else:  # whatever type
+        return isinstance(v, t)
+
+
+def _is_list_of(t) -> Any:
+    if isinstance(t, types.GenericAlias) and t.__name__ == "list":
+        if len(t.__args__) == 1:
+            return t.__args__[0]
+        else:  # pragma: no cover  # FIXME
+            return str
+    return None
 
 
 def _is_generic_type(p: inspect.Parameter) -> bool:
@@ -2449,8 +2458,9 @@ class _ParameterHandler:
         self._type_is_json = self._type == JsonData
         self._type_is_optional = self._type_is_json or _is_optional(hint.annotation)
         self._type_is_generic = _is_generic_type(hint)
-        # TODO generic handling?
-        self._type_is_list = self._type in (list[str], list[FileStorage])
+        self._type_list_item = _is_list_of(self._type)
+        self._type_is_list = self._type_list_item is not None
+        self._type_list_item_caster = self._pm._casts.get(self._type_list_item, self._type_list_item)
 
         # default value if any
         self._has_default = hint.default != inspect._empty
@@ -2472,9 +2482,6 @@ class _ParameterHandler:
         self._caster: Hooks.CastFun|None
         self._checker: Callable[[Any], bool]|None
 
-        self._type_list_item = None
-        self._type_list_item_caster = None
-
         # build extract/convert/check functions as necessary
         if self._type in self._pm._special_parameters:
             # directly get the parameter from wherever
@@ -2495,28 +2502,29 @@ class _ParameterHandler:
 
         elif self._type_is_list:
 
-            # FIXME for http we assumre b=1&b=2
+            # NOTE for http we assume b=1&b=2
 
             def not_provided(_):  # pragma: no cover
                 raise self._pm._Err("not provided")
 
+            # FIXME do we want to convert or be strict?
+            # - http: we do want to convert otherwise everything is a string
+            # - json: it could depend… eg [1,2] is a list[str]?
+            def cast_list_items(la):
+                assert isinstance(la, list)
+                for i in range(len(la)):
+                    if not isinstance(la[i], self._type_list_item):
+                        try:
+                            la[i] = self._type_list_item_caster(la[i])
+                        except Exception as e:
+                            raise self._pm._Err(f"parameter \"{self._rname}\" item {i} type error: {e}", 400)
+                return la
+
             self._extract = None
             self._convert_para = not_provided
             self._convert_json = lambda v: v
-            self._caster = None
+            self._caster = cast_list_items
             self._checker = lambda v: _check_type(self._type, v)
-
-            self._type_list_item = (
-                str if self._type == list[str] else
-                int if self._type == list[int] else
-                bool if self._type == list[bool] else
-                float if self._type == list[float] else
-                FileStorage if self._type == list[FileStorage] else
-                None
-            )
-            if self._type_list_item is None:  # pragma: no cover
-                raise self._pm._Bad(f"unsupported list item type for {self._type}")
-            self._type_list_item_caster = self._pm._casts.get(self._type, None)
 
         elif self._type_is_generic:
             # only handle generics on simple types
@@ -2566,10 +2574,11 @@ class _ParameterHandler:
             self._caster = self._pm._casts.get(self._type, self._type)
             self._checker = None
 
-        log.debug(f"name: {name}, type: {self._type}, cast: {self._caster}, isinstance: {self._type_isinstance}")
+        # log.debug(f"name: {name}, type: {self._type}, cast: {self._caster}, isinstance: {self._type_isinstance}")
 
-        if self._caster and (not callable(self._caster) or self._caster.__module__ == "typing"):
-            raise self._pm._Bad(f"parameter {name} type cast {self._caster} is not callable", where)
+        for caster in (self._caster, self._type_list_item_caster):
+            if caster and (not callable(caster) or caster.__module__ == "typing"):
+                raise self._pm._Bad(f"parameter {name} type cast {caster} is not callable", where)
 
     def __call__(self, req, params, kwargs, e400):
         """Extract value for parameters."""
@@ -2601,15 +2610,6 @@ class _ParameterHandler:
             if self._type_is_list and not req.is_json:
                 # FIXME unconvincing adhoc partial implementation
                 val = params.getlist(self._rname)
-                # check items
-                for i in range(len(val)):
-                    if not isinstance(val[i], self._type_list_item):  # type: ignore  # pragma: no cover
-                        try:
-                            val[i] = self._type_list_item_caster(val[i])  # type: ignore
-                        except Exception as e:
-                            e400(f"parameter \"{self._rname}\" item {i} type error: {e}")
-                            return None
-                    # else ok!
             else:
                 try:
                     val = (self._convert_json if req.is_json else self._convert_para)(params[self._rname])
@@ -2624,7 +2624,7 @@ class _ParameterHandler:
                     if not self._type_isinstance(val):
                         val = self._caster(val)
                     # else just keep it as is!
-                else:  # blind cast  # pragma: no cover
+                else:  # blind cast
                     val = self._caster(val)
             except Exception as e:
                 e400(f"parameter \"{self._rname}\" cast error on {val}: {e}")
@@ -2682,6 +2682,7 @@ class _ParameterManager:
             dt.date: dt.date.fromisoformat,
             dt.time: dt.time.fromisoformat,
             dt.datetime: dt.datetime.fromisoformat,
+            FileStorage: None,  # type: ignore
         }
         # predefined special parameter types, extend with special_parameter
         self._special_parameters: dict[type, Hooks.SpecialParameterFun] = {

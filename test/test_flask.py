@@ -2292,14 +2292,33 @@ def test_group_check():
         assert "cannot check group foo authz" in str(e)
 
 def test_generics():
+
+    class Stuff(str):
+        pass
+
     app = fsa.Flask("generics", FSA_AUTH="none")
-    # simple generic
+
+    # simple generics
+    @app.get("/l", authorize="ANY")
+    def get_l(l: list):
+        return f"len: {len(l)}", 200
     @app.get("/ls", authorize="ANY")
     def get_ls(l: list[str]):
         return f"len: {len(l)}", 200
     @app.get("/li", authorize="ANY")
     def get_li(l: list[int]):
         return f"len: {len(l)}", 200
+    @app.get("/lf", authorize="ANY")
+    def get_lf(l: list[float]):
+        return f"len: {len(l)}", 200
+    @app.get("/ln", authorize="ANY")
+    def get_none(l: list[None]):
+        return f"len: {len(l)}", 200
+    @app.get("/lS", authorize="ANY")
+    def get_lS(l: list[Stuff]):
+        assert isinstance(l, list) and all(isinstance(i, Stuff) for i in l)
+        return f"len: {len(l)}", 200
+
     # optionals
     @app.get("/l0s", authorize="ANY")
     def get_l0s(l: list[str]|None = None):
@@ -2310,50 +2329,67 @@ def test_generics():
     @app.get("/l0s3", authorize="ANY")
     def get_l0s3(l: typing.Union[list[str], None] = None):
         return "none" if l is None else "list"
-    # NOTE only str keys are allowed from JSON
+
+    # dicts
     @app.get("/dsi", authorize="ANY")
     def get_dsi(d: dict[str, int]):
         return f"len: {len(d)}", 200
     @app.get("/dsl", authorize="ANY")
     def get_dsl(d: dict[str, list[int]]):
         return f"len: {len(d)}", 200
+
+    # union
     @app.get("/lsi", authorize="ANY")
     def get_lsi(l: list[str]|list[int]):
         return f"len: {len(l)}", 200
-    @app.get("/ln", authorize="ANY")
-    def get_none(l: list[None]):
+
+    import datetime as dt
+    @app.get("/lD", authorize="ANY")
+    def get_lD(l: list[dt.date]):
         return f"len: {len(l)}", 200
+
     with app.test_client() as c:
         # list[str]
+        check(200, c.get("/l", json={"l": ["hello", "world"]}))
+        check(200, c.get("/l", json={"l": []}))
         check(200, c.get("/ls", json={"l": ["hello", "world"]}))
         check(200, c.get("/ls", json={"l": []}))
+        # NOTE integer 2 is cast to str
+        check(200, c.get("/ls", json={"l": ["hello", 2]}))
         check(400, c.get("/ls", json={}))
-        check(400, c.get("/ls", json={"l": ["hello", 2]}))
         check(400, c.get("/ls", json={"l": "a list of strings"}))
-        # repeated parameters
-        check(200, c.get("/ls?l=hello&l=world"))
         # list[int]
         check(200, c.get("/li", json={"l": [1, 2]}))
-        check(200, c.get("/li", json={"l": []}))
+        res = check(200, c.get("/li", json={"l": []}))
+        assert b"len: 0" in res.data
         check(400, c.get("/li", json={}))
         check(400, c.get("/li", json={"l": [True, 2]}))
         check(400, c.get("/li", json={"l": "a list of ints"}))
+        # list[float]
+        res = check(200, c.get("/lf", json={"l": [0.0, 1.0, 2.0]}))
+        assert b"len: 3" in res.data
+        # repeated parameters
+        res = check(200, c.get("/ls?l=hello&l=world"))
+        assert b"len: 2" in res.data
+        res = check(200, c.get("/li?l=1&l=2&l=3"))
+        assert b"len: 3" in res.data
         # what about repeated parameters?
         # list[str]|None and variants
         check(200, c.get("/l0s", json={"l": ["hello", "world"]}))
         check(200, c.get("/l0s", json={"l": []}))
         check(200, c.get("/l0s", json={}))
-        check(400, c.get("/l0s", json={"l": ["hello", 2]}))
+        # feature: 2 -> "2"
+        check(200, c.get("/l0s", json={"l": ["hello", 2]}))
         check(400, c.get("/l0s", json={"l": "a list of strings"}))
         check(200, c.get("/l0s2", json={"l": ["hello", "world"]}))
         check(200, c.get("/l0s2", json={"l": []}))
         check(200, c.get("/l0s2", json={}))
-        check(400, c.get("/l0s2", json={"l": ["hello", 2]}))
+        check(200, c.get("/l0s2", json={"l": ["hello", 2]}))
         check(400, c.get("/l0s2", json={"l": "a list of strings"}))
         check(200, c.get("/l0s3", json={"l": ["hello", "world"]}))
         check(200, c.get("/l0s3", json={"l": []}))
         check(200, c.get("/l0s3", json={}))
-        check(400, c.get("/l0s3", json={"l": ["hello", 2]}))
+        check(200, c.get("/l0s3", json={"l": ["hello", 2]}))
         check(400, c.get("/l0s3", json={"l": "a list of strings"}))
         # dict[str, int]
         check(200, c.get("/dsi", json={"d": {"a": 1, "b": 2}}))
@@ -2388,9 +2424,15 @@ def test_generics():
         check(400, c.get("/ln", json={"l": "list of nones"}))
         check(400, c.get("/ln", json={"l": [0]}))
         check(400, c.get("/ln", json={"l": ["nope"]}))
+        # list[Stuff]
+        check(200, c.get("/lS?l=hello&l=world"))
+        check(200, c.get("/lS", json={"l": ["hello", "world!"]}))
+        # list[Date]
+        check(200, c.get("/lD?l=1970-10-14&l=1970-03-20"))
+        check(200, c.get("/lD", json={"l": []}))
+        check(200, c.get("/lD", json={"l": ["2020-07-29"]}))
+        check(400, c.get("/lD", json={"l": ["not-a-valid-date"]}))
     # failures
-    class Stuff(str):
-        pass
     app = fsa.Flask("generics", FSA_AUTH="none")
     try:
         @app.get("/nope", authorize="ANY")
@@ -2401,11 +2443,20 @@ def test_generics():
         assert "unsupported generic type" in str(e)
     try:
         @app.get("/nope", authorize="ANY")
-        def get_nope(l: list[Stuff]):
+        def get_nope(l: dict[int, int]):
             return "no"
         assert False, "should not get there"
     except ConfigError as e:
         assert "unsupported generic type" in str(e)
+    # TODO should be made to work?
+    try:
+        @app.get("/nope", authorize="ANY")
+        def get_nope(l: dict[str, Stuff]):
+            return "no"
+        assert False, "should not get there"
+    except ConfigError as e:
+        assert "unsupported generic type" in str(e)
+
 
 def test_streaming():
 
