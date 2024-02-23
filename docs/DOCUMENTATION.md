@@ -1181,11 +1181,6 @@ See [all versions](VERSIONS.md).
 
 Todo or not todo…
 
-### Bugs
-
-- on before request failures, after request hooks do not run?
-  this feature may prevent returning resources.
-
 ### Authn/Authz
 
 - demo LDAP auth? One class plus a new `check_password`?
@@ -1205,8 +1200,6 @@ Todo or not todo…
 - `FSA_PARAM_STYLE` *any/http/json* to restrict/force parameters?
   being lazy is not too bad?
 - check for bad char in parameter names
-- better handle `list[*]` under http
-- refactor parameter handling
 - allow handling files in kwargs
 
 ### Features
@@ -1219,20 +1212,15 @@ Todo or not todo…
 - add ability to catch and process any user error.
 - json mode: generate json in more cases?
 - declare some exceptions to be turned into 400 instead of 500?
+  currently this can be done below, eg anodb, maybe this is enough?
 
 ### Software Engineering
 
-- refactor parameter handling: http vs json, list vs no-lists, optional…
 - reduce sloc?
 - separate classes/projects?
 - check for more directive types (dynamically)?
 - add app.log?
-- type checks: mypy vs pyright vs pyanalyze?  mypy is way too slow!
-- how to ensure that shared/pooled resources are returned even on errors?
-  is an `after_request` hook enough?
 - take advantage of `TypedDict`?
-- consider `jose` as a JWT provided?
-  PyJWT has 125 M.dls/mo, Python-JOSE under 6 M.dls/mo
 
 ### Documentation
 
