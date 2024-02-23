@@ -741,14 +741,18 @@ def get_search(q: Search):
     ...
 ```
 
-Generic types can be used, although with restrictions: `list` and `dict` of
-simple Python types are supported and checked for JSON parameters only:
+Generic types can be used, although with restrictions: only combinations of
+`list` and `str`-key `dict` of standard Python types are supported and checked. 
+Using custome classes may or may not work, consider using data classes instead.
 
 ```python
 @app.get("/question", authorize="ANY")
 def get_question(q: list[str]):
     ...
 ```
+
+Note that `list[*]` when using HTTP parameters are assumed to be _repeated_
+parameters, **not** one parameter with a list value.
 
 Custom classes can be used as parameter types, provided that the constructor
 accepts a string (for HTTP parameters) or whatever value provided (for JSON)
