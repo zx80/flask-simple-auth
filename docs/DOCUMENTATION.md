@@ -1201,6 +1201,7 @@ Todo or not todo…
   being lazy is not too bad?
 - check for bad char in parameter names
 - allow handling files in kwargs
+- add a filter on returned value? `make_response`?
 
 ### Features
 
