@@ -651,6 +651,71 @@ def test_objperm_authz(client):
     # FIXME should cleanup data
 ```
 
+## Dataclass Support
+
+Application frontends are typically developed with *JavaScript*, thus JSON
+*(JavaScript Object Notation)* is a convenient serialization format to
+exchange data with a Python backend.
+FlaskSimpleAuth supports data classes as well a simple generic types
+(`list`, `dict`…) for parameters and return values.
+
+Let us install the `pydantic` data-structure validation library:
+
+```shell
+pip install pydantic
+```
+
+Then add data type definitions and a route to `app.py` to compute the age of
+_Someone_ in _days_:
+
+```python
+# append to "app.py"
+from pydantic.dataclasses import dataclass
+import datetime
+
+@dataclass
+class Someone:
+    name: str
+    born: datetime.date
+
+@dataclass
+class Days:
+    name: str
+    days: int
+
+@app.get("/days", authorize="ANY")
+def get_days(who: Someone):
+    age = datetime.datetime.now().date() - who.born
+    return fsa.jsonify(Days(name=who.name, days=age.days))
+```
+
+This route can be tested directly:
+
+```shell
+# http parameter
+curl -si -X GET -d 'who={"name":"Hobbes","born":"2020-07-29"}' http://localhost:5000/days
+# json parameter
+curl -si -X GET -H "Content-Type: application/json" \
+    -d '{"who":{"name":"Hobbes","born":"2020-07-29"}}' http://localhost:5000/days
+# with an invalid date
+curl -si -X GET -d 'who={"name": "Calvin", "born": "unknown"}' http://localhost:5000/days
+```
+
+Then automatically:
+
+```python
+# append to "test.py"
+def test_days(client):
+    res = client.get("/days", data={"who":{"name":"Hobbes","born":"2020-07-29"}})
+    assert res.status_code == 200
+    assert res.json["name"] == "Hobbes" and isinstance(res.json["days"], int)
+    res = client.get("/days", json={"who":{"name":"Susie","born":"1970-10-14"}})
+    assert res.status_code == 200
+    # invalid data should lead to 400
+    res = client.get("/days", json={"who":{"name":"Calvin","born":"not yesterday"}})
+    assert res.status_code == 400
+```
+
 ## Further Improvements
 
 Let us edit `acme.conf` to activate or change some features.
