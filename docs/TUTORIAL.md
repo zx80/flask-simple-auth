@@ -222,7 +222,7 @@ def test_acmedata():
     # FIXME should also test errors...
 ```
 
-Run `pytest` as before to achieve *2 passed*.
+Run `pytest` as before to achieve _2 passed_.
 
 ## Basic Authentication
 
@@ -353,7 +353,7 @@ curl -si -X GET -u "acme:$ACME_ADMIN_PASS" http://localhost:5000/stuff     # 200
 ```
 
 Also append these same tests to `test.py`, and run them with `pytest` to
-achieve *3 passed*:
+achieve _3 passed_:
 
 ```python
 # append to "test.py"
@@ -421,7 +421,7 @@ curl -si -X GET -d USER=acme -d PASS="$ACME_ADMIN_PASS" http://localhost:5000/he
 ```
 
 Also append these same tests to `test.py`, and run them with `pytest` to
-achieve *4 passed*:
+achieve _4 passed_:
 
 ```python
 # append to "test.py"
@@ -493,7 +493,7 @@ curl -si -X GET -H "Authorization: Bearer <put-the-raw-token-value-here>" \
 ```
 
 Also append these same tests to `test.py`, and run them with `pytest` to
-achieve *5 passed*:
+achieve _5 passed_:
 
 ```python
 # append to "test.py"
@@ -561,7 +561,7 @@ curl -si -X GET -u 'meca:Mec0!' http://localhost:5000/hello-me    # 200
 ```
 
 Also append these same tests to `test.py`, and run them with `pytest` to
-achieve *6 passed*:
+achieve _6 passed_:
 
 ```python
 # append to "test.py"
@@ -631,7 +631,7 @@ curl -si -X PATCH -u 'mace:Mac1!' \
 ```
 
 Also append these same tests to `test.py`, and run them with `pytest` to
-achieve *7 passed*:
+achieve _7 passed_:
 
 ```python
 # append to "test.py"
@@ -693,26 +693,26 @@ This route can be tested directly:
 
 ```shell
 # http parameter
-curl -si -X GET -d 'who={"name":"Hobbes","born":"2020-07-29"}' http://localhost:5000/days
+curl -si -X GET -d who='{"name":"Hobbes","born":"2020-07-29"}' http://localhost:5000/days
 # json parameter
 curl -si -X GET -H "Content-Type: application/json" \
-    -d '{"who":{"name":"Hobbes","born":"2020-07-29"}}' http://localhost:5000/days
+    -d '{"who":{"name":"Calvin","born":"1970-03-20"}}' http://localhost:5000/days
 # with an invalid date
-curl -si -X GET -d 'who={"name": "Calvin", "born": "unknown"}' http://localhost:5000/days
+curl -si -X GET -d who='{"name":"Calvin","born":"unknown"}' http://localhost:5000/days
 ```
 
-Then automatically:
+Then automatically, run with `pytest` to achieve _8 passed_:
 
 ```python
 # append to "test.py"
 def test_days(client):
-    res = client.get("/days", data={"who":{"name":"Hobbes","born":"2020-07-29"}})
+    res = client.get("/days", data={"who":{"name":"Calvin","born":"1970-03-20"}})
     assert res.status_code == 200
     assert res.json["name"] == "Hobbes" and isinstance(res.json["days"], int)
     res = client.get("/days", json={"who":{"name":"Susie","born":"1970-10-14"}})
     assert res.status_code == 200
     # invalid data should lead to 400
-    res = client.get("/days", json={"who":{"name":"Calvin","born":"not yesterday"}})
+    res = client.get("/days", json={"who":{"name":"Hobbes","born":"not yesterday"}})
     assert res.status_code == 400
 ```
 
@@ -750,7 +750,7 @@ curl -si -X POST -u "acme:$ACME_ADMIN_PASS" \
 ```
 
 Also append these same tests to `test.py`, and run them with `pytest` to
-achieve *8 passed*:
+achieve _9 passed_:
 
 ```python
 # append to "test.py"
