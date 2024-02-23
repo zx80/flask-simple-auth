@@ -331,7 +331,7 @@ parameters are expected to be repeated parameters.
 @app.get("/generic", authorize="ANY")
 def get_generic(data: dict[str, list[int]]):
     # data["foo"][0]
-    return {k: len(v) for k, v in data}
+    return {k: len(v) for k, v in data.items()}
 ```
 
 The generic type support is not perfect, consider using data classes instead.
