@@ -5,7 +5,7 @@ In this tutorial, you will build a secure
 [HTTP](https://en.wikipedia.org/wiki/HTTP)
 [Python](https://python.org/)
 [WSGI](https://en.wikipedia.org/wiki/Web_Server_Gateway_Interface)
-back-end using
+back end using
 [FlaskSimpleAuth](https://pypi.org/project/flasksimpleauth), a
 [Flask](https://flask.palletsprojects.com/) extension.
 It will feature basic and parameter password **authentication** (who is the
@@ -25,7 +25,7 @@ tutorial state after each section.
 
 ## Application Setup
 
-Let us first create a minimal running REST application back-end *without*
+Let us first create a minimal running REST application back end *without*
 authentication and authorizations.
 
 Create and activate a Python virtual environment in a new directory, from a
@@ -653,9 +653,9 @@ def test_objperm_authz(client):
 
 ## Dataclass Support
 
-Application frontends are typically developed with *JavaScript*, thus JSON
+Application front ends are typically developed with *JavaScript*, thus JSON
 *(JavaScript Object Notation)* is a convenient serialization format to
-exchange data with a Python backend.
+exchange data with a Python back end.
 FlaskSimpleAuth supports data classes as well a simple generic types
 (`list`, `dict`…) for parameters and return values.
 
@@ -797,4 +797,5 @@ Restart and test the application with these new settings…
 
 By following this tutorial, you have built a secured *Flask* application by
 taking advantage of features provided by *FlaskSimpleAuth*: basic, parameter and
-token authentications, group and object permissions authorizations.
+token authentications, group and object permissions authorizations, and handling
+data classes.
