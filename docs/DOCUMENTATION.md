@@ -1228,7 +1228,6 @@ Todo or not todo…
 - add precise doc about generic type support
 - separate explanations from reference?
 - more recipes?
-- add pydantic parameters to recipees and tutorial.
 - include demo? point to demo?
 - comparisons with other frameworks
 - improve sample configuration

@@ -322,6 +322,22 @@ and route outputs:
 
 See [types demo](https://github.com/zx80/flask-simple-auth/blob/main/demo/types_path.py).
 
+### How-to use generic types with in request and responses?
+
+Just use them! They are converted from/to JSON, but for `list[*]` with HTTP
+parameters are expected to be repeated parameters.
+
+```python
+@app.get("/generic", authorize="ANY")
+def get_generic(data: dict[str, list[int]]):
+    # data["foo"][0]
+    return {k: len(v) for k, v in data}
+```
+
+The generic type support is not perfect, consider using data classes instead.
+Simple standard types are expected, they cannot be mixed with data classes in
+general, although some instances may work.
+
 ### How-to ... parameters?
 
 ## Miscellaneous
