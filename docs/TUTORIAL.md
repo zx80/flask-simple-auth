@@ -708,9 +708,10 @@ Then automatically, run with `pytest` to achieve _8 passed_:
 def test_days(client):
     res = client.get("/days", data={"who":{"name":"Calvin","born":"1970-03-20"}})
     assert res.status_code == 200
-    assert res.json["name"] == "Hobbes" and isinstance(res.json["days"], int)
+    assert res.json["name"] == "Calvin" and isinstance(res.json["days"], int)
     res = client.get("/days", json={"who":{"name":"Susie","born":"1970-10-14"}})
     assert res.status_code == 200
+    assert res.json["name"] == "Susie" and isinstance(res.json["days"], int)
     # invalid data should lead to 400
     res = client.get("/days", json={"who":{"name":"Hobbes","born":"not yesterday"}})
     assert res.status_code == 400
