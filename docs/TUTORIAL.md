@@ -26,8 +26,7 @@ tutorial state after each section.
 ## Application Setup
 
 Let us first create a minimal running REST application back end *without*
-authentication and authorizations.
-
+authentication and authorizations.  
 Create and activate a Python virtual environment in a new directory, from a
 shell terminal:
 
@@ -115,7 +114,7 @@ Connection: close
 ```
 
 It is good practice to automate application tests, for instance with
-[`pytest`](https://pytest.org/).
+[`pytest`](https://pytest.org/).  
 Create a `test.py` file with a test to cover this route:
 
 ```python
@@ -146,7 +145,7 @@ pytest test.py  # 1 passed
 ## Acme Database
 
 Our incredible application will held some data in a toy *Acme* database with
-*Users* who can own *Stuff* at a price.
+*Users* who can own *Stuff* at a price.  
 Create file `acme.py` to manage a simplistic in-memory database implemented
 as the `AcmeData` class:
 
@@ -226,8 +225,7 @@ Run `pytest` as before to achieve _2 passed_.
 
 ## Basic Authentication
 
-Let us now add new routes with *basic* authentication.
-This requires to:
+Let us now add new routes with *basic* authentication, which requires to:
 
 - configure the application.
 - store user credentials somewhere.
@@ -247,8 +245,7 @@ several files.
 This creates an annoying chicken-and-egg issue with Python initializations.
 A common pattern is to define `init_app(app: Flask)` initialization functions
 in each file, to call them from the application file, and to use proxy objects
-to avoid loading ordering issues.
-
+to avoid loading ordering issues.  
 Create a `database.py` file which will hold our application primitive database
 interface:
 
@@ -330,8 +327,7 @@ def get_stuff(user: fsa.CurrentUser):
 The `user` parameter will be automatically filled with the name of the
 authenticated user.
 Other parameters are filled and converted from the request HTTP or JSON
-parameters.
-
+parameters.  
 Set the admin password in the environment, in each terminal:
 
 ```shell
@@ -395,8 +391,7 @@ request *parameters*.
 This is usually done once to get some *token* (bearer, cookie…) which will be
 used to access other routes.
 Initialization requirements are the same as for *basic* authentication, as
-retrieving the user password is also needed.
-
+retrieving the user password is also needed.  
 To enable parameter authentication as well as *basic* authentication, simply
 update the `FSA_AUTH` configuration directive in `acme.conf`:
 
@@ -441,8 +436,7 @@ def test_param_authn(client):
 Let us now activate *token* authentication.
 This avoids sending login/passwords in each request, and is much more efficient
 for the server because cryptographic password hashing functions are *designed*
-to be very slow.
-
+to be very slow.  
 Token authentication can be activated explicitely by prepending *token* to
 `FSA_AUTH` in `acme.conf`:
 
@@ -451,8 +445,8 @@ Token authentication can be activated explicitely by prepending *token* to
 FSA_AUTH = ["token", "basic", "param"]
 ```
 
-Then we need token secret and route which allows to create a token.
-Edit file `acme.conf` to add the secret and delay of your chosing:
+Then we need token secret and route which allows to create a token.  
+Edit File `acme.conf` to add the secret and delay of your chosing:
 
 ```python
 # append to "acme.conf"
@@ -463,9 +457,8 @@ FSA_TOKEN_DELAY = 10.0  # set token expiration to 10 minutes (default is 1 hour)
 ```
 
 In a more realistic setting, the token secret would probably not be directly
-in the configuration, but passed to it or loaded by it.
-
-Then edit file `app.py` to add a new route to create a token for the current
+in the configuration, but passed to it or loaded by it.  
+Then edit File `app.py` to add a new route to create a token for the current
 user authenticated by password:
 
 ```python
@@ -483,9 +476,9 @@ curl -si -X GET -u "acme:$ACME_ADMIN_PASS" http://localhost:5000/token
 
 You should see the token as a JSON property in the response.
 The default token type is *fsa*, with a easy-to-understand human-readable
-format.
-Then proceed to use the token instead of the login/password to authenticate
-the user on a route:
+format.  
+Proceed to use the token instead of the login/password to authenticate the user
+on a route:
 
 ```shell
 curl -si -X GET -H "Authorization: Bearer <put-the-raw-token-value-here>" \
@@ -583,7 +576,7 @@ def test_group_authz(client):
 ## Object Authorization
 
 Object permissions link a user to some *objects* to allow operations.
-We want to allow object owners to change the price of their stuff.
+We want to allow object owners to change the price of their stuff.  
 First, create the permission verification function:
 
 ```python
@@ -656,9 +649,7 @@ def test_objperm_authz(client):
 Application front ends are typically developed with *JavaScript*, thus JSON
 *(JavaScript Object Notation)* is a convenient serialization format to
 exchange data with a Python back end.
-FlaskSimpleAuth supports data classes as well a simple generic types
-(`list`, `dict`…) for parameters and return values.
-
+FlaskSimpleAuth supports data classes for parameters and return values.  
 Let us install the `pydantic` data-structure validation library:
 
 ```shell
@@ -719,9 +710,9 @@ def test_days(client):
 
 ## Generic Support
 
-Generic types are also supported through JSON serialization.  
-Let us add a route to report which numbers from a list are primes.  
-Let us first add the `sympy` package:
+Generic types (`list`, `dict`…) are also supported through JSON serialization.  
+Let us add a route to report which numbers from a list are primes with the help
+of the `sympy` package:
 
 ```shell
 pip install sympy
