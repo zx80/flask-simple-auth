@@ -665,8 +665,8 @@ Let us install the `pydantic` data-structure validation library:
 pip install pydantic
 ```
 
-Then add data type definitions and a route to `app.py` to compute the age of
-_Someone_ in _days_:
+Then add data type definitions and an open route to `app.py` to compute the age
+of _Someone_ in _days_.
 
 ```python
 # append to "app.py"
@@ -717,6 +717,57 @@ def test_days(client):
     assert res.status_code == 400
 ```
 
+## Generic Support
+
+Generic types are also supported through JSON serialization.
+
+Let us add a route to report which numbers from a list are primes.
+Let us first add the `sympy` package:
+
+```shell
+pip install sympy
+```
+
+Then add an open route to `app.py` to return which integers are prime from a
+list of integers:
+
+```python
+# append to "app.py"
+import sympy
+
+@app.get("/primes", authorize="ANY")
+def get_primes(li: list[int]):
+    return fsa.jsonify(filter(sympy.isprime, li))
+```
+
+This can be tested directly:
+
+```shell
+# http parameters
+curl -si -X GET -d li=1 -d li=10 -d li=11 http://localhost:5000/primes
+# json parameters
+curl -si -X GET -H "Content-Type: application/json" \
+  -d '{"li":[1,10,11,20,21,23]}' http://localhost:5000/primes
+# bad parameters should get a 400
+curl -si -X GET -d li=prime -d li=time http://localhost:5000/primes
+```
+
+Then automatically, run with `pytest` to achieve _9 passed_:
+
+```python
+# append to "test.py"
+
+def test_primes(client):
+    res = client.get("/primes?li=7&li=8")
+    assert res.status_code == 200
+    assert res.json == [7]
+    res = client.get("/primes", json={"li": [1, 2, 3, 4, 5, 6, 7, 8, 9]})
+    assert res.status_code == 200
+    assert res.json == [2, 3, 5, 7]
+    res = client.get("/primes", json={"li": ["odd", "even"]})
+    assert res.status_code == 400
+```
+
 ## Further Improvements
 
 Let us edit `acme.conf` to activate or change some features.
@@ -751,7 +802,7 @@ curl -si -X POST -u "acme:$ACME_ADMIN_PASS" \
 ```
 
 Also append these same tests to `test.py`, and run them with `pytest` to
-achieve _9 passed_:
+achieve _10 passed_:
 
 ```python
 # append to "test.py"
