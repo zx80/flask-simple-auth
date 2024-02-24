@@ -2579,25 +2579,25 @@ class _ParameterHandler:
         self._default_value = hint.default if self._has_default else None
 
         if self._has_default:  # check default value consistency
+            # FIXME should also check list items if appropriate?
 
-            # isinstance
-            if self._type_is_optional and self._default_value is None:
-                pass
-            elif self._default_value is None:  # ok, assume |None
-                pass
+            if self._default_value is None:
+                if not self._type_is_optional:
+                    log.warning(f"parameter {name} is not optional but defaults to None")
+                # else: pass
             elif self._type_isinstance:
                 val = self._default_value
                 if isinstance(val, str) and self._type != str and self._caster:
                     try:
                         val = self._caster(val)
-                    except Exception as e:  # pragma: no cover
+                    except Exception as e:
                         raise self._pm._Bad(f"parameter {name} cannot cast default value: {e}")
                 if not isinstance(val, self._type):  # pragma: no cover
                     raise self._pm._Bad(f"parameter {name} bad type for default value ({val})")
-            # check
+
             if self._checker:
                 if self._type_is_optional and self._default_value is None:
-                    pass  # skip check call on optional values?
+                    pass  # skip check call on optional values
                 else:
                     try:
                         if not self._checker(self._default_value):

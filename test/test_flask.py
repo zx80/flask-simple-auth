@@ -2035,6 +2035,13 @@ def test_param_types():
     except ConfigError as e:
         assert "is not callable" in str(e)
 
+    try:
+        @app.get("/nope", authorize="ANY")
+        def get_nope(i: int = "one"):
+            return "no"
+        assert False, "should raise a config error"
+    except ConfigError as e:
+        assert "cannot cast" in str(e)
 
 def test_jsonify_with_generators():
     def gen(i: int):
