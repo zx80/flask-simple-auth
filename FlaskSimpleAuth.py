@@ -2462,10 +2462,6 @@ class _ParameterHandler:
         self._type_is_list = self._type_list_item is not None
         self._type_list_item_caster = self._pm._casts.get(self._type_list_item, self._type_list_item)
 
-        # default value if any
-        self._has_default = hint.default != inspect._empty
-        self._default_value = hint.default if self._has_default else None
-
         if self._type_is_json:  # anything converted from JSON, really
             self._type_isinstance = None
         else:
@@ -2574,11 +2570,40 @@ class _ParameterHandler:
             self._caster = self._pm._casts.get(self._type, self._type)
             self._checker = None
 
-        # log.debug(f"name: {name}, type: {self._type}, cast: {self._caster}, isinstance: {self._type_isinstance}")
-
         for caster in (self._caster, self._type_list_item_caster):
             if caster and (not callable(caster) or caster.__module__ == "typing"):
                 raise self._pm._Bad(f"parameter {name} type cast {caster} is not callable", where)
+
+        # default value if any
+        self._has_default = hint.default != inspect._empty
+        self._default_value = hint.default if self._has_default else None
+
+        if self._has_default:  # check default value consistency
+
+            # isinstance
+            if self._type_is_optional and self._default_value is None:
+                pass
+            elif self._default_value is None:  # ok, assume |None
+                pass
+            elif self._type_isinstance:
+                val = self._default_value
+                if isinstance(val, str) and self._type != str and self._caster:
+                    try:
+                        val = self._caster(val)
+                    except Exception as e:  # pragma: no cover
+                        raise self._pm._Bad(f"parameter {name} cannot cast default value: {e}")
+                if not isinstance(val, self._type):  # pragma: no cover
+                    raise self._pm._Bad(f"parameter {name} bad type for default value ({val})")
+            # check
+            if self._checker:
+                if self._type_is_optional and self._default_value is None:
+                    pass  # skip check call on optional values?
+                else:
+                    try:
+                        if not self._checker(self._default_value):
+                            raise self._pm._Bad(f"parameter {name} bad check for default value ({self._default_value})")
+                    except Exception as e:  # pragma: no cover
+                        raise self._pm._Bad(f"parameter {name} error while checking default value: {e}")
 
     def __call__(self, req, params, kwargs, e400):
         """Extract value for parameters."""

@@ -5,6 +5,7 @@ and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 
 ## ? on ?
 
+Check default value type for consistency.
 Improve tutorial.
 
 ## 29.0 on 2024-02-23

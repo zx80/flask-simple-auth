@@ -2456,6 +2456,14 @@ def test_generics():
         assert False, "should not get there"
     except ConfigError as e:
         assert "unsupported generic type" in str(e)
+    # bad default
+    try:
+        @app.get("/nope", authorize="ANY")
+        def get_nope(l: list[str] = {}):
+            return "no"
+        assert False, "should not get there"
+    except ConfigError as e:
+        assert "bad check" in str(e)
 
 
 def test_streaming():
