@@ -756,7 +756,6 @@ Then automatically, run with `pytest` to achieve _9 passed_:
 
 ```python
 # append to "test.py"
-
 def test_primes(client):
     res = client.get("/primes?li=7&li=8")
     assert res.status_code == 200
