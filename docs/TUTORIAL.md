@@ -719,9 +719,8 @@ def test_days(client):
 
 ## Generic Support
 
-Generic types are also supported through JSON serialization.
-
-Let us add a route to report which numbers from a list are primes.
+Generic types are also supported through JSON serialization.  
+Let us add a route to report which numbers from a list are primes.  
 Let us first add the `sympy` package:
 
 ```shell
