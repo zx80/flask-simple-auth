@@ -2593,8 +2593,8 @@ class _ParameterHandler:
                         val = self._caster(val)
                     except Exception as e:
                         raise self._pm._Bad(f"parameter {name} cannot cast default value: {e}")
-                if not isinstance(val, self._type):  # pragma: no cover
-                    raise self._pm._Bad(f"parameter {name} bad type for default value ({val})")
+                if not isinstance(val, self._type):
+                    raise self._pm._Bad(f"parameter {name} bad type for default value ({val}: {self._type})")
 
             if self._checker:
                 if self._type_is_optional and self._default_value is None:
