@@ -2471,6 +2471,13 @@ def test_generics():
         assert False, "should not get there"
     except ConfigError as e:
         assert "bad check" in str(e)
+    try:
+        @app.get("/nope", authorize="ANY")
+        def get_nope(l: list[int] = ["one", "two"]):
+            return "no"
+        assert False, "should not get there"
+    except ConfigError as e:
+        assert "bad check" in str(e)
 
 
 def test_streaming():

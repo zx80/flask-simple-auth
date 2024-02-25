@@ -2480,8 +2480,8 @@ class _ParameterHandler:
 
         # build extract/convert/check functions as necessary
         if self._type in self._pm._special_parameters:
-            # directly get the parameter from wherever
 
+            # directly get the parameter from wherever
             self._extract = self._pm._special_parameters[self._type]
             self._convert_para = None
             self._convert_json = None
@@ -2500,6 +2500,7 @@ class _ParameterHandler:
 
             # NOTE for http we assume b=1&b=2
 
+            # lists a handled differently for http parameters
             def not_provided(_):  # pragma: no cover
                 raise self._pm._Err("not provided")
 
