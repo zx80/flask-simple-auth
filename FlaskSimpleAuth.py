@@ -404,7 +404,7 @@ def _is_list_of(t) -> Any:
     if isinstance(t, types.GenericAlias) and t.__name__ == "list":
         if len(t.__args__) == 1:
             return t.__args__[0]
-        else:  # pragma: no cover  # FIXME
+        else:  # pragma: no cover  # cannot happen, "list" is not "list[*]"
             return str
     return None
 
