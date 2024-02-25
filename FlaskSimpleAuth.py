@@ -3264,11 +3264,13 @@ class FlaskSimpleAuth:
                 log.warning("ignoring FSA_LOGGING_LEVEL because already in debug mode")
         elif "FSA_LOGGING_LEVEL" in conf:
             log.setLevel(conf["FSA_LOGGING_LEVEL"])
+
         # check directives for typos
         all_directives = set(Directives.__dict__.keys())
         for name in conf:
             if name.startswith("FSA_") and name not in all_directives:
                 raise self._Bad(f"unexpected FSA_* directive: {name}")
+
         # set self._local internal holder
         local = conf.get("FSA_LOCAL", "thread")
         if local == "process":
@@ -3285,6 +3287,7 @@ class FlaskSimpleAuth:
         else:
             raise self._Bad(f"unexpected FSA_LOCAL value: {local}")
         self._local = Local()
+
         # status code for some errors errors
         self._server_error = conf.get("FSA_SERVER_ERROR", Directives.FSA_SERVER_ERROR)
         self._not_found_error = conf.get("FSA_NOT_FOUND_ERROR", Directives.FSA_NOT_FOUND_ERROR)
@@ -3294,6 +3297,7 @@ class FlaskSimpleAuth:
             self._app.register_error_handler(exceptions.HTTPException, lambda e: self._Res(e.description, e.code))
         # override FSA internal error handling user errors
         self._keep_user_errors = conf.get("FSA_KEEP_USER_ERRORS", Directives.FSA_KEEP_USER_ERRORS)
+
         #
         # initialize managers
         #
@@ -3303,6 +3307,7 @@ class FlaskSimpleAuth:
         self._qm._initialize()
         self._rm._initialize()
         self._cm._initialize()  # keep last
+
         #
         # blueprint hacks
         #
@@ -3319,6 +3324,7 @@ class FlaskSimpleAuth:
             self.template_context_processors = self._app.template_context_processors
         else:  # pragma: no cover
             raise self._Bad("unexpected Flask version while dealing with blueprints?")
+
         # done!
         self._initialized = True
 
@@ -3665,9 +3671,9 @@ class FlaskSimpleAuth:
             raise self._Bad(f"unexpected auth type, should be str, list or tuple: {type(auth)}")
 
         # FIXME should be in a non existing ready-to-run hook
+        # this cannot be moved to _initialize because all hooks must be registered
         self._am._check_auth_consistency()
         if self._cm and not self._cm._cached:
-            log.warning("CALLING set_caches")
             self._cm._set_caches()
 
         # normalize None to NONE
