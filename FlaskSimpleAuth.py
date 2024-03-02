@@ -494,8 +494,8 @@ class Reference(ppp.Proxy):
     This is a very thin wrapper around ProxyPatternPool Proxy class.
     """
 
-    def __init__(self, *args, close: str|None = "close", **kwargs):
-        super().__init__(*args, close=close, **kwargs)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class Flask(flask.Flask):
