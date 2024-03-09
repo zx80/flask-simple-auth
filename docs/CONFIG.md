@@ -13,8 +13,7 @@ FSA_MODE = "dev"                    # prod (default), dev (recommended), debug1-
 # FSA_LOGGING_LEVEL = logging.INFO  # logging verbosity, set to logging.DEBUG for debug
 # FSA_SECURE = True                 # require TLS
 # FSA_CORS = False                  # CORS handling
-# FSA_CORS_OPTS = {}                # initialization parameters
-# FSA_DEFAULT_CONTENT_TYPE = None   # set content type if unknown
+# FSA_CORS_OPTS = {}                # CORS initialization parameters
 # FSA_LOCAL = "thread"              # isolation: process, thread, werkzeug, gevent, eventlet
 
 #
@@ -85,12 +84,14 @@ FSA_PASSWORD_RE = [ r"[A-Z]", r"[a-z]", r"[0-9]" ]  # list of re to match
 # FSA_AUTHZ_SCOPES = []      # declare scope names (for oauth)
 
 #
-# PARAMETERS
+# INPUT AND OUTPUT
 #
 #
 # FSA_CAST = {}                        # type -> callable[[str], any]
 # FSA_SPECIAL_PARAMETERS = {}          # type -> callable
 # FSA_REJECT_UNEXPECTED_PARAMS = True  # strict more
+# FSA_DEFAULT_CONTENT_TYPE = None      # set content type if unknown
+# FSA_JSON_STREAMING = True            # stream json response if possible
 
 #
 # CACHE
