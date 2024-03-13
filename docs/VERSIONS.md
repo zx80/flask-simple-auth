@@ -3,6 +3,10 @@
 Sources are available on [GitHub](https://github.com/zx80/flask-simple-auth)
 and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 
+## ? on ?
+
+Add `ruff` style check.
+
 ## 29.2 on 2024-03-02
 
 Remove `close` default on `Reference` for ppp _9.0_.

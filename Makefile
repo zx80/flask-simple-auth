@@ -22,13 +22,19 @@ check.pyright: venv
 	source venv/bin/activate
 	pyright $(MODULE).py
 
-check.flake8: venv
-	source venv/bin/activate
-	flake8 --ignore=E127,E227,E402,E501,E721,F401,F811,W504 $(MODULE).py
-
 check.black: venv
 	source venv/bin/activate
 	black --check $(MODULE).py
+
+IGNORE  = E227,E402,E501,E721,F401,F811
+
+check.flake8: venv
+	source venv/bin/activate
+	flake8 --ignore=E127,W504,$(IGNORE) $(MODULE).py
+
+check.ruff: venv
+	source venv/bin/activate
+	ruff check --ignore=$(IGNORE) $(MODULE).py
 
 check.pytest: venv
 	source venv/bin/activate
