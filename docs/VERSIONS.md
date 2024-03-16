@@ -6,6 +6,7 @@ and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 ## ? on ?
 
 Add `ruff` style check.
+Update GitHub actions.
 
 ## 29.2 on 2024-03-02
 
