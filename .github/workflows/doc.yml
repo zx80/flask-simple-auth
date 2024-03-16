@@ -28,7 +28,7 @@ jobs:
         uses: actions/upload-pages-artifact@v3
   deploy:
     needs: build
-    environement:
+    environment:
       name: github-pages
     permissions:
       pages: write
