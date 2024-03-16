@@ -3,10 +3,11 @@
 Sources are available on [GitHub](https://github.com/zx80/flask-simple-auth)
 and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 
-## ? on ?
+## 29.3 on 2024-03-16
 
 Add `ruff` style check.
 Update GitHub actions.
+Update documentation.
 
 ## 29.2 on 2024-03-02
 
