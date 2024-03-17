@@ -1235,3 +1235,4 @@ Todo or not todo…
 - include demo? point to demo?
 - comparisons with other frameworks
 - improve sample configuration
+- use `FlaskTester` in tutorial?
