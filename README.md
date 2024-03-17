@@ -112,7 +112,7 @@ parameters are supported out of the box.
 
 ## License
 
-This software is *public domain*.
+This code is [Public Domain](https://creativecommons.org/publicdomain/zero/1.0/).
 
 All software has bug, this is software, hence…
 Beware that you may lose your hairs or your friends because of it.
