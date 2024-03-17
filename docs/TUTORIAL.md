@@ -708,11 +708,13 @@ def test_days(client):
     assert res.status_code == 400
 ```
 
-## Generic Support
+Note that this also works with standard dataclasses.
 
-Generic types (`list`, `dict`…) are also supported through JSON serialization.  
-Let us add a route to report which numbers from a list are primes with the help
-of the `sympy` package:
+## Standard Type Hints Support
+
+Types hints based on standard types (`list`, `dict`…) are also supported
+through JSON serialization. Let us add a route to report which numbers from a
+list are primes with the help of the `sympy` package:
 
 ```shell
 pip install sympy
