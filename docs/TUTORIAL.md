@@ -840,3 +840,8 @@ By following this tutorial, you have built a secured *Flask* application by
 taking advantage of features provided by *FlaskSimpleAuth*: basic, parameter and
 token authentications, group and object permissions authorizations, and handling
 data classes.
+
+Note: a tutorial is **not** the standard way of doing things, it is just a
+simplistic and minimal example to demonstrate available features. You should
+develop your skills by using tools such as `make` and `shell` scripting to
+simplify, automate and speed up your development process.
