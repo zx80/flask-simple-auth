@@ -263,18 +263,18 @@ def test_fsa_token():
     # malformed token
     try:
         user = tm._get_any_token_auth("not an FSA token")
-        assert False, "expecting a malformed error"
+        pytest.fail("expecting a malformed error")
     except fsa.ErrorResponse as e:
         assert "invalid fsa token" in str(e)
     # bad timestamp format
     try:
         user = tm._get_any_token_auth("R:U:demain:signature")
-        assert False, "expecting a bad timestamp format"
+        pytest.fail("expecting a bad timestamp format")
     except fsa.ErrorResponse as e:
         assert "unexpected timestamp format" in e.message
     try:
         user = tm._get_any_token_auth("Test:calvin:20201500000000:signature")
-        assert False, "expecting a bad timestamp format"
+        pytest.fail("expecting a bad timestamp format")
     except fsa.ErrorResponse as e:
         assert "unexpected fsa token limit" in e.message
     # force expiration
@@ -282,7 +282,7 @@ def test_fsa_token():
     tm._grace = -1000000
     try:
         user = tm._get_any_token_auth(calvin_token)
-        assert False, "token must have expired"
+        pytest.fail("token must have expired")
     except fsa.ErrorResponse as e:
         assert "expired auth token" in e.message
     # again after clear cache, so the expiration is detected at fsa level
@@ -290,7 +290,7 @@ def test_fsa_token():
     # app.clear_caches()
     try:
         user = tm._get_any_token_auth(calvin_token)
-        assert False, "token must have expired"
+        pytest.fail("token must have expired")
     except fsa.ErrorResponse as e:
         assert "expired fsa auth token" in e.message
     # cleanup
@@ -300,7 +300,7 @@ def test_fsa_token():
     grace, tm._grace = tm._grace, -100
     try:
         user = tm._get_any_token_auth(hobbes_token)
-        assert False, "token should be invalid"
+        pytest.fail("token should be invalid")
     except fsa.ErrorResponse as e:
         assert e.status == 401
     tm._grace = grace
@@ -346,7 +346,7 @@ def test_jwt_token():
     assert len(susie_token.split(".")) == 3
     try:
         user = tm._get_any_token_auth(susie_token)
-        assert False, "expired token should fail"
+        pytest.fail("expired token should fail")
     except fsa.ErrorResponse as e:
         assert "expired jwt auth token" in e.message
     finally:
@@ -362,7 +362,7 @@ def test_jwt_token():
     try:
         bad_token = f"{pieces[0]}.{pieces[2]}.{pieces[1]}"
         user = tm._get_any_token_auth(bad_token)
-        assert False, "bad token should fail"
+        pytest.fail("bad token should fail")
     except fsa.ErrorResponse as e:
         assert "invalid jwt token" in e.message
     # cleanup
@@ -376,7 +376,7 @@ def test_invalid_token():
     susie_token = susie_token[:-1] + "z"
     try:
         user = tm._get_any_token_auth(susie_token, tm._realm)
-        assert False, "token should be invalid"
+        pytest.fail("token should be invalid")
     except fsa.ErrorResponse as e:
         assert e.status == 401
     # wrong token
@@ -385,7 +385,7 @@ def test_invalid_token():
     tm._realm = realm
     try:
         user = tm._get_any_token_auth(moe_token, tm._realm)
-        assert False, "token should be invalid"
+        pytest.fail("token should be invalid")
     except fsa.ErrorResponse as e:
         assert e.status == 401
 
@@ -425,24 +425,24 @@ def test_password_check(client):
     assert not app.check_user_password("moe", "bad-password")
     try:
         pm.check_user_password("boo", "none")
-        assert False, "should have raised an error"
+        pytest.fail("should have raised an error")
     except ErrorResponse as e:
         assert True, "none password was rejected"
     try:
         pm.check_user_password("dad", "Error")
-        assert False, "should raise an error"
+        pytest.fail("should raise an error")
     except ErrorResponse as e:
         assert "test_check_pass error" in str(e)
     try:
         pm.check_user_password("baa", "whatever")
-        assert False, "should raise an Exception"
+        pytest.fail("should raise an Exception")
     except ErrorResponse as e:
         assert "no such user" in str(e)
     saved = pm._get_user_pass
     pm.get_user_pass(None)
     try:
         pm.check_user_password("calvin", "Oops!")
-        assert False, "should raise an error"
+        pytest.fail("should raise an error")
     except ErrorResponse as e:
         assert "invalid user/password" in str(e)
     pm.get_user_pass(saved)
@@ -476,7 +476,7 @@ def test_password_quality():
     pm._pass_len = 1
     try:
         app.hash_password("")
-        assert False, "len must be rejected"
+        pytest.fail("len must be rejected")
     except ErrorResponse as e:
         assert "too short" in str(e)
     assert app.hash_password("c") is not None
@@ -492,12 +492,12 @@ def test_password_quality():
     assert app.hash_password("Cy") is not None
     try:
         app.hash_password("CY")
-        assert False, "must detect missing lc letter"
+        pytest.fail("must detect missing lc letter")
     except ErrorResponse as e:
         assert "a-z" in str(e)
     try:
         app.hash_password("cy")
-        assert False, "must detect missing uc letter"
+        pytest.fail("must detect missing uc letter")
     except ErrorResponse as e:
         assert "A-Z" in str(e)
     # password quality return
@@ -513,13 +513,13 @@ def test_password_quality():
     assert app.hash_password("G0od!") is not None
     try:
         app.hash_password("B@d")
-        assert False, "password should be rejected"
+        pytest.fail("password should be rejected")
     except ErrorResponse as e:
         assert True, "password was rejected as expected"
     # password quality exception
     try:
         app.hash_password("@ny-Password!")
-        assert False, "password should be rejected"
+        pytest.fail("password should be rejected")
     except ErrorResponse as e:
         assert "not happy" in str(e)
     # reset password checking rules
@@ -544,7 +544,7 @@ def test_authorize():
         @app._fsa._zm._group_authz("stuff", fsa.ALL, fsa.ANY)
         def foo():
             return "foo", 200
-        assert False, "cannot mix ALL & ANY in authorize"
+        pytest.fail("cannot mix ALL & ANY in authorize")
     except ConfigError as e:
         assert True, "mix is forbidden"
 
@@ -998,73 +998,73 @@ def test_bad_app():
     # bad scheme
     try:
         app = create_app(FSA_AUTH="bad")
-        assert False, "bad app creation must fail"
+        pytest.fail("bad app creation must fail")
     except ConfigError as e:
         assert "bad" in str(e), "ok, bad app creation has failed"
     try:
         app = create_app(FSA_AUTH=1)
-        assert False, "bad app creation must fail"
+        pytest.fail("bad app creation must fail")
     except ConfigError as e:
         assert "unexpected FSA_AUTH type" in str(e)
     try:
         app = create_app(FSA_AUTH=[1])
-        assert False, "bad app creation must fail"
+        pytest.fail("bad app creation must fail")
     except ConfigError as e:
         assert "unexpected authentication id" in str(e)
     try:
         app = create_app(FSA_AUTH=["fake", "basic", "bad"])
-        assert False, "bad app creation must fail"
+        pytest.fail("bad app creation must fail")
     except ConfigError as e:
         assert "bad" in str(e), "ok, bad app creation has failed"
     try:
         app = create_app(auth="bad")
-        assert False, "bad app creation must fail"
+        pytest.fail("bad app creation must fail")
     except ConfigError as e:
         assert "bad" in str(e), "ok, bad app creation has failed"
     try:
         app = create_app(auth=["basic", "token", "bad"])
-        assert False, "bad app creation must fail"
+        pytest.fail("bad app creation must fail")
     except ConfigError as e:
         assert "bad" in str(e), "ok, bad app creation has failed"
     # bad token type
     try:
         app = create_app(FSA_AUTH="token", FSA_TOKEN_TYPE="bad")
-        assert False, "bad app creation must fail"
+        pytest.fail("bad app creation must fail")
     except ConfigError as e:
         assert "bad" in str(e), "ok, bad app creation has failed"
     # FIXME, None is ok?
     # try:
     #     app = create_app(FSA_AUTH="token", FSA_TOKEN_TYPE=None)
-    #    # assert False, "bad app creation must fail"
+    #    # pytest.fail("bad app creation must fail")
     # except ConfigError as e:
     #     assert True, "ok, bad app creation has failed"
     # bad token carrier
     try:
         app = create_app(FSA_AUTH="token", FSA_TOKEN_CARRIER="bad")
-        assert False, "bad app creation must fail"
+        pytest.fail("bad app creation must fail")
     except ConfigError as e:
         assert "bad" in str(e), "ok, bad app creation has failed"
     try:
         app = create_app(FSA_AUTH="token", FSA_TOKEN_CARRIER=None)
-        assert False, "bad app creation must fail"
+        pytest.fail("bad app creation must fail")
     except ConfigError as e:
         assert "unexpected FSA_TOKEN_CARRIER" in str(e), "ok, bad app creation has failed"
     # bad token name
     try:
         app = create_app(FSA_AUTH="token", FSA_TOKEN_CARRIER="bearer", FSA_TOKEN_NAME=None)
-        assert False, "bad app creation must fail"
+        pytest.fail("bad app creation must fail")
     except ConfigError as e:
         assert "requires a name" in str(e), "ok, bad app creation has failed"
     # bad jwt talgorithm
     try:
         app = create_app(FSA_AUTH="token", FSA_TOKEN_TYPE="jwt", FSA_TOKEN_ALGO="bad")
-        assert False, "bad app creation must fail"
+        pytest.fail("bad app creation must fail")
     except ConfigError as e:
         assert "bad" in str(e), "ok, bad app creation has failed"
     # bad local
     try:
         app = create_app(FSA_LOCAL="oops!")
-        assert False, "bad app creation must fail"
+        pytest.fail("bad app creation must fail")
     except ConfigError as e:
         assert "FSA_LOCAL" in str(e)
     # bad route auth
@@ -1073,7 +1073,7 @@ def test_bad_app():
         @app.get("/bad-auth-type", authz="ALL", authn=1)
         def get_bad_auth_type():
             return None
-        assert False, "bad app creation must fail"
+        pytest.fail("bad app creation must fail")
     except ConfigError as e:
         assert "unexpected auth type" in str(e)
     app = create_app()
@@ -1082,30 +1082,30 @@ def test_bad_app():
         @app.get("/bad-param-1", authorize="ALL", authz="NONE")
         def get_bad_param_1():
             return None
-        assert False, "creation must fail"
+        pytest.fail("creation must fail")
     except ConfigError as e:
         assert "cannot use both" in str(e)
     try:
         @app.get("/bad-param-2", auth="basic", authn="param")
         def get_bad_param_2():
             return None
-        assert False, "creation must fail"
+        pytest.fail("creation must fail")
     except ConfigError as e:
         assert "cannot use both" in str(e)
     # bad add various checks
     try:
         app.add_group(["hello", "world"])
-        assert False, "bad app creation must fail"
+        pytest.fail("bad app creation must fail")
     except ConfigError as e:
         assert "invalid group type" in str(e)
     try:
         app.add_scope(["hello", "world"])
-        assert False, "bad app creation must fail"
+        pytest.fail("bad app creation must fail")
     except ConfigError as e:
         assert "invalid scope type" in str(e)
     try:
         app.add_headers(one=1)
-        assert False, "bad app creation must fail"
+        pytest.fail("bad app creation must fail")
     except ConfigError as e:
         assert "header value" in str(e)
     try:
@@ -1207,22 +1207,22 @@ def test_bads():
     import AppBad as ab
     try:
         app = ab.create_badapp_5()
-        assert False, "mandatory parameter with default should fail"
+        pytest.fail("mandatory parameter with default should fail")
     except ConfigError as e:
         assert "default" in str(e)
     try:
         app = ab.create_badapp_6()
-        assert False, "missing path parameter should fail"
+        pytest.fail("missing path parameter should fail")
     except ConfigError as e:
         assert "missing" in str(e)
     try:
         app = ab.create_badapp_7()
-        assert False, "inconsistent path parameter types should fail"
+        pytest.fail("inconsistent path parameter types should fail")
     except ConfigError as e:
         assert "bad" in str(e)
     try:
         app = ab.create_badapp_8()
-        assert False, "unknown path parameter converter should fail"
+        pytest.fail("unknown path parameter converter should fail")
     except ConfigError as e:
         assert "unknown" in str(e)
     # unexpected parameter
@@ -1277,42 +1277,42 @@ def test_object_perms_errors():
         @app.get("/bad-perm-1", authorize=tuple())
         def get_bad_perm_1(uid: int):
             return "should not get there", 200
-        assert False, "should detect too short tuple"
+        pytest.fail("should detect too short tuple")
     except ConfigError as e:
         assert "3 data" in str(e)
     try:
         @app.get("/bad-perm-2/<uid>", authorize=("unknown",))
         def get_bad_perm_2_uid(uid: int):
             return "should not get there", 200
-        assert False, "should detect unregistered permission domain"
+        pytest.fail("should detect unregistered permission domain")
     except ConfigError as e:
         assert "missing object permission" in str(e)
     try:
         @app.get("/bad-perm-3", authorize=("known", 3))
         def get_bad_perm_3(uid: int):
             return "should not get there", 200
-        assert False, "should detect bad variable name"
+        pytest.fail("should detect bad variable name")
     except ConfigError as e:
         assert "unexpected identifier name type" in str(e)
     try:
         @app.get("/bad-perm-4/<uid>", authorize=("known", "uid", 3.14159))
         def get_bad_perm_4_uid(uid: int):
             return "should not get there", 200
-        assert False, "should detect bad mode type"
+        pytest.fail("should detect bad mode type")
     except ConfigError as e:
         assert "unexpected mode type" in str(e)
     try:
         @app.get("/bad-perm-5", authorize=("known", "uid"))
         def get_bad_perm_3(oid: int):
             return "should not get there", 200
-        assert False, "should detect missing variable"
+        pytest.fail("should detect missing variable")
     except ConfigError as e:
         assert "missing function parameter uid" in str(e)
     try:
         @app.get("/bad-perm-6", authorize=("known", "uid"))
         def get_bad_perm_3():
             return "should not get there", 200
-        assert False, "should detect missing variable"
+        pytest.fail("should detect missing variable")
     except ConfigError as e:
         assert "permissions require some parameters" in str(e)
     # run time errors
@@ -1334,28 +1334,28 @@ def test_authorize_errors():
         @app.get("/bad-authorize", authorize=[3.14159])
         def get_bad_authorize():
             return "should not get there", 200
-        assert False, "should detect bad authorize type"
+        pytest.fail("should detect bad authorize type")
     except ConfigError as e:
         assert "unexpected authorization" in str(e)
     try:
         @app.get("/bad-mix-1", authorize=["ANY", "ALL"])
         def get_bad_mix_1():
             return "should not get there", 200
-        assert False, "should detect ANY/ALL mix"
+        pytest.fail("should detect ANY/ALL mix")
     except ConfigError as e:
         assert "ANY/ALL" in str(e)
     try:
         @app.get("/bad-mix-2", authorize=["ANY", "OTHER"])
         def get_bad_mix_2():
             return "should not get there", 200
-        assert False, "should detect ANY/other mix"
+        pytest.fail("should detect ANY/other mix")
     except ConfigError as e:
         assert "other" in str(e)
     try:
         @app.get("/bad-mix-3", authorize=["ANY", ("foo", "id")])
         def get_bad_mix_2():
             return "should not get there", 200
-        assert False, "should detect ANY/other mix"
+        pytest.fail("should detect ANY/other mix")
     except ConfigError as e:
         assert "object" in str(e)
     try:
@@ -1363,7 +1363,7 @@ def test_authorize_errors():
         @app.get("/bad-group", authorize="no-such-group")
         def get_bad_group():
             return "should not get there", 200
-        assert False, "should detect unregistered group"
+        pytest.fail("should detect unregistered group")
     except ConfigError as e:
         assert "no-such-group" in str(e)
     try:
@@ -1373,7 +1373,7 @@ def test_authorize_errors():
         @app.get("/bad-scope", authorize="no-such-scope", auth="oauth")
         def get_bad_scope():
             return "should not get there", 200
-        assert False, "should detect unregistered scope"
+        pytest.fail("should detect unregistered scope")
     except ConfigError as e:
         assert "no-such-scope" in str(e)
 
@@ -1403,12 +1403,12 @@ def test_scope_errors():
     import AppFact as af
     try:
         app = af.create_app(FSA_AUTH="oauth", FSA_TOKEN_TYPE="fsa")
-        assert False, "should raise an exception"
+        pytest.fail("should raise an exception")
     except ConfigError as e:
         assert "oauth" in str(e) and "JWT" in str(e)
     try:
         app = af.create_app(FSA_AUTH="oauth", FSA_TOKEN_TYPE="jwt", FSA_TOKEN_ISSUER=None)
-        assert False, "should raise an exception"
+        pytest.fail("should raise an exception")
     except ConfigError as e:
         assert "oauth" in str(e) and "ISSUER" in str(e)
     try:
@@ -1416,7 +1416,7 @@ def test_scope_errors():
         @app.get("/foo/bla", authorize=["read"], auth=["oauth"])
         def get_foo_bla():
             return "", 200
-        assert False, "should be rejected"
+        pytest.fail("should be rejected")
     except ConfigError as e:
         assert "JWT" in str(e)
 
@@ -1484,7 +1484,7 @@ def test_no_such_cache():
     import AppFact as af
     try:
         af.create_app(FSA_CACHE="no-such-cache")
-        assert False, "create app should fail"
+        pytest.fail("create app should fail")
     except ConfigError as e:
         assert "unexpected FSA_CACHE" in e.args[0]
 
@@ -1510,17 +1510,17 @@ def test_warnings_and_errors():
     # password exceptions
     try:
         app.hash_password("short1")
-        assert False, "should be too short"
+        pytest.fail("should be too short")
     except fsa.ErrorResponse as e:
         assert e.status == 400 and "too short" in e.message
     try:
         app.hash_password("long-enough-but-missing-a-number")
-        assert False, "should not match re"
+        pytest.fail("should not match re")
     except fsa.ErrorResponse as e:
         assert e.status == 400 and "must match" in e.message
     try:
         app._fsa._am._pm.check_user_password("calvin", "hobbes")
-        assert False, "should not get through"
+        pytest.fail("should not get through")
     except fsa.ErrorResponse as e:
         assert e.status == 518 and "bad" in e.message
     # unused length warning
@@ -1533,7 +1533,7 @@ def test_warnings_and_errors():
     app._fsa._initialize()
     try:
         app._fsa._am._pm.check_user_password("calvin", "hobbes")
-        assert False, "should not get through"
+        pytest.fail("should not get through")
     except fsa.ErrorResponse as e:
         assert e.status == 500 and "internal error with get_user_pass" in e.message
     # overwrite warning
@@ -1550,22 +1550,22 @@ def test_warnings_and_errors():
     # type errors
     try:
         app = af.create_app(FSA_CAST="not a dict")
-        assert False, "should not get through"
+        pytest.fail("should not get through")
     except ConfigError as e:
         assert "FSA_CAST must be a dict" in str(e)
     try:
         app = af.create_app(FSA_OBJECT_PERMS="should be a dict")
-        assert False, "should not get through"
+        pytest.fail("should not get through")
     except ConfigError as e:
         assert "FSA_OBJECT_PERMS must be a dict" in str(e)
     try:
         app = af.create_app(FSA_SPECIAL_PARAMETER="not a dict")
-        assert False, "should not get through"
+        pytest.fail("should not get through")
     except ConfigError as e:
         assert "FSA_SPECIAL_PARAMETER must be a dict" in str(e)
     try:
         app = af.create_app(FSA_NO_SUCH_DIRECTIVE="no-such-directive")
-        assert False, "should not get through"
+        pytest.fail("should not get through")
     except ConfigError as e:
         assert "FSA_NO_SUCH_DIRECTIVE" in str(e)
 
@@ -1673,7 +1673,7 @@ def test_jwt_authorization():
         @app.get("/some/path", authorize=["read", "write"], auth=["oauth", "basic"])
         def get_some_path():
             return "", 200
-        assert False, "route should be rejected"
+        pytest.fail("route should be rejected")
     except fsa.ConfigError as e:
         assert "mixed" in str(e)
     app._fsa._am._tm._issuer = None
@@ -1681,7 +1681,7 @@ def test_jwt_authorization():
         @app.patch("/any/stuff", authorize=["write"], auth="oauth")
         def patch_any_stuff():
             return "", 204
-        assert False, "route should be rejected"
+        pytest.fail("route should be rejected")
     except fsa.ConfigError as e:
         assert "ISSUER" in str(e)
     app._fsa._am._tm._issuer = "god"
@@ -1751,21 +1751,21 @@ def test_error_response():
     try:
         app = af.create_app(FSA_ERROR_RESPONSE=True)
         app._fsa._initialize()
-        assert False, "should have raised an exception"
+        pytest.fail("should have raised an exception")
     except ConfigError as e:
         assert "unexpected FSA_ERROR_RESPONSE" in str(e)
     # again, with FSA_ERROR_RESPONSE None
     try:
         app = af.create_app(FSA_ERROR_RESPONSE=None)
         app._fsa._initialize()
-        assert False, "should have raised an exception"
+        pytest.fail("should have raised an exception")
     except ConfigError as e:
         assert "unexpected FSA_ERROR_RESPONSE" in str(e)
     # again, with FSA_ERROR_RESPONSE "bad value"
     try:
         app = af.create_app(FSA_ERROR_RESPONSE="bad value")
         app._fsa._initialize()
-        assert False, "should have raised an exception"
+        pytest.fail("should have raised an exception")
     except ConfigError as e:
         assert "unexpected FSA_ERROR_RESPONSE" in str(e)
     # again, to trigger a warning for coverage
@@ -1846,7 +1846,7 @@ def test_mode():
     try:
         app = fsa.Flask("mode", FSA_MODE="unexpected")
         app._fsa._initialize()
-        assert False, "should raise an exception"
+        pytest.fail("should raise an exception")
     except ConfigError as e:
         assert "FSA_MODE" in str(e)
 
@@ -2023,7 +2023,7 @@ def test_param_types():
         @app.post("/list-str", authorize="ANY")
         def post_list_str(ls: typing.List[str]):
             return json(len(ls)), 201
-        assert False, "should raise a config error"
+        pytest.fail("should raise a config error")
     except ConfigError as e:
         assert "not callable" in str(e)
 
@@ -2031,7 +2031,7 @@ def test_param_types():
         @app.post("/list", authorize="ANY")
         def post_list(l: typing.List):
             return json(len(l)), 201
-        assert False, "should raise a config error"
+        pytest.fail("should raise a config error")
     except ConfigError as e:
         assert "is not callable" in str(e)
 
@@ -2039,7 +2039,7 @@ def test_param_types():
         @app.get("/nope", authorize="ANY")
         def get_nope(i: int = "one"):
             return "no"
-        assert False, "should raise a config error"
+        pytest.fail("should raise a config error")
     except ConfigError as e:
         assert "cannot cast" in str(e)
 
@@ -2047,7 +2047,7 @@ def test_param_types():
         @app.get("/nope", authorize="ANY")
         def get_nope(b=False):
             return "no"
-        assert False, "should raise a config error"
+        pytest.fail("should raise a config error")
     except ConfigError as e:
         assert "bad type" in str(e)
 
@@ -2302,7 +2302,7 @@ def test_group_check():
         @app.get("/foo", authorize="foo")
         def get_foo():
             return "should not get there", 200
-        assert False, "should not get there"
+        pytest.fail("should not get there")
     except ConfigError as e:
         assert "cannot check group foo authz" in str(e)
 
@@ -2453,14 +2453,14 @@ def test_generics():
         @app.get("/nope", authorize="ANY")
         def get_nope(l: tuple[str, int]):
             return "no"
-        assert False, "should not get there"
+        pytest.fail("should not get there")
     except ConfigError as e:
         assert "unsupported generic type" in str(e)
     try:
         @app.get("/nope", authorize="ANY")
         def get_nope(l: dict[int, int]):
             return "no"
-        assert False, "should not get there"
+        pytest.fail("should not get there")
     except ConfigError as e:
         assert "unsupported generic type" in str(e)
     # TODO should be made to work?
@@ -2468,7 +2468,7 @@ def test_generics():
         @app.get("/nope", authorize="ANY")
         def get_nope(l: dict[str, Stuff]):
             return "no"
-        assert False, "should not get there"
+        pytest.fail("should not get there")
     except ConfigError as e:
         assert "unsupported generic type" in str(e)
     # bad default
@@ -2476,14 +2476,14 @@ def test_generics():
         @app.get("/nope", authorize="ANY")
         def get_nope(l: list[str] = {}):
             return "no"
-        assert False, "should not get there"
+        pytest.fail("should not get there")
     except ConfigError as e:
         assert "bad check" in str(e)
     try:
         @app.get("/nope", authorize="ANY")
         def get_nope(l: list[int] = ["one", "two"]):
             return "no"
-        assert False, "should not get there"
+        pytest.fail("should not get there")
     except ConfigError as e:
         assert "bad check" in str(e)
 
