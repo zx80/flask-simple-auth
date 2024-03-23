@@ -6,6 +6,7 @@ and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 ## 29.5 on ?
 
 Fix handling of default str values for headers and cookies special parameters.
+Also show cookies in debug mode.
 
 ## 29.4 on 2024-03-23
 
