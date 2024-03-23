@@ -3038,7 +3038,7 @@ class _RequestManager:
             # rpp += " - files: " + ", ".join(sorted(request.files.keys())) + "\n"
             rpp += f"\t{r.method} {r.path} HTTP/?\n\t" + \
                 "\n\t".join(f"{k}: {v}" for k, v in r.headers.items()) + "\n"
-            rpp += f"\tCookie: " + "; ".join(f"{k}={v}" for k, v in r.cookies.items()) + "\n"
+            rpp += "\tCookie: " + "; ".join(f"{k}={v}" for k, v in r.cookies.items()) + "\n"
             log.debug(rpp)
 
     def _run_before_requests(self) -> Response|None:
