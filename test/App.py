@@ -419,8 +419,8 @@ def get_shadow(stuff: str, lapp: CurrentApp, blup: str = "Yukon"):
     return f"{lapp.name}: {stuff} {blup}", 200
 
 @app.get("/cookie/foo", authorize=ANY)
-def get_cookie_foo(foo: Cookie):
-    return f"cookie foo: {foo}", 200
+def get_cookie_foo(foo: Cookie, bla: Cookie = None):
+    return f"cookie foo: {foo}, bla: {bla}", 200
 
 @app.get("/headers", authorize=ANY)
 def get_headers(user_agent: Header, hello: Header):

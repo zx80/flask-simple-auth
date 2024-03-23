@@ -2614,7 +2614,13 @@ class _ParameterHandler:
             if self._rname in params:
                 e400(f"unexpected request parameter \"{self._rname}\"")
                 return None
-            return self._extract(self._rname)
+            try:
+                return self._extract(self._rname)
+            except Exception:  # on error, return the default if any
+                if self._has_default:
+                    return self._default_value
+                else:
+                    raise
 
         # path & request parameter
         if self._rname in params and self._name in kwargs:

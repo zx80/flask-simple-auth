@@ -1874,7 +1874,10 @@ def test_shadowing(client):
 def test_cookie(client):
     client.set_cookie("foo", "bla")
     res = check(200, client.get("/cookie/foo"))
-    assert res.data == b"cookie foo: bla"
+    assert res.data == b"cookie foo: bla, bla: None"
+    client.set_cookie("bla", "foo")
+    res = check(200, client.get("/cookie/foo"))
+    assert res.data == b"cookie foo: bla, bla: foo"
 
 def test_headers(client):
     res = check(200, client.get("/headers", headers={"HELLO": "World!"}))
