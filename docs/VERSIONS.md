@@ -7,6 +7,7 @@ and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 
 Use default value if available on cookie or header errors.
 Use `pytest.fail` where appropriate.
+Improved tutorial.
 
 ## 29.3 on 2024-03-16
 
