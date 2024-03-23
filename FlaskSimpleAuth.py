@@ -2485,7 +2485,7 @@ class _ParameterHandler:
             self._extract = self._pm._special_parameters[self._type]
             self._convert_para = None
             self._convert_json = None
-            self._caster = None
+            self._caster = self._type if issubclass(self._type, str) else None
             self._checker = None
 
         elif self._type_is_json:
@@ -2567,7 +2567,8 @@ class _ParameterHandler:
         else:  # default
 
             self._extract = None
-            self._convert_para = self._convert_json = lambda x: x
+            self._convert_para = lambda x: x
+            self._convert_json = lambda x: x
             self._caster = self._pm._casts.get(self._type, self._type)
             self._checker = None
 
