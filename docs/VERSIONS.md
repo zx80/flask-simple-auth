@@ -3,6 +3,10 @@
 Sources are available on [GitHub](https://github.com/zx80/flask-simple-auth)
 and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 
+## ? on ?
+
+Test cookie with a string default.
+
 ## 29.5 on 2024-03-23
 
 Fix handling of default str values for headers and cookies special parameters.
