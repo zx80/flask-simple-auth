@@ -12,19 +12,19 @@ scare = Blueprint("scare", __name__)
 
 
 # GET /scare: consult one's data
-@scare.get("/scare", authorize="ALL")
+@scare.get("/scare", authorize="AUTH")
 def get_scare():
     return json(db.get_user_data(login=app.get_user())), 200
 
 
 # GET /scare/token: return a token for current user
-@scare.get("/scare/token", authorize="ALL", auth="basic")
+@scare.get("/scare/token", authorize="AUTH", auth="basic")
 def get_scare_token():
     return json(app.create_token()), 200
 
 
 # GET /scare/token2: MFA token for current user, basic + code
-@scare.get("/scare/token2", authorize="ALL", auth="basic")
+@scare.get("/scare/token2", authorize="AUTH", auth="basic")
 def get_scare_token2(code: str, user: fsa.CurrentUser):
     if code != user + ":42":
         return f"invalid validation code for {user}", 400
@@ -32,7 +32,7 @@ def get_scare_token2(code: str, user: fsa.CurrentUser):
 
 
 # POST /scare (login, pass): register a new user, or 500 if already exists
-@scare.post("/scare", authorize="ANY")
+@scare.post("/scare", authorize="OPEN")
 def post_scare(login: str, email: str, _pass: str):
     res = db.add_user(login=login, email=email, upass=app.hash_password(_pass), admin=False)
     app.password_uncache(login)  # needed, because previous failures are cached…
@@ -40,7 +40,7 @@ def post_scare(login: str, email: str, _pass: str):
 
 
 # PATCH /scare (opass, npass): change one's password
-@scare.patch("/scare", authorize="ALL")
+@scare.patch("/scare", authorize="AUTH")
 def patch_scare(opass: str, npass: str):
     login = app.get_user()
     res = db.get_user_data(login=login)
@@ -55,7 +55,7 @@ def patch_scare(opass: str, npass: str):
 
 
 # DELETE /scare: unregister
-@scare.delete("/scare", authorize="ALL")
+@scare.delete("/scare", authorize="AUTH")
 def delete_scare():
     login = app.get_user()
     res = db.get_user_data(login=login)

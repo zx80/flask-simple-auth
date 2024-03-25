@@ -60,7 +60,7 @@ app.config.from_envvar("ACME_CONFIG")
 # TODO LATER MORE INITIALIZATIONS
 
 # GET /hello route, not authenticated
-@app.get("/hello", authorize="ANY")
+@app.get("/hello", authorize="OPEN")
 def get_hello():
     return { "msg": "hello", "version": fsa.__version__ }, 200
 
@@ -303,23 +303,23 @@ import auth
 auth.init_app(app)
 ```
 
-And add routes which are open to *ALL* authenticated users:
+And add routes which are open to _AUTH_-enticated users:
 
 ```python
 # append to "app.py" routes
 # all authentication users can access this route
-@app.get("/hello-me", authorize="ALL")
+@app.get("/hello-me", authorize="AUTH")
 def get_hello_me(user: fsa.CurrentUser):
     return { "msg": "hello", "user": user }, 200
 
 # users can add stuff for themselves
-@app.post("/stuff", authorize="ALL")
+@app.post("/stuff", authorize="AUTH")
 def post_stuff(stuff: str, price: float, user: fsa.CurrentUser):
     db.add_stuff(stuff, user, price)
     return f"stuff added: {stuff}", 201
 
 # and consult them
-@app.get("/stuff", authorize="ALL")
+@app.get("/stuff", authorize="AUTH")
 def get_stuff(user: fsa.CurrentUser):
     return fsa.jsonify(db.get_user_stuff(user)), 200
 ```
@@ -463,7 +463,7 @@ user authenticated by password:
 
 ```python
 # append to "app.py"
-@app.get("/token", authorize="ALL")
+@app.get("/token", authorize="AUTH")
 def get_token(user: fsa.CurrentUser):
     return { "token": app.create_token(user) }, 200
 ```
@@ -674,7 +674,7 @@ class Days:
     name: str
     days: int
 
-@app.get("/days", authorize="ANY")
+@app.get("/days", authorize="OPEN")
 def get_days(who: Someone):
     age = datetime.datetime.now().date() - who.born
     return fsa.jsonify(Days(name=who.name, days=age.days))
@@ -727,7 +727,7 @@ list of integers:
 # append to "app.py"
 import sympy
 
-@app.get("/primes", authorize="ANY")
+@app.get("/primes", authorize="OPEN")
 def get_primes(li: list[int]):
     return fsa.jsonify(filter(sympy.isprime, li))
 ```

@@ -3,7 +3,7 @@
 # https://fastapi.tiangolo.com/tutorial/security/oauth2-jwt/
 #
 # About 50 lines to get there, half FastAPI version!
-# Note that **ALL** functions are one liners…
+# Note that _all_ functions are one liners…
 #
 
 import logging
@@ -52,7 +52,7 @@ def user_is_enabled(login: str) -> bool:
 
 # from a REST perspective, it should really be GET…
 # however OAuth web-oriented view prescribes POST on "username" and "password"
-@app.post("/token", authorize="ALL", auth="param")
+@app.post("/token", authorize="AUTH", auth="param")
 def post_token(user: User):
     return {"access_token": app.create_token(user.username), "token_type": "bearer"}, 200
 

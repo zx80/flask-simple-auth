@@ -3,9 +3,10 @@
 Sources are available on [GitHub](https://github.com/zx80/flask-simple-auth)
 and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 
-## ? on ?
+## 30.0 on ?
 
 Test cookie with a string default.
+Rename predefined special groups: `OPEN AUTH CLOSE`.
 
 ## 29.5 on 2024-03-23
 

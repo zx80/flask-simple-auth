@@ -112,7 +112,7 @@ The security first principle means that if the parameter is missing the route
 is closed with a *403*.
 
 ```python
-@app.get("/store", authorize="ANY")
+@app.get("/store", authorize="OPEN")
 def get_store(filter: str = None):
     # return store contents, possibly filtered
     ...
@@ -122,7 +122,7 @@ def post_store(data: str):
     # append new data to store, return id
     ...
 
-@app.get("/store/<id>", authorize="ANY")
+@app.get("/store/<id>", authorize="OPEN")
 def get_store_id(id: int):
     # return data corresponding to id
     ...
@@ -409,7 +409,7 @@ Other authentication schemes can be added by registering a new hook which:
 def code_authentication(app: Flask, req: Request) -> str|None:
     ...
 
-@app.get("/code-authentication", authorization="ALL", auth="code")
+@app.get("/code-authentication", authorize="AUTH", auth="code")
 def get_code_authentication(user: CurrentUser):
     return f"Hello code-authenticated {user}!", 200
 ```
@@ -488,7 +488,7 @@ An opened route for user registration with mandatory parameters
 could look like that:
 
 ```python
-@app.post("/register", authorize="ANY")
+@app.post("/register", authorize="OPEN")
 def post_register(user: str, password: str):
     if user_already_exists(user):
         return f"cannot create {user}", 409
@@ -502,7 +502,7 @@ by a password method:
 
 ```python
 # token creation route for all registered users
-@app.get("/login", authorize="ALL")
+@app.get("/login", authorize="AUTH")
 def get_login():
     return jsonify(app.create_token()), 200
 ```
@@ -540,7 +540,7 @@ that is *all* conditions must be met.
 A group or role is identified as an integer or a string.
 There are three approaches to check for group membership:
 
-- use predefined group special values `NONE ANY ALL`.
+- use predefined group special values `OPEN AUTH CLOSE`.
 - associate a group membership function to each group name.
 - use the `user_in_group(user, group)` function to check whether the
   authenticated user belongs to a given group.
@@ -557,25 +557,25 @@ def get_admin_only():
 
 There are three special values that can be passed to the `authorize` decorator:
 
-- `ANY` declares that no authentication is needed on that route,
-  i.e. *any*one can get in.
-- `ALL` declares that all authenticated user can access this route,
+- `OPEN` declares that no authentication is needed on that route,
+  i.e. anyone can get in, the route is open.
+- `AUTH` declares that all authenticated user can access this route,
   without group checks.
-- `NONE` returns a *403* on all access. It can be used to close a route
+- `CLOSE` returns a *403* on all access. It can be used to close a route
   temporarily. This is the default.
 
 ```python
-@app.get("/closed", authorize="NONE")
+@app.get("/closed", authorize="CLOSE")
 def get_closed():
     # nobody can get here
 
-@app.get("/authenticated", authorize="ALL")
+@app.get("/authenticated", authorize="AUTH")
 def get_authenticated():
-    # ALL authenticated users can get here
+    # AUTH-enticated users can get here
 
-@app.get("/opened", authorize="ANY")
+@app.get("/opened", authorize="OPEN")
 def get_opened():
-    # ANYone can get here, no authentication is required
+    # anyone can get here, no authentication is required
 ```
 
 Note that this simplistic model does is not enough for non-trivial applications,
@@ -717,7 +717,7 @@ If one parameter is a dict of keyword arguments, all remaining request
 parameters are added to it, as shown below:
 
 ```python
-@app.put("/awesome", authorize="ALL")
+@app.put("/awesome", authorize="AUTH")
 def put_awesome(**kwargs):
     ...
 ```
@@ -736,7 +736,7 @@ class Search:
     words: list[str]
     limit: int
 
-@app.get("/search", authorize="ANY")
+@app.get("/search", authorize="OPEN")
 def get_search(q: Search):
     ...
 ```
@@ -746,7 +746,7 @@ Generic types can be used, although with restrictions: only combinations of
 Using custome classes may or may not work, consider using data classes instead.
 
 ```python
-@app.get("/question", authorize="ANY")
+@app.get("/question", authorize="OPEN")
 def get_question(q: list[str]):
     ...
 ```
@@ -763,7 +763,7 @@ class EmailAddr:
     def __init__(self, addr: str):
         self._addr = addr
 
-@app.get("/mail/<addr>", authorize="ALL")
+@app.get("/mail/<addr>", authorize="AUTH")
 def get_mail_addr(addr: EmailAddr):
     ...
 ```
@@ -778,7 +778,7 @@ class nat(int):  # this demonstrate Python simplicity
             raise ValueError(f"nat value must be positive: {val}")
         return super().__new__(cls, val)
 
-@app.get("/pos", authorize="ANY")
+@app.get("/pos", authorize="OPEN")
 def get_pos(i: nat, j: nat):
     # i and j are positive integers
     ...
@@ -798,7 +798,7 @@ def strToHouse(s: str) -> House:
 
 # or: app.cast(House, strToHouse)
 
-@app.get("/house/<h>", authorize="ANY")
+@app.get("/house/<h>", authorize="OPEN")
 def get_house_h(h: House)
     ...
 ```
@@ -840,7 +840,7 @@ class User:
 
 app.special_parameter(User, lambda _: User(app.current_user()))
 
-@app.get("/hello", authorize="ALL")
+@app.get("/hello", authorize="AUTH")
 def get_hello(user: User):
     return f"Hello {user.firstname} {user.lastname}!", 200
 ```
@@ -853,7 +853,7 @@ translating HTTP parameters.  This allows to use python keywords as parameter
 names, such as `pass` or `def`.
 
 ```python
-@app.put("/user/<pass>", authorize="ALL")
+@app.put("/user/<pass>", authorize="AUTH")
 def put_user_pass(_pass: str, _def: str, _import: str):
     ...
 ```
@@ -936,7 +936,7 @@ def check_foo_param(foo):
     if this_foo_is_confidential(foo, app.current_user()):
         raise ErrorResponse(f"no way foo: {foo}", 403)
 
-@app.get("/foo/<fid>", authorize="ALL")
+@app.get("/foo/<fid>", authorize="AUTH")
 def get_foo_fid(fid: int):
     check_foo_param(fid)
     ...
@@ -1195,7 +1195,6 @@ Todo or not todo…
 - how to have several issuers and their signatures schemes?
 - add `issuer` route parameter? see `realm`.
 - authz/authn instead of authorize/auth?
-- rename ANY/ALL/NONE to something more intuitive?
 - declare scopes *per domain*?
 - drop token if their validity is too long?
 

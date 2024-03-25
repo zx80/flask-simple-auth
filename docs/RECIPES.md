@@ -29,7 +29,7 @@ HTTP Basic authentication is a login and password authentication encoded in
 - set `FSA_AUTH` to `basic` or to contain `basic`, or have a route with
   a `auth="basic"` parameter.
 - register a `get_user_pass` hook.
-- simple authentication routes are triggered with `authorize="ALL"`
+- simple authentication routes are triggered with `authorize="AUTH"`
 
 ### How-to configure parameter authentication?
 
@@ -40,7 +40,7 @@ This is login and password authentication passed as HTTP or JSON parameters.
 - the name of the expected two parameters are set with `FSA_PARAM_USER` and
   `FSA_PARAM_PASS`.
 - register a `get_user_pass` hook.
-- simple authentication routes are triggered with `authorize="ALL"`
+- simple authentication routes are triggered with `authorize="AUTH"`
 
 ### How-to configure token authentication?
 
@@ -82,7 +82,7 @@ You must build the object yourself, based on the string user name.
   ```python
   app.special_parameter(UserObject, lambda _: get_user_object())
 
-  @app.route("/...", authorize="ALL")
+  @app.route("/...", authorize="AUTH")
   def route_dotdotdot(user: UserObject)
       ...
   ```
@@ -171,7 +171,7 @@ that an authenfication method has succeeded, and that another must still be chec
 - create a route with the *first* auth method, eg a login/password basic authentication.
 
   ```python
-  @app.get("/login1", authorize="ALL", auth="basic")
+  @app.get("/login1", authorize="AUTH", auth="basic")
   def get_login1(user: fsa.CurrentUser):
       # trigger sending an email or SMS for a code
       send_temporary_code_to_user(user)
@@ -183,7 +183,7 @@ that an authenfication method has succeeded, and that another must still be chec
   code provided by the user at this stage.
 
   ```python
-  @app.get("/login2", authorize="ALL", auth="token", realm="login1")
+  @app.get("/login2", authorize="AUTH", auth="token", realm="login1")
   def get_login2(user: fsa.CurrentUser, code: str):
       if not check_code_validity(user, code):
           return "invalid validation code", 401
@@ -205,18 +205,21 @@ section in the documentation.
 
 ### How-to close a route?
 
-Use `authorize="NONE"` as a route parameter.
+Use `authorize="CLOSE"` as a route parameter.
 This will trigger a 403 forbidden response.
+
+This can be added in a list of authorizations (`authorize=[…, "CLOSE"]`)
+and will supersede all other settings for this route.
 
 ### How-to open a route?
 
-Use `authorize="ANY"` as a route parameter.
-*ANY*one can execute the route, without authentication.
+Use `authorize="OPEN"` as a route parameter.
+Anyone can execute the route, without authentication.
 
 ### How-to just authenticate a route?
 
-Use `authorize="ALL"` as a route parameter.
-*ALL* authenticated users can execute the route.
+Use `authorize="AUTH"` as a route parameter.
+All authenticated users can execute the route.
 
 ### How-to use simple group authorizations?
 
@@ -328,7 +331,7 @@ Just use them! They are converted from/to JSON, but for `list[*]` with HTTP
 parameters are expected to be repeated parameters.
 
 ```python
-@app.get("/generic", authorize="ANY")
+@app.get("/generic", authorize="OPEN")
 def get_generic(data: dict[str, list[int]]):
     # data["foo"][0]
     return {k: len(v) for k, v in data.items()}

@@ -37,12 +37,12 @@ def delete_todos_tid(tid: str):
     return "", 204
 
 
-@app.get("/todos", authorize="ANY")
+@app.get("/todos", authorize="OPEN")
 def get_todos():
     return TODOS, 200
 
 
-@app.post("/todos", authorize="ANY")
+@app.post("/todos", authorize="OPEN")
 def post_todos(task: str):
     # FIXME complexity!
     i = int(max(TODOS.keys()).lstrip("todo")) + 1

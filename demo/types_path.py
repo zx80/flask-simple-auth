@@ -7,12 +7,12 @@ import pydantic as pyda
 types = Blueprint("types", __name__)
 
 
-@types.get("/scalars", authorize="ANY")
+@types.get("/scalars", authorize="OPEN")
 def get_scalars(i: int = 0, f: float = 0.0, b: bool = False, s: str = ""):
     return f"i={i}, f={f}, b={b}, s={s}", 200
 
 
-@types.get("/json", authorize="ANY")
+@types.get("/json", authorize="OPEN")
 def get_json(j: JsonData):
     return f"{type(j).__name__}: {j}", 200
 
@@ -25,7 +25,7 @@ class nat(int):
         return super().__new__(cls, val)
 
 
-@types.get("/nat", authorize="ANY")
+@types.get("/nat", authorize="OPEN")
 def get_nat(i: nat, j: nat):
     return json(i + j), 200
 
@@ -42,12 +42,12 @@ class Personnage:
     age: int
 
 
-@types.post("/char", authorize="ANY")
+@types.post("/char", authorize="OPEN")
 def post_char(char: Character):
     return {"name": char.name, "age": char.age}, 201
 
 
-@types.post("/pers", authorize="ANY")
+@types.post("/pers", authorize="OPEN")
 def post_pers(pers: Personnage):
     return {"name": pers.name, "age": pers.age}, 201
 
@@ -60,6 +60,6 @@ class ListOfStr(list):
         super().__init__(l)
 
 
-@types.get("/ls", authorize="ANY")
+@types.get("/ls", authorize="OPEN")
 def post_ls(l: ListOfStr):
     return {"len": len(l), "all": "/".join(l)}, 200

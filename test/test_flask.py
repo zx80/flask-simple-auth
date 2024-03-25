@@ -1343,7 +1343,7 @@ def test_authorize_errors():
             return "should not get there", 200
         pytest.fail("should detect ANY/ALL mix")
     except ConfigError as e:
-        assert "ANY/ALL" in str(e)
+        assert "OPEN/AUTH" in str(e)
     try:
         @app.get("/bad-mix-2", authorize=["ANY", "OTHER"])
         def get_bad_mix_2():
@@ -2538,3 +2538,26 @@ def test_mixing():
         res = c.get("/mixing?a=35", json={"b": 7})
         assert res.status_code == 400
         assert b"not mix" in res.data
+
+def run_authorize(predefs, code):
+
+    for a in predefs:
+
+        app = fsa.Flask("auth")
+
+        @app.get("/route", authorize=a)
+        def get_route():
+            return "", 200
+
+        with app.test_client() as c:
+            res = c.get("/route")
+            assert res.status_code == code
+
+def test_open():
+    run_authorize(fsa._OPEN, 200)
+
+def test_close():
+    run_authorize(fsa._CLOSE, 403)
+
+def test_auth():
+    run_authorize(fsa._AUTH, 401)

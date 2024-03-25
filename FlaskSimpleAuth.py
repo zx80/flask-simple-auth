@@ -321,12 +321,35 @@ class Header(str):
 #
 # SPECIAL PREDEFINED GROUP NAMES
 #
-#  ANY: anyone can come in, no authentication required
-#  ALL: all authenticated users are allowed
-# NONE: no one can come in, the path is forbidden
-#
-ANY, ALL, NONE = "ANY", "ALL", "NONE"
-_PREDEFS = (ANY, ALL, NONE)
+ANY, ALL, NONE = "OPEN", "AUTH", "CLOSE"  # compatibility
+
+_OPEN = {"OPEN", "ANY", "NOAUTH"}
+"""Open route, no authentication."""
+
+_AUTH = {"AUTH", "AUTHENTICATED", "ALL"}
+"""Authenticated route."""
+
+_CLOSE = {"CLOSE", "NONE", "NOBODY"}
+"""Closed route."""
+
+_PREDEFS = _OPEN | _AUTH | _CLOSE
+"""All predefined pseudo-group names."""
+
+
+def _is_predef(l, s):
+    return any(map(lambda i: i in s, l))
+
+
+def _is_open(l):
+    return _is_predef(l, _OPEN)
+
+
+def _is_auth(l):
+    return _is_predef(l, _AUTH)
+
+
+def _is_close(l):
+    return _is_predef(l, _CLOSE)
 
 
 def _is_optional(t) -> bool:
@@ -2355,7 +2378,7 @@ class _AuthorizationManager:
 
     # just to record that no authorization check was needed
     def _no_authz(self, path, *groups):
-        """Decorator for skipping authorizations (authorize="NONE")."""
+        """Decorator for skipping authorizations (authorize="AUTH")."""
 
         def decorate(fun: Callable):
 
@@ -3638,7 +3661,7 @@ class FlaskSimpleAuth:
             return self._Res(f"internal error caught at {level} on {path}", self._server_error)
 
     # FIXME endpoint?
-    def add_url_rule(self, rule, endpoint=None, view_func=None, authorize=NONE, auth=None, realm=None, **options):
+    def add_url_rule(self, rule, endpoint=None, view_func=None, authorize="CLOSE", auth=None, realm=None, **options):
         """Route decorator helper method.
 
         - ``authz`` or ``authorize``: authorization constraints.
@@ -3648,7 +3671,7 @@ class FlaskSimpleAuth:
 
         # handle authz/authorize and authn/auth
         if "authz" in options:
-            if authorize is None or authorize != NONE:
+            if authorize is None or authorize != "CLOSE":
                 raise self._Bad("cannot use both authz and authorize on a route")
             authorize = options["authz"]
             del options["authz"]
@@ -3684,12 +3707,12 @@ class FlaskSimpleAuth:
         if self._cm and not self._cm._cached:
             self._cm._set_caches()
 
-        # normalize None to NONE
-        authorize = list(map(lambda a: NONE if a is None else a, authorize))
+        # normalize None to CLOSE
+        authorize = list(map(lambda a: "CLOSE" if a is None else a, authorize))
 
         # ensure non emptyness
         if len(authorize) == 0:
-            authorize = [NONE]
+            authorize = ["CLOSE"]
 
         # special handling of "oauth" rule-specific authentication
         if auth and type(auth) in (tuple, list) and "oauth" in auth:
@@ -3713,17 +3736,26 @@ class FlaskSimpleAuth:
             bads = list(filter(lambda a: a not in groups and a not in perms and a not in predefs, authorize))
             raise self._Bad(f"unexpected authorizations on {rule}: {bads}")
 
-        if NONE in predefs:
-            # overwrite all perms, a route is closed just by appending "NONE"
+        if _is_close(predefs):
+            # overwrite all perms, a route is closed just by appending "CLOSE"
             # NOTE the handling is performed later to allow for some checks
-            predefs, groups, perms = [NONE], [], []
-        elif ANY in predefs:
-            if len(predefs) > 1:
-                raise self._Bad(f"cannot mix ANY/ALL predefined groups on {path}")
+            predef, groups, perms = "CLOSE", [], []
+        elif _is_open(predefs):
+            predef = "OPEN"
+            if _is_auth(predefs):
+                raise self._Bad(f"cannot mix OPEN/AUTH predefined groups on {path}")
             if groups:
-                raise self._Bad(f"cannot mix ANY and other groups on {path}")
+                raise self._Bad(f"cannot mix OPEN and other groups on {path}")
             if perms:
-                raise self._Bad(f"cannot mix ANY with per-object permissions on {path}")
+                raise self._Bad(f"cannot mix OPEN with per-object permissions on {path}")
+        elif _is_auth(predefs):
+            predef = "AUTH"
+        else:  # trigger auth anyway
+            assert groups or perms
+            predef = "AUTH"
+
+        del predefs
+        assert predef in {"OPEN", "AUTH", "CLOSE"}
 
         from uuid import UUID
 
@@ -3767,8 +3799,8 @@ class FlaskSimpleAuth:
                 # else spec includes a type that we keep…
         newpath = "<".join(splits)
 
-        # special shortcut for NONE, override the user function entirely
-        if NONE in predefs:
+        # special shortcut, override the user function entirely
+        if predef == "CLOSE":
 
             @functools.wraps(view_func)  # type: ignore
             def r403():
@@ -3781,42 +3813,46 @@ class FlaskSimpleAuth:
         assert fun is not None
 
         # else only add needed filters on top of "fun", in reverse order
-        need_authenticate = ALL in predefs or groups or perms
+        need_authenticate = predef == "AUTH"
         need_parameters = len(fun.__code__.co_varnames) > 0
-        assert len(predefs) <= 1
 
         # build handling layers in reverse order:
         # routed / authenticate / (oauth|group|no|) / params / perms / hooks / fun
         if self._qm._before_exec_hooks:
             fun = self._qm._execute_hooks(newpath, "before exec hook", fun, self._qm._before_exec_hooks)
+
         if perms:
             if not need_parameters:
                 raise self._Bad("permissions require some parameters")
             assert need_authenticate and need_parameters
             first = fun.__code__.co_varnames[0]  # type: ignore
             fun = self._zm._perm_authz(newpath, first, *perms)(fun)
+
         if need_parameters:
             fun = self._pm._parameters(newpath)(fun)
         else:
             fun = self._pm._noparams(newpath)(fun)
+
         if groups:
             assert need_authenticate
             if auth == "oauth":
                 fun = self._zm._oauth_authz(newpath, *groups)(fun)
             else:
                 fun = self._zm._group_authz(newpath, *groups)(fun)
-        elif ANY in predefs:
+        elif predef == "OPEN":
             assert not groups and not perms
             fun = self._zm._no_authz(newpath, *groups)(fun)
-        elif ALL in predefs:
+        elif predef == "AUTH":
             assert need_authenticate
-            fun = self._zm._no_authz(newpath, *groups)(fun)
+            if not perms and not groups:
+                fun = self._zm._no_authz(newpath, *groups)(fun)
         else:  # no authorization at this level
             assert perms
+
         if need_authenticate:
-            assert perms or groups or ALL in predefs
+            assert perms or groups or predef == "AUTH"
             fun = self._am._authenticate(newpath, auth=auth, realm=realm)(fun)  # type: ignore
-        else:  # "ANY" case deserves a warning
+        else:  # "OPEN" case deserves a warning
             log.warning(f"no authenticate on {newpath}")
 
         assert fun != view_func, "some wrapping added"
