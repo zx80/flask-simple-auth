@@ -3733,7 +3733,7 @@ class FlaskSimpleAuth:
 
         # authorize are either in groups or in perms
         if len(authorize) != len(groups) + len(perms) + len(predefs):
-            bads = list(filter(lambda a: a not in groups and a not in perms and a not in predefs, authorize))
+            bads = list(filter(lambda a: a not in groups and a not in perms and a not in _PREDEFS, authorize))
             raise self._Bad(f"unexpected authorizations on {rule}: {bads}")
 
         if _is_close(predefs):
