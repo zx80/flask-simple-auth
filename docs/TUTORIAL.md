@@ -307,7 +307,7 @@ And add routes which are open to _AUTH_-enticated users:
 
 ```python
 # append to "app.py" routes
-# all authentication users can access this route
+# all authenticated users can access this route
 @app.get("/hello-me", authorize="AUTH")
 def get_hello_me(user: fsa.CurrentUser):
     return { "msg": "hello", "user": user }, 200
