@@ -24,19 +24,19 @@ auth.init_app(app)
 
 
 # GET /version: show running FlaskSimpleAuth version
-@app.get("/version", authorize="AUTH")
+@app.get("/version", authorize="OPEN")
 def get_version():
     return json(fsa.__version__), 200
 
 
 # GET /now: show current time from database
-@app.get("/now", authorize="AUTH")
+@app.get("/now", authorize="OPEN")
 def get_now():
     return json(db.now()), 200
 
 
 # GET /who: show authenticated user if available
-@app.get("/who", authorize="AUTH")
+@app.get("/who", authorize="OPEN")
 def get_who():
     return json(app.get_user(required=False)), 200
 

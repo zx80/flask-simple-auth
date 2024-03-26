@@ -336,20 +336,20 @@ _PREDEFS = _OPEN | _AUTH | _CLOSE
 """All predefined pseudo-group names."""
 
 
-def _is_predef(l, s):
-    return any(map(lambda i: i in s, l))
+def _is_predef(la: list[Any], s: set[str]):
+    return any(map(lambda i: i in s, la))
 
 
-def _is_open(l):
-    return _is_predef(l, _OPEN)
+def _is_open(la: list[Any]):
+    return _is_predef(la, _OPEN)
 
 
-def _is_auth(l):
-    return _is_predef(l, _AUTH)
+def _is_auth(la: list[Any]):
+    return _is_predef(la, _AUTH)
 
 
-def _is_close(l):
-    return _is_predef(l, _CLOSE)
+def _is_close(la: list[Any]):
+    return _is_predef(la, _CLOSE)
 
 
 def _is_optional(t) -> bool:
@@ -3846,7 +3846,7 @@ class FlaskSimpleAuth:
             assert need_authenticate
             if not perms and not groups:
                 fun = self._zm._no_authz(newpath, *groups)(fun)
-        else:  # no authorization at this level
+        else:  # pragma: no cover # no authorization at this level
             assert perms
 
         if need_authenticate:
