@@ -1194,9 +1194,7 @@ Todo or not todo…
 - password re could use a dict for providing an explanation?
 - how to have several issuers and their signatures schemes?
 - add `issuer` route parameter? see `realm`.
-- authz/authn instead of authorize/auth?
 - declare scopes *per domain*?
-- drop token if their validity is too long?
 
 ### Params
 
@@ -1214,6 +1212,7 @@ Todo or not todo…
 - the doc and implementation should clarify exception handling,
   and possible overrides.
 - add ability to catch and process any user error.
+  what about Flask?
 - json mode: generate json in more cases? automatically?
 - declare some exceptions to be turned into 400 instead of 500?
   currently this can be done below, eg anodb, maybe this is enough?
@@ -1221,17 +1220,13 @@ Todo or not todo…
 ### Software Engineering
 
 - reduce sloc?
-- separate classes/projects?
 - check for more directive types (dynamically)?
 - add app.log?
 - take advantage of `TypedDict`?
 
 ### Documentation
 
-- add precise doc about generic type support
-- separate explanations from reference?
 - more recipes?
 - include demo? point to demo?
 - comparisons with other frameworks
-- improve sample configuration
 - use `FlaskTester` in tutorial?
