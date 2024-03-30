@@ -40,8 +40,7 @@ pip install FlaskSimpleAuth[password]
 ```
 
 Using your favorite text editor, create in the `fsa-tuto` directory the `app.py`
-file with an _unauthenticated_ `GET /hello` route.
-The route is open because it is authorized to *ANY*one.
+file with an open (unauthenticated) `GET /hello` route.
 The `authorize` route parameter is **mandatory** to declare authorization
 requirements on the route.
 If not set, the route would be closed (aka 403).
@@ -844,6 +843,8 @@ token authentications, group and object permissions authorizations, and handling
 data classes.
 
 Note: a tutorial is **not** the standard way of doing things, it is just a
-simplistic and minimal example to demonstrate available features. You should
-develop your skills by using tools such as `make` and `shell` scripting to
-simplify, automate and speed up your development process.
+simplistic and minimal example to demonstrate available features.
+You should develop your skills by using tools such as `make` and `shell`
+scripting to simplify, automate and speed up your development process.
+Also, the above tests with authentications could be simplified with
+the [FlaskTester](https://pypi.org/project/FlaskTester/) package.
