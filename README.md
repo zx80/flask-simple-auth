@@ -4,7 +4,7 @@ FlaskSimpleAuth is a [Flask](https://flask.palletsprojects.com/) wrapper to add
 a declarative security layer to routes with authentification, authorization and
 parameter management.
 
-![Status](https://github.com/zx80/flask-simple-auth/actions/workflows/fsa.yml/badge.svg?branch=master&style=flat)
+![Status](https://github.com/zx80/flask-simple-auth/actions/workflows/fsa.yml/badge.svg?branch=main&style=flat)
 ![Tests](https://img.shields.io/badge/tests-87%20✓-success)
 ![Coverage](https://img.shields.io/badge/coverage-100%25-success)
 ![Issues](https://img.shields.io/github/issues/zx80/flask-simple-auth?style=flat)
