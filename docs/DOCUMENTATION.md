@@ -743,7 +743,7 @@ def get_search(q: Search):
 
 Generic types can be used, although with restrictions: only combinations of
 `list` and `str`-key `dict` of standard Python types are supported and checked.
-Using custome classes may or may not work, consider using data classes instead.
+Using custom classes may or may not work, consider using data classes instead.
 
 ```python
 @app.get("/question", authorize="OPEN")
