@@ -1230,3 +1230,4 @@ Todo or not todo…
 - include demo? point to demo?
 - comparisons with other frameworks
 - use `FlaskTester` in tutorial?
+- add `POST /token` to tutorial?
