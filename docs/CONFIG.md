@@ -32,8 +32,8 @@ FSA_ERROR_RESPONSE = "json:error"  # plain (default), json, json:<property-name>
 # AUTHENTICATION
 #
 #
-# FSA_AUTH = "none"         # list: none, httpd, basic, param, password, token, fake, oauth…
-# FSA_REALM = <app-name>
+# FSA_AUTH = "none"         # in: none, httpd, basic, param, password, token, fake, oauth…
+# FSA_REALM = <app-name>    # authentication realm for basic and digest
 #
 # parameter names for fake and param
 #
@@ -58,7 +58,7 @@ FSA_ERROR_RESPONSE = "json:error"  # plain (default), json, json:<property-name>
 # password authentication
 #
 # FSA_GET_USER_PASS = None        # hook, login -> password hash
-# FSA_PASSWORD_SCHEME = "bcrypt"  # passlib algorithm
+# FSA_PASSWORD_SCHEME = "bcrypt"  # passlib algorithm, None to disable passwords
 # FSA_PASSWORD_OPTS = {}          # passlib initialization
 #
 # password quality settings
@@ -79,8 +79,8 @@ FSA_PASSWORD_RE = [ r"[A-Z]", r"[a-z]", r"[0-9]" ]  # list of re to match
 #
 # FSA_GROUP_CHECK = {}       # groupe-name -> membership check fun
 # FSA_OBJECT_PERMS = {}      # domain -> permission check fun
-# FSA_USER_IN_GROUP = None   # generic hook for groups
-# FSA_AUTHZ_GROUPS = []      # declare group names
+# FSA_USER_IN_GROUP = None   # group member hook: login, group -> bool
+# FSA_AUTHZ_GROUPS = []      # formally declare group names
 # FSA_AUTHZ_SCOPES = []      # declare scope names (for oauth)
 
 #
