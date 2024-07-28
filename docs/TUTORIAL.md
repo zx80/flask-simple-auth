@@ -165,10 +165,8 @@ class AcmeData:
         return login in self.users
 
     def add_user(self, login: str, password: str, email: str, admin: bool) -> None:
-        if self.user_exists(login):
-            raise fsa.ErrorResponse(f"cannot overwrite existing user: {login}", 409)
-        if not re.match(r"^[a-z][a-z0-9]+$", login):
-            raise fsa.ErrorResponse(f"invalid login name: {login}", 400)
+        self.user_exists(login) and fsa.err(f"cannot overwrite existing user: {login}", 409)
+        re.match(r"^[a-z][a-z0-9]+$", login) or fsa.err(f"invalid login name: {login}", 400)
         self.users[login] = [password, email, admin]
 
     def get_user_pass(self, login: str) -> str|None:
@@ -178,20 +176,16 @@ class AcmeData:
         return self.users[login][2] if login in self.users else False
 
     def add_stuff(self, stuff: str, login: str, price: float) -> None:
-        if stuff in self.stuff:
-            raise fsa.ErrorResponse(f"cannot overwrite existing stuff: {stuff}", 409)
-        if login not in self.users:
-            raise fsa.ErrorResponse(f"no such user: {login}", 404)
+        stuff in self.stuff and fsa.err(f"cannot overwrite existing stuff: {stuff}", 409)
+        login in self.users or fsa.err(f"no such user: {login}", 404)
         self.stuff[stuff] = [login, price]
 
     def get_user_stuff(self, login: str) -> list[tuple[str, float]]:
-        if login not in self.users:
-            raise fsa.ErrorResponse(f"no such user: {login}", 404)
+        login in self.users or fsa.err(f"no such user: {login}", 404)
         return [ (stuff, row[1]) for stuff,row in self.stuff.items() if row[0] == login ]
 
     def change_stuff(self, stuff: str, price: float) -> None:
-        if stuff not in self.stuff:
-            raise fsa.ErrorResponse(f"no such stuff: {stuff}", 404)
+        stuff in self.stuff or fsa.err(f"no such stuff: {stuff}", 404)
         self.stuff[stuff][1] = price
 ```
 
@@ -276,9 +270,8 @@ from database import db
 
 # FlaskSimpleAuth password authentication hook
 def get_user_pass(login: str) -> str|None:
-    if not db.user_exists(login):
-        # NOTE returning None would work as well, but the result is cached
-        raise fsa.ErrorResponse(f"no such user: {login}", 401)
+    # NOTE returning None would work as well, but the result would be cached
+    db.user_exists(login) or fsa.err(f"no such user: {login}", 401)
     return db.get_user_pass(login)
 
 # TODO MORE CALLBACKS
