@@ -6,6 +6,7 @@ and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 ## ? in ?
 
 Improve tutorial.
+Fix unformatted format strings.
 
 ## 30.0 on 2024-03-26
 

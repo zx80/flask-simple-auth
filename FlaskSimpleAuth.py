@@ -1337,14 +1337,14 @@ class _TokenManager:
         ref = self._cmp_sig(f"{trealm}:{user}:{slimit}", secret)
         if ref != sig:
             if self._fsa._mode >= _Mode.DEBUG:
-                log.debug("AUTH (fsa token): invalid signature ({token})")
-            raise self._Err("invalid fsa auth token signature ({token})", 401)
+                log.debug(f"AUTH (fsa token): invalid signature ({token})")
+            raise self._Err(f"invalid fsa auth token signature ({token})", 401)
         # check limit with a grace time
         now = dt.datetime.now(dt.timezone.utc) - dt.timedelta(minutes=self._grace)
         if now > limit:
             if self._fsa._mode >= _Mode.DEBUG:
-                log.debug("AUTH (fsa token): token {token} has expired ({token})")
-            raise self._Err("expired fsa auth token ({token})", 401)
+                log.debug(f"AUTH (fsa token): token {token} has expired ({token})")
+            raise self._Err(f"expired fsa auth token ({token})", 401)
         return user, limit, None
 
     # function suitable for the internal authentication API
@@ -2847,7 +2847,7 @@ class _ParameterManager:
             # build helpers
             for name, param in sigs.parameters.items():
                 if name in handlers or name in names:
-                    raise self._Bad("parameter name collision on {name}", where)
+                    raise self._Bad(f"parameter name collision on {name}", where)
                 elif param.kind == inspect.Parameter.VAR_KEYWORD:
                     has_kwargs = True
                 elif param.kind == inspect.Parameter.VAR_POSITIONAL:
@@ -3418,7 +3418,7 @@ class FlaskSimpleAuth:
                 raise self._Bad(f"{directive} must be a dict")
             for key, hook in hooks.items():
                 if not callable(hook):  # pragma: no cover
-                    raise self._Bad("{directive} {key} value must be callable")
+                    raise self._Bad(f"{directive} {key} value must be callable")
                 set_hook(key, hook)
 
     #
