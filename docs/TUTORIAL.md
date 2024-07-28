@@ -423,6 +423,10 @@ def test_param_authn(client):
     assert res.json["user"] == "acme"
 ```
 
+Note that in the wide web world, people often prefer using a `POST` method with
+parameters `username` and `password` for this purpose.
+Setting this up is left as an exercise.
+
 ## Token Authentication
 
 Let us now activate *token* authentication.
