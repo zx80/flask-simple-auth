@@ -3,10 +3,11 @@
 Sources are available on [GitHub](https://github.com/zx80/flask-simple-auth)
 and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 
-## ? in ?
+## 30.1 in 2024-07-28
 
 Improve tutorial.
 Fix unformatted format strings.
+Add convenient `err` function for `raise ErrorResponse`.
 
 ## 30.0 on 2024-03-26
 

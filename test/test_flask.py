@@ -1263,7 +1263,7 @@ def test_object_perms_errors():
     def is_okay(u: str, v: str, m: str):
         log.debug(f"is_okay({u}, {v}, {m})")
         if v == "fsa":
-            raise fsa.ErrorResponse("oops-1", 518)
+            fsa.err("oops-1", 518)
         elif v == "ex":
             raise Exception("oops-2")
         elif v == "float":

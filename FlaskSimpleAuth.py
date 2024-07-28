@@ -198,6 +198,14 @@ class ErrorResponse(BaseException):
     content_type: str|None = None
 
 
+def err(*args, **kwargs):
+    """Shorcut function to trigger an error response.
+
+    It can be used inside an expression, eg: ``res or err("no data", 404)``
+    """
+    raise ErrorResponse(*args, **kwargs)
+
+
 class ConfigError(BaseException):
     """FSA User Configuration Error.
 
