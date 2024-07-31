@@ -7,6 +7,7 @@ and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 
 Simplify tutorial code.
 More precise warning.
+Check with `ruff`, drop check with `mypy`.
 
 ## 30.1 on 2024-07-28
 
