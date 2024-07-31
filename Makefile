@@ -13,55 +13,64 @@ F.pdf	= $(F.md:%.md=%.pdf)
 PYTHON	= python
 PIP		= venv/bin/pip
 
-.PHONY: check check.mypy check.flake8 check.black check.pytest check.demo check.coverage check.docs
+.PHONY: check.mypy
 check.mypy: venv
 	source venv/bin/activate
-	mypy --implicit-optional --check-untyped-defs $(MODULE).py
+	mypy $(MODULE).py
 
+.PHONY: check.pyright
 check.pyright: venv
 	source venv/bin/activate
 	pyright $(MODULE).py
 
+.PHONY: check.black
 check.black: venv
 	source venv/bin/activate
 	black --check $(MODULE).py
 
 IGNORE  = E227,E402,E501,E721,F401,F811
 
+.PHONY: check.flake8
 check.flake8: venv
 	source venv/bin/activate
 	flake8 --ignore=E127,W504,$(IGNORE) $(MODULE).py
 
+.PHONY: check.ruff
 check.ruff: venv
 	source venv/bin/activate
 	ruff check --ignore=$(IGNORE) $(MODULE).py
 
+.PHONY: check.pytest
 check.pytest: venv
 	source venv/bin/activate
 	$(MAKE) -C test check
 
+.PHONY: check.coverage
 check.coverage: venv
 	source venv/bin/activate
 	$(MAKE) -C test coverage
 
 # MD013: line length
+.PHONY: check.docs
 check.docs:
 	source venv/bin/activate
 	pymarkdown -d MD013 scan *.md */*.md
 	sphinx-lint docs/
 
 # just run the demo
+.PHONY: check.demo
 check.demo: venv
 	source venv/bin/activate
 	$(MAKE) -C demo check.pgall
 
 STYLE	= flake8
 
+.PHONY: check
 check: venv
 	source venv/bin/activate
 	type $(PYTHON)
-	$(MAKE) check.mypy
 	$(MAKE) check.pyright
+	$(MAKE) check.ruff
 	$(MAKE) check.docs
 	$(MAKE) check.$(STYLE)
 	$(MAKE) check.pytest && \
