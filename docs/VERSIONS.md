@@ -6,6 +6,7 @@ and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 ## ? on ?
 
 Simplify tutorial code.
+More precise warning.
 
 ## 30.1 on 2024-07-28
 

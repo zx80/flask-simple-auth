@@ -201,7 +201,7 @@ class ErrorResponse(BaseException):
 def err(*args, **kwargs):
     """Shorcut function to trigger an error response.
 
-    It can be used inside an expression, eg: ``res or err("no data", 404)``
+    It can be used inside an expression, eg: ``_ = res or err("no data", 404)``
     """
     raise ErrorResponse(*args, **kwargs)
 
@@ -3861,7 +3861,7 @@ class FlaskSimpleAuth:
             assert perms or groups or predef == "AUTH"
             fun = self._am._authenticate(newpath, auth=auth, realm=realm)(fun)  # type: ignore
         else:  # "OPEN" case deserves a warning
-            log.warning(f"no authenticate on {newpath}")
+            log.warning(f"no authenticate on {','.join(options.get('methods', []))} {newpath}")
 
         assert fun != view_func, "some wrapping added"
 
