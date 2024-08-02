@@ -620,7 +620,7 @@ class Flask(flask.Flask):
             val = rv[0] if isinstance(rv, tuple) else rv
             if type(val) in (bytes, str):
                 res.content_type = self._fsa._rm._default_type if len(val) else "text/plain"
-            elif type(rv) in (typing.Generator, typing.Iterator):
+            elif type(rv) in (typing.Generator, typing.Iterator):  # pragma: no cover
                 res.content_type = self._fsa._rm._default_type
         return res
 

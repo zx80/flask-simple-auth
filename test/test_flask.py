@@ -2281,10 +2281,10 @@ def test_default_type():
         assert res.headers["Content-Type"] == "application/xml"
         res = check(200, c.get("/ola"))
         assert res.data == b""
-        assert res.headers["Content-Type"] == "application/xml"
+        assert res.headers["Content-Type"] == "text/plain"
         res = check(204, c.get("/ciao"))
         assert res.data == b""
-        assert res.headers["Content-Type"] == "application/xml"
+        assert res.headers["Content-Type"] == "text/plain"
 
 def test_group_check():
     app = fsa.Flask("group-check", FSA_AUTH="fake", FSA_GROUP_CHECK={"foo": lambda u: u == "calvin"})
