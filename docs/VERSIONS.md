@@ -3,6 +3,11 @@
 Sources are available on [GitHub](https://github.com/zx80/flask-simple-auth)
 and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 
+## 30.3 on ?
+
+Force `text/plain` on empty results, because it is most likely _not_ a valid
+whatever (json, html)…
+
 ## 30.2 on 2024-07-31
 
 Simplify tutorial code.

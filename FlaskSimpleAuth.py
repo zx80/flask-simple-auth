@@ -617,9 +617,10 @@ class Flask(flask.Flask):
         res = super().make_response(rv)
         # possibly override Content-Type header
         if self._fsa._rm._default_type:
-            if type(rv) in (bytes, str, typing.Generator, typing.Iterator):
-                res.content_type = self._fsa._rm._default_type
-            elif isinstance(rv, tuple) and isinstance(rv[0], (bytes, str, typing.Generator, typing.Iterator)):
+            val = rv[0] if isinstance(rv, tuple) else rv
+            if type(val) in (bytes, str):
+                res.content_type = self._fsa._rm._default_type if len(val) else "text/plain"
+            elif type(rv) in (typing.Generator, typing.Iterator):
                 res.content_type = self._fsa._rm._default_type
         return res
 
