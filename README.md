@@ -62,7 +62,6 @@ to tell whether a user can access a given store in a particular role:
 
 ```python
 # file "auth.py"
-
 def get_user_pass(user: str) -> str|None:
     return ...  # hashed password retrieved from somewhere
 
@@ -77,7 +76,7 @@ Here is an example of configuration for the above application:
 Users are identified either with a JWT token or with a basic authentification.
 
 ```python
-# acme configuration
+# file "acme.conf"
 import os
 import auth
 
