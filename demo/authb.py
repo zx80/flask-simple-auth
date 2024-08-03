@@ -37,7 +37,7 @@ def post_auth(user: User):
     user.upass = app.hash_password(user.upass)
     aid = db.add_auth(a=user)
     app.auth_uncache(user.login)
-    app.password_uncache(user.email)
+    app.auth_uncache(user.email)
     return {"aid": aid}, 201
 
 
@@ -49,7 +49,7 @@ def put_auth_login(login: str, user: User):
     res = db.change_auth(a=user)
     _ = res or error(f"no such user: {login}", 404)
     app.auth_uncache(user.login)
-    app.password_uncache(user.email)
+    app.auth_uncache(user.email)
     return "", 204
 
 
