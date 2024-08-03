@@ -31,8 +31,8 @@ SELECT login, email, upass, admin FROM Auth ORDER BY 1;
 
 -- name: add_user$
 INSERT INTO Auth(login, email, upass, admin)
-  VALUES (:login, :email, :upass, :admin)
-  RETURNING aid;
+VALUES (:login, :email, :upass, :admin)
+RETURNING aid;
 
 -- name: del_user_login!
 DELETE FROM Auth WHERE :login IN (login, email);
@@ -45,3 +45,27 @@ UPDATE Auth SET email = :email WHERE :login IN (login, email);
 
 -- name: upd_user_admin!
 UPDATE Auth SET admin = :admin WHERE :login IN (login, email);
+
+-- name: get_auth_all
+SELECT aid, login, email, upass, admin
+FROM Auth
+ORDER BY 2;
+
+-- name: get_auth_login^
+SELECT aid, login, email, upass, admin
+FROM Auth
+WHERE login = :login;
+
+-- name: add_auth$
+INSERT INTO Auth(login, email, upass, admin)
+  VALUES (:a.login, :a.email, :a.upass, :a.admin)
+  ON CONFLICT DO NOTHING
+  RETURNING aid;
+
+-- name: change_auth!
+UPDATE Auth SET
+  login = :a.login,
+  email = :a.email,
+  upass = :a.upass,
+  admin = :a.admin
+WHERE aid = :a.aid;

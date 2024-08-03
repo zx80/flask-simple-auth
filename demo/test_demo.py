@@ -1,6 +1,8 @@
 #
 # NON REGRESSION TESTS FOR DEMO APP
 #
+# NOTE these could be simplified with FlaskTester
+#
 
 import pytest
 from app import app
@@ -272,6 +274,35 @@ def test_users(client):
     # cleanup
     check(204, client.delete("/users/tmp", headers=FOO_BASIC))
     check(404, client.get("/users/tmp", headers=FOO_BASIC))
+
+
+def test_auth(client):
+    import model
+    res = check(200, client.get("/auth", headers=FOO_BASIC))
+    assert res.is_json and isinstance(res.json, list) and len(res.json) >= 2
+    foo_aid = check(200, client.get("/auth/foo", headers=FOO_BASIC)).json["aid"]
+    assert isinstance(foo_aid, int)
+    # new tmp user
+    tmp = model.User(login="tmp", upass="tmp", email="tmp@somewhere.fr", admin=True)
+    assert tmp.aid is None
+    res_aid = check(201, client.post("/auth", json={"user": tmp}, headers=FOO_BASIC)).json
+    tmp.aid = res_aid["aid"]
+    tmp_get = check(200, client.get("/auth/tmp", headers=TMP_BASIC)).json
+    assert isinstance(tmp_get, dict) and len(tmp_get) == 5
+    tmp2 = model.User(**tmp_get)
+    tmp.upass = tmp2.upass  # override non encoded password field
+    assert tmp == tmp2
+    # auto-update tmp
+    tmp2.upass = "TMP"
+    tmp2.admin = False
+    check(204, client.put("/auth/tmp", json={"user": tmp2}, headers=TMP_BASIC))
+    # test new password and no-admin perms!
+    check(403, client.put("/auth/tmp", json={"user": tmp2}, headers=TMP_BASIC_2))
+    # cleanup
+    check(204, client.delete("/auth/tmp", headers=FOO_BASIC))
+    # more errors
+    check(405, client.patch("/auth/foo", headers=FOO_BASIC))
+    check(401, client.get("/auth/foo", headers=TMP_BASIC))
 
 
 def test_types(client):

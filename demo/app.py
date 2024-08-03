@@ -61,6 +61,10 @@ app.register_blueprint(stuff)
 from users import users
 app.register_blueprint(users)
 
+# another version with pydantic
+from authb import authb
+app.register_blueprint(authb)
+
 # self-care for users (register, consult, get token, change password)
 from scare import scare
 app.register_blueprint(scare)
