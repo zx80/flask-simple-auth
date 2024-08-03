@@ -295,9 +295,9 @@ def test_auth(client):
     # auto-update tmp
     tmp2.upass = "TMP"
     tmp2.admin = False
-    check(204, client.put("/auth/tmp", json={"user": tmp2}, headers=TMP_BASIC))
+    check(204, client.put(f"/auth/{tmp.aid}", json={"user": tmp2}, headers=TMP_BASIC))
     # test new password and no-admin perms!
-    check(403, client.put("/auth/tmp", json={"user": tmp2}, headers=TMP_BASIC_2))
+    check(403, client.put(f"/auth/{tmp.aid}", json={"user": tmp2}, headers=TMP_BASIC_2))
     # cleanup
     check(204, client.delete("/auth/tmp", headers=FOO_BASIC))
     # more errors

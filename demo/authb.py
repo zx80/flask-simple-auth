@@ -41,15 +41,18 @@ def post_auth(user: User):
     return {"aid": aid}, 201
 
 
-# PUT /auth/<login> (user): update user data
-@authb.put("/auth/<login>", authorize="ADMIN")
-def put_auth_login(login: str, user: User):
-    _ = login == user.login or error("inconsistent login", 400)
+# PUT /auth/<aid> (user): update user data
+@authb.put("/auth/<aid>", authorize="ADMIN")
+def put_auth_aid(aid: int, user: User):
+    _ = aid == user.aid or error("inconsistent aid", 400)
     user.upass = app.hash_password(user.upass)
-    res = db.change_auth(a=user)
-    _ = res or error(f"no such login: {login}", 404)
-    app.auth_uncache(user.login)
-    app.auth_uncache(user.email)
+    res = db.get_auth_aid(aid=aid)  # FIXME FOR UPDATE…
+    _ = res or error(f"no such aid: {aid}", 404)
+    prev = User(**tup2dict(res))
+    db.change_auth(a=user)
+    # user previous data as the login/email may have changed
+    app.auth_uncache(prev.login)
+    app.auth_uncache(prev.email)
     return "", 204
 
 

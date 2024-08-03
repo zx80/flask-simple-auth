@@ -56,6 +56,12 @@ SELECT aid, login, email, upass, admin
 FROM Auth
 WHERE login = :login;
 
+-- FIXME should be "FOR UPDATE" but I'm not so sure about sqlite3
+-- name: get_auth_aid^
+SELECT aid, login, email, upass, admin
+FROM Auth
+WHERE aid = :aid;
+
 -- name: add_auth$
 INSERT INTO Auth(login, email, upass, admin)
   VALUES (:a.login, :a.email, :a.upass, :a.admin)
