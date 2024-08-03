@@ -47,7 +47,7 @@ def put_auth_login(login: str, user: User):
     _ = login == user.login or error("inconsistent login", 400)
     user.upass = app.hash_password(user.upass)
     res = db.change_auth(a=user)
-    _ = res or error(f"no such user: {login}", 404)
+    _ = res or error(f"no such login: {login}", 404)
     app.auth_uncache(user.login)
     app.auth_uncache(user.email)
     return "", 204
