@@ -41,8 +41,8 @@ def get_store(pattern: str = "%"):
     # return the list of stores matching optional parameter pattern
     return ..., 200
 
-@app.post("/store/<sid>", authorize=("store", "sid", "manager"))
-def post_store_sid(sid: int, product: str, quantity: int):
+@app.post("/store/<sid>/product", authorize=("store", "sid", "manager"))
+def post_store_sid_product(sid: int, product: str, quantity: int):
     # product is added in quantity to store sid
     return ..., 201
 ```
