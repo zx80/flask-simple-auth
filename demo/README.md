@@ -99,6 +99,10 @@ The [types\_path.py](types_path.py) blueprint illustrates getting
 various parameter types, including the convenient `JsonData` types
 which converts a string to a JSON data structure.
 
+In [authb.py](authb.py) this goes a step further by using a pydantic class
+defined in [model.py](model.py) for parameters on routes `POST /auth` and
+`PUT /auth/<login>`.
+
 ### Database
 
 Flask, because Python memory management requires a global lock (GIL) which
@@ -134,15 +138,15 @@ for initial application users.
   database python file between applications.
 - the global shared `db` object is used locally in [app.py](app.py), but also in
   [auth.py](auth.py) for user authentification and authorization hooks, and in the
-  3 blueprints [scare.py](scare.py), [users.py](users.py) and [stuff.py](stuff.py),
-  only at the price of a trivial one liner:
+  4 blueprints [scare.py](scare.py), [users.py](users.py), [stuff.py](stuff.py)
+  and [authb.py](authb.py), only at the price of a trivial one liner:
 
   ```python
   from database import db
   ```
 
 If someone wants to change the underlying DB, the SQL files may need to be updated
-for the SQL variant syntax, as the `DB_*` configuration directives for driver
+for the SQL variant syntax, as the `DATABASE` configuration directive for driver
 and connection management.
 Compare [create-db.sql](create-db.sql) vs [create-pg.sql](create-pg.sql)
 and [app-db.conf](app-db.conf) vs [app-pg.conf](app-pg.conf).
