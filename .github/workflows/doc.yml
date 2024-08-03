@@ -1,6 +1,8 @@
 name: FlaskSimpleAuth documentation publication on GitHub
 
-on: push
+on:
+  push:
+    branch: [ "main" ]
 
 jobs:
   build:
