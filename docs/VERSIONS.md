@@ -7,6 +7,7 @@ and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 
 Force `text/plain` on empty results, because it is most likely _not_ a valid
 whatever (json, html)…
+Update and extend demo with pydantic example.
 
 ## 30.2 on 2024-07-31
 
