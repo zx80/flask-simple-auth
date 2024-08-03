@@ -1,5 +1,6 @@
 import pydantic
 
+# this also works with standard dataclasses and pydantic objects
 @pydantic.dataclasses.dataclass
 class User:
     login: str
