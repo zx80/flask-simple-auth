@@ -21,6 +21,5 @@ def db_commit(res: Response):
 
 # module initialization
 def init_app(app: Flask):
-    cf = app.config
-    db.set_fun(lambda i: DB(cf["DB_TYPE"], cf["DB_CONN"], cf["DB_SQL"], cf["DB_OPTIONS"]))
+    db.set_fun(lambda i: DB(**app.config["DATABASE"]))
     app.after_request(db_commit)

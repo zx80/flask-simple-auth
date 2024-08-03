@@ -4,7 +4,7 @@
 # this version attempts to get cache invalidation right, what a pain.
 # it should be waiting for the TTL.
 
-from FlaskSimpleAuth import Blueprint, current_app as app, jsonify as json
+from FlaskSimpleAuth import Blueprint, current_app as app, jsonify as json, err as error
 from database import db
 
 users = Blueprint("users", __name__)
@@ -20,7 +20,8 @@ def get_users():
 @users.get("/users/<login>", authorize=("users", "login"))
 def get_users_login(login: str):
     res = db.get_user_data(login=login)
-    return (json(res), 200) if res else ("", 404)
+    _ = res or error(f"no such login: {login}", 404)
+    return json(res), 200
 
 
 # POST /users (login, pass, admin): add a new user
@@ -56,11 +57,9 @@ def patch_users_login(login: str, email: str|None = None,
 # DELETE /users/<login>: delete this user
 @users.delete("/users/<login>", authorize=("users", "login"))
 def delete_users_login(login: str):
-    res = db.get_user_data(login=login)
-    if not res:
-        return "", 404
-    assert login in res[:2], "login is either login or email"
+    data = db.get_user_data(login=login)
+    _ = data or error(f"no such login: {login}", 404)
     db.del_user_login(login=login)
-    app.auth_uncache(res[0])
-    app.auth_uncache(res[1])  # email as a login
+    app.auth_uncache(data[0])
+    app.auth_uncache(data[1])  # email as a login
     return "", 204

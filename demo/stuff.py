@@ -2,7 +2,7 @@
 # STUFF are managed by all AUTH-enticated users
 #
 
-from FlaskSimpleAuth import Blueprint, jsonify as json
+from FlaskSimpleAuth import Blueprint, jsonify as json, err as error
 from database import db
 
 stuff = Blueprint("stuff", __name__)
@@ -26,7 +26,8 @@ def post_stuff(sname: str):
 @stuff.get("/stuff/<sid>", authorize="AUTH")
 def get_stuff_sid(sid: int):
     res = db.get_stuff_sid(sid=sid)
-    return (json(res), 200) if res else ("", 404)
+    _ = res or error(f"no such sid: {sid}", 404)
+    return json(res), 200
 
 
 # DELETE /stuff/<sid>: delete this stuff
@@ -39,9 +40,6 @@ def delete_stuff_sid(sid: int):
 # PATCH /stuff/<sid>: update this stuff
 @stuff.patch("/stuff/<sid>", authorize="AUTH")
 def patch_stuff_sid(sid: int, sname: str):
-    # FIXME should be FOR UPDATE, but sqlite does not support that,
-    # or check that update below did something
-    if not db.get_stuff_sid(sid=sid):
-        return "", 404
-    db.upd_stuff_sid(sid=sid, sname=sname)
+    res = db.upd_stuff_sid(sid=sid, sname=sname)
+    _ = res or error(f"no such sid: {sid}", 404)
     return "", 204
