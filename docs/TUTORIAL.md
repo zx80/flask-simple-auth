@@ -143,7 +143,7 @@ pytest test.py  # 1 passed
 
 ## Acme Database
 
-Our incredible application will held some data in a toy *Acme* database with
+Our incredible application will hold some data in a toy *Acme* database with
 *Users* who can own *Stuff* at a price.  
 Create file `acme.py` to manage a simplistic in-memory database implemented
 as the `AcmeData` class:
@@ -280,6 +280,7 @@ def get_user_pass(login: str) -> str|None:
 def init_app(app: fsa.Flask):
     # register password hook
     app.get_user_pass(get_user_pass)
+    # app.get_user_pass(db.get_user_pass)  # would work as well…
     # TODO MORE REGISTRATIONS
 ```
 
@@ -423,16 +424,16 @@ def test_param_authn(client):
     assert res.json["user"] == "acme"
 ```
 
-Note that in the wide web world, people often prefer using a `POST` method with
-parameters `username` and `password` for this purpose.
-Setting this up is left as an exercise.
+Authentication is often managed with tokens instead of passwords.
+This approach is discussed in the next section.
 
 ## Token Authentication
 
 Let us now activate *token* authentication.
 This avoids sending login/passwords in each request, and is much more efficient
 for the server because cryptographic password hashing functions are *designed*
-to be very slow.  
+to be very slow. Moreover, you do not want to pay for cpu cycles and have your
+users endure additional latency just for that.  
 Token authentication can be activated explicitely by prepending *token* to
 `FSA_AUTH` in `acme.conf`:
 
@@ -495,6 +496,10 @@ def test_token_authn(client):
     assert res.json["user"] == "acme"
 ```
 
+Note that in the wide web world, people often prefer using a `POST` method with
+parameters `username` and `password` for retrieving a token.
+Setting this up is left as an exercise.
+
 ## Group Authorization
 
 For *group* authorization, we need to:
@@ -504,9 +509,8 @@ For *group* authorization, we need to:
 - define a route which requires some group membership
 
 Whether a user belongs to the *admin* group is defined as a boolean
-in the user profile managed by *AcmeData*.
-
-Then write the group checking function:
+in the user profile managed by *AcmeData*.  
+First, write the group checking function:
 
 ```python
 # in "auth.py"
@@ -519,6 +523,7 @@ Then register it in the auth initializations:
 ```python
 # append to "init_app" in "auth.py"
     app.group_check("admin", user_is_admin)
+    # app.group_check("admin", db.user_is_admin)  # would work as well…
 ```
 
 Then edit `app.py` to create a route reserved to admins which insert new users,
@@ -572,7 +577,7 @@ def test_group_authz(client):
 ## Object Authorization
 
 Object permissions link a user to some *objects* to allow operations.
-We want to allow object owners to change the price of their stuff.  
+We want to allow object _owners_ to change the price of _their_ stuff.  
 First, create the permission verification function:
 
 ```python
@@ -834,7 +839,7 @@ Restart and test the application with these new settings…
 
 ## Colophon
 
-By following this tutorial, you have built a secured *Flask* application by
+By following this tutorial, you have built a secure *Flask* application by
 taking advantage of features provided by *FlaskSimpleAuth*: basic, parameter and
 token authentications, group and object permissions authorizations, and handling
 data classes.
