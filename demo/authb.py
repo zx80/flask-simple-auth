@@ -10,11 +10,16 @@ from model import User
 
 authb = Blueprint("auth", __name__)
 
-# NOTE this can be done directly by the database driver
-#      eg with connection option row_factory=psycopg.rows.dict_row
-#      or conn.row_factory = sqlite3.Row
+# NOTE
+#
+# - this could be done directly by the database driver eg with connection option
+#   row_factory=psycopg.rows.dict_row or conn.row_factory = sqlite3.Row.
+# - this is done explicitely at the app level so as to ease
+#   sqlite3/psycopg code compatibility which is a feature of this demo.
+# - the generated dict is consistent with the User class.
+#
 def tup2dict(u):
-    assert isinstance(u, (list, tuple)) and len(u) == 5
+    assert isinstance(u, (list, tuple)) and len(u) == 5  # sanity check
     return {"aid": u[0], "login": u[1], "email": u[2], "upass": u[3], "admin": u[4]}
 
 # GET /auth: get all auth data
@@ -34,7 +39,7 @@ def get_auth_login(login: str):
 # POST /auth (login, email, pass, admin): add a new user
 @authb.post("/auth", authorize="ADMIN")
 def post_auth(user: User):
-    user.upass = app.hash_password(user.upass)
+    user.upass = app.hash_password(user.upass)  # hash clear text password!
     aid = db.add_auth(a=user)
     app.auth_uncache(user.login)
     app.auth_uncache(user.email)
@@ -45,12 +50,12 @@ def post_auth(user: User):
 @authb.put("/auth/<aid>", authorize="ADMIN")
 def put_auth_aid(aid: int, user: User):
     _ = aid == user.aid or error("inconsistent aid", 400)
-    user.upass = app.hash_password(user.upass)
+    user.upass = app.hash_password(user.upass)  # hash clear text password!
     res = db.get_auth_aid(aid=aid)  # FIXME FOR UPDATE…
     _ = res or error(f"no such aid: {aid}", 404)
     prev = User(**tup2dict(res))
     db.change_auth(a=user)
-    # user previous data as the login/email may have changed
+    # user *previous* data may have changed
     app.auth_uncache(prev.login)
     app.auth_uncache(prev.email)
     return "", 204
