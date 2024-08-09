@@ -790,7 +790,7 @@ class Directives:
     """Request hook executed before request.
 
     These hooks are managed internally by FlaskSimpleAuth so that they are
-    executed *after* its own before request hooks, so as to minimize
+    executed *after* its own (FSA) before request hooks, so as to minimize
     interactions between user hooks registered to Flask directly and its own
     hooks.
     """
@@ -800,6 +800,11 @@ class Directives:
 
     FlaskSimpleAuth-specific hooks executed after authentication, so that for
     instance the current user is available.
+
+    The hook is executed *after* authentication and *before* the user function.
+
+    It may be used to commit and return a database connection used by the
+    authentication phase.
 
     See also ``before_exec`` function/decorator.
     """
