@@ -9,6 +9,7 @@ Force `text/plain` on empty results, because it is most likely _not_ a valid
 whatever (json, html)…
 Update and extend demo with pydantic example.
 Update README.
+Allow mixing _JSON_ and _HTTP_ parameters.
 
 ## 30.2 on 2024-07-31
 

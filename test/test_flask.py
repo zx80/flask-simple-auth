@@ -2534,10 +2534,10 @@ def test_mixing():
         res = c.get("/mixing", json={"a": 37, "b": 5})
         assert res.status_code == 200
         assert res.json == 42
-        # bad
+        # mixing, why not?
         res = c.get("/mixing?a=35", json={"b": 7})
-        assert res.status_code == 400
-        assert b"not mix" in res.data
+        assert res.status_code == 200
+        assert res.json == 42
 
 def run_authorize(predefs, code):
 

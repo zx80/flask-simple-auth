@@ -33,7 +33,7 @@ except ModuleNotFoundError:
 
 import flask
 import werkzeug.exceptions as exceptions
-from werkzeug.datastructures import FileStorage
+from werkzeug.datastructures import FileStorage, CombinedMultiDict
 
 import ProxyPatternPool as ppp  # type: ignore
 
@@ -2801,20 +2801,18 @@ class _ParameterManager:
         """Get request parameters wherever they are."""
         if request.is_json:
             self._fsa._local.params = "json"
-            # FIXME should it be forbidden?
-            if request.files or request.args or request.form:
-                log.error("unexpected JSON and HTTP parameter mix")
-                raise self._Err("cannot mix JSON and HTTP parameters", 400)
-            return request.json
+            # FIXME should it always be a dict? if not the CombinedMultiDict will fail
+            if not isinstance(request.json, dict):  # pragma: no cover
+                log.warning(f"request.json is expected to be a dict, got {type(request.json)}.")
+            # NOTE json + args may result in unexpected corner case behavior…
+            # NOTE form and files cannot co-exists with json
+            return CombinedMultiDict([request.json, request.args])
         else:
             self._fsa._local.params = "http"
-
             # reimplement "request.values" after Flask 2.0 regression
-            # the logic of web-targetted HTTP does not make sense for a REST API
+            # the logic of web-oriented HTTP does not make sense for a REST API
             # https://github.com/pallets/werkzeug/pull/2037
             # https://github.com/pallets/flask/issues/4120
-            from werkzeug.datastructures import CombinedMultiDict
-
             return CombinedMultiDict([request.args, request.form, request.files])
 
     def _noparams(self, path):
