@@ -3,6 +3,10 @@
 Sources are available on [GitHub](https://github.com/zx80/flask-simple-auth)
 and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 
+## TODO
+
+- drop mandatory dependency to `passlib`? `pwdlib`? direct `bcrypt`?
+
 ## 30.3 on 2024-08-10
 
 Force `text/plain` on empty results, because it is most likely _not_ a valid
