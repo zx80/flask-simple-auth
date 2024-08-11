@@ -77,9 +77,9 @@ Depending on options, the following modules should be installed:
   [CacheToolsUtils](https://pypi.org/project/cachetoolsutils/) for caching.
   Possibly [pymemcache](https://pypi.org/project/pymemcache/) and
   [redis](https://pypi.org/project/redis/) for external back-ends.
-- [passlib](https://pypi.org/project/passlib/) for password management,
-  [bcrypt](https://pypi.org/project/bcrypt/)  for password hashing (default algorithm).
-- [PyJWT](https://pypi.org/project/PyJWT/) for JSON Web Token (JWT),
+- [bcrypt](https://pypi.org/project/bcrypt/)  for password hashing (default algorithm),
+  [passlib](https://pypi.org/project/passlib/) for other password management,
+  [PyJWT](https://pypi.org/project/PyJWT/) for JSON Web Token (JWT),
   [cryptography](https://pypi.org/project/cryptography/) for pubkey-signed JWT.
 - [Flask HTTPAuth](https://github.com/miguelgrinberg/Flask-HTTPAuth)
   for `http-*` authentication options.
@@ -438,11 +438,19 @@ impair application performance.
 The following configuration directives are available to configure `passlib`
 password checks:
 
-- `FSA_PASSWORD_SCHEME` password scheme to use for passwords.
-  Default is `bcrypt`.
+- `FSA_PASSWORD_SCHEME` password provider and scheme to use for passwords.
+  There are two providers: `fsa` (internal) and `passlib`.
+
+  Default is `fsa:bcrypt`.
+
+  The internal `fsa` provider supports `bcrypt` (with a dependency to the
+  eponymous package), `plaintext` (do not use) and `a85` and `b64` obfuscated
+  plaintext (do not use either).
+
   See [passlib documentation](https://passlib.readthedocs.io/en/stable/lib/passlib.hash.html)
   for available options, including the bad *plaintext*.
   Set to `None` to disable internal password checking.
+
 - `FSA_PASSWORD_OPTS` relevant options (for `passlib.CryptContext`).
   Default is ident *2y* with *4* rounds.
 
@@ -451,7 +459,7 @@ thwart password cracking if the hashed passwords are leaked, so that you
 do not want to have to use that on every request in real life (eg *hundreds*
 milliseconds for passlib bcrypt *12* rounds).
 The above defaults result in manageable password checks of a few milliseconds.
-Consider using tokens to reduce the authentication load on each request.
+Please consider using tokens to reduce the authentication load on each request.
 
 For `digest` authentication, the password must be either in *plaintext* or a
 simple MD5 hash ([RFC 2617](https://www.rfc-editor.org/rfc/rfc2617.txt)).

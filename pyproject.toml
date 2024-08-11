@@ -37,14 +37,27 @@ package = "https://pypi.org/project/FlaskSimpleAuth/"
 
 [project.optional-dependencies]
 # various dev tools
-dev = [ "mypy", "pyright", "flake8", "black", "pytest", "coverage", "pymarkdownlnt!=0.9.5", "build", "twine", "wheel", "types-flask", "types-requests", "ruff", ]
+dev = [
+  "types-flask", "types-requests",
+  "mypy", "pyright",
+  "flake8", "black", "ruff",
+  "pytest", "coverage",
+  "pymarkdownlnt!=0.9.5",
+  "build", "twine", "wheel",
+]
 # documentation generation
 doc = [ "sphinx", "sphinx_rtd_theme", "sphinx-autoapi", "sphinx-lint", "myst_parser" ]
 # NOTE also: password jwt cors httpauth
 tests = [ "requests", "pydantic>=2.0" ]
 demo = [ "anodb", "psycopg", "psycopg2", "pymemcache", "redis", "types-redis", "types-cachetools" ]
 # password management
-password = [ "passlib", "bcrypt" ]
+# out: passlib (unmaintained)
+password = [
+  "bcrypt",
+  "argon2-cffi",
+  "scrypt",
+  "passlib; python_version < 3.13",
+]
 # cache options
 redis = [ "redis" ]
 memcached = [ "pymemcache" ]

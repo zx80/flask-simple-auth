@@ -5,6 +5,7 @@
 
 import io
 import re
+import importlib
 import typing
 
 import pytest
@@ -50,6 +51,13 @@ def has_service(host="localhost", port=22):
         return False
     finally:
         tcp_ip.close()
+
+def has_package(pkg_name):
+    try:
+        importlib.import_module(pkg_name)
+        return True
+    except ModuleNotFoundError:
+        return False
 
 def test_sanity():
     assert App.app is not None and fsa is not None
@@ -463,6 +471,42 @@ def test_password_check(client):
 def test_plaintext_password():
     app = fsa.Flask("plain", FSA_PASSWORD_SCHEME="plaintext")
     assert app.hash_password("hello") == "hello"
+    assert app.check_password("hello", "hello")
+
+def check_various_passwords(app):
+    for password in ("hello", "W0r1d!", "&éçàùµ§…"):
+        assert app.check_password(password, app.hash_password(password))
+
+def test_fsa_password_simple_schemes():
+    for scheme in ("plaintext", "fsa:plaintext", "fsa:b64", "fsa:a85"):
+        app = fsa.Flask(scheme, FSA_PASSWORD_SCHEME=scheme)
+        check_various_passwords(app)
+
+@pytest.mark.skipif(not has_package("bcrypt"), reason="bcrypt is not available")
+def test_fsa_password_bcrypt_scheme():
+    for scheme in ("bcrypt", "fsa:bcrypt"):
+        app = fsa.Flask(scheme, FSA_PASSWORD_SCHEME=scheme)
+        check_various_passwords(app)
+
+@pytest.mark.skipif(not has_package("argon2"), reason="argon2 is not available")
+@pytest.mark.skip(reason="not implemented yet")
+def test_fsa_password_argon2_scheme():
+    for scheme in ("argon2", "fsa:argon2"):
+        app = fsa.Flask(scheme, FSA_PASSWORD_SCHEME=scheme)
+        check_various_passwords(app)
+
+@pytest.mark.skipif(not has_package("scrypt"), reason="scrypt is not available")
+@pytest.mark.skip(reason="not implemented yet")
+def test_fsa_password_scrypt_scheme():
+    for scheme in ("scrypt", "fsa:scrypt"):
+        app = fsa.Flask(scheme, FSA_PASSWORD_SCHEME=scheme)
+        check_various_passwords(app)
+
+@pytest.mark.skipif(not has_package("passlib"), reason="passlib is not available")
+def test_passlib_password_scheme():
+    for scheme in ("passlib:plaintext", "passlib:bcrypt"):
+        app = fsa.Flask(scheme, FSA_PASSWORD_SCHEME=scheme)
+        check_various_passwords(app)
 
 def test_password_quality():
     mode = app._fsa._mode
@@ -1465,7 +1509,8 @@ def test_redis_cache():
 def test_caches():
     import AppFact as af
     import CacheToolsUtils as ctu
-    for cache in ["ttl", "lru", "lfu", "mru", "fifo", "rr", "dict", "none"]:
+    # mru: deprecated
+    for cache in ["ttl", "lru", "lfu", "fifo", "rr", "dict", "none"]:
         for prefix in [cache + ".", None]:
             log.debug(f"testing cache type {cache}")
             with af.create_app(FSA_CACHE=cache, FSA_CACHE_PREFIX=prefix).test_client() as c:
@@ -1568,6 +1613,21 @@ def test_warnings_and_errors():
         pytest.fail("should not get through")
     except ConfigError as e:
         assert "FSA_NO_SUCH_DIRECTIVE" in str(e)
+    try:
+        app = af.create_app(FSA_PASSWORD_SCHEME="foo:bcrypt")
+        pytest.fail("should not get through")
+    except ConfigError as e:
+        assert "provider" in str(e)
+    try:
+        app = af.create_app(FSA_PASSWORD_SCHEME="fsa:bad-scheme")
+        pytest.fail("should not get through")
+    except ConfigError as e:
+        assert "bad-scheme" in str(e)
+    try:
+        app = af.create_app(FSA_PASSWORD_SCHEME="passlib:bad_scheme")
+        pytest.fail("should not get through")
+    except ConfigError as e:
+        assert "bad_scheme" in str(e)
 
 
 def test_jsondata(client):

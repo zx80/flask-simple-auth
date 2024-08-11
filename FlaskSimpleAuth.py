@@ -942,14 +942,29 @@ class Directives:
     FSA_TOKEN_ISSUER: str|None = None
     """Token issuer."""
 
-    FSA_PASSWORD_SCHEME: str|None = "bcrypt"
-    """Password hash algorithm name from ``passlib``."""
+    FSA_PASSWORD_SCHEME: str|None = "fsa:bcrypt"
+    """Password hash provider and algorithm name.
 
-    FSA_PASSWORD_OPTS: dict[str, Any] = {"bcrypt__default_rounds": 4, "bcrypt__default_ident": "2y"}
-    """Password hash algorithm options from ``passlib``.
+    If the provider is not set, uses ``fsa`` for bcrypt, plaintext, a85 and b64,
+    otherwise ``passlib``.
+    """
 
-    Default for *bcrypt* is ident *2y* (132-bit salt) with *4* rounds (2⁴ hash iterations).
-    It is compatible with Apache. All _2*_ variants are really equivalent.
+    FSA_PASSWORD_OPTS: dict[str, Any]|None = None
+    """Password hash algorithm options.
+
+    *None* triggers the defaults, which depend on the provider and scheme:
+
+    - for ``fsa:bcrypt``: ``{"rounds": 4, "prefix"=b"2b"}``
+    - for ``fsa:*``: ``{}``
+    - for ``passlib:bcrypt``: ``{"bcrypt__default_rounds": 4, "bcrypt__default_ident": "2y"}``
+
+    With passlib, default for *bcrypt* is ident *2y* (132-bit salt) with *4*
+    rounds (2⁴ hash iterations). It is compatible with Apache.
+    All _2*_ variants are really equivalent.
+
+    The recommend password rounds is _12_, which results in _x00 ms_ server cpu time.
+    This is okay only if you do **not** use password authentication on many routes,
+    but only to retrieve some token which would be much easier to check.
     """
 
     FSA_PASSWORD_LENGTH: int = 0
@@ -1471,15 +1486,15 @@ class _PasswordManager:
     #
     # PASSWORD MANAGEMENT
     #
-    # FSA_PASSWORD_SCHEME: name of password scheme for passlib context
+    # FSA_PASSWORD_SCHEME: names of password provider and scheme
     # FSA_PASSWORD_OPTS: further options for passlib context
     # FSA_PASSWORD_LENGTH: minimal length of provided passwords
     # FSA_PASSWORD_RE: list of re a password must match
     # FSA_PASSWORD_QUALITY: hook for password strength check
     # FSA_PASSWORD_CHECK: hook for alternate password check
     #
-    # NOTE passlib bcrypt is Apache compatible
-    # NOTE about caching: if password checks are cached, this would
+    # NOTE bcrypt is Apache compatible
+    # NOTE about caching: if password checks are cached, this could
     #      mean that the clear text password is stored in cache, which
     #      is a VERY BAD IDEA because consulting the cache would give
     #      access to said passwords.
@@ -1496,7 +1511,9 @@ class _PasswordManager:
         self._Bad = fsa._Bad
         self._Err = fsa._Err
         # password stuff
-        self._pass_context = None
+        self._pass_provider_name: str = "fsa"
+        self._pass_scheme: str = "bcrypt"
+        self._pass_provider = None
         self._pass_check: Hooks.PasswordCheckFun|None = None
         self._pass_quality: Hooks.PasswordQualityFun|None = None
         self._pass_len: int = 0
@@ -1515,23 +1532,128 @@ class _PasswordManager:
 
         # configure password management
         scheme = conf.get("FSA_PASSWORD_SCHEME", Directives.FSA_PASSWORD_SCHEME)
+
         if not scheme:  # pragma: no cover
             # raise self._Bad("cannot initialize password manager without a scheme")
             return
-        log.info(f"initializing password manager with {scheme}")
+        if ":" in scheme:
+            provider, scheme = scheme.split(":", 1)
+        else:  # default depends on scheme
+            provider = "fsa" if scheme in ("bcrypt", "plaintext", "a85", "b64") else "passlib"
+
+        if provider not in ("fsa", "passlib"):
+            raise self._Bad(f"unsupported password provider: {provider}")
+
+        log.info(f"initializing password manager with {provider}:{scheme}")
+
         if scheme == "plaintext":
             log.warning("plaintext password manager is a bad idea")
+
+        # record just in case
+        self._pass_provider_name, self._pass_scheme = provider, scheme
+
         options = conf.get("FSA_PASSWORD_OPTS", Directives.FSA_PASSWORD_OPTS)
-        # only actually initialize with passlib if needed
-        # passlib context is a pain, you have to know the scheme name to set its
-        # round. Ident "2y" is same as "2b" but apache compatible.
-        try:
-            from passlib.context import CryptContext  # type: ignore
-        except ModuleNotFoundError:  # pragma: no cover
-            log.error("missing module: install FlaskSimpleAuth[passwords]")
-            raise
-        self._pass_context = CryptContext(schemes=[scheme], **options)
+
+        class PlainTextPassProvider:
+
+            def hash(self, password: str) -> str:
+                return password
+
+            def verify(self, password: str, ref: str) -> bool:
+                return password == ref
+
+        import base64
+
+        class B64PassProvider:
+
+            def hash(self, password: str) -> str:
+                return base64.b64encode(password.encode("UTF8")).decode("ascii")
+
+            def verify(self, password: str, ref: str) -> bool:
+                return password == base64.b64decode(ref).decode("UTF8")
+
+        class A85PassProvider:
+
+            def hash(self, password: str) -> str:
+                return base64.a85encode(password.encode("UTF8")).decode("ascii")
+
+            def verify(self, password: str, ref: str) -> bool:
+                return password == base64.a85decode(ref).decode("UTF8")
+
+        # simple schemes do not require an external package
+        _FSA_PASS_SIMPLE_SCHEMES = {
+            "plaintext": PlainTextPassProvider,
+            "b64": B64PassProvider,
+            "a85": A85PassProvider,
+        }
+
+        if provider == "fsa":
+
+            if scheme in _FSA_PASS_SIMPLE_SCHEMES:
+
+                self._pass_provider = _FSA_PASS_SIMPLE_SCHEMES[scheme]()
+
+            elif scheme == "bcrypt":
+
+                if options is None:
+                    # NOTE 2y is not supported…
+                    options = {"rounds": 4, "prefix": b"2b"}
+
+                try:
+                    import bcrypt
+                except ModuleNotFoundError:  # pragma: no cover
+                    log.error("missing module bcrypt")
+                    raise
+
+                class BCryptPassProvider:
+
+                    def hash(self, password: str) -> str:
+                        return bcrypt.hashpw(password.encode("UTF8"), bcrypt.gensalt(**options)).decode("ascii")
+
+                    def verify(self, password: str, ref: str) -> bool:
+                        return bcrypt.checkpw(password.encode("UTF8"), ref.encode("ascii"))
+
+                self._pass_provider = BCryptPassProvider()
+
+            elif scheme == "argon2":
+
+                raise self._Bad("scheme fsa:argon2 not implemented yet")
+
+            elif scheme == "scrypt":
+
+                raise self._Bad("scheme fsa:scrypt not implemented yet")
+
+            else:
+
+                raise self._Bad(f"unexpected fsa password scheme: {scheme}")
+
+        else:
+            # only actually initialize with passlib if needed
+            # passlib context is a pain, you have to know the scheme name to set its
+            # round. Ident "2y" is same as "2b" but apache compatible.
+
+            assert provider == "passlib"
+
+            if options is None:  # bcrypt defaults
+                options = {"bcrypt__default_rounds": 4, "bcrypt__default_ident": "2y"}
+
+            try:
+                from passlib.context import CryptContext  # type: ignore
+            except ModuleNotFoundError:  # pragma: no cover
+                log.error("missing module passlib")
+                raise
+
+            # this raises errors if dependencies are missing
+            try:
+                self._pass_provider = CryptContext(schemes=[scheme], **options)
+            except Exception as e:
+                log.error(f"error while initializing passlib {scheme}: {str(e)}")
+                raise self._Bad(f"unsupported passlib scheme: {scheme}", str(e))
+
+        # custom password checking function
         self._pass_check = conf.get("FSA_PASSWORD_CHECK", Directives.FSA_PASSWORD_CHECK)
+
+        # password quality checks
         self._pass_quality = conf.get("FSA_PASSWORD_QUALITY", Directives.FSA_PASSWORD_QUALITY)
         self._pass_len = conf.get("FSA_PASSWORD_LENGTH", Directives.FSA_PASSWORD_LENGTH)
         self._pass_re += [
@@ -1579,21 +1701,21 @@ class _PasswordManager:
 
     def check_password(self, pwd: str, ref: str) -> bool:
         """Check whether password is ok wrt to reference."""
-        if not self._pass_context:  # pragma: no cover
+        if not self._pass_provider:  # pragma: no cover
             raise self._Err("password manager is disabled", self._fsa._server_error)
         try:
-            return self._pass_context.verify(pwd, ref)
+            return self._pass_provider.verify(pwd, ref)
         except Exception as e:  # ignore passlib issues
             log.error(f"passlib verify: {e}")
             return False
 
     def hash_password(self, pwd: str, check=True) -> str:
         """Hash password according to the current password scheme."""
-        if not self._pass_context:  # pragma: no cover
+        if not self._pass_provider:  # pragma: no cover
             raise self._Err("password manager is disabled", self._fsa._server_error)
         if check:
             self._check_quality(pwd)
-        return self._pass_context.hash(pwd)
+        return self._pass_provider.hash(pwd)
 
     def check_user_password(self, user: str, pwd: str) -> str:
         """Check user/password against internal or external credentials.
@@ -2114,7 +2236,7 @@ class _CacheManager:
                 rcache = ct.LRUCache(maxsize, **self._cache_opts)
             elif cache == "lfu":
                 rcache = ct.LFUCache(maxsize, **self._cache_opts)
-            elif cache == "mru":
+            elif cache == "mru":  # pragma: no cover
                 rcache = ct.MRUCache(maxsize, **self._cache_opts)
             elif cache == "fifo":
                 rcache = ct.FIFOCache(maxsize, **self._cache_opts)
