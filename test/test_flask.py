@@ -489,7 +489,6 @@ def test_fsa_password_bcrypt_scheme():
         check_various_passwords(app)
 
 @pytest.mark.skipif(not has_package("argon2"), reason="argon2 is not available")
-@pytest.mark.skip(reason="not implemented yet")
 def test_fsa_password_argon2_scheme():
     for scheme in ("argon2", "fsa:argon2"):
         app = fsa.Flask(scheme, FSA_PASSWORD_SCHEME=scheme)

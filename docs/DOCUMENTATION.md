@@ -77,7 +77,8 @@ Depending on options, the following modules should be installed:
   [CacheToolsUtils](https://pypi.org/project/cachetoolsutils/) for caching.
   Possibly [pymemcache](https://pypi.org/project/pymemcache/) and
   [redis](https://pypi.org/project/redis/) for external back-ends.
-- [bcrypt](https://pypi.org/project/bcrypt/)  for password hashing (default algorithm),
+- [bcrypt](https://pypi.org/project/bcrypt/) for password hashing (default algorithm),
+  [argon2-cffi](https://pypi.org/project/argon2-cffi/) for password hashing,
   [passlib](https://pypi.org/project/passlib/) for other password management,
   [PyJWT](https://pypi.org/project/PyJWT/) for JSON Web Token (JWT),
   [cryptography](https://pypi.org/project/cryptography/) for pubkey-signed JWT.
@@ -444,8 +445,8 @@ password checks:
   Default is `fsa:bcrypt`.
 
   The internal `fsa` provider supports `bcrypt` (with a dependency to the
-  eponymous package), `plaintext` (do not use) and `a85` and `b64` obfuscated
-  plaintext (do not use either).
+  eponymous package), `argon2` (with `argon2-cffi`), `plaintext` (do not use)
+  and `a85` and `b64` obfuscated plaintext (do not use either).
 
   See [passlib documentation](https://passlib.readthedocs.io/en/stable/lib/passlib.hash.html)
   for available options, including the bad *plaintext*.

@@ -1539,7 +1539,7 @@ class _PasswordManager:
         if ":" in scheme:
             provider, scheme = scheme.split(":", 1)
         else:  # default depends on scheme
-            provider = "fsa" if scheme in ("bcrypt", "plaintext", "a85", "b64") else "passlib"
+            provider = "fsa" if scheme in ("bcrypt", "argon2", "plaintext", "a85", "b64") else "passlib"
 
         if provider not in ("fsa", "passlib"):
             raise self._Bad(f"unsupported password provider: {provider}")
@@ -1617,7 +1617,32 @@ class _PasswordManager:
 
             elif scheme == "argon2":
 
-                raise self._Bad("scheme fsa:argon2 not implemented yet")
+                # TODO what about the check_needs_rehash feature?
+
+                if options is None:
+                    options = {"memory_cost": 1000, "time_cost": 1, "parallelism": 1}
+
+                try:
+                    import argon2
+                except ModuleNotFoundError:  # pragma: no cover
+                    log.error("missing module argon2")
+                    raise
+
+                class Argon2PassProvider:
+
+                    def __init__(self):
+                        self._hasher = argon2.PasswordHasher(**options)
+
+                    def hash(self, password: str) -> str:
+                        return self._hasher.hash(password)
+
+                    def verify(self, password: str, ref: str) -> bool:
+                        try:
+                            return self._hasher.verify(ref, password)
+                        except argon2.VerificationError:
+                            return False
+
+                self._pass_provider = Argon2PassProvider()
 
             elif scheme == "scrypt":
 
