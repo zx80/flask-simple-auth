@@ -37,11 +37,10 @@ venv:
 # DATABASE
 #
 
-SCHEME	= bcrypt
 CREDS	= foo:bla bla:foo
 
 users.sql:
-	./pass.py $(SCHEME) $(CREDS) > $@
+	./pass.py $(CREDS) > $@
 
 stuff.db: users.sql
 	sqlite3 $@ < create-db.sql
