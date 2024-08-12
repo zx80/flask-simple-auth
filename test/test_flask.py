@@ -1622,11 +1622,12 @@ def test_warnings_and_errors():
         pytest.fail("should not get through")
     except ConfigError as e:
         assert "bad-scheme" in str(e)
-    try:
-        app = af.create_app(FSA_PASSWORD_SCHEME="passlib:bad_scheme")
-        pytest.fail("should not get through")
-    except ConfigError as e:
-        assert "bad_scheme" in str(e)
+    if has_package("passlib"):
+        try:
+            app = af.create_app(FSA_PASSWORD_SCHEME="passlib:bad_scheme")
+            pytest.fail("should not get through")
+        except ConfigError as e:
+            assert "bad_scheme" in str(e)
 
 
 def test_jsondata(client):
