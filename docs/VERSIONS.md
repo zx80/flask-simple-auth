@@ -6,6 +6,7 @@ and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 ## TODO
 
 - distinguish default auth from configured auth.
+- add support passlib lists of schemes.
 
 ## 31.0 on ?
 
