@@ -476,6 +476,7 @@ def test_plaintext_password():
 def check_various_passwords(app):
     for password in ("hello", "W0r1d!", "&éçàùµ§…"):
         assert app.check_password(password, app.hash_password(password))
+        assert not app.check_password("another one", app.hash_password(password))
 
 def test_fsa_password_simple_schemes():
     for scheme in ("plaintext", "fsa:plaintext", "fsa:b64", "fsa:a85"):
@@ -495,7 +496,6 @@ def test_fsa_password_argon2_scheme():
         check_various_passwords(app)
 
 @pytest.mark.skipif(not has_package("scrypt"), reason="scrypt is not available")
-@pytest.mark.skip(reason="not implemented yet")
 def test_fsa_password_scrypt_scheme():
     for scheme in ("scrypt", "fsa:scrypt"):
         app = fsa.Flask(scheme, FSA_PASSWORD_SCHEME=scheme)

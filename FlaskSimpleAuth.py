@@ -945,8 +945,8 @@ class Directives:
     FSA_PASSWORD_SCHEME: str|None = "fsa:bcrypt"
     """Password hash provider and algorithm name.
 
-    If the provider is not set, uses ``fsa`` for bcrypt, plaintext, a85 and b64,
-    otherwise ``passlib``.
+    If the provider is not set, uses ``fsa`` for bcrypt, argon2, scrypt,
+    plaintext, a85 and b64, otherwise ``passlib``.
     """
 
     FSA_PASSWORD_OPTS: dict[str, Any]|None = None
@@ -955,6 +955,8 @@ class Directives:
     *None* triggers the defaults, which depend on the provider and scheme:
 
     - for ``fsa:bcrypt``: ``{"rounds": 4, "prefix"=b"2b"}``
+    - for ``fsa:argon2``: ``{"memory_cost": 1000, "time_cost": 1, "parallelism": 1}``
+    - for ``fsa:scrypt``: ``{"saltlength": 16, "maxtime": 0.05}``
     - for ``fsa:*``: ``{}``
     - for ``passlib:bcrypt``: ``{"bcrypt__default_rounds": 4, "bcrypt__default_ident": "2y"}``
 
@@ -1533,13 +1535,15 @@ class _PasswordManager:
         # configure password management
         scheme = conf.get("FSA_PASSWORD_SCHEME", Directives.FSA_PASSWORD_SCHEME)
 
+        _FSA_PASSWORD_SCHEMES = {"bcrypt", "argon2", "scrypt", "plaintext", "a85", "b64"}
+
         if not scheme:  # pragma: no cover
             # raise self._Bad("cannot initialize password manager without a scheme")
             return
         if ":" in scheme:
             provider, scheme = scheme.split(":", 1)
         else:  # default depends on scheme
-            provider = "fsa" if scheme in ("bcrypt", "argon2", "plaintext", "a85", "b64") else "passlib"
+            provider = "fsa" if scheme in _FSA_PASSWORD_SCHEMES else "passlib"
 
         if provider not in ("fsa", "passlib"):
             raise self._Bad(f"unsupported password provider: {provider}")
@@ -1631,7 +1635,7 @@ class _PasswordManager:
                 class Argon2PassProvider:
 
                     def __init__(self):
-                        self._hasher = argon2.PasswordHasher(**options)
+                        self._hasher = argon2.PasswordHasher(**options)  # type: ignore
 
                     def hash(self, password: str) -> str:
                         return self._hasher.hash(password)
@@ -1639,14 +1643,53 @@ class _PasswordManager:
                     def verify(self, password: str, ref: str) -> bool:
                         try:
                             return self._hasher.verify(ref, password)
-                        except argon2.VerificationError:
+                        except argon2.VerificationError:  # type: ignore ; # pragma: no cover
                             return False
 
                 self._pass_provider = Argon2PassProvider()
 
             elif scheme == "scrypt":
 
-                raise self._Bad("scheme fsa:scrypt not implemented yet")
+                # TODO document available options
+                if options is None:
+                    options = {"saltlength": 16, "maxtime": 0.05}
+
+                import os
+                import base64
+
+                try:
+                    import scrypt
+                except ModuleNotFoundError:  # pragma: no cover
+                    log.error("missing module scrypt")
+                    raise
+
+                CLEAR = "FlaskSimpleAuth!"
+
+                class ScryptPassProvider:
+
+                    def __init__(self, saltlength: int, maxtime: float=0.05, **options):
+                        self._saltlength = saltlength
+                        self._enc_options = dict(options)
+                        self._enc_options.update(maxtime=maxtime)
+                        self._dec_options = dict(options)
+                        # NOTE decrypt can fail when used with the initial maxtime
+                        self._enc_options.update(maxtime=1.5 * maxtime)
+
+                    def hash(self, password: str) -> str:
+                        salt = os.urandom(self._saltlength)
+                        clear = base64.a85encode(salt).decode("ascii") + CLEAR
+                        encrypted = scrypt.encrypt(clear, password, **self._enc_options)
+                        return base64.a85encode(encrypted).decode("ascii")
+
+                    def verify(self, password: str, ref: str) -> bool:
+                        encrypted = base64.a85decode(ref)
+                        try:
+                            clear = scrypt.decrypt(encrypted, password, **self._dec_options)
+                            return clear.endswith(CLEAR)  # type: ignore
+                        except scrypt.error:
+                            return False
+
+                self._pass_provider = ScryptPassProvider(**options)
 
             else:
 
@@ -1731,7 +1774,7 @@ class _PasswordManager:
         try:
             return self._pass_provider.verify(pwd, ref)
         except Exception as e:  # ignore passlib issues
-            log.error(f"passlib verify: {e}")
+            log.error(f"verify error: {e}")
             return False
 
     def hash_password(self, pwd: str, check=True) -> str:
