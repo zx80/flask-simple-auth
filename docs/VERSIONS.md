@@ -15,6 +15,7 @@ Add support for password scheme `argon2` and `scrypt`.
 Add direct implementations for `plaintext`, `a85` and `b64`:
 the two later schemes are simple obfuscations proposed as _better_ very bad
 options over `plaintext`.
+Add _Python 3.13_ and _Pypy 3.10_ to CI.
 
 ## 30.3 on 2024-08-10
 
