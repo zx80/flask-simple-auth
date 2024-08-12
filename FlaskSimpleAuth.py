@@ -1671,8 +1671,8 @@ class _PasswordManager:
                         self._enc_options = dict(options)
                         self._enc_options.update(maxtime=maxtime)
                         self._dec_options = dict(options)
-                        # NOTE decrypt can fail when used with the initial maxtime
-                        self._enc_options.update(maxtime=1.5 * maxtime)
+                        # NOTE decrypt can fail when used with the encoding maxtime
+                        self._dec_options.update(maxtime=1.5 * maxtime)
 
                     def hash(self, password: str) -> str:
                         salt = os.urandom(self._saltlength)
