@@ -30,7 +30,8 @@ check:
 # coverage
 has_redis   = $(shell netcat -z 0.0.0.0 6379 && echo 1)
 has_memcached = $(shell netcat -z 0.0.0.0 11211 && echo 1)
-has_passlib = $(shell python -c 'import passlib' 2> /dev/null && echo 1)
+# NOTE python 3.13 has passlib, it just does not work…
+has_passlib = $(shell python -c 'from passlib.context import CryptContext as C; C("bcrypt")' 2> /dev/null && echo 1)
 
 ifndef COVER
   ifeq ($(has_redis)$(has_memcached)$(has_passlib),111)
