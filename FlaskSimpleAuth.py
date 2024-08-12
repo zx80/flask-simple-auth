@@ -1666,7 +1666,7 @@ class _PasswordManager:
 
                 class ScryptPassProvider:
 
-                    def __init__(self, saltlength: int, maxtime: float=0.05, **options):
+                    def __init__(self, saltlength: int, maxtime: float = 0.05, **options):
                         self._saltlength = saltlength
                         self._enc_options = dict(options)
                         self._enc_options.update(maxtime=maxtime)
