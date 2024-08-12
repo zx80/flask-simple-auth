@@ -1,9 +1,9 @@
 #
-# authentication data for testing purpose
+# authentication data for testing purpose, without reliance on the app.
 #
 
 from typing import Dict
-from passlib.context import CryptContext  # type: ignore
+import bcrypt
 
 #
 # GROUPS
@@ -18,11 +18,13 @@ GROUPS = {
 def user_in_group(user, group):
     return user in GROUPS.get(group, [])
 
+def hashpw(password: str):
+    return bcrypt.hashpw(password.encode("UTF8"), bcrypt.gensalt(rounds=4, prefix=b"2b")).decode("ascii")
+
 #
 # PASSWORDS
 #
-pm = CryptContext(schemes=["bcrypt"], bcrypt__default_rounds=4, bcrypt__default_ident='2y')
 UP = { "calvin": "hobbes", "hobbes": "susie", "dad": "mum" }
-UHP = { u: pm.hash(p) for u, p in UP.items() }
+UHP = { u: hashpw(p) for u, p in UP.items() }
 
 get_user_pass = UHP.get
