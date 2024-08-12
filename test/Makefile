@@ -30,10 +30,13 @@ check:
 # coverage
 has_redis   = $(shell netcat -z 0.0.0.0 6379 && echo 1)
 has_memcached = $(shell netcat -z 0.0.0.0 11211 && echo 1)
+has_passlib = $(shell python -c 'import passlib' 2> /dev/null && echo 1)
 
 ifndef COVER
-  ifeq ($(has_redis)$(has_memcached),11)
+  ifeq ($(has_redis)$(has_memcached)$(has_passlib),111)
     COVER   = 100.0
+  else ifeq ($(has_redis)$(has_memcached),11)
+    COVER   = 99.5
   else
     COVER   = 99.2
   endif
