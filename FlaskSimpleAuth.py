@@ -1650,7 +1650,6 @@ class _PasswordManager:
 
             elif scheme == "scrypt":
 
-                # TODO document available options
                 if options is None:
                     options = {"saltlength": 16, "maxtime": 0.05}
 
