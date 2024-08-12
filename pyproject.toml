@@ -56,7 +56,7 @@ password = [
   "bcrypt",
   "argon2-cffi",
   "scrypt",
-  "passlib; python_version < 3.13",
+  "passlib; python_version < '3.13'",
 ]
 # cache options
 redis = [ "redis" ]
