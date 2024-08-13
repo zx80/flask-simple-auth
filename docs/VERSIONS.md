@@ -10,7 +10,7 @@ and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 Add _Python 3.13_ and _Pypy 3.10_ to CI.
 Given its lack of maintenance, remove the mandatory dependency to `passlib`
 for default `bcrypt` scheme by implementing the password check directly.
-Add support for password scheme `argon2` and `scrypt`.
+Add support for password schemes `argon2` and `scrypt`.
 Add direct implementations for `plaintext`, `a85` and `b64`:
 the two later schemes are simple obfuscations proposed as _better_ very bad
 options over `plaintext`.
