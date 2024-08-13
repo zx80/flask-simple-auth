@@ -108,7 +108,7 @@ Connection: close
 
 {
   "msg": "hello",
-  "version": "30.3"
+  "version": "31.0"
 }
 ```
 
@@ -826,6 +826,20 @@ fact that *token* is added implicitely when the configuration is a scalar:
 # update "acme.conf"
 FSA_AUTH = "password"
 ```
+
+The default behavior is that _any_ authentication scheme can be used on _any_
+route which requires authentication.
+Often, an application can be more selective, for instance by requiring
+an actual password on the login route and only tokens on the others.
+In order to achieve this behavior:
+
+```python
+# append to "acme.conf"
+FSA_AUTH_DEFAULT = "token"  # default authentication scheme
+```
+
+And update route definitions to require some other scheme when needed
+with parameter `auth="param"` or `auth="basic"`.
 
 Finally, as the debugging level is not useful anymore, it can be
 reduced by updating `FSA_MODE` setting:
