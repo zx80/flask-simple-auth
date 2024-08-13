@@ -5,8 +5,6 @@ and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 
 ## TODO
 
-- distinguish default auth from configured auth.
-
 ## 31.0 on ?
 
 Add _Python 3.13_ and _Pypy 3.10_ to CI.
@@ -17,6 +15,7 @@ Add direct implementations for `plaintext`, `a85` and `b64`:
 the two later schemes are simple obfuscations proposed as _better_ very bad
 options over `plaintext`.
 Add support for `passlib` list of schemes.
+Add `FSA_AUTH_DEFAULT` to require a specific authentication scheme by default.
 
 ## 30.3 on 2024-08-10
 

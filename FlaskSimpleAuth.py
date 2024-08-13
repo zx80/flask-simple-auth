@@ -828,7 +828,7 @@ class Directives:
     """
 
     # authentication
-    FSA_AUTH: str|list[str] = ["httpd"]
+    FSA_AUTH: str|list[str] = "httpd"
     """List of authentication schemes to use.
 
     - ``none``: no authentication.
@@ -840,9 +840,15 @@ class Directives:
     - ``param``: parameter password authentication
     - ``password``: try ``basic`` then ``param``
     - ``fake``: fake authentication using a parameter
-    - ``token``: token authentication
+    - ``token``: token authentication (implicit if ``FSA_AUTH`` is a scalar)
     - ``http-token``: same with *Flask-HTTPAuth*
     - ``oauth``: token authentication variant
+    """
+
+    FSA_AUTH_DEFAULT: str|list[str]|None = None
+    """Default authentication to use on a route.
+
+    Default is to rely on ``FSA_AUTH``.
     """
 
     FSA_REALM: str = "<to be set as application name>"
@@ -1894,10 +1900,8 @@ class _AuthenticationManager:
         fsa, conf = self._fsa, self._fsa._app.config
 
         # list of allowed authentication schemes
-        auth = conf.get("FSA_AUTH", None)
-        if not auth:
-            self._auth = ["httpd"]
-        elif isinstance(auth, str):
+        auth = conf.get("FSA_AUTH", Directives.FSA_AUTH)
+        if isinstance(auth, str):
             if auth not in ("oauth", "token", "http-token"):
                 self._auth = ["token", auth]
             else:
@@ -1906,6 +1910,20 @@ class _AuthenticationManager:
             self._auth = auth
         else:
             raise self._Bad(f"unexpected FSA_AUTH type: {type(auth)}")
+
+        default_auth = conf.get("FSA_AUTH_DEFAULT", Directives.FSA_AUTH_DEFAULT)
+        if isinstance(default_auth, str):
+            default_auth = [default_auth]
+        if default_auth is None:
+            self._default_auth = None
+        elif isinstance(default_auth, list):
+            for a in default_auth:
+                if a not in self._auth:
+                    raise self._Bad(f"default auth is not allowed: {a} / {self._auth}")
+            self._default_auth = default_auth
+        else:
+            raise self._Bad(f"unexpected FSA_AUTH_DEFAULT type: {type(default_auth)}")
+
         # FIXME needed for some tm checks
         self._fsa._local.auth = self._auth
         # FIXME there is a token realm, is this consistent?
@@ -2077,7 +2095,7 @@ class _AuthenticationManager:
                     if realm:  # pragma: no cover
                         local.realm = realm
                         local.token_realm = realm
-                    if auth:
+                    if auth:  # override allowed authentications
                         local.auth = auth
                     try:
                         self.get_user()
@@ -3243,7 +3261,7 @@ class _RequestManager:
         local.user = None                # for this user
         local.need_authorization = True  # whether some authz occurred
         assert fsa._am and fsa._am._tm   # mypy…
-        local.auth = fsa._am._auth       # allowed authn schemes
+        local.auth = fsa._am._default_auth or fsa._am._auth  # allowed authn schemes
         local.realm = fsa._am._realm     # authn realm
         local.token_realm = fsa._am._tm._realm if fsa._am._tm else None
         local.scopes = None              # current oauth scopes

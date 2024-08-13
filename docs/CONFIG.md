@@ -33,6 +33,7 @@ FSA_ERROR_RESPONSE = "json:error"  # plain (default), json, json:<property-name>
 #
 #
 # FSA_AUTH = "none"         # in: none, httpd, basic, param, password, token, fake, oauth…
+# FSA_AUTH_DEFAULT = None   # default authentication on route, None for using FSA_AUTH
 # FSA_REALM = <app-name>    # authentication realm for basic and digest
 #
 # parameter names for fake and param
@@ -58,8 +59,8 @@ FSA_ERROR_RESPONSE = "json:error"  # plain (default), json, json:<property-name>
 # password authentication
 #
 # FSA_GET_USER_PASS = None        # hook, login -> password hash
-# FSA_PASSWORD_SCHEME = "bcrypt"  # passlib algorithm, None to disable passwords
-# FSA_PASSWORD_OPTS = {}          # passlib initialization
+# FSA_PASSWORD_SCHEME = "bcrypt"  # password algorithms, None to disable passwords
+# FSA_PASSWORD_OPTS = {}          # password initialization
 #
 # password quality settings
 #

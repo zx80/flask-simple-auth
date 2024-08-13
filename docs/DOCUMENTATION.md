@@ -418,6 +418,12 @@ def get_code_authentication(user: CurrentUser):
 The `FSA_AUTHENTICATION` configuration directive is a dictionary which can be
 used for the same purpose.
 
+By default, authentication is performed when required on a route by trying
+all allowed schemes in turn.
+This can be changed by setting `FSA_AUTH_DEFAULT` to a subset of `FSA_AUTH`,
+in which case other schemes will only be tried if set explicitely on a route
+with `auth=…`.
+
 ### Password Management
 
 Password authentication is performed for the following authentication schemes:

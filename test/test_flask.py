@@ -1042,6 +1042,40 @@ def test_per_route(client):
     assert "calvin (param)" in res.headers["FSA-User"]
     check(401, client.get("/auth/ftp", headers=BASIC))
 
+def test_default_auth():
+    # bad cases
+    try:
+        app = fsa.Flask("bad", FSA_AUTH=["token", "param"], FSA_AUTH_DEFAULT="basic")
+        # trigger init
+        app.hash_password("hello")
+        pytest.fail("default auth is not allowed")
+    except ConfigError as e:
+        assert "not allowed" in str(e)
+    try:
+        app = fsa.Flask("bad", FSA_AUTH_DEFAULT=42)
+        app.hash_password("hello")
+        pytest.fail("default auth type")
+    except ConfigError as e:
+        assert "int" in str(e)
+    # working case
+    app = fsa.Flask("no-auth", FSA_AUTH=["token", "fake"], FSA_AUTH_DEFAULT="token")
+    @app.get("/login", authorize="AUTH", auth="fake")
+    def get_login(user: fsa.CurrentUser):
+        return {"token": app.create_token(user)}
+    @app.get("/hello", authorize="AUTH")  # MUST be token!
+    def get_hello(user: fsa.CurrentUser):
+        return {"msg": f"hello {user}"}
+    with app.test_client() as api:
+        res = api.get("/login", data={"LOGIN": "calvin"})
+        assert res.status_code == 200 and res.is_json
+        calvin_token = res.json["token"]
+        # fake must be blocked
+        res = api.get("/hello", data={"LOGIN": "hobbes"})
+        assert res.status_code == 401
+        # token must be ok
+        res = api.get("/hello", headers={"Authorization": f"Bearer {calvin_token}"})
+        assert res.status_code == 200 and res.is_json and res.json["msg"] == "hello calvin"
+
 def test_bad_app():
     from AppBad import create_app
     # working versions, we basically test that there is no exception
