@@ -5,7 +5,7 @@ and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 
 ## TODO
 
-## 31.0 on ?
+## 31.0 on 2024-08-13
 
 Add _Python 3.13_ and _Pypy 3.10_ to CI.
 Given its lack of maintenance, remove the mandatory dependency to `passlib`
