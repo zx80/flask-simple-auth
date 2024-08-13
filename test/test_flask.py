@@ -468,6 +468,14 @@ def test_password_check(client):
     assert b"decoding error on authorization" in res.data
     pop_auth(fsa)
 
+def test_no_password_manager():
+    app = fsa.Flask("nopm", FSA_PASSWORD_SCHEME=None)
+    try:
+        app.hash_password("hello")
+        pytest.fail("should fail because no pm")
+    except ErrorResponse as e:
+        assert "disabled" in str(e)
+
 def test_plaintext_password():
     app = fsa.Flask("plain", FSA_PASSWORD_SCHEME="plaintext")
     assert app.hash_password("hello") == "hello"
@@ -506,6 +514,18 @@ def test_passlib_password_scheme():
     for scheme in ("passlib:plaintext", "passlib:bcrypt"):
         app = fsa.Flask(scheme, FSA_PASSWORD_SCHEME=scheme)
         check_various_passwords(app)
+
+@pytest.mark.skipif(not has_package("passlib"), reason="passlib is not available")
+def test_passlib_password_scheme_list():
+    app = fsa.Flask("passlib", FSA_PASSWORD_SCHEME=["bcrypt", "plaintext"])
+    # bcrypt
+    ref = app.hash_password("hello")
+    assert len(ref) > 10
+    assert app.check_password("hello", ref)
+    assert not app.check_password("world", ref)
+    # plaintext
+    assert app.check_password("world", "world")
+    assert not app.check_password("hello", "world")
 
 def test_password_quality():
     mode = app._fsa._mode

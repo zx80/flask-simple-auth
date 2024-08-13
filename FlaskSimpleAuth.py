@@ -942,11 +942,13 @@ class Directives:
     FSA_TOKEN_ISSUER: str|None = None
     """Token issuer."""
 
-    FSA_PASSWORD_SCHEME: str|None = "fsa:bcrypt"
-    """Password hash provider and algorithm name.
+    FSA_PASSWORD_SCHEME: str|list[str]|None = "bcrypt"
+    """
+    Password hash provider and algorithm name, or list of passlib schemes,
+    or password disactivation.
 
-    If the provider is not set, uses ``fsa`` for bcrypt, argon2, scrypt,
-    plaintext, a85 and b64, otherwise ``passlib``.
+    If the provider is not set, uses ``fsa`` for *bcrypt*, *argon2*, *scrypt*,
+    *plaintext*, *a85* and *b64*, otherwise ``passlib``.
     """
 
     FSA_PASSWORD_OPTS: dict[str, Any]|None = None
@@ -1523,6 +1525,27 @@ class _PasswordManager:
         self._get_user_pass: Hooks.GetUserPassFun|None = None
         self._initialized = False
 
+    # only actually initialize with passlib if needed
+    # passlib context is a pain, you have to know the scheme name to set its
+    # round. Ident "2y" is same as "2b" but apache compatible.
+    def __passlib_init(self, schemes: list[str], options):
+
+        if options is None:  # bcrypt defaults
+            options = {"bcrypt__default_rounds": 4, "bcrypt__default_ident": "2y"}
+
+        try:
+            from passlib.context import CryptContext  # type: ignore
+        except ModuleNotFoundError:  # pragma: no cover
+            log.error("missing module passlib")
+            raise
+
+        # this raises errors if dependencies are missing
+        try:
+            self._pass_provider = CryptContext(schemes=schemes, **options)
+        except Exception as e:
+            log.error(f"error while initializing passlib {schemes}: {str(e)}")
+            raise self._Bad(f"unsupported passlib scheme: {schemes}", str(e))
+
     def _initialize(self):
         """After-configuration initialization."""
 
@@ -1534,12 +1557,19 @@ class _PasswordManager:
 
         # configure password management
         scheme = conf.get("FSA_PASSWORD_SCHEME", Directives.FSA_PASSWORD_SCHEME)
+        options = conf.get("FSA_PASSWORD_OPTS", Directives.FSA_PASSWORD_OPTS)
 
         _FSA_PASSWORD_SCHEMES = {"bcrypt", "argon2", "scrypt", "plaintext", "a85", "b64"}
 
-        if not scheme:  # pragma: no cover
-            # raise self._Bad("cannot initialize password manager without a scheme")
+        # no password manager
+        if scheme is None:
             return
+
+        # passlib list of schemes
+        if isinstance(scheme, list):
+            self.__passlib_init(scheme, options)
+            return
+
         if ":" in scheme:
             provider, scheme = scheme.split(":", 1)
         else:  # default depends on scheme
@@ -1552,11 +1582,6 @@ class _PasswordManager:
 
         if scheme == "plaintext":
             log.warning("plaintext password manager is a bad idea")
-
-        # record just in case
-        self._pass_provider_name, self._pass_scheme = provider, scheme
-
-        options = conf.get("FSA_PASSWORD_OPTS", Directives.FSA_PASSWORD_OPTS)
 
         class PlainTextPassProvider:
 
@@ -1695,27 +1720,9 @@ class _PasswordManager:
                 raise self._Bad(f"unexpected fsa password scheme: {scheme}")
 
         else:
-            # only actually initialize with passlib if needed
-            # passlib context is a pain, you have to know the scheme name to set its
-            # round. Ident "2y" is same as "2b" but apache compatible.
-
             assert provider == "passlib"
-
-            if options is None:  # bcrypt defaults
-                options = {"bcrypt__default_rounds": 4, "bcrypt__default_ident": "2y"}
-
-            try:
-                from passlib.context import CryptContext  # type: ignore
-            except ModuleNotFoundError:  # pragma: no cover
-                log.error("missing module passlib")
-                raise
-
-            # this raises errors if dependencies are missing
-            try:
-                self._pass_provider = CryptContext(schemes=[scheme], **options)
-            except Exception as e:
-                log.error(f"error while initializing passlib {scheme}: {str(e)}")
-                raise self._Bad(f"unsupported passlib scheme: {scheme}", str(e))
+            self.__passlib_init([scheme], options)
+            return
 
         # custom password checking function
         self._pass_check = conf.get("FSA_PASSWORD_CHECK", Directives.FSA_PASSWORD_CHECK)

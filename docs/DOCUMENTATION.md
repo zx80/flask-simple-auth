@@ -442,8 +442,8 @@ password checks:
 - `FSA_PASSWORD_SCHEME` password provider and scheme to use for passwords.
   There are two providers: `fsa` (internal) and `passlib`.
 
-  Default is `fsa:bcrypt`.
-  Set to `None` to disable internal password checking.
+  Default is `bcrypt`.
+  Set to _None_ to disable internal password checking.
 
   The internal `fsa` provider supports `bcrypt` and `scrypt` (with a dependency
   to their eponymous package), `argon2` (with `argon2-cffi`), `plaintext` (do
@@ -457,6 +457,9 @@ password checks:
     to which `saltlength` is added by the interface.
   - [passlib](https://passlib.readthedocs.io/en/stable/lib/passlib.hash.html)
     for available options, including the bad *plaintext*.
+
+  Note: a list of schemes can also be provided, in which case it is passed as-is
+  to passlib.
 
 - `FSA_PASSWORD_OPTS` relevant options (for `passlib.CryptContext`).
   Default is ident *2y* with *4* rounds.
