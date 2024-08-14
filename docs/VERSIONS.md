@@ -9,6 +9,7 @@ and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 - check password vs basic + param wrt default authentication.
 - check TUTORIAL consistency wrt previous item.
 - use default authentication in demo and other live projects (kiva, pizza, ref).
+- try passlib + explicit pypi crypt with Python 3.13.
 
 ## ? on ?
 
