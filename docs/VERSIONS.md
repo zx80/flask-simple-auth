@@ -5,6 +5,11 @@ and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 
 ## TODO
 
+- check when unexpected authentication schemes are detected.
+- check password vs basic + param wrt default authentication.
+- check TUTORIAL consistency wrt previous item.
+- use default authentication in demo and other live projects (kiva, pizza, ref).
+
 ## 31.0 on 2024-08-13
 
 Add _Python 3.13_ and _Pypy 3.10_ to CI.
