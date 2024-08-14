@@ -56,7 +56,6 @@ password = [
   "bcrypt",
   "argon2-cffi",
   "scrypt",
-  # "passlib; python_version < '3.13'",
   "passlib",
   "crypt_r; python_version >= '3.13'",
 ]
