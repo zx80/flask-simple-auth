@@ -399,11 +399,12 @@ The available authentication schemes are:
   - `FSA_FAKE_LOGIN` is the parameter holding the user name.
     Default is `LOGIN`.
 
-Other authentication schemes can be added by registering a new hook which:
+Other authentication schemes can be added by registering a new hook early
+in the application initialization. This hook:
 
 - is passed the application and request
 - returns the authenticated login as a str, or None
-- may raise an `ErrorResponse` if unhappy, eg to generate a 401
+- may raise an `ErrorResponse` if really unhappy
 
 ```python
 @app.authentication("code")

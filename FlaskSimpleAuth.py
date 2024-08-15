@@ -1911,12 +1911,14 @@ class _AuthenticationManager:
         else:
             raise self._Bad(f"unexpected FSA_AUTH type: {type(auth)}")
 
+        # default authentication on a route, unless explicitely stated
         default_auth = conf.get("FSA_AUTH_DEFAULT", Directives.FSA_AUTH_DEFAULT)
         if isinstance(default_auth, str):
             default_auth = [default_auth]
         if default_auth is None:
-            self._default_auth = None
+            self._default_auth = None  # will rely on self._auth
         elif isinstance(default_auth, list):
+            # check consistency with allowed authentication schemes
             for a in default_auth:
                 if a not in self._auth:
                     raise self._Bad(f"default auth is not allowed: {a} / {self._auth}")
@@ -1952,6 +1954,10 @@ class _AuthenticationManager:
         for a in self._auth:
             self._add_auth(a)
         fsa._set_hooks("FSA_AUTHENTICATION", self.authentication)
+        # check consistency with registered authentication schemes
+        for a in self._auth:
+            if a not in self._authentication:
+                raise self._Bad(f"unexpected authentication: {a}")
         #
         # http auth setup
         #
@@ -3715,7 +3721,6 @@ class FlaskSimpleAuth:
 
     def authentication(self, auth: str, hook: Hooks.AuthenticationFun|None = None):
         """Add new authentication hook."""
-        self._initialize()
         return self._am.authentication(auth, hook)
 
     def add_group(self, *groups) -> None:

@@ -5,7 +5,6 @@ and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 
 ## TODO
 
-- check when unexpected authentication schemes are detected.
 - check password vs basic + param wrt default authentication.
 - check TUTORIAL consistency wrt previous item.
 - use default authentication in demo and other live projects (kiva, pizza, ref).
@@ -15,6 +14,8 @@ and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 Fix typos in documentation.
 Add dependency on [`crypt_r`](https://github.com/fedora-python/crypt_r)
 for _Python 3.13_ so that `passlib` works there too.
+Check that authentication schemes exist while configuring.
+Delay initialization after authentication schemes are registed.
 
 ## 31.0 on 2024-08-13
 
