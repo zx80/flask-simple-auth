@@ -21,6 +21,7 @@ from FlaskSimpleAuth import Flask, jsonify, ANY, ALL, NONE, path, string, \
 app = Flask(
     "Test",
     debug=True,
+    FSA_AUTH=["token", "param", "basic", "fake", "none"],
     FSA_MODE="debug2",
     FSA_LOGGING_LEVEL=logging.DEBUG
 )
@@ -396,11 +397,11 @@ def get_perm_basic():
 def get_perm_token():
     return "token", 200
 
-@app.get("/perm/token-basic", authorize=ALL, auth=("token", "basic"))
+@app.get("/perm/token-basic", authorize=ALL, auth=["token", "basic"])
 def get_perm_token_basic():
     return "token-basic", 200
 
-@app.get("/perm/basic-token", authorize=ALL, auth=("basic", "token"))
+@app.get("/perm/basic-token", authorize=ALL, auth=["basic", "token"])
 def get_perm_basic_token():
     return "basic-token", 200
 

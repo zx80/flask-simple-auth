@@ -212,16 +212,17 @@ routes.
 
 ### Authentication Schemes
 
-The available authentication schemes are:
+Authentication schemes are enabled with directive `FSA_AUTH`.
+The available schemes are:
 
 - `none`
 
   Deactivate authentication.
+  This is the default.
 
 - `httpd`
 
   Inherit web server supplied authentication through `request.remote_user`.
-  This is the default.
 
   There are plenty authentication schemes available in a web server such as
   [Apache](https://httpd.apache.org/) or [Nginx](https://nginx.org/), including
@@ -420,7 +421,7 @@ The `FSA_AUTHENTICATION` configuration directive is a dictionary which can be
 used for the same purpose.
 
 By default, authentication is performed when required on a route by trying
-all allowed schemes in turn.
+all enabled schemes in turn.
 This can be changed by setting `FSA_AUTH_DEFAULT` to a subset of `FSA_AUTH`,
 in which case other schemes will only be tried if set explicitely on a route
 with `auth=…`.

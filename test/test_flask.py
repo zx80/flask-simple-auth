@@ -135,7 +135,7 @@ def all_auth(client, user, pswd, check, *args, **kwargs):
     check(client.get(*args, **kwargs, data=USERPASS))
     check(client.get(*args, **kwargs, data={"auth": token_param}))
     pop_auth(app._fsa)
-    push_auth(app._fsa, ["token", "password"], "fsa", "param", "auth")
+    push_auth(app._fsa, ["token", "basic", "param"], "fsa", "param", "auth")
     check(client.get(*args, **kwargs, data=USERPASS))
     check(client.get(*args, **kwargs, data={"auth": token_param}))
     pop_auth(app._fsa)
@@ -146,7 +146,7 @@ def all_auth(client, user, pswd, check, *args, **kwargs):
     check(client.get(*args, **kwargs, headers=BASIC))
     check(client.get(*args, **kwargs, data={"auth": token_basic}))
     pop_auth(app._fsa)
-    push_auth(app._fsa, ["token", "password"], "fsa", "param", "auth")
+    push_auth(app._fsa, ["token", "basic", "param"], "fsa", "param", "auth")
     check(client.get(*args, **kwargs, headers=BASIC))
     check(client.get(*args, **kwargs, data={"auth": token_basic}))
     pop_auth(app._fsa)
@@ -398,7 +398,7 @@ def test_invalid_token():
         assert e.status == 401
 
 def test_password_lazy_init():
-    app = fsa.Flask("pass-one")
+    app = fsa.Flask("pass-one", FSA_AUTH="basic")
     ref = app.hash_password("hello world!")
     assert isinstance(ref, str) and len(ref) >= 40
     app = fsa.Flask("pass-two")
@@ -456,7 +456,7 @@ def test_password_check(client):
     pm.get_user_pass(saved)
     fsa.password_check(None)
     # password, through requests
-    push_auth(fsa, ["password"])
+    push_auth(fsa, ["basic", "param"])
     res = check(401, client.get("/read", data={"USER": "dad", "PASS": "bad-dad-password"}))
     assert b"invalid password for" in res.data
     res = check(401, client.get("/read", data={"USER": "dad"}))
@@ -902,7 +902,7 @@ def test_www_authenticate(client):
     assert "Basic" in str(res.www_authenticate)
     assert "realm" in res.www_authenticate
     pop_auth(app._fsa)
-    push_auth(app._fsa, "password")
+    push_auth(app._fsa, ["basic", "param"])
     res = check(401, client.get("/admin"))
     assert "Basic" in str(res.www_authenticate)
     assert "realm" in res.www_authenticate
@@ -994,13 +994,13 @@ def test_per_route(client):
     # password
     res = check(200, client.get("/auth/password", headers=BASIC))
     assert "password auth: calvin" in res.text
-    assert "calvin (password)" in res.headers["FSA-User"]
+    assert "calvin (basic)" in res.headers["FSA-User"]
     res = check(200, client.get("/auth/password", data=PARAM))
     assert "password auth: calvin" in res.text
-    assert "calvin (password)" in res.headers["FSA-User"]
+    assert "calvin (param)" in res.headers["FSA-User"]
     res = check(200, client.get("/auth/password", json=PARAM))
     assert "password auth: calvin" in res.text
-    assert "calvin (password)" in res.headers["FSA-User"]
+    assert "calvin (param)" in res.headers["FSA-User"]
     check(401, client.get("/auth/password", headers=TOKEN))
     check(401, client.get("/auth/password", data=FAKE))
     check(401, client.get("/auth/password", json=FAKE))
@@ -1050,7 +1050,7 @@ def test_default_auth():
         app.hash_password("hello")
         pytest.fail("default auth is not allowed")
     except ConfigError as e:
-        assert "not allowed" in str(e)
+        assert "not enabled" in str(e)
     try:
         app = fsa.Flask("bad", FSA_AUTH_DEFAULT=42)
         app.hash_password("hello")
@@ -1081,8 +1081,8 @@ def test_bad_app():
     # working versions, we basically test that there is no exception
     app = create_app(FSA_AUTH="basic", FSA_LOCAL="werkzeug")
     app = create_app(FSA_AUTH=["token", "basic"])
-    app = create_app(auth="fake")
-    app = create_app(auth=["token", "fake"])
+    app = create_app(FSA_AUTH="fake", auth="fake")
+    app = create_app(FSA_AUTH=["token", "fake"], auth=["token", "fake"])
     # trigger default header name
     app = create_app(FSA_AUTH="token", FSA_TOKEN_CARRIER="header", FSA_TOKEN_SECRET="too short")
     # cover jwt initialization path
@@ -1119,7 +1119,7 @@ def test_bad_app():
     except ConfigError as e:
         assert "bad" in str(e), "ok, bad app creation has failed"
     try:
-        app = create_app(auth=["basic", "token", "bad"])
+        app = create_app(FSA_AUTH="password", auth=["basic", "token", "bad"])
         pytest.fail("bad app creation must fail")
     except ConfigError as e:
         assert "bad" in str(e), "ok, bad app creation has failed"
@@ -1209,6 +1209,7 @@ def test_bad_app():
         @app.get("/bad-param-col", authorize="ANY")
         def get_bad_param_col(_x: int, x: int):
             return _x + x, 200
+        pytest.fail("bad app creation must fail")
     except ConfigError as e:
         assert "collision" in str(e)
     try:
@@ -1217,6 +1218,13 @@ def test_bad_app():
             return len(args)
     except ConfigError as e:
         assert "position" in str(e)
+    # inconsistent authentication
+    try:
+        app = fsa.Flask("bad", FSA_AUTH=["none", "token"])
+        app._fsa._initialize()
+        pytest.fail("bad app creation must fail")
+    except ConfigError as e:
+        assert "none" in str(en)
 
 
 class PK():
@@ -1355,7 +1363,7 @@ def test_object_perms(client):
 
 def test_object_perms_errors():
     import AppFact as af
-    app = af.create_app(FSA_AUTH="fake")
+    app = af.create_app()
     @app.object_perms("known")
     def is_okay(u: str, v: str, m: str):
         log.debug(f"is_okay({u}, {v}, {m})")
@@ -1483,7 +1491,7 @@ def test_group_errors():
            return 3.14159
        else:
            return True
-    app = af.create_app(FSA_AUTH="fake", FSA_USER_IN_GROUP=bad_uig)
+    app = af.create_app(FSA_AUTH=["fake", "oauth"], FSA_USER_IN_GROUP=bad_uig)
     @app.get("/ex", authorize="ex")
     def get_ex():
         return "should not get here", 200
@@ -1509,7 +1517,7 @@ def test_scope_errors():
     except ConfigError as e:
         assert "oauth" in str(e) and "ISSUER" in str(e)
     try:
-        app = af.create_app(FSA_AUTH="token", FSA_TOKEN_TYPE="fsa", FSA_TOKEN_ISSUER="god")
+        app = af.create_app(FSA_AUTH="oauth", FSA_TOKEN_TYPE="fsa", FSA_TOKEN_ISSUER="god")
         @app.get("/foo/bla", authorize=["read"], auth=["oauth"])
         def get_foo_bla():
             return "", 200
@@ -1623,6 +1631,7 @@ def test_warnings_and_errors():
         assert e.status == 518 and "bad" in e.message
     # unused length warning
     app = af.create_app(
+        FSA_AUTH=["password", "oauth"],
         FSA_TOKEN_TYPE="jwt",
         FSA_TOKEN_ISSUER="calvin",
         FSA_TOKEN_LENGTH=8,  # no used if jwt
@@ -1777,7 +1786,8 @@ def test_www_authenticate_priority(client):
 
 def test_jwt_authorization():
     import AppFact as af
-    app = af.create_app(FSA_TOKEN_TYPE="jwt", FSA_REALM="comics", FSA_TOKEN_ISSUER="god")
+    app = af.create_app(FSA_AUTH=["oauth", "basic"], FSA_TOKEN_TYPE="jwt",
+                        FSA_REALM="comics", FSA_TOKEN_ISSUER="god")
     # oauth in list auth
     @app.get("/some/stuff", authorize=["read"], auth=["oauth"])
     def get_some_stuff():

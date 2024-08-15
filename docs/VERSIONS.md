@@ -5,17 +5,20 @@ and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 
 ## TODO
 
-- check password vs basic + param wrt default authentication.
 - check TUTORIAL consistency wrt previous item.
 - use default authentication in demo and other live projects (kiva, pizza, ref).
 
-## ? on ?
+## 32.0 on ?
 
 Fix typos in documentation.
 Add dependency on [`crypt_r`](https://github.com/fedora-python/crypt_r)
 for _Python 3.13_ so that `passlib` works there too.
 Check that authentication schemes exist while configuring.
 Delay initialization after authentication schemes are registed.
+Simplify `password` authentication.
+Restrict auth decorator parameter to `str` or `list[str]`.
+Require that all used authentications are explicitely enabled from `FSA_AUTH`.
+By default, no authentication scheme is enabled, instead of `httpd`.
 
 ## 31.0 on 2024-08-13
 

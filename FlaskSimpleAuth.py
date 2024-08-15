@@ -828,8 +828,8 @@ class Directives:
     """
 
     # authentication
-    FSA_AUTH: str|list[str] = "httpd"
-    """List of authentication schemes to use.
+    FSA_AUTH: str|list[str] = "none"
+    """List of enabled authentication schemes.
 
     - ``none``: no authentication.
     - ``httpd``: inherit web-server authentication
@@ -1160,7 +1160,7 @@ class _TokenManager:
         self._initialized = False
 
     def _initialize(self):
-        """After-configuration initialization."""
+        """After-configuration token manager initialization."""
 
         if self._initialized:  # pragma: no cover
             log.warning("Token Manager already initialized, skipping…")
@@ -1553,7 +1553,7 @@ class _PasswordManager:
             raise self._Bad(f"unsupported passlib scheme: {schemes}", str(e))
 
     def _initialize(self):
-        """After-configuration initialization."""
+        """After-configuration password manager initialization."""
 
         if self._initialized:  # pragma: no cover
             log.warning("Password Manager already initialized, skipping…")
@@ -1565,17 +1565,19 @@ class _PasswordManager:
         scheme = conf.get("FSA_PASSWORD_SCHEME", Directives.FSA_PASSWORD_SCHEME)
         options = conf.get("FSA_PASSWORD_OPTS", Directives.FSA_PASSWORD_OPTS)
 
+        # internally supported schemes
         _FSA_PASSWORD_SCHEMES = {"bcrypt", "argon2", "scrypt", "plaintext", "a85", "b64"}
 
         # no password manager
         if scheme is None:
             return
 
-        # passlib list of schemes
+        # shortcut for passlib list of schemes
         if isinstance(scheme, list):
             self.__passlib_init(scheme, options)
             return
 
+        # single scheme
         if ":" in scheme:
             provider, scheme = scheme.split(":", 1)
         else:  # default depends on scheme
@@ -1590,6 +1592,7 @@ class _PasswordManager:
             log.warning("plaintext password manager is a bad idea")
 
         class PlainTextPassProvider:
+            """Helper class for plaintext password."""
 
             def hash(self, password: str) -> str:
                 return password
@@ -1600,6 +1603,7 @@ class _PasswordManager:
         import base64
 
         class B64PassProvider:
+            """Helper class for b64 obfuscated password."""
 
             def hash(self, password: str) -> str:
                 return base64.b64encode(password.encode("UTF8")).decode("ascii")
@@ -1608,6 +1612,7 @@ class _PasswordManager:
                 return password == base64.b64decode(ref).decode("UTF8")
 
         class A85PassProvider:
+            """Helper class for a85 obfuscated password."""
 
             def hash(self, password: str) -> str:
                 return base64.a85encode(password.encode("UTF8")).decode("ascii")
@@ -1641,6 +1646,7 @@ class _PasswordManager:
                     raise
 
                 class BCryptPassProvider:
+                    """Helper class for bcrypt password."""
 
                     def hash(self, password: str) -> str:
                         return bcrypt.hashpw(password.encode("UTF8"), bcrypt.gensalt(**options)).decode("ascii")
@@ -1664,6 +1670,7 @@ class _PasswordManager:
                     raise
 
                 class Argon2PassProvider:
+                    """Helper class for argon2 password."""
 
                     def __init__(self):
                         self._hasher = argon2.PasswordHasher(**options)  # type: ignore
@@ -1696,6 +1703,7 @@ class _PasswordManager:
                 CLEAR = "FlaskSimpleAuth!"
 
                 class ScryptPassProvider:
+                    """Helper class for scrypt password."""
 
                     def __init__(self, saltlength: int, maxtime: float = 0.05, **options):
                         self._saltlength = saltlength
@@ -1860,8 +1868,8 @@ class _AuthenticationManager:
         self._Exc = fsa._Exc
         self._store = fsa._store
         # initialize all authentication stuff
-        self._auth: list[str] = []              # order default authentications
-        self._all_auth: set[str] = set()        # all authentication methods
+        self._auth: list[str] = []                     # ordered enabled authentications
+        self._default_auth: list[str]|str|None = None  # default route authentication
         # map auth to their hooks
         self._authentication: dict[str, Hooks.AuthenticationFun] = {
             "none": lambda _a, _r: None,
@@ -1872,12 +1880,12 @@ class _AuthenticationManager:
             "fake": self._get_fake_auth,
             "basic": self._get_basic_auth,
             "param": self._get_param_auth,
-            "password": self._get_password_auth,
             # HTTPAuth-dependent authentication
             "digest": self._get_httpauth,
             "http-basic": self._get_httpauth,
             "http-digest": self._get_httpauth,
             "http-token": self._get_httpauth,
+            # new authentications can be registered
         }
         self._auth_params: set[str] = set()  # authentication parameters to ignore
         self._realm: str = fsa._app.name
@@ -1891,7 +1899,7 @@ class _AuthenticationManager:
         self._initialized = False
 
     def _initialize(self):
-        """After-configuration initialization."""
+        """After-configuration authentication manager initialization."""
 
         if self._initialized:  # pragma: no cover
             log.warning("Authentication Manager already initialized, skipping…")
@@ -1902,14 +1910,17 @@ class _AuthenticationManager:
         # list of allowed authentication schemes
         auth = conf.get("FSA_AUTH", Directives.FSA_AUTH)
         if isinstance(auth, str):
-            if auth not in ("oauth", "token", "http-token"):
-                self._auth = ["token", auth]
+            if auth not in ("oauth", "token", "http-token", "none"):
+                auth = ["token", auth]
             else:
-                self._auth = [auth]
-        elif isinstance(auth, list):  # keep the provided list, whatever
-            self._auth = auth
+                auth = [auth]
+        if isinstance(auth, list):  # keep the provided list, whatever
+            self._auth = self._password_auth(auth)
         else:
             raise self._Bad(f"unexpected FSA_AUTH type: {type(auth)}")
+        # sanity check
+        if "none" in auth and len(auth) > 1:
+            raise self._Bad(f"cannot both enable and disable authentication: {auth}")
 
         # default authentication on a route, unless explicitely stated
         default_auth = conf.get("FSA_AUTH_DEFAULT", Directives.FSA_AUTH_DEFAULT)
@@ -1918,10 +1929,7 @@ class _AuthenticationManager:
         if default_auth is None:
             self._default_auth = None  # will rely on self._auth
         elif isinstance(default_auth, list):
-            # check consistency with allowed authentication schemes
-            for a in default_auth:
-                if a not in self._auth:
-                    raise self._Bad(f"default auth is not allowed: {a} / {self._auth}")
+            default_auth = self._password_auth(default_auth)
             self._default_auth = default_auth
         else:
             raise self._Bad(f"unexpected FSA_AUTH_DEFAULT type: {type(default_auth)}")
@@ -1940,7 +1948,7 @@ class _AuthenticationManager:
         #
         if "fake" not in self._auth and "FSA_FAKE_LOGIN" in conf:
             log.warning("ignoring directive FSA_FAKE_LOGIN")
-        if "param" not in self._auth and "password" not in self._auth:
+        if "param" not in self._auth:
             if "FSA_PARAM_USER" in conf:
                 log.warning("ignoring directive FSA_PARAM_USER")
             if "FSA_PARAM_PASS" in conf:
@@ -1951,13 +1959,17 @@ class _AuthenticationManager:
         #
         # registrations
         #
+        # see also authentication decorator
+        fsa._set_hooks("FSA_AUTHENTICATION", self.authentication)
+        # check existence and possibly trigger auth-related stuff
         for a in self._auth:
             self._add_auth(a)
-        fsa._set_hooks("FSA_AUTHENTICATION", self.authentication)
-        # check consistency with registered authentication schemes
-        for a in self._auth:
-            if a not in self._authentication:
-                raise self._Bad(f"unexpected authentication: {a}")
+        # check consistency with enabled authentication schemes
+        if default_auth:
+            for a in default_auth:
+                if a not in self._auth:
+                    raise self._Bad(f"default auth is not enabled: {a} / {self._auth}")
+        # TODO consistency checks about authentications?
         #
         # http auth setup
         #
@@ -1992,20 +2004,27 @@ class _AuthenticationManager:
         # done!
         self._initialized = True
 
+    def _password_auth(self, la: list[str]):
+        """password is replaced by basic and param."""
+        if "password" in la:
+            la.remove("password")
+            la.append("basic")
+            la.append("param")
+        return la
+
     def _add_auth(self, auth: str):
         """Register that an authentication method is used."""
         if not isinstance(auth, str):  # pragma: no cover
             raise self._Bad(f"unexpected authentication identifier type: {type(auth).__name__}")
-        if auth in self._all_auth:
-            return
-        self._all_auth.add(auth)
+        if auth not in self._authentication:
+            raise self._Bad(f"unexpected authentication scheme: {auth}")
         # possibly add parameters to ignore silently
-        if auth in ("param", "password"):
+        if auth == "param":
             self._auth_params.add(self._userp)
             self._auth_params.add(self._passp)
         if auth == "fake":
             self._auth_params.add(self._login)
-        if auth == "token":
+        if auth in ("token", "oauth"):
             if not self._tm:  # pragma: no cover
                 raise self._Bad("cannot use token auth if token is disabled")
             if self._tm._carrier == "param":
@@ -2014,7 +2033,6 @@ class _AuthenticationManager:
 
     def authentication(self, auth: str, hook: Hooks.AuthenticationFun|None = None):
         """Add new authentication hook, can be used as a decorator."""
-        self._add_auth(auth)
         return self._store(self._authentication, "authentication", auth, hook)
 
     def _set_www_authenticate(self, res: Response) -> Response:
@@ -2025,7 +2043,7 @@ class _AuthenticationManager:
             for a in local.auth:
                 if a in ("token", "oauth") and self._tm and self._tm._carrier == "bearer":
                     schemes.add(f'{self._tm._name} realm="{local.token_realm}"')
-                elif a in ("basic", "password"):
+                elif a == "basic":
                     schemes.add(f'Basic realm="{local.realm}"')
                 elif a in ("http-token", "http-basic", "digest", "http-digest"):
                     assert self._http_auth
@@ -2116,15 +2134,6 @@ class _AuthenticationManager:
             return wrapper
 
         return decorate
-
-    def _check_auth_consistency(self):
-        #
-        # authentication checks are delayed as much as possible because we have
-        # to wait for custom authentication registrations.
-        #
-        for a in self._all_auth:
-            if a not in self._authentication:
-                raise self._Bad(f"unexpected auth: {a}")
 
     def _auth_has(self, *auth):
         """Tell whether current authentication includes any of these schemes."""
@@ -2227,16 +2236,6 @@ class _AuthenticationManager:
         return self._pm.check_user_password(user, pwd)
 
     #
-    # HTTP BASIC OR PARAM AUTH
-    #
-    def _get_password_auth(self, app, req: Request) -> str:
-        """Get user from basic or param authentication."""
-        try:
-            return self._get_basic_auth(app, req)
-        except ErrorResponse:  # failed, let's try param
-            return self._get_param_auth(app, req)
-
-    #
     # TOKEN AUTH
     #
     def _get_token_auth(self, app, req: Request) -> str|None:
@@ -2283,7 +2282,7 @@ class _CacheManager:
         self._initialized = False
 
     def _initialize(self):
-        """After-configuration initialization."""
+        """After-configuration cache manager initialization."""
 
         if self._initialized:  # pragma: no cover
             log.warning("Cache Manager is already initialized, skipping…")
@@ -2478,7 +2477,7 @@ class _AuthorizationManager:
         self._initialized = False
 
     def _initialize(self):
-        """After-configuration initialization."""
+        """After-configuration authorization manager initialization."""
 
         if self._initialized:  # pragma: no cover
             log.warning("Authorization Manager already initialized, skipping…")
@@ -2996,7 +2995,7 @@ class _ParameterManager:
         self._initialized = False
 
     def _initialize(self):
-        """After-configuration initialization."""
+        """After-configuration parameter manager initialization."""
 
         if self._initialized:  # pragma: no cover
             log.warning("Parameter Manager already initialized, skipping…")
@@ -3194,7 +3193,7 @@ class _RequestManager:
         self._initialized = False
 
     def _initialize(self) -> None:
-        """After-configuration initialization."""
+        """After-configuration request manager initialization."""
 
         if self._initialized:  # pragma: no cover
             log.warning("Request Manager already initialized, skipping…")
@@ -3328,7 +3327,7 @@ class _ResponseManager:
         self._initialized = False
 
     def _initialize(self):
-        """After-configuration initialization."""
+        """After-configuration response manager initialization."""
 
         if self._initialized:  # pragma: no cover
             log.warning("Response Manager already initialized, skipping…")
@@ -3921,20 +3920,20 @@ class FlaskSimpleAuth:
             authorize = [authorize]
 
         # ensure that auth is registered as used
+        if isinstance(auth, str):
+            auth = [auth]
         if auth is None:
             pass
-        elif isinstance(auth, str):
-            self._am._add_auth(auth)
-        elif isinstance(auth, (list, tuple)):
+        elif isinstance(auth, list):
+            auth = self._am._password_auth(auth)
             # this also checks that list items are str
             for a in auth:
-                self._am._add_auth(a)
+                if a not in self._am._auth:
+                    raise self._Bad(f"auth is not enabled: {a}")
         else:
-            raise self._Bad(f"unexpected auth type, should be str, list or tuple: {type(auth)}")
+            raise self._Bad(f"unexpected auth type, should be str or list: {type(auth)}")
 
         # FIXME should be in a non existing ready-to-run hook
-        # this cannot be moved to _initialize because all hooks must be registered
-        self._am._check_auth_consistency()
         if self._cm and not self._cm._cached:
             self._cm._set_caches()
 
@@ -3952,8 +3951,6 @@ class FlaskSimpleAuth:
             auth = "oauth"
 
         if auth == "oauth":  # sanity checks
-            if self._am._tm._token != "jwt":
-                raise self._Bad(f"oauth authorizations require JWT tokens on {rule}")
             if not self._am._tm._issuer:
                 raise self._Bad(f"oauth token authorizations require FSA_TOKEN_ISSUER on {rule}")
 
