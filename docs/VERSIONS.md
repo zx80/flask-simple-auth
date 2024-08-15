@@ -5,7 +5,6 @@ and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 
 ## TODO
 
-- check TUTORIAL consistency wrt previous item.
 - use default authentication in demo and other live projects (kiva, pizza, ref).
 
 ## 32.0 on ?

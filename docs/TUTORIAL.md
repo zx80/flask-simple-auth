@@ -108,7 +108,7 @@ Connection: close
 
 {
   "msg": "hello",
-  "version": "31.0"
+  "version": "32.0"
 }
 ```
 
@@ -432,7 +432,7 @@ This approach is discussed in the next section.
 Let us now activate *token* authentication.
 This avoids sending login/passwords in each request, and is much more efficient
 for the server because cryptographic password hashing functions are *designed*
-to be very slow. Moreover, you do not want to pay for cpu cycles and have your
+to be very slow. Moreover, you may not want to pay for cpu cycles and have your
 users endure additional latency just for that.  
 Token authentication can be activated explicitely by prepending *token* to
 `FSA_AUTH` in `acme.conf`:
@@ -456,11 +456,11 @@ FSA_TOKEN_DELAY = 10.0  # set token expiration to 10 minutes (default is 1 hour)
 In a more realistic setting, the token secret would probably not be directly
 in the configuration, but passed to it or loaded by it.  
 Then edit File `app.py` to add a new route to create a token for the current
-user authenticated by password:
+user authenticated by a password scheme:
 
 ```python
 # append to "app.py"
-@app.get("/token", authorize="AUTH")
+@app.get("/token", authorize="AUTH", auth=["basic", "param"])
 def get_token(user: fsa.CurrentUser):
     return { "token": app.create_token(user) }, 200
 ```
@@ -838,8 +838,8 @@ In order to achieve this behavior:
 FSA_AUTH_DEFAULT = "token"  # default authentication scheme
 ```
 
-And update route definitions to require some other scheme when needed
-with parameter `auth="param"` or `auth="basic"`.
+And update route definitions to require some other scheme when needed with
+parameter `auth="param"`, `auth="basic"` or `auth="password"` for both.
 
 Finally, as the debugging level is not useful anymore, it can be
 reduced by updating `FSA_MODE` setting:
