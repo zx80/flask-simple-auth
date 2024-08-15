@@ -7,7 +7,7 @@ and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 
 - use default authentication in demo and other live projects (kiva, pizza, ref).
 
-## 32.0 on ?
+## 32.0 on 2024-08-15
 
 - Add dependency on [`crypt_r`](https://github.com/fedora-python/crypt_r)
   for _Python 3.13_ so that `passlib` works there too.
