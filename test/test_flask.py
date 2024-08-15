@@ -1224,7 +1224,7 @@ def test_bad_app():
         app._fsa._initialize()
         pytest.fail("bad app creation must fail")
     except ConfigError as e:
-        assert "none" in str(en)
+        assert "none" in str(e)
 
 
 class PK():
