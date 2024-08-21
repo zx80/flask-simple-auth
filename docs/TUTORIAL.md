@@ -70,7 +70,7 @@ Create the `acme.conf` configuration file:
 
 ```python
 # file "acme.conf"
-FSA_AUTH = "none"  # allow non authenticated routes (OPEN)
+FSA_AUTH = "none"    # allow non authenticated routes (aka OPEN authorization)
 FSA_MODE = "debug1"  # debug level 1, max is 4
 FSA_ADD_HEADERS = { "Application": "Acme" }
 ```
@@ -78,7 +78,7 @@ FSA_ADD_HEADERS = { "Application": "Acme" }
 Start the application in a terminal with the *flask* local test server.
 
 ```shell
-export ACME_CONFIG="acme.conf"  # where to find the config file
+export ACME_CONFIG="acme.conf"  # where to find the configuration file
 flask --app ./app.py run --debug --reload
 # various log traces...
 # control-c to stop
@@ -93,7 +93,7 @@ curl -si -X GET http://localhost:5000/hello  # 200
 You should see a log line for the request in the application terminal,
 possibly some debug output, and the JSON response in the second terminal,
 with 3 FSA-specific headers telling the request, the authentication and
-execution time:
+execution time from the framework point of view:
 
 ```http
 HTTP/1.1 200 OK
@@ -399,14 +399,14 @@ Which parameters are used for authentication is also configurable in
 
 ```python
 # append to "acme.conf"
-FSA_PARAM_USER = "USER"  # parameter for the user name (default value)
-FSA_PARAM_PASS = "PASS"  # parameter for the password (default value)
+FSA_PARAM_USER = "username"  # parameter for the user name (default is USER)
+FSA_PARAM_PASS = "password"  # parameter for the password (default is PASS)
 ```
 
 Test from a terminal:
 
 ```shell
-curl -si -X GET -d USER=acme -d PASS="$ACME_ADMIN_PASS" http://localhost:5000/hello-me  # 200
+curl -si -X GET -d username=acme -d password="$ACME_ADMIN_PASS" http://localhost:5000/hello-me  # 200
 ```
 
 Also append these same tests to `test.py`, and run them with `pytest` to
@@ -416,11 +416,12 @@ achieve _4 passed_:
 # append to "test.py"
 def test_param_authn(client):
     # HTTP parameters
-    res = client.get("/hello-me", data={"USER": "acme", "PASS": os.environ["ACME_ADMIN_PASS"]})
+    acme_auth_params = {"username": "acme", "password": os.environ["ACME_ADMIN_PASS"]}
+    res = client.get("/hello-me", data=acme_auth_param)
     assert res.status_code == 200
     assert res.json["user"] == "acme"
     # also with JSON parameters
-    res = client.get("/hello-me", json={"USER": "acme", "PASS": os.environ["ACME_ADMIN_PASS"]})
+    res = client.get("/hello-me", json=acme_auth_param)
     assert res.status_code == 200
     assert res.json["user"] == "acme"
 ```
@@ -455,7 +456,7 @@ FSA_TOKEN_DELAY = 10.0  # set token expiration to 10 minutes (default is 1 hour)
 ```
 
 In a more realistic setting, the token secret would probably not be directly
-in the configuration, but passed to it or loaded by it.  
+in the configuration, but passed to it or loaded by it somehow.
 Then edit File `app.py` to add a new route to create a token for the current
 user authenticated by a password scheme:
 
@@ -464,12 +465,17 @@ user authenticated by a password scheme:
 @app.get("/token", authorize="AUTH", auth=["basic", "param"])
 def get_token(user: fsa.CurrentUser):
     return { "token": app.create_token(user) }, 200
+
+@app.post("/token", authorize="AUTH", auth="param")
+def post_token(user: fsa.CurrentUser):
+    return { "token": app.create_token(user) }, 201
 ```
 
 Then restart and test:
 
 ```shell
 curl -si -X GET -u "acme:$ACME_ADMIN_PASS" http://localhost:5000/token
+curl -si -X POST -d username=acme -d password="$ACME_ADMIN_PASS" http://localhost:5000/token
 ```
 
 You should see the token as a JSON property in the response.
@@ -489,17 +495,28 @@ achieve _5 passed_:
 ```python
 # append to "test.py"
 def test_token_authn(client):
+    acme_param_auth = {"username": "acme", "password": os.environ["ACME_ADMIN_PASS"]}
+    # GET /token basic
     res = client.get("/token", headers=ACME_BASIC)
-    assert res.status_code == 200
+    assert res.status_code == 200 and "token" in res.json
     ACME_TOKEN = { "Authorization": f"Bearer {res.json['token']}" }
+    # GET /token param
+    res = client.get("/token", data=acme_param_auth)
+    assert res.status_code == 200 and "token" in res.json
+    res = client.get("/token", json=acme_param_auth)
+    assert res.status_code == 200 and "token" in res.json
+    # GET /hello-me token
     res = client.get("/hello-me", headers=ACME_TOKEN)
     assert res.status_code == 200
     assert res.json["user"] == "acme"
+    # POST /token
+    res = client.post("/token", data=acme_param_auth)
+    assert res.status_code == 201 and "token" in res.json
+    res = client.post("/token", json=acme_param_auth)
+    assert res.status_code == 201 and "token" in res.json
+    res = client.post("/token", headers=ACME_BASIC)
+    assert res.status_code == 401  # no basic auth
 ```
-
-Note that in the wide web world, people often prefer using a `POST` method with
-parameters `username` and `password` for retrieving a token.
-Setting this up is left as an exercise.
 
 ## Group Authorization
 
