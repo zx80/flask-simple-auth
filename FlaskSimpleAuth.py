@@ -373,6 +373,11 @@ def _is_optional(t) -> bool:
     )
 
 
+def _type(t) -> str:
+    """Return type name for error message display."""
+    return type(t).__name__
+
+
 def _valid_type(t) -> bool:
     """Return if type t is consistent with _check_type expectations."""
     if t in (None, bool, int, float, str, types.NoneType):
@@ -828,27 +833,34 @@ class Directives:
     """
 
     # authentication
-    FSA_AUTH: str|list[str] = "none"
+    FSA_AUTH: str|list[str] = []
     """List of enabled authentication schemes.
 
-    - ``none``: no authentication.
-    - ``httpd``: inherit web-server authentication
-    - ``basic``: HTTP Basic password authentication
-    - ``http-basic``: same with *Flask-HTTPAuth*
-    - ``digest``: HTTP Digest password authentication with *Flask-HTTPAuth*
-    - ``http-digest``: same
-    - ``param``: parameter password authentication
-    - ``password``: try ``basic`` then ``param``
-    - ``fake``: fake authentication using a parameter
-    - ``token``: token authentication (implicit if ``FSA_AUTH`` is a scalar)
-    - ``http-token``: same with *Flask-HTTPAuth*
-    - ``oauth``: token authentication variant
+    This directive is **mandatory**.
+
+    Note: the result of authentication is the user identification (eg login,
+    name or email…) as a string, which is accessible from the application and
+    using the ``CurrentUser`` special parameter type in route functions.
+
+    - ``none``: no authentication, implicit if ``FSA_AUTH`` is a scalar, required for OPEN routes.
+    - ``httpd``: inherit web-server authentication.
+    - ``basic``: HTTP Basic password authentication.
+    - ``http-basic``: same with *Flask-HTTPAuth* implementation.
+    - ``digest``: HTTP Digest password authentication with *Flask-HTTPAuth*.
+    - ``http-digest``: same as previous.
+    - ``param``: parameter password authentication.
+    - ``password``: try ``basic`` then ``param``.
+    - ``fake``: fake authentication using a parameter, for local tests only.
+    - ``token``: token authentication (implicit if ``FSA_AUTH`` is a scalar).
+    - ``http-token``: same with *Flask-HTTPAuth*.
+    - ``oauth``: token authentication variant, where the token holds the list of permissions.
     """
 
     FSA_AUTH_DEFAULT: str|list[str]|None = None
-    """Default authentication to use on a route.
+    """Default authentications to use on a route.
 
-    Default is to rely on ``FSA_AUTH``.
+    These authentications **must** be enabled.
+    Default is *None*, which means relying on schemes allowed by ``FSA_AUTH``.
     """
 
     FSA_REALM: str = "<to be set as application name>"
@@ -1454,6 +1466,7 @@ class _TokenManager:
         realm = realm or self._fsa._local.token_realm
         assert realm is not None  # help type check
         user, exp, scopes = self._get_any_token_auth_exp(token, realm)
+        # log.debug(f"token: u={user} exp={exp} scopes={scopes}")
         # must recheck token expiration
         now = dt.datetime.now(dt.timezone.utc) - dt.timedelta(minutes=self._grace)
         if now > exp:
@@ -1510,7 +1523,7 @@ class _PasswordManager:
     #      access to said passwords.
     #      Thus `check_password`, `hash_password`, `_check_password`,
     #      `_password_check` and `_check_with_password_hook` should not be
-    #      cached, ever, even if expensive.
+    #      cached directly, ever, even if expensive.
     #      Make good use of tokens to reduce password check costs.
 
     def __init__(self, fsa):
@@ -1534,7 +1547,7 @@ class _PasswordManager:
     # only actually initialize with passlib if needed
     # passlib context is a pain, you have to know the scheme name to set its
     # round. Ident "2y" is same as "2b" but apache compatible.
-    def __passlib_init(self, schemes: list[str], options):
+    def __passlib_init(self, schemes: list[str], options: dict[str, Any]|None):
 
         if options is None:  # bcrypt defaults
             options = {"bcrypt__default_rounds": 4, "bcrypt__default_ident": "2y"}
@@ -1833,7 +1846,7 @@ class _PasswordManager:
                     log.debug(f"AUTH (password): invalid user/password ({user})")
                     raise self._Err(f"invalid user/password for {user}", 401)
         elif not isinstance(ref, (str, bytes)):  # do a type check in passing
-            log.error(f"type error in get_user_pass: {type(ref)} on {user}, expecting None, str or bytes")
+            log.error(f"type error in get_user_pass: {_type(ref)} on {user}, expecting None, str or bytes")
             raise self._Err("internal error with get_user_pass", self._fsa._server_error)
         elif self.check_password(pwd, ref):  # does not match, try alternate check
             return user
@@ -1911,17 +1924,18 @@ class _AuthenticationManager:
         # list of allowed authentication schemes
         auth = conf.get("FSA_AUTH", Directives.FSA_AUTH)
         if isinstance(auth, str):
+            # nearly always add "token"
             if auth not in ("oauth", "token", "http-token", "none"):
-                auth = ["token", auth]
+                auth = ["token", auth, "none"]
             else:
                 auth = [auth]
-        if isinstance(auth, list):  # keep the provided list, whatever
-            self._auth = self._password_auth(auth)
-        else:
-            raise self._Bad(f"unexpected FSA_AUTH type: {type(auth)}")
-        # sanity check
-        if "none" in auth and len(auth) > 1:
-            raise self._Bad(f"cannot both enable and disable authentication: {auth}")
+        if not isinstance(auth, list):
+            raise self._Bad(f"unexpected FSA_AUTH type: {_type(auth)}")
+        # auth list cannot be empty
+        if auth is None or auth == []:
+            raise self._Bad("empty authentication configuration, please provide FSA_AUTH!")
+        # keep the provided list, whatever
+        self._auth = self._password_auth(auth)
 
         # default authentication on a route, unless explicitely stated
         default_auth = conf.get("FSA_AUTH_DEFAULT", Directives.FSA_AUTH_DEFAULT)
@@ -1933,7 +1947,7 @@ class _AuthenticationManager:
             default_auth = self._password_auth(default_auth)
             self._default_auth = default_auth
         else:
-            raise self._Bad(f"unexpected FSA_AUTH_DEFAULT type: {type(default_auth)}")
+            raise self._Bad(f"unexpected FSA_AUTH_DEFAULT type: {_type(default_auth)}")
 
         # FIXME needed for some tm checks
         self._fsa._local.auth = self._auth
@@ -2016,7 +2030,7 @@ class _AuthenticationManager:
     def _add_auth(self, auth: str):
         """Register that an authentication method is used."""
         if not isinstance(auth, str):  # pragma: no cover
-            raise self._Bad(f"unexpected authentication identifier type: {type(auth).__name__}")
+            raise self._Bad(f"unexpected authentication identifier type: {_type(auth)}")
         if auth not in self._authentication:
             raise self._Bad(f"unexpected authentication scheme: {auth}")
         # possibly add parameters to ignore silently
@@ -2092,13 +2106,12 @@ class _AuthenticationManager:
 
         return local.user
 
-    def _authenticate(self, path: str, auth: str|list[str]|None = None, realm: str|None = None):
+    def _authenticate(self, path: str, auth: list[str]|None = None, realm: str|None = None):
         """Decorator to authenticate current user."""
 
         # check auth parameter
         if auth:
-            if isinstance(auth, str):
-                auth = [auth]
+            assert isinstance(auth, list)
             # probably already caught before
             for a in auth:
                 if a not in self._authentication:  # pragma: no cover
@@ -2598,7 +2611,7 @@ class _AuthorizationManager:
                             raise
                         return self._Res(f"internal error while checking group {grp}", fsa._server_error)
                     if not isinstance(ok, bool):
-                        log.error(f"type error in group check: {ok}: {type(ok)}, must return a boolean")
+                        log.error(f"type error in group check: {ok}: {_type(ok)}, must return a boolean")
                         return self._Res(f"internal error in group check for {grp}", fsa._server_error)
                     elif not ok:
                         return self._Res(f'not in group "{grp}"', 403)
@@ -2642,9 +2655,9 @@ class _AuthorizationManager:
             if domain not in self._object_perms:
                 raise self._Bad(f"missing object permission checker for {perm} on {path}")
             if not isinstance(name, str):
-                raise self._Bad(f"unexpected identifier name type ({type(name)}) for {perm} on {path}")
+                raise self._Bad(f"unexpected identifier name type ({_type(name)}) for {perm} on {path}")
             if mode is not None and type(mode) not in (int, str):
-                raise self._Bad(f"unexpected mode type ({type(mode)}) for {perm} on {path}")
+                raise self._Bad(f"unexpected mode type ({_type(mode)}) for {perm} on {path}")
 
         def decorate(fun: Callable):
 
@@ -2680,7 +2693,7 @@ class _AuthorizationManager:
                         log.warning(f"none object permission on {domain} {val} {mode}")
                         return self._Res("object not found", fsa._not_found_error)
                     elif not isinstance(ok, bool):  # paranoid?
-                        log.error(f"type error on on {request.method} {request.path} permission {perms} check: {type(ok)}")
+                        log.error(f"type error on on {request.method} {request.path} permission {perms} check: {_type(ok)}")
                         return self._Res("internal error with permission check", fsa._server_error)
                     elif not ok:
                         return self._Res(f"permission denied on {domain}:{val} ({mode})", 403)
@@ -2951,7 +2964,7 @@ class _ParameterManager:
                 return s
             if isinstance(s, str):
                 return s.lower() not in ("", "0", "false", "f")
-            raise self._Err(f"cannot cast to bool: {type(s)}", 400)  # pragma: no cover
+            raise self._Err(f"cannot cast to bool: {_type(s)}", 400)  # pragma: no cover
 
         def int_cast(s):
             if isinstance(s, bool):  # pragma: no cover
@@ -2960,7 +2973,7 @@ class _ParameterManager:
                 return s
             if isinstance(s, str):
                 return int(s, base=0)
-            raise self._Err(f"cannot cast to int: {type(s)}", 400)  # pragma: no cover
+            raise self._Err(f"cannot cast to int: {_type(s)}", 400)  # pragma: no cover
 
         # predefined cases, extend with cast
         self._casts: dict[type, Hooks.CastFun] = {
@@ -3023,7 +3036,7 @@ class _ParameterManager:
             self._fsa._local.params = "json"
             # FIXME should it always be a dict? if not the CombinedMultiDict will fail
             if not isinstance(request.json, dict):  # pragma: no cover
-                log.warning(f"request.json is expected to be a dict, got {type(request.json)}.")
+                log.warning(f"request.json is expected to be a dict, got {_type(request.json)}.")
             # NOTE json + args may result in unexpected corner case behavior…
             # NOTE form and files cannot co-exists with json
             return CombinedMultiDict([request.json, request.args])
@@ -3350,7 +3363,7 @@ class _ResponseManager:
         elif callable(error):
             self._error_response = error
         elif not isinstance(error, str):
-            raise self._Bad(f"unexpected FSA_ERROR_RESPONSE type: {type(error).__name__}")
+            raise self._Bad(f"unexpected FSA_ERROR_RESPONSE type: {_type(error)}")
         elif error == "plain":
             self._error_response = \
                 lambda m, c, h, _m: Response(m, c, h, content_type="text/plain")
@@ -3728,7 +3741,7 @@ class FlaskSimpleAuth:
         self._initialize()
         for grp in groups:
             if not isinstance(grp, (str, int)):
-                raise self._Bad(f"invalid group type: {type(grp).__name__}")
+                raise self._Bad(f"invalid group type: {_type(grp)}")
             self._zm._groups.add(grp)
 
     def add_scope(self, *scopes) -> None:
@@ -3736,7 +3749,7 @@ class FlaskSimpleAuth:
         self._initialize()
         for scope in scopes:
             if not isinstance(scope, str):
-                raise self._Bad(f"invalid scope type: {type(scope).__name__}")
+                raise self._Bad(f"invalid scope type: {_type(scope)}")
             self._zm._scopes.add(scope)
 
     def add_headers(self, **kwargs) -> None:
@@ -3744,9 +3757,9 @@ class FlaskSimpleAuth:
         self._initialize()
         for k, v in kwargs.items():
             if not isinstance(k, str):  # pragma: no cover
-                raise self._Bad(f"header name must be a string: {type(k).__name__}")
+                raise self._Bad(f"header name must be a string: {_type(k)}")
             if not (isinstance(v, str) or callable(v)):
-                raise self._Bad(f"header value must be a string or a callable: {type(v).__name__}")
+                raise self._Bad(f"header value must be a string or a callable: {_type(v)}")
             self._store(self._rm._headers, "header", k, v)  # type: ignore
 
     def before_exec(self, hook: Hooks.BeforeExecFun) -> None:
@@ -3932,7 +3945,7 @@ class FlaskSimpleAuth:
                 if a not in self._am._auth:
                     raise self._Bad(f"auth is not enabled: {a}")
         else:
-            raise self._Bad(f"unexpected auth type, should be str or list: {type(auth)}")
+            raise self._Bad(f"unexpected auth type, should be str or list: {_type(auth)}")
 
         # FIXME should be in a non existing ready-to-run hook
         if self._cm and not self._cm._cached:
@@ -3946,12 +3959,10 @@ class FlaskSimpleAuth:
             authorize = ["CLOSE"]
 
         # special handling of "oauth" rule-specific authentication
-        if auth and type(auth) in (tuple, list) and "oauth" in auth:
+        if auth and isinstance(auth, list) and "oauth" in auth:
             if len(auth) != 1:
                 raise self._Bad(f"oauth authentication cannot be mixed with other schemes on {rule}")
-            auth = "oauth"
-
-        if auth == "oauth":  # sanity checks
+            assert auth == ["oauth"]
             if not self._am._tm._issuer:
                 raise self._Bad(f"oauth token authorizations require FSA_TOKEN_ISSUER on {rule}")
 
@@ -3977,8 +3988,26 @@ class FlaskSimpleAuth:
                 raise self._Bad(f"cannot mix OPEN and other groups on {path}")
             if perms:
                 raise self._Bad(f"cannot mix OPEN with per-object permissions on {path}")
+            # OPEN authz requires none authn, otherwise it means AUTH
+            # NOTE we know that self._am._auth is not empty
+            if "none" not in self._am._auth:
+                predef = "AUTH"
+                log.warning(f"OPEN authorization but none authentication is not allowed on {path}")
+            if auth:  # explicit authentication list
+                if "none" not in auth:
+                    predef = "AUTH"
+                    log.warning(f"OPEN authorization but none authentication is not set on {path}")
+            elif self._am._default_auth and "none" not in self._am._default_auth:  # implicit
+                predef = "AUTH"
+                log.warning(f"OPEN authorization but none authentication is not set in defaults on {path}")
         elif _is_auth(predefs):
             predef = "AUTH"
+            # change to CLOSE if no authentication is enabled
+            if (self._am._auth == ["none"] or
+                auth and auth == ["none"] or
+                self._am._default_auth and self._am._default_auth == ["none"]):
+                log.warning(f"AUTH authorization but only none authentication on {path}")
+                predef = "CLOSE"
         else:  # trigger auth anyway
             assert groups or perms
             predef = "AUTH"
@@ -4064,7 +4093,7 @@ class FlaskSimpleAuth:
 
         if groups:
             assert need_authenticate
-            if auth == "oauth":
+            if isinstance(auth, list) and "oauth" in auth:
                 fun = self._zm._oauth_authz(newpath, *groups)(fun)
             else:
                 fun = self._zm._group_authz(newpath, *groups)(fun)

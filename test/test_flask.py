@@ -401,7 +401,7 @@ def test_password_lazy_init():
     app = fsa.Flask("pass-one", FSA_AUTH="basic")
     ref = app.hash_password("hello world!")
     assert isinstance(ref, str) and len(ref) >= 40
-    app = fsa.Flask("pass-two")
+    app = fsa.Flask("pass-two", FSA_AUTH="basic")
     assert app.check_password("hello world!", ref)
 
 def test_password_check(client):
@@ -469,7 +469,7 @@ def test_password_check(client):
     pop_auth(fsa)
 
 def test_no_password_manager():
-    app = fsa.Flask("nopm", FSA_PASSWORD_SCHEME=None)
+    app = fsa.Flask("nopm", FSA_AUTH="none", FSA_PASSWORD_SCHEME=None)
     try:
         app.hash_password("hello")
         pytest.fail("should fail because no pm")
@@ -477,7 +477,7 @@ def test_no_password_manager():
         assert "disabled" in str(e)
 
 def test_plaintext_password():
-    app = fsa.Flask("plain", FSA_PASSWORD_SCHEME="plaintext")
+    app = fsa.Flask("plain", FSA_AUTH="password", FSA_PASSWORD_SCHEME="plaintext")
     assert app.hash_password("hello") == "hello"
     assert app.check_password("hello", "hello")
 
@@ -488,36 +488,36 @@ def check_various_passwords(app):
 
 def test_fsa_password_simple_schemes():
     for scheme in ("plaintext", "fsa:plaintext", "fsa:b64", "fsa:a85"):
-        app = fsa.Flask(scheme, FSA_PASSWORD_SCHEME=scheme)
+        app = fsa.Flask(scheme, FSA_AUTH="password", FSA_PASSWORD_SCHEME=scheme)
         check_various_passwords(app)
 
 @pytest.mark.skipif(not has_package("bcrypt"), reason="bcrypt is not available")
 def test_fsa_password_bcrypt_scheme():
     for scheme in ("bcrypt", "fsa:bcrypt"):
-        app = fsa.Flask(scheme, FSA_PASSWORD_SCHEME=scheme)
+        app = fsa.Flask(scheme, FSA_AUTH="password", FSA_PASSWORD_SCHEME=scheme)
         check_various_passwords(app)
 
 @pytest.mark.skipif(not has_package("argon2"), reason="argon2 is not available")
 def test_fsa_password_argon2_scheme():
     for scheme in ("argon2", "fsa:argon2"):
-        app = fsa.Flask(scheme, FSA_PASSWORD_SCHEME=scheme)
+        app = fsa.Flask(scheme, FSA_AUTH="password", FSA_PASSWORD_SCHEME=scheme)
         check_various_passwords(app)
 
 @pytest.mark.skipif(not has_package("scrypt"), reason="scrypt is not available")
 def test_fsa_password_scrypt_scheme():
     for scheme in ("scrypt", "fsa:scrypt"):
-        app = fsa.Flask(scheme, FSA_PASSWORD_SCHEME=scheme)
+        app = fsa.Flask(scheme, FSA_AUTH="password", FSA_PASSWORD_SCHEME=scheme)
         check_various_passwords(app)
 
 @pytest.mark.skipif(not has_package("passlib"), reason="passlib is not available")
 def test_passlib_password_scheme():
     for scheme in ("passlib:plaintext", "passlib:bcrypt"):
-        app = fsa.Flask(scheme, FSA_PASSWORD_SCHEME=scheme)
+        app = fsa.Flask(scheme, FSA_AUTH="password", FSA_PASSWORD_SCHEME=scheme)
         check_various_passwords(app)
 
 @pytest.mark.skipif(not has_package("passlib"), reason="passlib is not available")
 def test_passlib_password_scheme_list():
-    app = fsa.Flask("passlib", FSA_PASSWORD_SCHEME=["bcrypt", "plaintext"])
+    app = fsa.Flask("passlib", FSA_AUTH="password", FSA_PASSWORD_SCHEME=["bcrypt", "plaintext"])
     # bcrypt
     ref = app.hash_password("hello")
     assert len(ref) > 10
@@ -1052,7 +1052,7 @@ def test_default_auth():
     except ConfigError as e:
         assert "not enabled" in str(e)
     try:
-        app = fsa.Flask("bad", FSA_AUTH_DEFAULT=42)
+        app = fsa.Flask("bad", FSA_AUTH="password", FSA_AUTH_DEFAULT=42)
         app.hash_password("hello")
         pytest.fail("default auth type")
     except ConfigError as e:
@@ -1166,17 +1166,17 @@ def test_bad_app():
         assert "FSA_LOCAL" in str(e)
     # bad route auth
     try:
-        app = create_app()
-        @app.get("/bad-auth-type", authz="ALL", authn=1)
+        app = create_app("token")
+        @app.get("/bad-auth-type", authz="AUTH", authn=1)
         def get_bad_auth_type():
             return None
         pytest.fail("bad app creation must fail")
     except ConfigError as e:
         assert "unexpected auth type" in str(e)
-    app = create_app()
+    app = create_app("basic")
     # incompatible route parameters
     try:
-        @app.get("/bad-param-1", authorize="ALL", authz="NONE")
+        @app.get("/bad-param-1", authorize="AUTH", authz="NONE")
         def get_bad_param_1():
             return None
         pytest.fail("creation must fail")
@@ -1218,13 +1218,6 @@ def test_bad_app():
             return len(args)
     except ConfigError as e:
         assert "position" in str(e)
-    # inconsistent authentication
-    try:
-        app = fsa.Flask("bad", FSA_AUTH=["none", "token"])
-        app._fsa._initialize()
-        pytest.fail("bad app creation must fail")
-    except ConfigError as e:
-        assert "none" in str(e)
 
 
 class PK():
@@ -1331,8 +1324,8 @@ def test_bads():
     except ConfigError as e:
         assert "unknown" in str(e)
     # unexpected parameter
-    app = fsa.Flask("unexpected param", FSA_MODE="debug2")
-    @app.get("/youpi", authorize="ANY")
+    app = fsa.Flask("unexpected param", FSA_AUTH="none", FSA_MODE="debug2")
+    @app.get("/youpi", authorize="OPEN")
     def get_youpi(i: int):
         return str(i), 200
     client = app.test_client()
@@ -1691,6 +1684,12 @@ def test_warnings_and_errors():
             pytest.fail("should not get through")
         except ConfigError as e:
             assert "bad_scheme" in str(e)
+    try:
+        app = fsa.Flask("empty", FSA_AUTH=[])
+        app._fsa._initialize()
+        pytest.fail("FSA_AUTH must not be empty")
+    except ConfigError as e:
+        assert "empty auth" in str(e)
 
 
 def test_jsondata(client):
@@ -1786,8 +1785,11 @@ def test_www_authenticate_priority(client):
 
 def test_jwt_authorization():
     import AppFact as af
-    app = af.create_app(FSA_AUTH=["oauth", "basic"], FSA_TOKEN_TYPE="jwt",
-                        FSA_REALM="comics", FSA_TOKEN_ISSUER="god")
+    app = af.create_app(
+        FSA_AUTH=["oauth", "basic"],
+        FSA_TOKEN_TYPE="jwt",
+        FSA_REALM="comics",
+        FSA_TOKEN_ISSUER="god")
     # oauth in list auth
     @app.get("/some/stuff", authorize=["read"], auth=["oauth"])
     def get_some_stuff():
@@ -1895,13 +1897,16 @@ def test_error_response():
     # again, to trigger a warning for coverage
     def erh(m: str, c: int):
         return Response(m, c, content_type="text/plain")
-    app = fsa.Flask("trigger warning")
+    app = fsa.Flask("trigger warning", FSA_AUTH="none")
     app._fsa._error_response = erh
     app.config.update(FSA_ERROR_RESPONSE="json", FSA_SECURE=False)
     app._fsa._initialize()
     # check that we take control of flask errors
-    app = fsa.Flask("not-implemented", FSA_LOGGING_LEVEL=logging.INFO, FSA_ERROR_RESPONSE="json:bad")
-    @app.get("/implemented", authorize="ANY")
+    app = fsa.Flask("not-implemented",
+                    FSA_AUTH="none",
+                    FSA_LOGGING_LEVEL=logging.INFO,
+                    FSA_ERROR_RESPONSE="json:bad")
+    @app.get("/implemented", authorize="OPEN")
     def get_implemented():
         raise ErrorResponse("oops", 418)
     with app.test_client() as client:
@@ -1924,7 +1929,7 @@ def test_add_headers():
         return "", 200
     app.add_headers(Now="Maintenant")
     client = app.test_client()
-    res = check(200, client.get("heads"))
+    res = check(200, client.get("/heads"))
     assert "Service" in res.headers and "Headers" in res.headers and "Now" in res.headers
     assert "FSA-Delay" in res.headers and re.match(r"\d+\.\d{6}$", res.headers["FSA-Delay"])
 
@@ -1966,9 +1971,9 @@ def test_mode():
     # combine all debug/modes
     for debug in (True, False):
         for mode in ("debug4", "debug3", "debug2", "debug1", "debug", "dev", "prod"):
-            hello(fsa.Flask("mode", debug=debug, FSA_MODE=mode))
+            hello(fsa.Flask("mode", debug=debug, FSA_AUTH="none", FSA_MODE=mode))
     try:
-        app = fsa.Flask("mode", FSA_MODE="unexpected")
+        app = fsa.Flask("mode", FSA_AUTH="none", FSA_MODE="unexpected")
         app._fsa._initialize()
         pytest.fail("should raise an exception")
     except ConfigError as e:
@@ -2015,8 +2020,8 @@ def test_user_errors():
     # check that user errors are raised again under FSA_KEEP_USER_ERRORS
     class Oops(Exception):
         pass
-    app = fsa.Flask("user-errors", FSA_KEEP_USER_ERRORS=True)
-    @app.get("/oops", authorize="ANY")
+    app = fsa.Flask("user-errors", FSA_AUTH="none", FSA_KEEP_USER_ERRORS=True)
+    @app.get("/oops", authorize="OPEN")
     def get_oops():
         raise Oops("internal error in get_oops!")
     client = app.test_client()
@@ -2085,26 +2090,26 @@ def test_param_params():
 
 def test_file_storage():
 
-    app = fsa.Flask("file-storage", FSA_MODE="debug4")
+    app = fsa.Flask("file-storage", FSA_AUTH="none", FSA_MODE="debug4")
 
-    @app.post("/upload", authorize="ANY")
+    @app.post("/upload", authorize="OPEN")
     def post_upload(file: fsa.FileStorage):
         assert isinstance(file, fsa.FileStorage)
         return f"file={file.filename}", 201
 
-    @app.post("/uploads", authorize="ANY")
+    @app.post("/uploads", authorize="OPEN")
     def post_uploads(**kwargs):
         return " ".join(sorted(kwargs.keys())), 201
 
-    @app.post("/mix", authorize="ANY")
+    @app.post("/mix", authorize="OPEN")
     def post_mix(data: int, file: fsa.FileStorage):
         return f"data={data} file={file.filename}", 201
 
-    @app.post("/empty", authorize="ANY")
+    @app.post("/empty", authorize="OPEN")
     def post_empty():
         return "nothing", 200
 
-    @app.post("/optional", authorize="ANY")
+    @app.post("/optional", authorize="OPEN")
     def post_optional(file: fsa.FileStorage|None = None):
         return file.filename if file else "no file"
 
@@ -2147,10 +2152,10 @@ def test_file_storage():
 
 
 def test_param_types():
-    app = fsa.Flask("param-types", FSA_MODE="debug")
+    app = fsa.Flask("param-types", FSA_AUTH="none", FSA_MODE="debug")
 
     try:
-        @app.post("/list-str", authorize="ANY")
+        @app.post("/list-str", authorize="OPEN")
         def post_list_str(ls: typing.List[str]):
             return json(len(ls)), 201
         pytest.fail("should raise a config error")
@@ -2158,7 +2163,7 @@ def test_param_types():
         assert "not callable" in str(e)
 
     try:
-        @app.post("/list", authorize="ANY")
+        @app.post("/list", authorize="OPEN")
         def post_list(l: typing.List):
             return json(len(l)), 201
         pytest.fail("should raise a config error")
@@ -2166,7 +2171,7 @@ def test_param_types():
         assert "is not callable" in str(e)
 
     try:
-        @app.get("/nope", authorize="ANY")
+        @app.get("/nope", authorize="OPEN")
         def get_nope(i: int = "one"):
             return "no"
         pytest.fail("should raise a config error")
@@ -2174,7 +2179,7 @@ def test_param_types():
         assert "cannot cast" in str(e)
 
     try:
-        @app.get("/nope", authorize="ANY")
+        @app.get("/nope", authorize="OPEN")
         def get_nope(b=False):
             return "no"
         pytest.fail("should raise a config error")
@@ -2185,8 +2190,8 @@ def test_jsonify_with_generators():
     def gen(i: int):
         for i in range(i):
             yield i
-    app = fsa.Flask("json-gen")
-    @app.get("/json", authorize="ANY")
+    app = fsa.Flask("json-gen", FSA_AUTH="none")
+    @app.get("/json", authorize="OPEN")
     def get_json(what: str):
         l = [0, 1, 2]
         res = (l if what == "list" else
@@ -2210,7 +2215,7 @@ def test_jsonify_with_generators():
 
 def test_pydantic_models():
     import pydantic
-    app = fsa.Flask("pyda-1")
+    app = fsa.Flask("pyda-1", FSA_AUTH="none")
     # pydantic class
     # FIXME List -> list?
     class Foo(pydantic.BaseModel):
@@ -2221,10 +2226,10 @@ def test_pydantic_models():
     FOO_OK = {"f0": "ok", "f1": [1, 2], "f2": ["hello", 1.0]}
     FOO_KO = {"f0": "ok", "f1": [1, 2]}  # missing f2
     # foo test route
-    @app.post("/foo", authorize="ANY")
+    @app.post("/foo", authorize="OPEN")
     def post_foo(f: Foo):
          return {"f": str(f)}, 201
-    @app.get("/foo", authorize="ANY")
+    @app.get("/foo", authorize="OPEN")
     def get_foo():
         return fsa.jsonify(Foo(**FOO_OK)), 200
     # pydantic dataclass
@@ -2235,7 +2240,7 @@ def test_pydantic_models():
     BLA_OK = {"b0": ["hello", "world"], "b1": 5432}
     BLA_KO = {"b0": [], "b1": "forty-two"}  # bad b1
     # bla test route
-    @app.post("/bla", authorize="ANY")
+    @app.post("/bla", authorize="OPEN")
     def post_bla(b: Bla):
         return fsa.jsonify(b), 201
     # standard dataclass
@@ -2250,7 +2255,7 @@ def test_pydantic_models():
     DIM_OK2 = {"d0": ("Calvin", 6), "d1": 5432}
     DIM_KO = {"d0": {"Calvin": 6}, "d1": 1234}  # bad d0, not detected
     # dim test route
-    @app.post("/dim", authorize="ANY")
+    @app.post("/dim", authorize="OPEN")
     def post_dim(d: Dim):
         return fsa.jsonify(d), 201
     # pydantic special parameter
@@ -2259,7 +2264,7 @@ def test_pydantic_models():
         f: float = 0.0
     DOOM = {"i": 1, "f": 1.0}
     app.special_parameter(Doom, lambda _: Doom(**DOOM))
-    @app.get("/doom", authorize="ANY")
+    @app.get("/doom", authorize="OPEN")
     def get_doom(d: Doom):
         return fsa.jsonify(d), 200
     # tests
@@ -2304,7 +2309,7 @@ def test_pydantic_models():
         assert r.json == DOOM
 
 def test_multi_400():
-    app = fsa.Flask("400")
+    app = fsa.Flask("400", FSA_AUTH="none")
 
     # special parameter errors
     def throwAny():
@@ -2318,10 +2323,10 @@ def test_multi_400():
     app.special_parameter(ParamAny, lambda _: throwAny())
     app.special_parameter(Param400, lambda _: throw400())
     # missing stuff
-    @app.get("/400", authorize="ANY")
+    @app.get("/400", authorize="OPEN")
     def get_400(i: int, j: int, f: fsa.FileStorage, p: Param400):
         return "oops 400", 200
-    @app.get("/oops", authorize="ANY")
+    @app.get("/oops", authorize="OPEN")
     def get_oops(q: ParamAny):
         return "oops any", 200
 
@@ -2378,20 +2383,22 @@ def test_custom_authentication():
         assert res.json == "hobbes"
 
 def test_default_type():
-    app = fsa.Flask("default-type", FSA_DEFAULT_CONTENT_TYPE="application/xml")
-    @app.get("/hello", authorize="ANY")
+    app = fsa.Flask("default-type",
+                    FSA_AUTH="none",
+                    FSA_DEFAULT_CONTENT_TYPE="application/xml")
+    @app.get("/hello", authorize="OPEN")
     def get_hello():
         return fsa.jsonify("hello"), 200
-    @app.get("/bonjour", authorize="ANY")
+    @app.get("/bonjour", authorize="OPEN")
     def get_bonjour():
         return "<x>bonjour</x>", 200
-    @app.get("/guttentag", authorize="ANY")
+    @app.get("/guttentag", authorize="OPEN")
     def get_guttentag():
         return "<X>Gutten Tag</X>"
-    @app.get("/ola", authorize="ANY")
+    @app.get("/ola", authorize="OPEN")
     def get_ola():
         return None
-    @app.get("/ciao", authorize="ANY")
+    @app.get("/ciao", authorize="OPEN")
     def get_ciao():
         return (None, 204)
     with app.test_client() as c:
@@ -2622,9 +2629,9 @@ def test_streaming():
 
     for streaming in (True, False):
 
-        app = fsa.Flask("stream", FSA_JSON_STREAMING=streaming)
+        app = fsa.Flask("stream", FSA_AUTH="none", FSA_JSON_STREAMING=streaming)
 
-        @app.get("/stream", authorize="ANY")
+        @app.get("/stream", authorize="OPEN")
         def get_stream(n: int = 3):
             return fsa.jsonify(range(n))
 
@@ -2642,8 +2649,8 @@ def test_streaming():
 def test_mixing():
     # test *non* mixing of http & json
 
-    app = fsa.Flask("mixing")
-    @app.get("/mixing", authorize="ANY")
+    app = fsa.Flask("mixing", FSA_AUTH="none")
+    @app.get("/mixing", authorize="OPEN")
     def get_mixing(a: int, b: int):
         return fsa.jsonify(a + b)
 
@@ -2667,7 +2674,7 @@ def run_authorize(predefs, code):
 
     for a in predefs:
 
-        app = fsa.Flask("auth")
+        app = fsa.Flask("auth", FSA_AUTH=["token", "basic", "none"])
 
         @app.get("/route", authorize=a)
         def get_route():
@@ -2685,3 +2692,28 @@ def test_close():
 
 def test_auth():
     run_authorize(fsa._AUTH, 401)
+
+def test_open_auth():
+    # OPEN -> AUTH if none is not allowed, for coverage
+    # auth list
+    app = fsa.Flask("open", FSA_AUTH=["token", "basic"])
+    @app.get("/open", authorize="OPEN")
+    def get_open():
+        return {"msg": "open!"}
+    # implicit and explicit auth
+    app = fsa.Flask("open",
+                    FSA_AUTH=["token", "basic", "none"],
+                    FSA_AUTH_DEFAULT=["token", "basic"])
+    @app.get("/open-1", authorize="OPEN")
+    def get_open_1():
+        return {"msg": "open 1!"}
+    @app.get("/open-2", authorize="OPEN", auth=["token", "basic"])
+    def get_open_2():
+        return {"msg": "open 2!"}
+
+def test_auth_close():
+    # AUTH -> CLOSE if only none is allowed, for coverage
+    app = fsa.Flask("auth", FSA_AUTH="none")
+    @app.get("/auth", authorize="AUTH")
+    def get_auth():
+        return {"msg": "auth!"}

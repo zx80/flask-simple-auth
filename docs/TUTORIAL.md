@@ -70,6 +70,7 @@ Create the `acme.conf` configuration file:
 
 ```python
 # file "acme.conf"
+FSA_AUTH = "none"  # allow non authenticated routes (OPEN)
 FSA_MODE = "debug1"  # debug level 1, max is 4
 FSA_ADD_HEADERS = { "Application": "Acme" }
 ```
@@ -108,7 +109,7 @@ Connection: close
 
 {
   "msg": "hello",
-  "version": "32.0"
+  "version": "33.0"
 }
 ```
 
@@ -228,8 +229,8 @@ Let us now add new routes with *basic* authentication, which requires to:
 Edit the `acme.conf` file to tell about basic authentication:
 
 ```python
-# append to "acme.conf"
-FSA_AUTH = ["basic"]
+# update "acme.conf"
+FSA_AUTH = ["basic", "none"]
 FSA_REALM = "acme"  # the app name, also the default
 ```
 
@@ -390,7 +391,7 @@ update the `FSA_AUTH` configuration directive in `acme.conf`:
 
 ```python
 # update "acme.conf"
-FSA_AUTH = ["basic", "param"]
+FSA_AUTH = ["basic", "param", "none"]
 ```
 
 Which parameters are used for authentication is also configurable in
@@ -439,7 +440,7 @@ Token authentication can be activated explicitely by prepending *token* to
 
 ```python
 # update "acme.conf"
-FSA_AUTH = ["token", "basic", "param"]
+FSA_AUTH = ["token", "basic", "param", "none"]
 ```
 
 Then we need token secret and route which allows to create a token.  
@@ -820,7 +821,8 @@ FSA_TOKEN_TYPE = "jwt"  # default is "fsa"
 
 The authentication configuration can be simplified to the same effect by
 setting it to *password*, which stands for both *basic* and *param*, and the
-fact that *token* is added implicitely when the configuration is a scalar:
+fact that *token* and *none* are added implicitely when the configuration
+is a scalar:
 
 ```python
 # update "acme.conf"

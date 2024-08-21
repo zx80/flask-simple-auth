@@ -212,13 +212,13 @@ routes.
 
 ### Authentication Schemes
 
-Authentication schemes are enabled with directive `FSA_AUTH`.
+Authentication schemes are enabled with mandatory directive `FSA_AUTH`.
 The available schemes are:
 
 - `none`
 
-  Deactivate authentication.
-  This is the default.
+  No authentication.
+  This is necessary for opening routes (`authorize="OPEN"`).
 
 - `httpd`
 
@@ -264,7 +264,7 @@ The available schemes are:
 
 - `password`
 
-  Tries `basic` then `param` authentication.
+  Shortcut to try `basic` then `param` authentication.
 
 - `http-digest` or `digest`
 
@@ -285,7 +285,7 @@ The available schemes are:
   See also [Password Management](#password-management) below for
   how the password is retrieved and checked. Note that password management
   is different for digest authentication because the simple hash of the
-  password or the password itself is needed for the verification.
+  password or the unhashed password itself is needed for the verification.
 
 - `token`
 
@@ -585,8 +585,12 @@ There are three special values that can be passed to the `authorize` decorator:
 
 - `OPEN` declares that no authentication is needed on that route,
   i.e. anyone can get in, the route is open.
+  This _requires_ that authentication `none` is allowed by `FSA_AUTH`
+  configuration, otherwise it is treated as `AUTH`.
 - `AUTH` declares that all authenticated user can access this route,
   without group checks.
+  This _requires_ that some authentication scheme is allowed, otherwise it is
+  treated as `CLOSE`.
 - `CLOSE` returns a *403* on all access. It can be used to close a route
   temporarily. This is the default.
 

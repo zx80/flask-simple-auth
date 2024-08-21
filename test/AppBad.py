@@ -6,10 +6,12 @@ log = logging.getLogger("bad")
 # generic authentication scheme test
 def create_app(auth=None, **config):
     app = Flask("bad")
+    if auth:
+        app.config.update(FSA_AUTH=[auth])
     app.config.update(**config)
 
     # next definition may raise an Exception
-    @app.route("/misc", methods=["GET"], authorize="ALL", auth=auth)
+    @app.route("/misc", methods=["GET"], authorize="AUTH", auth=auth)
     def get_misc():
         return "may get there, depending", 200
 
@@ -25,11 +27,11 @@ def create_badapp_2(**config):
         log.warning(f"intentional get_user_pass failure on {login}")
         raise Exception(f"get_user_pass failed for {login}")
 
-    @app.get("/any", authorize="ANY")
+    @app.get("/any", authorize="OPEN")
     def get_any():
         return "any ok", 200
 
-    @app.get("/all", authorize="ALL")
+    @app.get("/all", authorize="AUTH")
     def get_all():
         return "should not get there!", 418
 
@@ -61,14 +63,14 @@ def create_badapp_3(**config):
 
 # failing path
 def create_badapp_4(**config):
-    app = Flask("bad 4")
+    app = Flask("bad 4", FSA_AUTH="none")
     app.config.update(**config)
 
-    @app.get("/ok", authorize="ANY")
+    @app.get("/ok", authorize="OPEN")
     def get_ok():
         return "ok is ok!", 200
 
-    @app.get("/any", authorize="ANY")
+    @app.get("/any", authorize="OPEN")
     def get_any():
         raise Exception("intended exception on get_any!")
 
@@ -76,10 +78,10 @@ def create_badapp_4(**config):
 
 # mandatory path parameter
 def create_badapp_5(**config):
-    app = Flask("bad 5")
+    app = Flask("bad 5", FSA_AUTH="none")
     app.config.update(**config)
 
-    @app.get("/hello/<name>", authorize="ANY")
+    @app.get("/hello/<name>", authorize="OPEN")
     def get_hello_name(name: str = "Calvin"):
         return f"Bonjour {name} !", 200
 
@@ -87,10 +89,10 @@ def create_badapp_5(**config):
 
 # missing path parameter
 def create_badapp_6(**config):
-    app = Flask("bad 6")
+    app = Flask("bad 6", FSA_AUTH="none")
     app.config.update(**config)
 
-    @app.get("/hello/<missing>", authorize="ANY")
+    @app.get("/hello/<missing>", authorize="OPEN")
     def get_hello_missing():
          return "Bonsoir <missing> !", 200
 
@@ -98,10 +100,10 @@ def create_badapp_6(**config):
 
 # inconsistent path parameter types
 def create_badapp_7(**config):
-    app = Flask("bad 7")
+    app = Flask("bad 7", FSA_AUTH="none")
     app.config.update(**config)
 
-    @app.get("/hello/<int:bad>", authorize="ANY")
+    @app.get("/hello/<int:bad>", authorize="OPEN")
     def get_hello_missing(bad: float):
          return f"Salut {bad} !", 200
 
@@ -109,10 +111,10 @@ def create_badapp_7(**config):
 
 # again
 def create_badapp_8(**config):
-    app = Flask("bad 8")
+    app = Flask("bad 8", FSA_AUTH="none")
     app.config.update(**config)
 
-    @app.get("/hello/<unknown:bad>", authorize="ANY")
+    @app.get("/hello/<unknown:bad>", authorize="OPEN")
     def get_hello_missing(bad: int):
          return f"Salut {bad} !", 200
 

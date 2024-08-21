@@ -11,10 +11,11 @@ from Shared import something
 def create_app(**config):
     app = Flask("4ops", debug=True)
     app.config.update(
-        FSA_AUTH=["fake", "oauth", "basic", "param"],
+        FSA_AUTH=["fake", "oauth", "basic", "param", "none"],
         FSA_TOKEN_TYPE="jwt",
-        FSA_TOKEN_ISSUER="moe",
-        FSA_GET_USER_PASS=get_user_pass, FSA_USER_IN_GROUP=user_in_group)
+        FSA_TOKEN_ISSUER="god",
+        FSA_GET_USER_PASS=get_user_pass,
+        FSA_USER_IN_GROUP=user_in_group)
     app.config.update(**config)
     app.register_blueprint(subapp, url_prefix="/b")
 
