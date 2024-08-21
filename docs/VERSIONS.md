@@ -11,13 +11,14 @@ and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 - remove old ANY/ALL/NONE authorizations.
 - oauth: issuer/scope? issuer/secret?
 
-## 33.0 on ?
+## 33.0 on 2024-08-16
 
 - makes `FSA_AUTH` mandatory to declare the list of allowed schemes.
 - requires _none_ authentication on `OPEN` routes, otherwise they are
   turned into `AUTH`. (Should it rather be an error?).
 - `AUTH` routes without effective authentication are turned into `CLOSE`.
 - improve type name display on some errors.
+- update tutorial.
 
 ## 32.0 on 2024-08-15
 
