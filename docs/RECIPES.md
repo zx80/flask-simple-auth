@@ -114,7 +114,7 @@ You need to create a callback to handle your scheme:
   ```python
   def xyz_authentication(app, req):
       # investigate the request and return the login or None for 401
-      # possibly raise an ErrorResponse
+      # possibly raise an ErrorResponse with fsa.err(…)
       return ...
   ```
 
@@ -141,7 +141,7 @@ The AD password checking model is pretty strange, as it requires to send the
 clear password to the authentication server to check whether it is accepted.
 To do that:
 
-- create a new password checking function which will do that.
+- create a new password checking function:
 
   ```python
   def check_login_password_with_AD_server(login: str, password: str) -> bool|None:
@@ -153,7 +153,7 @@ To do that:
   - on `True`: the password is accepted
   - on `False`: it is not
   - on `None`: 401 (no such user)
-  - if unhappy: raise an `ErrorResponse` exception
+  - if unhappy: raise an `ErrorResponse` exception with `fsa.err(...)`
 - register this hook
 
   ```python
@@ -191,9 +191,18 @@ that an authenfication method has succeeded, and that another must still be chec
       return app.create_token(user), 200
   ```
 
-- only allow token authentication on other routes with `FSA_AUTH = "token"`.
+- only allow token authentication on other routes, eg with
+  `FSA_AUTH_DEFAULT = "token"`.
 
 See [MFA demo](https://github.com/zx80/flask-simple-auth/blob/main/demo/mfa.py).
+
+### How to ensure that no route is without authentication?
+
+With belt and suspenders:
+
+- do not use `authorize="OPEN"` on _any_ route.
+- use an explicit `FSA_AUTH` list setting **without** `none`.
+- use `FSA_AUTH_DEFAULT="token"`.
 
 ### How-to ... authentication?
 
@@ -203,18 +212,20 @@ For details, see the relevant
 [authorization](https://zx80.github.io/flask-simple-auth/DOCUMENTATION.html#authorization)
 section in the documentation.
 
-### How-to close a route?
+### How-to (temporarily) close a route?
 
-Use `authorize="CLOSE"` as a route parameter.
-This will trigger a 403 forbidden response.
+Use `authorize="CLOSE"` as a route parameter to trigger a 403 forbidden response.
 
 This can be added in a list of authorizations (`authorize=[…, "CLOSE"]`)
 and will supersede all other settings for this route.
 
 ### How-to open a route?
 
-Use `authorize="OPEN"` as a route parameter.
-Anyone can execute the route, without authentication.
+Use `authorize="OPEN"` as a route parameter, **and** allow authentication `none`
+by adding it to `FSA_AUTH`.
+Depending on `FSA_AUTH_DEFAULT`, you may have to add `auth="none"` on the route
+so that this (non) authentication is allowed.
+Anyone can execute such routes, without authentication.
 
 ### How-to just authenticate a route?
 
@@ -242,7 +253,7 @@ For that, you must:
 - declare that the group authorization is required on a route definition:
 
   ```python
-  @app.route("/admin-access", authorize="admin")
+  @app.route("/admin", authorize="admin")
   def ...
   ```
 
@@ -256,7 +267,7 @@ In most application, access permissions depend on some kind of relationship to
 the data, e.g. someone may read a message because they are either the recipient
 or the sender of this particular message.
 
-- object authorization require a per-domain callback which tells whether an
+- object authorizations require a per-domain callback which tells whether an
   *id*entified object of the domain can be access by a *user* in a *role*.
 
   ```python
@@ -278,7 +289,7 @@ or the sender of this particular message.
   the role.
 
   ```python
-  @app.patch("/stuff/<id>", authorize=("stuff", "id", "update")
+  @app.patch("/stuff/<id>", authorize=("stuff", "id", "update"))
   def patch_stuff_id(id: int, ...):
       return ...
   ```
@@ -325,7 +336,7 @@ and route outputs:
 
 See [types demo](https://github.com/zx80/flask-simple-auth/blob/main/demo/types_path.py).
 
-### How-to use generic types with in request and responses?
+### How-to use generic types in requests and responses?
 
 Just use them! They are converted from/to JSON, but for `list[*]` with HTTP
 parameters are expected to be repeated parameters.
@@ -349,7 +360,8 @@ general, although some instances may work.
 
 The default configuration emphasizes security, so non TLS connections are
 rejected, unless running on *localhost* for tests.
-To allow non-TLS connections, set `FSA_SECURE = False`.
+To allow non-TLS connections, set `FSA_SECURE = False` and feel deeply ashamed
+to have done that.
 
 ### How-to use a shared REDIS cache?
 
@@ -372,7 +384,7 @@ FlaskSimpleAuth uses [`redis`](https://pypi.org/project/redis/) to deal with red
 
 ### How-to get an anwer?
 
-Submit your question [there](https://github.com/zx80/flask-simple-auth/issues)!
+Submit your question [here](https://github.com/zx80/flask-simple-auth/issues)!
 
 ### How-to contribute?
 
