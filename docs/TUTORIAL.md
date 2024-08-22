@@ -455,8 +455,8 @@ FSA_TOKEN_DELAY = 10.0  # set token expiration to 10 minutes (default is 1 hour)
 ```
 
 In a more realistic setting, the token secret would probably not be directly
-in the configuration, but passed to it or loaded by it somehow.
-Then edit File `app.py` to add new routes to create a token for the current
+in the configuration, but passed to it or loaded by it somehow.  
+Edit File `app.py` to add new routes to create a token for the current
 user authenticated by a password scheme:
 
 ```python
@@ -660,7 +660,7 @@ def test_objperm_authz(client):
     # FIXME should cleanup data
 ```
 
-## Dataclass Support
+## Dataclass Parameters
 
 Application front ends are typically developed with *JavaScript*, thus JSON
 *(JavaScript Object Notation)* is a convenient serialization format to
@@ -726,7 +726,7 @@ def test_days(client):
 
 Note that this also works with standard dataclasses.
 
-## Standard Type Hints Support
+## Standard Type Hints Parameters
 
 Types hints based on standard types (`list`, `dict`…) are also supported
 through JSON serialization. Let us add a route to report which numbers from a
@@ -777,7 +777,8 @@ def test_primes(client):
 
 Let us edit `acme.conf` to activate or change some features.
 
-Errors are shown as `text/plain` by default, but this can be changed to JSON:
+Errors are shown as `text/plain` by default, but this can be changed to JSON
+which will be more easily handled by JavaScript clients:
 
 ```python
 # append to "acme.conf"
