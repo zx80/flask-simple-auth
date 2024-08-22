@@ -164,7 +164,7 @@ To do that at the library level:
   scheme used by your application.
 
 Alternatively, this could be implemented in one route which checks the credentials
-and provides a token which to be used afterwards:
+and provides a token which will be used afterwards:
 
 - create the token route:
 
