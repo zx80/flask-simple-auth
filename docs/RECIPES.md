@@ -172,7 +172,7 @@ and provides a token which will be used afterwards:
   # this route is open in the sense that it takes charge of checking credentials
   @app.post("/token-ad", authorize="OPEN", auth="none")
   def get_token_ad(username: str, password: str):
-      if not check_user_pass_with_ad(username, password):
+      if not check_login_password_with_AD_server(username, password):
           fsa.err("invalid AD credentials", 401)
       return {"token": app.create_token(username)}, 201
   ```
