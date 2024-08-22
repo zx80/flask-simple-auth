@@ -139,7 +139,7 @@ be deployed on a real server.
 
 The AD password checking model is pretty strange, as it requires to send the
 clear password to the authentication server to check whether it is accepted.
-To do that:
+To do that at the library level:
 
 - create a new password checking function:
 
@@ -162,6 +162,21 @@ To do that:
 
 - you do not need to have a `get_user_pass` hook if this is the sole password
   scheme used by your application.
+
+Alternatively, this could be implemented in one route which checks the credentials
+and provides a token which to be used afterwards:
+
+- create the token route:
+
+  ```python
+  # this route is open in the sense that it takes charge of checking credentials
+  @app.post("/token-ad", authorize="OPEN", auth="none")
+  def get_token_ad(username: str, password: str):
+      if not check_user_pass_with_ad(username, password):
+          fsa.err("invalid AD credentials", 401)
+      return {"token": app.create_token(username)}, 201
+  ```
+- use `FSA_AUTH_DEFAULT="token"` so that all other routes require the token.
 
 ### How-to use multi-factor authentication (MFA)?
 
