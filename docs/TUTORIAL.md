@@ -238,8 +238,8 @@ For non trivial projects, it is good practice to split the application in
 several files.
 This creates an annoying chicken-and-egg issue with Python initializations.
 A common pattern is to define `init_app(app: Flask)` initialization functions
-in each file, to call them from the application file, and to use proxy objects
-to avoid loading ordering issues.  
+in each file, to call them from the main application file, and to use proxy
+objects to avoid loading ordering issues.  
 Create a `database.py` file which will hold our application primitive database
 interface:
 
@@ -249,15 +249,15 @@ import os
 import FlaskSimpleAuth as fsa
 import acme
 
-# this is a proxy object to the actual database
+# this is a proxy object to the actual database created when calling init_app
 db = fsa.Reference()
 
 # application database initialization
 def init_app(app: fsa.Flask):
     # initialize proxy object
     db.set(acme.AcmeData())
-    # add an "admin" user
-    db.add_user("acme", app.hash_password(os.environ["ACME_ADMIN_PASS"]), "acme@acme.org", True)
+    # add user acme as an admin
+    db.add_user("acme", app.hash_password(os.environ["ACME_PASS"]), "acme@acme.org", True)
 ```
 
 Create an `auth.py` file for the authentication and authorization callbacks:
@@ -285,7 +285,7 @@ def init_app(app: fsa.Flask):
     # TODO MORE REGISTRATIONS
 ```
 
-Edit the `app.py` file to initialize database and auth:
+Edit the `app.py` file to import and initialize database and auth:
 
 ```python
 # insert in "app.py" initialization
@@ -297,7 +297,7 @@ import auth
 auth.init_app(app)
 ```
 
-And add routes which are open to _AUTH_-enticated users:
+And add routes which can be accessed by _AUTH_-enticated users:
 
 ```python
 # append to "app.py" routes
@@ -326,20 +326,20 @@ Set the admin password in the environment, in each terminal:
 
 ```shell
 # hint for 64+ bit random password: head -c 9 /dev/random | base64
-export ACME_ADMIN_PASS="<a-good-admin-password>"
+export ACME_PASS="<a-good-admin-password>"
 ```
 
 Restart and test the application:
 
 ```shell
-curl -si -X GET                            http://localhost:5000/hello-me  # 401
-curl -si -X GET -u 'meca:Mec0!'            http://localhost:5000/hello-me  # 401
-curl -si -X GET -u "acme:$ACME_ADMIN_PASS" http://localhost:5000/hello-me  # 200
-curl -si -X POST -u "acme:$ACME_ADMIN_PASS" \
-    -d stuff=pinte -d price=6.5            http://localhost:5000/stuff     # 201
-curl -si -X POST -u "acme:$ACME_ADMIN_PASS" \
-    -d stuff=pinte -d price=6.5            http://localhost:5000/stuff     # 409
-curl -si -X GET -u "acme:$ACME_ADMIN_PASS" http://localhost:5000/stuff     # 200
+curl -si -X GET                          http://localhost:5000/hello-me  # 401
+curl -si -X GET -u 'meca:Mec0!'          http://localhost:5000/hello-me  # 401
+curl -si -X GET -u "acme:$ACME_PASS"     http://localhost:5000/hello-me  # 200
+curl -si -X POST -u "acme:$ACME_PASS" \
+    -d stuff=pinte -d price=6.5          http://localhost:5000/stuff     # 201
+curl -si -X POST -u "acme:$ACME_PASS" \
+    -d stuff=pinte -d price=6.5          http://localhost:5000/stuff     # 409
+curl -si -X GET -u "acme:$ACME_PASS"     http://localhost:5000/stuff     # 200
 ```
 
 Also append these same tests to `test.py`, and run them with `pytest` to
@@ -351,11 +351,12 @@ import os
 import base64
 
 # NOTE basic auth should be managed by the test client…
+# see https://pypi.org/project/FlaskTester/ for instance
 def basic_auth(login: str, passwd: str) -> dict[str, str]:
     encoded = base64.b64encode(f"{login}:{passwd}".encode("UTF8"))
     return { "Authorization": f"Basic {encoded.decode('ascii')}" }
 
-ACME_BASIC = basic_auth("acme", os.environ["ACME_ADMIN_PASS"])
+ACME_BASIC = basic_auth("acme", os.environ["ACME_PASS"])
 
 MECA_PASS = "Mec0!"
 MECA_BASIC = basic_auth("meca", MECA_PASS)
@@ -373,8 +374,7 @@ def test_basic_authn(client):
     res = client.post("/stuff", headers=ACME_BASIC, json={"stuff": "pinte", "price": 6.5})
     assert res.status_code == 409
     res = client.get("/stuff", headers=ACME_BASIC)
-    assert res.status_code == 200
-    assert res.json[0][0] == "pinte"
+    assert res.status_code == 200 and res.json[0][0] == "pinte"
     # FIXME should cleanup data
 ```
 
@@ -383,7 +383,7 @@ def test_basic_authn(client):
 Another common way to authenticate a user is to provide the credentials as
 request *parameters*.
 This is usually done once to get some *token* (bearer, cookie…) which will be
-used to access other routes.
+used to access other routes, as discussed in the next section.
 Initialization requirements are the same as for *basic* authentication, as
 retrieving the user password is also needed.  
 To enable parameter authentication as well as *basic* authentication, simply
@@ -406,7 +406,7 @@ FSA_PARAM_PASS = "password"  # parameter for the password (default is PASS)
 Test from a terminal:
 
 ```shell
-curl -si -X GET -d username=acme -d password="$ACME_ADMIN_PASS" http://localhost:5000/hello-me  # 200
+curl -si -X GET -d username=acme -d password="$ACME_PASS" http://localhost:5000/hello-me  # 200
 ```
 
 Also append these same tests to `test.py`, and run them with `pytest` to
@@ -415,15 +415,14 @@ achieve _4 passed_:
 ```python
 # append to "test.py"
 def test_param_authn(client):
-    # HTTP parameters
-    acme_auth_params = {"username": "acme", "password": os.environ["ACME_ADMIN_PASS"]}
+    # authentication parameters
+    acme_auth_params = {"username": "acme", "password": os.environ["ACME_PASS"]}
+    # passed as HTTP parameters
     res = client.get("/hello-me", data=acme_auth_param)
-    assert res.status_code == 200
-    assert res.json["user"] == "acme"
-    # also with JSON parameters
+    assert res.status_code == 200 and res.json["user"] == "acme"
+    # or as JSON parameters
     res = client.get("/hello-me", json=acme_auth_param)
-    assert res.status_code == 200
-    assert res.json["user"] == "acme"
+    assert res.status_code == 200 and res.json["user"] == "acme"
 ```
 
 Authentication is often managed with tokens instead of passwords.
@@ -444,7 +443,7 @@ Token authentication can be activated explicitely by prepending *token* to
 FSA_AUTH = ["token", "basic", "param", "none"]
 ```
 
-Then we need token secret and route which allows to create a token.  
+Then we need a token signature secret and a route to create a token.  
 Edit File `acme.conf` to add the secret and delay of your chosing:
 
 ```python
@@ -457,7 +456,7 @@ FSA_TOKEN_DELAY = 10.0  # set token expiration to 10 minutes (default is 1 hour)
 
 In a more realistic setting, the token secret would probably not be directly
 in the configuration, but passed to it or loaded by it somehow.
-Then edit File `app.py` to add a new route to create a token for the current
+Then edit File `app.py` to add new routes to create a token for the current
 user authenticated by a password scheme:
 
 ```python
@@ -466,6 +465,7 @@ user authenticated by a password scheme:
 def get_token(user: fsa.CurrentUser):
     return { "token": app.create_token(user) }, 200
 
+# web application like to POST with authentication parameters to get a token
 @app.post("/token", authorize="AUTH", auth="param")
 def post_token(user: fsa.CurrentUser):
     return { "token": app.create_token(user) }, 201
@@ -474,13 +474,12 @@ def post_token(user: fsa.CurrentUser):
 Then restart and test:
 
 ```shell
-curl -si -X GET -u "acme:$ACME_ADMIN_PASS" http://localhost:5000/token
-curl -si -X POST -d username=acme -d password="$ACME_ADMIN_PASS" http://localhost:5000/token
+curl -si -X GET -u "acme:$ACME_PASS"                       http://localhost:5000/token
+curl -si -X POST -d username=acme -d password="$ACME_PASS" http://localhost:5000/token
 ```
 
 You should see the token as a JSON property in the response.
-The default token type is *fsa*, with a easy-to-understand human-readable
-format.  
+The default token type is *fsa*, with a short human-readable format.  
 Proceed to use the token instead of the login/password to authenticate the user
 on a route:
 
@@ -495,21 +494,20 @@ achieve _5 passed_:
 ```python
 # append to "test.py"
 def test_token_authn(client):
-    acme_param_auth = {"username": "acme", "password": os.environ["ACME_ADMIN_PASS"]}
+    acme_param_auth = {"username": "acme", "password": os.environ["ACME_PASS"]}
     # GET /token basic
     res = client.get("/token", headers=ACME_BASIC)
     assert res.status_code == 200 and "token" in res.json
     ACME_TOKEN = { "Authorization": f"Bearer {res.json['token']}" }
+    # GET /hello-me with the token
+    res = client.get("/hello-me", headers=ACME_TOKEN)
+    assert res.status_code == 200 and res.json["user"] == "acme"
     # GET /token param
     res = client.get("/token", data=acme_param_auth)
     assert res.status_code == 200 and "token" in res.json
     res = client.get("/token", json=acme_param_auth)
     assert res.status_code == 200 and "token" in res.json
-    # GET /hello-me token
-    res = client.get("/hello-me", headers=ACME_TOKEN)
-    assert res.status_code == 200
-    assert res.json["user"] == "acme"
-    # POST /token
+    # POST /token param
     res = client.post("/token", data=acme_param_auth)
     assert res.status_code == 201 and "token" in res.json
     res = client.post("/token", json=acme_param_auth)
@@ -522,13 +520,13 @@ def test_token_authn(client):
 
 For *group* authorization, we need to:
 
-- store group membership information somewhere
-- provide callbacks to check for group membership
-- define a route which requires some group membership
+- store group membership information somewhere.
+- provide callbacks to check for group membership.
+- define a route which requires some group membership.
 
 Whether a user belongs to the *admin* group is defined as a boolean
 in the user profile managed by *AcmeData*.  
-First, write the group checking function:
+First, write the group checking hook:
 
 ```python
 # in "auth.py"
@@ -558,18 +556,18 @@ def post_user(login: str, password: str, email: str):
 Then restart and test:
 
 ```shell
-curl -si -X POST -u "acme:$ACME_ADMIN_PASS" \
-                                      http://localhost:5000/user  # 400 (missing parameters)
-curl -si -X POST -u "acme:$ACME_ADMIN_PASS" \
+curl -si -X POST -u "acme:$ACME_PASS" \
+                                      http://localhost:5000/user      # 400 (missing parameters)
+curl -si -X POST -u "acme:$ACME_PASS" \
   -d login="acme" -d email="acme@acme.org" -d password='P0ss!' \
-                                      http://localhost:5000/user  # 409 (user exists)
-curl -si -X POST -u "acme:$ACME_ADMIN_PASS" \
+                                      http://localhost:5000/user      # 409 (user exists)
+curl -si -X POST -u "acme:$ACME_PASS" \
   -d login="123" -d email="123@acme.org" -d password='P1ss!' \
-                                      http://localhost:5000/user  # 400 (bad login parameter)
-curl -si -X POST -u "acme:$ACME_ADMIN_PASS" \
+                                      http://localhost:5000/user      # 400 (bad login parameter)
+curl -si -X POST -u "acme:$ACME_PASS" \
   -d login="meca" -d email="meca@acme.org" -d password='Mec0!' \
-                                      http://localhost:5000/user  # 201
-curl -si -X GET -u 'meca:Mec0!' http://localhost:5000/hello-me    # 200
+                                      http://localhost:5000/user      # 201
+curl -si -X GET -u 'meca:Mec0!'       http://localhost:5000/hello-me  # 200
 ```
 
 Also append these same tests to `test.py`, and run them with `pytest` to
@@ -587,8 +585,7 @@ def test_group_authz(client):
     res = client.post("/user", headers=ACME_BASIC, json={"login": "meca", "email": "meca@acme.org", "password": MECA_PASS})
     assert res.status_code == 201
     res = client.get("/hello-me", headers=MECA_BASIC)
-    assert res.status_code == 200
-    assert res.json["user"] == "meca"
+    assert res.status_code == 200 and res.json["user"] == "meca"
     # FIXME should cleanup data
 ```
 
@@ -596,7 +593,7 @@ def test_group_authz(client):
 
 Object permissions link a user to some *objects* to allow operations.
 We want to allow object _owners_ to change the price of _their_ stuff.  
-First, create the permission verification function:
+First, create the permission verification hook for stuff accesses:
 
 ```python
 # insert in "auth.py"
@@ -631,12 +628,12 @@ def patch_stuff_sid(sid: str, price: float):
 Then restart and test:
 
 ```shell
-curl -si -X POST -u "acme:$ACME_ADMIN_PASS" \
+curl -si -X POST -u "acme:$ACME_PASS" \
   -d login="mace" -d email="mace@acme.org" -d password='Mac1!' \
                                       http://localhost:5000/user        # 201
 curl -si -X POST -u 'mace:Mac1!' \
     -d stuff=bear -d price=2.0        http://localhost:5000/stuff       # 201
-curl -si -X PATCH -u "acme:$ACME_ADMIN_PASS" \
+curl -si -X PATCH -u "acme:$ACME_PASS" \
                   -d price=3.0        http://localhost:5000/stuff/bear  # 403
 curl -si -X PATCH -u 'mace:Mac1!' \
                   -d price=3.0        http://localhost:5000/stuff/bear  # 200
@@ -706,9 +703,9 @@ This route can be tested directly:
 curl -si -X GET -d who='{"name":"Hobbes","born":"2020-07-29"}' http://localhost:5000/days
 # json parameter
 curl -si -X GET -H "Content-Type: application/json" \
-    -d '{"who":{"name":"Calvin","born":"1970-03-20"}}' http://localhost:5000/days
+    -d '{"who":{"name":"Calvin","born":"1970-03-20"}}'         http://localhost:5000/days
 # with an invalid date
-curl -si -X GET -d who='{"name":"Calvin","born":"unknown"}' http://localhost:5000/days
+curl -si -X GET -d who='{"name":"Calvin","born":"unknown"}'    http://localhost:5000/days
 ```
 
 Then automatically, run with `pytest` to achieve _8 passed_:
@@ -758,9 +755,9 @@ This can be tested directly:
 curl -si -X GET -d li=1 -d li=10 -d li=11 http://localhost:5000/primes
 # json parameters
 curl -si -X GET -H "Content-Type: application/json" \
-  -d '{"li":[1,10,11,20,21,23]}' http://localhost:5000/primes
+  -d '{"li":[1,10,11,20,21,23]}'          http://localhost:5000/primes
 # bad parameters should get a 400
-curl -si -X GET -d li=prime -d li=time http://localhost:5000/primes
+curl -si -X GET -d li=prime -d li=time    http://localhost:5000/primes
 ```
 
 Then automatically, run with `pytest` to achieve _9 passed_:
@@ -769,11 +766,9 @@ Then automatically, run with `pytest` to achieve _9 passed_:
 # append to "test.py"
 def test_primes(client):
     res = client.get("/primes?li=7&li=8")
-    assert res.status_code == 200
-    assert res.json == [7]
+    assert res.status_code == 200 and res.json == [7]
     res = client.get("/primes", json={"li": [1, 2, 3, 4, 5, 6, 7, 8, 9]})
-    assert res.status_code == 200
-    assert res.json == [2, 3, 5, 7]
+    assert res.status_code == 200 and res.json == [2, 3, 5, 7]
     res = client.get("/primes", json={"li": ["odd", "even"]})
     assert res.status_code == 400
 ```
@@ -803,10 +798,10 @@ After restarting the application, weak passwords are rejected, and error
 messages as shown as JSON objects:
 
 ```shell
-curl -si -X POST -u "acme:$ACME_ADMIN_PASS" \
+curl -si -X POST -u "acme:$ACME_PASS" \
   -d login="came" -d email="came@acme.org" -d password="C@me" \
                                          http://localhost:5000/user  # 400 (pass length)
-curl -si -X POST -u "acme:$ACME_ADMIN_PASS" \
+curl -si -X POST -u "acme:$ACME_PASS" \
   -d login="came" -d email="came@acme.org" -d password="Cameleon" \
                                          http://localhost:5000/user  # 400 (pass regex)
 ```
@@ -849,7 +844,7 @@ FSA_AUTH = "password"
 The default behavior is that _any_ authentication scheme can be used on _any_
 route which requires authentication.
 Often, an application can be more selective, for instance by requiring
-an actual password on the login route and only tokens on the others.
+an actual password on the login route and only tokens on the others.  
 In order to achieve this behavior:
 
 ```python
@@ -858,7 +853,8 @@ FSA_AUTH_DEFAULT = "token"  # default authentication scheme
 ```
 
 And update route definitions to require some other scheme when needed with
-parameter `auth="param"`, `auth="basic"` or `auth="password"` for both.
+parameter `auth="param"`, `auth="basic"`, `auth="password"` for both, or
+`auth="none"` for open routes.
 
 Finally, as the debugging level is not useful anymore, it can be
 reduced by updating `FSA_MODE` setting:
