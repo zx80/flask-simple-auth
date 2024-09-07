@@ -218,7 +218,7 @@ The available schemes are:
 - `none`
 
   No authentication.
-  This is necessary for opening routes (`authorize="OPEN"`).
+  This is **necessary** for opening routes (`authorize="OPEN"`).
 
 - `httpd`
 
@@ -587,12 +587,14 @@ There are three special values that can be passed to the `authorize` decorator:
   i.e. anyone can get in, the route is open.
   This _requires_ that authentication `none` is allowed by `FSA_AUTH`
   configuration, otherwise it is treated as `AUTH`.
+  Moreover, if `FSA_AUTH_DEFAULT` is set to an authentication scheme, it is
+  _necessary_ to add `auth="none"` to the route definition to open it.
 - `AUTH` declares that all authenticated user can access this route,
   without group checks.
   This _requires_ that some authentication scheme is allowed, otherwise it is
   treated as `CLOSE`.
 - `CLOSE` returns a *403* on all access. It can be used to close a route
-  temporarily. This is the default.
+  temporarily. This is the default if `authorize` is not set.
 
 ```python
 @app.get("/closed", authorize="CLOSE")
