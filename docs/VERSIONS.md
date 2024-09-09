@@ -10,6 +10,7 @@ and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 - use default authentication in demo and other live projects (kiva, pizza, ref).
 - remove old ANY/ALL/NONE authorizations.
 - oauth: issuer/scope? issuer/secret?
+- tutorial: add JsonData?
 
 ## ? on ?
 
