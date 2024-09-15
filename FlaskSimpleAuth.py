@@ -2194,9 +2194,10 @@ class _AuthenticationManager:
             user = self._http_auth.authenticate(auth, password)
             if user is not None and user is not False:
                 if isinstance(user, bool) and user:  # pragma: no cover
-                    assert isinstance(auth.username, str)  # help type check
+                    assert isinstance(auth.username, str)  # type check help
                     return auth.username
                 else:
+                    assert isinstance(user, str)  # type check help
                     return user
         except ErrorResponse as e:  # pragma: no cover
             log.debug(f"AUTH (http-*): bad authentication {e}")
@@ -3361,7 +3362,7 @@ class _ResponseManager:
         if error is None:
             raise self._Bad("unexpected FSA_ERROR_RESPONSE: None")
         elif callable(error):
-            self._error_response = error
+            self._error_response = error  # type: ignore
         elif not isinstance(error, str):
             raise self._Bad(f"unexpected FSA_ERROR_RESPONSE type: {_type(error)}")
         elif error == "plain":
