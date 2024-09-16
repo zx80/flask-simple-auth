@@ -2740,8 +2740,7 @@ def test_optional_params():
         return (i is None and j is None) or (isinstance(i, int) and isinstance(j, int) and i == j)
     with app.test_client() as api:
         cnt = 0
-        # "/i1" "/i4"
-        for path in ["/i0", "/i2", "/i3"]:
+        for path in ["/i0", "/i1", "/i2", "/i3", "/i4"]:
             for val in [None, 0, 1, 42]:
                 for par in ["json"]:
                 # for par in ["json", "data"]:
@@ -2751,4 +2750,4 @@ def test_optional_params():
                     res = api.get(path, **param)
                     assert res.status_code == 200 and res.is_json and "i" in res.json
                     assert int_eq(val, res.json["i"])
-        assert cnt == 12
+        assert cnt == 20

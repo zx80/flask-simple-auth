@@ -465,10 +465,13 @@ def _typeof(p: inspect.Parameter):
     elif p.kind is inspect.Parameter.VAR_POSITIONAL:  # *args
         return list
     elif p.annotation is not inspect._empty:
-        a = p.annotation
-        # skip optional (3 forms)
-        if _is_optional(a):
-            a = a.__args__[0]
+        anno = p.annotation
+        if _is_optional(anno):  # skip optional (3 forms)
+            a = anno.__args__[0]
+            if a in (None, types.NoneType):
+                a = anno.__args__[1]
+        else:
+            a = anno
         return a
     elif p.default and p.default is not inspect._empty:
         return type(p.default)
