@@ -2744,7 +2744,7 @@ def test_optional_params():
             for val in [42, 0, 1, None]:
                 for par in ["json", "data"]:
                     if par == "data" and val is None:
-                        # this only works with json for now
+                        # there is no representation of None as a raw string.
                         continue
                     cnt += 1
                     param = {par: {"i": val}}
