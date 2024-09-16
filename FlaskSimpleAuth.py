@@ -3303,7 +3303,7 @@ class _RequestManager:
             rpp = f"{r}\n"
             params = fsa._pm._params()
             if params:
-                show = [ f"{name} ({_type(params[name])})" for name in sorted(params.keys()) ]
+                show = [f"{name} ({_type(params[name])})" for name in sorted(params.keys())]
                 rpp += "\t- params: " + ", ".join(show) + "\n"
             else:
                 rpp += "\t- no params\n"
