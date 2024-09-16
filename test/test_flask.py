@@ -24,7 +24,7 @@ log = logging.getLogger("tests")
 
 # app._fsa._log.setLevel(logging.DEBUG)
 # app.log.setLevel(logging.DEBUG)
-# log.setLevel(logging.DEBUG)
+log.setLevel(logging.DEBUG)
 # app._fsa._initialize()
 
 def check(code, res):
@@ -2717,3 +2717,38 @@ def test_auth_close():
     @app.get("/auth", authorize="AUTH")
     def get_auth():
         return {"msg": "auth!"}
+
+def test_optional_params():
+    app = fsa.Flask("opt", FSA_AUTH="none", FSA_MODE="debug4")
+    # optional simple parameters
+    @app.get("/i0", authorize="OPEN")
+    def get_i0(i: int|None):
+        return { "i": i }
+    @app.get("/i1", authorize="OPEN")
+    def get_i1(i: None|int):
+        return { "i": i }
+    @app.get("/i2", authorize="OPEN")
+    def get_i2(i: typing.Optional[int]):
+        return { "i": i }
+    @app.get("/i3", authorize="OPEN")
+    def get_i3(i: typing.Union[int, None]):
+        return { "i": i }
+    @app.get("/i4", authorize="OPEN")
+    def get_i4(i: typing.Union[None, int]):
+        return { "i": i }
+    def int_eq(i, j):
+        return (i is None and j is None) or (isinstance(i, int) and isinstance(j, int) and i == j)
+    with app.test_client() as api:
+        cnt = 0
+        # "/i1" "/i4"
+        for path in ["/i0", "/i2", "/i3"]:
+            for val in [None, 0, 1, 42]:
+                for par in ["json"]:
+                # for par in ["json", "data"]:
+                    cnt += 1
+                    param = {par: {"i": val}}
+                    log.debug(f"param = {param}")
+                    res = api.get(path, **param)
+                    assert res.status_code == 200 and res.is_json and "i" in res.json
+                    assert int_eq(val, res.json["i"])
+        assert cnt == 12

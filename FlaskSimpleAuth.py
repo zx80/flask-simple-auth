@@ -363,13 +363,16 @@ def _is_close(la: list[Any]):
 def _is_optional(t) -> bool:
     """Tell whether type is marked as optional."""
     return (
-        # T | None
-        (isinstance(t, types.UnionType) and len(t.__args__) == 2 and t.__args__[1] == type(None)) or
+        # T|None or None|Type
+        (isinstance(t, types.UnionType) and len(t.__args__) == 2 and
+         (t.__args__[0] == type(None) or t.__args__[0] is None or
+          t.__args__[1] == type(None) or t.__args__[1] is None)) or
+        (isinstance(t, types.UnionType) and len(t.__args__) == 2 and t.__args__[0] == type(None)) or
         # Optional[T]
         (hasattr(t, "__name__") and t.__name__ == "Optional") or  # type: ignore
-        # Union[T, None]
+        # Union[None, T] or Union[T, None]
         (hasattr(t, "__origin__") and t.__origin__ is typing.Union and  # type: ignore
-         len(t.__args__) == 2 and t.__args__[1] == type(None))
+         len(t.__args__) == 2 and (t.__args__[0] == type(None) or t.__args__[1] == type(None)))
     )
 
 
@@ -406,11 +409,11 @@ def _valid_type(t) -> bool:
 # TODO caster?
 def _check_type(t, v) -> bool:
     """Dynamically and recursively check whether v is compatible with t."""
-    if t is None:
+    if t is None or t == types.NoneType:
         return v is None
     elif t == int:  # beware that bool is also an int
         return isinstance(v, int) and not isinstance(v, bool)
-    elif t in (bool, float, str, types.NoneType):  # simple types
+    elif t in (bool, float, str):  # simple types
         return isinstance(v, t)
     elif isinstance(t, types.GenericAlias):  # generic types
         if t.__name__ == "list":
@@ -2924,7 +2927,9 @@ class _ParameterHandler:
         # cast? also for path parameters??
         if self._caster:
             try:
-                if self._type_isinstance:
+                if self._type_is_optional and val is None:
+                    pass
+                elif self._type_isinstance:
                     if not self._type_isinstance(val):
                         val = self._caster(val)
                     # else just keep it as is!
@@ -3298,16 +3303,19 @@ class _RequestManager:
             rpp = f"{r}\n"
             params = fsa._pm._params()
             if params:
-                rpp += " - params: " + ", ".join(sorted(params.keys())) + "\n"
+                show = [ f"{name} ({_type(params[name])})" for name in sorted(params.keys()) ]
+                rpp += "\t- params: " + ", ".join(show) + "\n"
             else:
-                rpp += " - no params\n"
+                rpp += "\t- no params\n"
             # detailed parameter sources
             # rpp += " - args: " + ", ".join(sorted(request.args.keys())) + "\n"
             # rpp += " - form: " + ", ".join(sorted(request.form.keys())) + "\n"
             # rpp += " - files: " + ", ".join(sorted(request.files.keys())) + "\n"
             rpp += f"\t{r.method} {r.path} HTTP/?\n\t" + \
                 "\n\t".join(f"{k}: {v}" for k, v in r.headers.items()) + "\n"
-            rpp += "\tCookie: " + "; ".join(f"{k}={v}" for k, v in r.cookies.items()) + "\n"
+            cookies = "; ".join(f"{k}={v}" for k, v in r.cookies.items())
+            if cookies:
+                rpp += f"\tCookie: {cookies}\n"
             log.debug(rpp)
 
     def _run_before_requests(self) -> Response|None:

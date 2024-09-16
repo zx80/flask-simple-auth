@@ -11,13 +11,13 @@ and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 - remove old ANY/ALL/NONE authorizations.
 - oauth: issuer/scope? issuer/secret?
 - tutorial: add JsonData?
-- check `int|None` handling of `null`
 
 ## ? on ?
 
 - updated tutorial.
 - improve recipes.
 - improve documentation.
+- fix optional parameter support
 
 ## 33.0 on 2024-08-16
 
