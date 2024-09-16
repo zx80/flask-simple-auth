@@ -3,21 +3,21 @@
 Sources are available on [GitHub](https://github.com/zx80/flask-simple-auth)
 and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 
-## TODO
+## TODO v34?
 
 - drop support for _Flask 2.x_?
+- remove old ANY/ALL/NONE authorizations.
 - authz/authn consistency? should "none" be required for "OPEN" routes?
 - use default authentication in demo and other live projects (kiva, pizza, ref).
-- remove old ANY/ALL/NONE authorizations.
 - oauth: issuer/scope? issuer/secret?
 - tutorial: add JsonData?
 
-## ? on ?
+## 33.1 on 2024-09-16
 
 - updated tutorial.
 - improve recipes.
 - improve documentation.
-- fix optional parameter support
+- improve optional parameter support.
 
 ## 33.0 on 2024-08-16
 
