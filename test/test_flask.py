@@ -2741,13 +2741,15 @@ def test_optional_params():
     with app.test_client() as api:
         cnt = 0
         for path in ["/i0", "/i1", "/i2", "/i3", "/i4"]:
-            for val in [None, 0, 1, 42]:
-                for par in ["json"]:
-                # for par in ["json", "data"]:
+            for val in [42, 0, 1, None]:
+                for par in ["json", "data"]:
+                    if par == "data" and val is None:
+                        # this only works with json for now
+                        continue
                     cnt += 1
                     param = {par: {"i": val}}
                     log.debug(f"param = {param}")
                     res = api.get(path, **param)
                     assert res.status_code == 200 and res.is_json and "i" in res.json
                     assert int_eq(val, res.json["i"])
-        assert cnt == 20
+        assert cnt == 35
