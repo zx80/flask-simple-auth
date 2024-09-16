@@ -3314,7 +3314,7 @@ class _RequestManager:
             rpp += f"\t{r.method} {r.path} HTTP/?\n\t" + \
                 "\n\t".join(f"{k}: {v}" for k, v in r.headers.items()) + "\n"
             cookies = "; ".join(f"{k}={v}" for k, v in r.cookies.items())
-            if cookies:
+            if cookies:  # pragma: no cover
                 rpp += f"\tCookie: {cookies}\n"
             log.debug(rpp)
 
