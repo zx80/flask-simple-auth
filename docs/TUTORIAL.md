@@ -773,6 +773,44 @@ def test_primes(client):
     assert res.status_code == 400
 ```
 
+## JSON Parameters
+
+Arbitrary JSON parameters can be declared with special type `JsonData`:
+
+```python
+# append to "app.py"
+@app.get("/len", authorize="OPEN")
+def get_len(v: fsa.JsonData):
+    try:
+        return {"len": len(v)}
+    except TypeError:
+        return {"len": "not available"}
+```
+
+Which it can be tested manually:
+
+```shell
+curl -si -d 'p={"hi":"w!"}' http://localhost:5000/len  # 1
+curl -si -d 'p=[1,2]'       http://localhost:5000/len  # 2
+curl -si -d 'p="hi!"'       http://localhost:5000/len  # 3
+curl -si -d 'p=3.14'        http://localhost:5000/len  # not available
+```
+
+And automatically:
+
+```python
+# append to "test.py"
+def test_len(client):
+    res = client.get("len", json={"p": {"hi":"w!"}})
+    assert res.status_code == 200 And res.json["len"] == 1
+    res = client.get("len", json={"p": ["foo", "bla"]})
+    assert res.status_code == 200 And res.json["len"] == 2
+    res = client.get("len", json={"p": "hi!"})
+    assert res.status_code == 200 And res.json["len"] == 3
+    res = client.get("len", json={"p": null})
+    assert res.status_code == 200 And res.json["len"] == "not available"
+```
+
 ## Further Improvements
 
 Let us edit `acme.conf` to activate or change some features.

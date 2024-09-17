@@ -10,7 +10,10 @@ and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 - authz/authn consistency? should "none" be required for "OPEN" routes?
 - use default authentication in demo and other live projects (kiva, pizza, ref).
 - oauth: issuer/scope? issuer/secret?
-- tutorial: add JsonData?
+
+## ? on ?
+
+- add JsonData section to tutorial.
 
 ## 33.1 on 2024-09-16
 
