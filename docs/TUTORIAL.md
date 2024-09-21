@@ -790,10 +790,12 @@ def get_len(v: fsa.JsonData):
 Which it can be tested manually:
 
 ```shell
-curl -si -d 'p={"hi":"w!"}' http://localhost:5000/len  # 1
-curl -si -d 'p=[1,2]'       http://localhost:5000/len  # 2
-curl -si -d 'p="hi!"'       http://localhost:5000/len  # 3
-curl -si -d 'p=3.14'        http://localhost:5000/len  # not available
+curl -si -d 'p={"hi":"w!"}' http://localhost:5000/len  # 200: 1
+curl -si -d 'p=[1,2]'       http://localhost:5000/len  # 200: 2
+curl -si -d 'p="hi!"'       http://localhost:5000/len  # 200: 3
+curl -si -d 'p=3.14'        http://localhost:5000/len  # 200: not available
+curl -si -d 'p=not-json'    http://localhost:5000/len  # 400: invalid parameter
+curl -si                    http://localhost:5000/len  # 400: missing parameter
 ```
 
 And automatically:
@@ -801,14 +803,22 @@ And automatically:
 ```python
 # append to "test.py"
 def test_len(client):
+    # working
     res = client.get("len", json={"p": {"hi":"w!"}})
     assert res.status_code == 200 And res.json["len"] == 1
     res = client.get("len", json={"p": ["foo", "bla"]})
     assert res.status_code == 200 And res.json["len"] == 2
     res = client.get("len", json={"p": "hi!"})
     assert res.status_code == 200 And res.json["len"] == 3
+    res = client.get("len", data={"p": '"hi!"'})
+    assert res.status_code == 200 And res.json["len"] == 3
     res = client.get("len", json={"p": null})
     assert res.status_code == 200 And res.json["len"] == "not available"
+    # errors
+    res = client.get("len")
+    assert res.status_code == 400  # missing parameter
+    res = client.get("len", data={"p": "bad-json"})
+    assert res.status_code == 400  # invalid parameter value
 ```
 
 ## Further Improvements
