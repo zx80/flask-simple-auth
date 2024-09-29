@@ -11,6 +11,8 @@ and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 - use default authentication in demo and other live projects (kiva, pizza, ref).
 - oauth: issuer/scope? issuer/secret?
 - ldap authentication?
+- how to export and use the cache for user-related data?
+- what about secured caching, eg an expensive password check?
 
 ## ? on ?
 
