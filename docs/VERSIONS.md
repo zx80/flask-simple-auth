@@ -17,6 +17,7 @@ and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 ## ? on ?
 
 - add JsonData section to tutorial.
+- password manager refactoring
 
 ## 33.1 on 2024-09-16
 
