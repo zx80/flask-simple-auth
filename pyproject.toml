@@ -59,6 +59,8 @@ password = [
   "passlib",
   "crypt_r; python_version >= '3.13'",
 ]
+# python-ldap requires python3-dev libldap-dev libsasl2-dev gcc
+ldap = [ "ldap3" ]
 # cache options
 redis = [ "redis" ]
 memcached = [ "pymemcache" ]

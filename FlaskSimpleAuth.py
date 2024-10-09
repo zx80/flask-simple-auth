@@ -14,16 +14,18 @@ This code is public domain.
 # TODO refactoring
 # - clarify manager public/private interfaces
 
+import os
 import sys
 from typing import Callable, Any
 import typing
 import types
-
+from enum import IntEnum
+import dataclasses
 import functools
 import inspect
+
+import base64
 import datetime as dt
-import dataclasses
-from enum import IntEnum
 import json
 
 try:
@@ -1020,7 +1022,7 @@ class Directives:
 
     Alternate password check function.
     Given the login and clear password, returns whether the authentication is valid.
-    This allows to take full control of password checking, eg for LDAP/AD authentication.
+    This allows to take full control of password checking, possibly as a fallback.
 
     Consider adding a new authentication scheme, see FSA_AUTHENTICATION.
     """
@@ -1509,6 +1511,209 @@ class _TokenManager:
         return token
 
 
+class _LDAPAuthBase:
+    """Base class for LDAP Authentication.
+
+    :param url: full/partial LDAP URL (``ldap://dn:pw@host:port/base?attr?scope?filter``).
+    :param scheme: "ldap" or "ldaps".
+    :param host: ldap server hostname.
+    :param port: ldap server port number.
+    :param base: directory branch for search, defaults to *None* (no search).
+    :param dn: distinguished name for binding while searching.
+    :param pw: password for binding while searching.
+    :param use_tls: use TLS, default is *True*.
+    :param attr: attribute name for searching.
+    :param scope: scope of search ("sub" or "one" or "base"), defaults to "sub".
+    :param filter: extra search filter, defaults to "(objectClass=*)".
+
+    Parameter ``url`` can contain all other parameters at once, but may be
+    quite long and hard to read. Other parameters override these settings.
+    """
+
+    def __init__(self, url: str|None = None,
+                 scheme: str|None = None, host: str|None = None, port: str|None = None,
+                 use_tls: bool = True, base: str|None = None, dn: str|None = None, pw: str|None = None,
+                 attr: str|None = None, scope: str|None = None, filter: str|None = None):
+        # clean slate
+        self._scheme, self._host, self._port = None, None, None
+        self._base, self._dn, self._pw = None, None, None
+        self._attr, self._scope, self._filter = None, None, None
+        # decompose url if provided
+        if url:
+            from urllib.parse import urlparse
+            u = urlparse(url)
+            assert u.scheme in ("ldap", "ldaps"), "ldap url is expected"
+            self._scheme = u.scheme
+            self._host = u.hostname
+            self._port = u.port
+            self._base = u.path[1:] if u.path and len(u.path) > 1 else None
+            self._dn, self._pw = u.username, u.password
+            if u.query:
+                self._attr, self._scope, self._filter = u.query.split("?", 2)
+        # overrides and defaults
+        self._scheme = scheme or self._scheme or "ldap"
+        self._host = host or self._host or "localhost"
+        self._port = port or self._port or (389 if self._scheme == "ldap" else 686)
+        self._base = base or self._base
+        self._dn = dn or self._dn
+        self._pw = pw or self._pw
+        self._use_tls = use_tls
+        self._attr = attr or self._attr or "uid"
+        self._scope = scope or self._scope or "sub"
+        self._filter = filter or self._filter or "(objectClass=*)"
+        assert self._scope in ("one", "sub", "base")
+
+    def url(self):
+        """Show LDAP full URL."""
+        from urllib.parse import quote as q
+        url = self._scheme + "://"
+        if self._dn:
+            url += q(self._dn)
+            if self._pw:
+                url += ":" + q(self._pw)
+            url += "@"
+        url += self._host
+        if self._port:
+            url += ":" + str(self._port)
+        if self._base:
+            url += "/" + self._base
+        url += "?" + self._attr + "?" + self._scope + "?" + self._filter
+        return url
+
+    def __call__(self, username: str, password: str) -> str|None:
+        raise Exception("not implemented yet")
+
+class _LDAPAuth(LDAPAuthBase):
+    """LDAP Authentication with ``ldap``."""
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        # python-ldap specific initializations
+        import ldap
+        self._ldap = ldap
+        from ldap.filter import escape_filter_chars
+        self._escape = escape_filter_chars
+        self._scope_val = (
+            ldap.SCOPE_SUBTREE if self._scope == "sub" else
+            ldap.SCOPE_ONELEVEL if self._scope == "one" else
+            ldap.SCOPE_BASE
+        )
+        self._conn = None
+
+    def __call__(self, username: str, password: str):
+        """Check username password by binding to LDAP."""
+        try:
+            if not self._conn:
+                uri = self._scheme + "://" + self._host + ":" + str(self._port)
+                self._conn = self._ldap.initialize(uri)
+            if self._use_tls:  # FIXME is once enough?
+                self._conn.start_tls_s()
+            if self._base:  # initial search
+                if self._dn:  # initial bind
+                    self._conn.simple_bind_s(self._dn, self._pw)
+                search = f"({self._attr}={self._escape(username)})"
+                if self._filter:
+                    search = f"(&{self._filter}{search})"
+                # log.debug(f"ldap search = {search}")
+                result = self._conn.search_s(self._base, self._scope_val, search)
+                if not result or len(result) != 1:
+                    return None
+                user_dn = result[0][0]  # FIXME parametric?
+            else:  # maybe the user did really use a DN as a login…
+                user_dn = username
+            try:
+                self._conn.simple_bind_s(user_dn, password)
+                return username
+            except self._ldap.LDAPError as e:
+                log.info(f"ldap error: {e}")
+                return None  # 401
+            finally:
+                self._conn.unbind_s()
+        except Exception as e:
+            log.error(f"ldap internal error: {e}")
+            self._conn = None
+            raise
+        return None  # 401
+
+# TODO server pool…
+class _LDAP3Auth(LDAPAuthBase):
+    """LDAP Authentication with ``ldap3``.
+
+    Specific constructor parameters:
+
+    :param server_opts: dictionary of parameters for ldap3 Server constructor.
+    :param conn_opts: dictionary of parameters for ldap3 Connection constructor.
+    :param search_opts: dictionary of parameters for ldap3 search operation.
+
+    All other parameters are forwarded to LDAPAuthBase.
+    """
+
+    def __init__(self,
+                 server_opts: dict[str, Any]={},
+                 conn_opts: dict[str, Any]={},
+                 search_opts: dict[str, Any]={},
+                 **kwargs):
+        super().__init__(**kwargs)
+        # ldap3 specific initializations
+        self._server_opts = server_opts
+        self._conn_opts = conn_opts
+        self._search_opts = search_opts
+        import ldap3
+        self._ldap3 = ldap3
+        from ldap3.utils.conv import escape_filter_chars
+        self._escape = escape_filter_chars
+        self._scope_val = (
+            ldap3.SUBTREE  if self._scope == "sub" else
+            ldap3.LEVEL if self._scope == "one" else
+            ldap3.BASE
+        )
+        self._server, self._conn = None, None
+
+    def __call__(self, username: str, password: str):
+        try:
+            if not self._server:
+                self._server = self._ldap3.Server(host=self._host, port=self._port, **self._server_opts)
+            if not self._conn:
+                if self._dn:
+                    self._conn = self._ldap3.Connection(self._server, user=self._dn, password=self._pw, **self._conn_opts)
+                else:  # Anonymous…
+                    self._conn = self._ldap3.Connection(self._server, **self._conn_opts)
+                if self._use_tls:
+                    if not self._conn.start_tls():
+                        raise Exception(f"cannot start tls: {self._conn.result['message']}")
+                else:
+                    if not self._conn.open():
+                        raise Exception(f"cannot open: {self._conn.result['message']}")
+                if not self._conn.bind():
+                    raise Exception(f"cannot bind: {self._conn.result['message']}")
+            if self._base:
+                if not self._conn.bind():
+                    log.error(f"cannot bind: {self._conn.result['message']}")
+                search = f"({self._attr}={self._escape(username)})"
+                if self._filter:
+                    search = f"(&{self._filter}{search})"
+                if not self._conn.search(self._base, search, self._scope_val, **self._search_opts):
+                    raise Exception(f"cannot search: {self._conn.result['message']}")
+                if len(self._conn.response) != 1:
+                    log.info(f"ldap search: {self._conn.result} ({len(self._conn.response)})")
+                    return None
+                user_dn = self._conn.response[0]["dn"]
+            else:  # the user is expected to type a full DN…
+                user_dn = username
+            try:
+                # FIXME why do I need a new connection?
+                conn = self._ldap3.Connection(self._server, user=user_dn, password=password, **self._conn_opts)
+                if self._use_tls:
+                    conn.start_tls()
+                return username if conn.bind() else None
+            finally:
+                conn.unbind()
+        except Exception as e:  # on any error, will start over
+            log.error(f"ldap3 internal error: {e}")
+            self._server, self._conn = None, None
+        return None
+
+
 class _PasswordManager:
     """Internal password management."""
 
@@ -1583,8 +1788,6 @@ class _PasswordManager:
 
             def verify(self, password: str, ref: str) -> bool:
                 return password == ref
-
-        import base64
 
         class B64PassProvider:
             """Helper class for b64 obfuscated password."""
@@ -1673,9 +1876,6 @@ class _PasswordManager:
             if options is None:
                 options = {"saltlength": 16, "maxtime": 0.05}
 
-            import os
-            import base64
-
             try:
                 import scrypt
             except ModuleNotFoundError:  # pragma: no cover
@@ -1716,6 +1916,16 @@ class _PasswordManager:
 
             raise self._Bad(f"unexpected fsa password scheme: {scheme}")
 
+    def __ldap_init(self, provider: str, scheme: str, options: dict[str, Any]):
+        """Initialization for LDAP authentication."""
+
+        assert provider in ("ldap", "ldap3")
+        # FIXME there are plenty SASL sub schemes. "anonymous" entails two level bindings?.
+        assert scheme in ("anonymous", "simple", "sasl"), f"unexpected LDAP authentication scheme: {scheme}"
+        assert scheme == "simple"  # for now
+
+        self._pass_check = _LDAPAuth(**options) if ldap == "ldap" else _LDAP3Auth(**options)
+
     def _initialize(self):
         """After-configuration password manager initialization."""
 
@@ -1744,6 +1954,8 @@ class _PasswordManager:
         # single scheme
         if ":" in scheme:
             provider, scheme = scheme.split(":", 1)
+        elif scheme in ("ldap", "ldap3"):
+            provider, scheme = scheme, "simple"
         else:  # default depends on scheme
             provider = "fsa" if scheme in _FSA_PASSWORD_SCHEMES else "passlib"
 
@@ -1756,8 +1968,12 @@ class _PasswordManager:
             self.__fsa_init(scheme, options)
         elif provider == "passlib":
             self.__passlib_init([scheme], options)
+        elif provider in ("ldap", "ldap3"):
+            self.__ldap_init(provider, scheme, options)
         else:
             raise self._Bad(f"unexpected password provider: {provider}")
+
+        # TODO warn if redefined or ignored?
 
         # custom password checking function
         self._pass_check = conf.get("FSA_PASSWORD_CHECK", Directives.FSA_PASSWORD_CHECK)

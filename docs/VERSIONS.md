@@ -10,14 +10,16 @@ and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 - authz/authn consistency? should "none" be required for "OPEN" routes?
 - use default authentication in demo and other live projects (kiva, pizza, ref).
 - oauth: issuer/scope? issuer/secret?
-- ldap authentication?
 - how to export and use the cache for user-related data?
 - what about secured caching, eg an expensive password check?
+- ldap pool?
+- ldap authorizations?
 
 ## ? on ?
 
 - add JsonData section to tutorial.
 - password manager refactoring
+- add **experimental** support for _ldap_ authentication.
 
 ## 33.1 on 2024-09-16
 

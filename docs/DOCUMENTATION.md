@@ -448,7 +448,8 @@ The following configuration directives are available to configure `passlib`
 password checks:
 
 - `FSA_PASSWORD_SCHEME` password provider and scheme to use for passwords.
-  There are two providers: `fsa` (internal) and `passlib`.
+  There are four providers: `fsa` (internal), `passlib`, `ldap` and `ldap3`.
+  The two latter are **experimental**.
 
   Default is `bcrypt`.
   Set to _None_ to disable internal password checking.
@@ -469,7 +470,8 @@ password checks:
   Note: a list of schemes can also be provided, in which case it is passed as-is
   to passlib.
 
-- `FSA_PASSWORD_OPTS` relevant options (for `passlib.CryptContext`).
+- `FSA_PASSWORD_OPTS` relevant options depending on the underlying scheme,
+  (eg `passlib.CryptContext` for provider `passlib`).
   Default is ident *2y* with *4* rounds.
 
 Beware that modern password checking is often pretty expensive in order to
@@ -543,6 +545,56 @@ and illustrated in the [demo](demo/mfa.py).
 Note that route-dependent realms do **not** work with `http-*` authentications
 because the realm is frozen by the external implementation in this case.
 Also, The same shared secret is used to validate all realms.
+
+### LDAP Authentication
+
+When the provider is `ldap` or `ldap3`, password management is delegated to an
+LDAP server accessed with `python-ldap` or `ldap3`.
+
+Only the _simple_ method is currently implemented, i.e. the clear text
+password is send directly to the LDAP server for consideration, which
+means that if your network is compromised your are basically leaking
+passwords…
+
+LDAP does not have a simple concept of user identifier, aka login, but rather
+relies on a hierarchy of identifiers to distinguish an object, called a
+DN (distinguished name). Thus, the typical authentication process from
+a _username_ and _password_ is:
+
+1. Connect to the server, possibly with an initial identifier/password.
+2. Perform a search to find the DN corresponding to the username.
+   The search succeeds if it returns _one_ entry.
+3. Authenticate (called binding) to the server with this DN and password.
+
+You must trust the network and the server… btw, did you really authenticate it
+before sending the user credentials in clear text?
+
+The following parameters, provided with `FSA_PASSWORD_OPTS`, allow to configure
+the access to the LDAP server:
+
+- `url`: a detailed LDAP URL which can contain most parameters at once:
+  `ldaps://dn:pw@host:port/base?attr?scope?filter`.
+  However, given the length of LDAP query parameters, this might not be
+  easy to read, so consider providing it decomposed as:
+- `scheme`: `ldap` (port _389_) or `ldaps` (SSL on port _686_).
+- `host`: hostname of the LDAP server, defaults to _localhost_.
+- `port`: port number, defaults depends on `scheme`.
+- `dn`/`pw`: distinguished name and password for searching.
+  In not provided, an anonymous search will be attempted.
+- `attr`: attribute for searching, defaults to `uid`.
+- `scope`: `sub`, `one` or `base`, defaults to `sub`.
+  Define the scope of the search.
+- `filter`: additional filter for searching, defaults to `(objectClass=*)`.
+- `use_tls`: whether to start a TLS connection, defaults to _True_.
+
+For provider `ldap3`, additional parameters allow to provide more configuration
+to various phases of the authentication process:
+
+- `server_opts`: dictionary of parameters for `Server`.
+- `conn_opts`: dictionary of parameters for `Connection`.
+- `search_opts`: dictionary of parameters for `search`.
+
+Performance implications of authenticating with an LDAP service are unclear.
 
 ## Authorization
 
