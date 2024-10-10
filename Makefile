@@ -94,6 +94,7 @@ venv:
 	$(PYTHON) -m venv venv
 	$(PIP) install -U pip
 	$(PIP) install -e .[dev,doc,tests,demo,password,jwt,cors,httpauth]
+	$(PIP) install -e python-ldap ldap3
 
 .PHONY: venv.dev
 venv.dev: venv
