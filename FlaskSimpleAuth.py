@@ -1584,6 +1584,7 @@ class _LDAPAuthBase:
     def check(self, username: str, password: str) -> bool:  # pragma: no cover
         raise Exception("not implemented yet")
 
+
 class _LDAPAuth(_LDAPAuthBase):
     """LDAP Authentication with ``ldap``."""
 
@@ -1636,6 +1637,7 @@ class _LDAPAuth(_LDAPAuthBase):
             raise
         return False
 
+
 # TODO server pool…
 class _LDAP3Auth(_LDAPAuthBase):
     """LDAP Authentication with ``ldap3``.
@@ -1648,11 +1650,10 @@ class _LDAP3Auth(_LDAPAuthBase):
 
     All other parameters are forwarded to LDAPAuthBase.
     """
-
     def __init__(self,
-                 server_opts: dict[str, Any]={},
-                 conn_opts: dict[str, Any]={},
-                 search_opts: dict[str, Any]={},
+                 server_opts: dict[str, Any] = {},
+                 conn_opts: dict[str, Any] = {},
+                 search_opts: dict[str, Any] = {},
                  **kwargs):
         super().__init__(**kwargs)
         # ldap3 specific initializations
@@ -1664,7 +1665,7 @@ class _LDAP3Auth(_LDAPAuthBase):
         from ldap3.utils.conv import escape_filter_chars
         self._escape = escape_filter_chars
         self._scope_val = (
-            ldap3.SUBTREE  if self._scope == "sub" else
+            ldap3.SUBTREE if self._scope == "sub" else
             ldap3.LEVEL if self._scope == "one" else
             ldap3.BASE
         )
