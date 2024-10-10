@@ -1514,7 +1514,7 @@ class _TokenManager:
 class _LDAPAuthBase:
     """Base class for LDAP Authentication.
 
-    :param url: full/partial LDAP URL (``ldap://dn:pw@host:port/base?attr?scope?filter``).
+    :param url: full/partial LDAP URL (``scheme://dn:pw@host:port/base?attr?scope?filter``).
     :param scheme: "ldap" or "ldaps".
     :param host: ldap server hostname.
     :param port: ldap server port number.
@@ -1531,27 +1531,27 @@ class _LDAPAuthBase:
     """
 
     def __init__(self, url: str|None = None,
-                 scheme: str|None = None, host: str|None = None, port: str|None = None,
+                 scheme: str = "", host: str = "", port: int = 0,
                  use_tls: bool = True, base: str|None = None, dn: str|None = None, pw: str|None = None,
-                 attr: str|None = None, scope: str|None = None, filter: str|None = None):
+                 attr: str = "", scope: str = "", filter: str = ""):
         # clean slate
-        self._scheme, self._host, self._port = None, None, None
+        self._scheme, self._host, self._port = "", "", 0
         self._base, self._dn, self._pw = None, None, None
-        self._attr, self._scope, self._filter = None, None, None
+        self._attr, self._scope, self._filter = "", "", ""
         # decompose url if provided
         if url:
             from urllib.parse import urlparse
             u = urlparse(url)
-            assert u.scheme in ("ldap", "ldaps"), "ldap url is expected"
             self._scheme = u.scheme
-            self._host = u.hostname
-            self._port = u.port
+            self._host = u.hostname or ""
+            self._port = u.port or 0
             self._base = u.path[1:] if u.path and len(u.path) > 1 else None
             self._dn, self._pw = u.username, u.password
             if u.query:
                 self._attr, self._scope, self._filter = u.query.split("?", 2)
         # overrides and defaults
         self._scheme = scheme or self._scheme or "ldap"
+        assert self._scheme in ("ldap", "ldaps"), "expecting ldap scheme"
         self._host = host or self._host or "localhost"
         self._port = port or self._port or (389 if self._scheme == "ldap" else 686)
         self._base = base or self._base
@@ -1560,11 +1560,12 @@ class _LDAPAuthBase:
         self._use_tls = use_tls
         self._attr = attr or self._attr or "uid"
         self._scope = scope or self._scope or "sub"
-        self._filter = filter or self._filter or "(objectClass=*)"
         assert self._scope in ("one", "sub", "base")
+        self._filter = filter or self._filter or "(objectClass=*)"
 
     def url(self):
         """Show LDAP full URL."""
+        # pyright helper:
         from urllib.parse import quote as q
         url = self._scheme + "://"
         if self._dn:
@@ -1580,10 +1581,10 @@ class _LDAPAuthBase:
         url += "?" + self._attr + "?" + self._scope + "?" + self._filter
         return url
 
-    def __call__(self, username: str, password: str) -> str|None:
+    def check(self, username: str, password: str) -> bool:  # pragma: no cover
         raise Exception("not implemented yet")
 
-class _LDAPAuth(LDAPAuthBase):
+class _LDAPAuth(_LDAPAuthBase):
     """LDAP Authentication with ``ldap``."""
 
     def __init__(self, **kwargs):
@@ -1594,13 +1595,13 @@ class _LDAPAuth(LDAPAuthBase):
         from ldap.filter import escape_filter_chars
         self._escape = escape_filter_chars
         self._scope_val = (
-            ldap.SCOPE_SUBTREE if self._scope == "sub" else
-            ldap.SCOPE_ONELEVEL if self._scope == "one" else
-            ldap.SCOPE_BASE
+            ldap.SCOPE_SUBTREE if self._scope == "sub" else  # type: ignore
+            ldap.SCOPE_ONELEVEL if self._scope == "one" else  # type: ignore
+            ldap.SCOPE_BASE  # type: ignore
         )
         self._conn = None
 
-    def __call__(self, username: str, password: str):
+    def check(self, username: str, password: str):  # pragma: no cover
         """Check username password by binding to LDAP."""
         try:
             if not self._conn:
@@ -1617,26 +1618,26 @@ class _LDAPAuth(LDAPAuthBase):
                 # log.debug(f"ldap search = {search}")
                 result = self._conn.search_s(self._base, self._scope_val, search)
                 if not result or len(result) != 1:
-                    return None
+                    return False
                 user_dn = result[0][0]  # FIXME parametric?
             else:  # maybe the user did really use a DN as a login…
                 user_dn = username
             try:
                 self._conn.simple_bind_s(user_dn, password)
-                return username
-            except self._ldap.LDAPError as e:
+                return True
+            except self._ldap.LDAPError as e:  # type: ignore
                 log.info(f"ldap error: {e}")
-                return None  # 401
+                return False
             finally:
                 self._conn.unbind_s()
         except Exception as e:
             log.error(f"ldap internal error: {e}")
             self._conn = None
             raise
-        return None  # 401
+        return False
 
 # TODO server pool…
-class _LDAP3Auth(LDAPAuthBase):
+class _LDAP3Auth(_LDAPAuthBase):
     """LDAP Authentication with ``ldap3``.
 
     Specific constructor parameters:
@@ -1669,7 +1670,7 @@ class _LDAP3Auth(LDAPAuthBase):
         )
         self._server, self._conn = None, None
 
-    def __call__(self, username: str, password: str):
+    def check(self, username: str, password: str):  # pragma: no cover
         try:
             if not self._server:
                 self._server = self._ldap3.Server(host=self._host, port=self._port, **self._server_opts)
@@ -1692,26 +1693,27 @@ class _LDAP3Auth(LDAPAuthBase):
                 search = f"({self._attr}={self._escape(username)})"
                 if self._filter:
                     search = f"(&{self._filter}{search})"
-                if not self._conn.search(self._base, search, self._scope_val, **self._search_opts):
+                if not self._conn.search(self._base, search, self._scope_val, **self._search_opts):  # type: ignore
                     raise Exception(f"cannot search: {self._conn.result['message']}")
-                if len(self._conn.response) != 1:
-                    log.info(f"ldap search: {self._conn.result} ({len(self._conn.response)})")
-                    return None
+                if not self._conn.response or len(self._conn.response) != 1:
+                    log.debug(f"ldap search: {self._conn.result}")
+                    return False
                 user_dn = self._conn.response[0]["dn"]
             else:  # the user is expected to type a full DN…
                 user_dn = username
+            conn = None
             try:
                 # FIXME why do I need a new connection?
                 conn = self._ldap3.Connection(self._server, user=user_dn, password=password, **self._conn_opts)
                 if self._use_tls:
                     conn.start_tls()
-                return username if conn.bind() else None
+                return conn.bind()
             finally:
-                conn.unbind()
+                _ = conn and conn.unbind()
         except Exception as e:  # on any error, will start over
             log.error(f"ldap3 internal error: {e}")
             self._server, self._conn = None, None
-        return None
+        return False
 
 
 class _PasswordManager:
@@ -1924,7 +1926,8 @@ class _PasswordManager:
         assert scheme in ("anonymous", "simple", "sasl"), f"unexpected LDAP authentication scheme: {scheme}"
         assert scheme == "simple"  # for now
 
-        self._pass_check = _LDAPAuth(**options) if ldap == "ldap" else _LDAP3Auth(**options)
+        self._ldap_auth = _LDAPAuth(**options) if provider == "ldap" else _LDAP3Auth(**options)
+        self._pass_check = self._ldap_auth.check
 
     def _initialize(self):
         """After-configuration password manager initialization."""

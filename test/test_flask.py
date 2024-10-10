@@ -2753,3 +2753,23 @@ def test_optional_params():
                     assert res.status_code == 200 and res.is_json and "i" in res.json
                     assert int_eq(val, res.json["i"])
         assert cnt == 35
+
+LDAP_URL = "ldaps://foo:bla@ldap.server:389/search?login?sub?(objectClass=*)"
+
+def ldap_tests(scheme: str, url: str):
+    app = fsa.Flask(
+        "ldap client",
+         FSA_AUTH="password",
+         FSA_PASSWORD_SCHEME=scheme,
+         FSA_PASSWORD_OPTS = {"url": url},
+    )
+    app._fsa._initialize()
+    assert app._fsa._am._pm._ldap_auth.url() == LDAP_URL
+
+@pytest.mark.skipif(not has_package("ldap"), reason="ldap is not available")
+def test_ldap():
+    ldap_tests("ldap", LDAP_URL)
+
+@pytest.mark.skipif(not has_package("ldap3"), reason="ldap3 is not available")
+def test_ldap3():
+    ldap_tests("ldap3", LDAP_URL)

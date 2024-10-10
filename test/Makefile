@@ -39,7 +39,7 @@ ifndef COVER
   else ifeq ($(has_redis)$(has_memcached),11)
     COVER   = 99.3
   else ifeq ($(has_passlib),1)
-    COVER   = 99.2
+    COVER   = 99.3
   else
     COVER   = 97.7
   endif
