@@ -93,11 +93,12 @@ clean.venv: clean
 venv:
 	$(PYTHON) -m venv venv
 	$(PIP) install -U pip
-	$(PIP) install -e .[dev,doc,tests,demo,password,jwt,cors,httpauth]
-	$(PIP) install -e python-ldap ldap3
+	$(PIP) install -e .[demo,password,jwt,cors,httpauth]
 
 .PHONY: venv.dev
 venv.dev: venv
+	$(PIP) install -e .[dev,doc,tests,ldap]
+	$(PIP) install python-ldap
 
 $(MODULE).egg-info: venv
 	$(PIP) install -e .
