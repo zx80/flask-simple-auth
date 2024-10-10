@@ -12,14 +12,14 @@ and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 - oauth: issuer/scope? issuer/secret?
 - how to export and use the cache for user-related data?
 - what about secured caching, eg an expensive password check?
-- ldap pool?
+- ldap3 pool?
 - ldap authorizations?
 
-## ? on ?
+## 33.2 on 2024-10-10
 
 - add JsonData section to tutorial.
 - password manager refactoring
-- add **experimental** support for _ldap_ authentication.
+- add **experimental** support for _LDAP_ authentication.
 
 ## 33.1 on 2024-09-16
 

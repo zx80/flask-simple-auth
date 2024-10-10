@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "FlaskSimpleAuth"
-version = "33.1"
+version = "33.2"
 authors = [ { name = "Fabien Coelho", email = "flask.auth@coelho.net" } ]
 description = "Simple authentication, authorization and parameters for Flask, emphasizing configurability"
 readme = "README.md"
