@@ -14,7 +14,7 @@ jobs:
     steps:
     # General Setup
     - name: Packages
-      run: apt install python3-dev libldap-dev libsasl2-dev gcc
+      run: sudo apt install python3-dev libldap-dev libsasl2-dev gcc
     - name: Git Checkout
       uses: actions/checkout@v4
     - name: Set up Redis
