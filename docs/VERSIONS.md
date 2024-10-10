@@ -12,8 +12,12 @@ and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 - oauth: issuer/scope? issuer/secret?
 - how to export and use the cache for user-related data?
 - what about secured caching, eg an expensive password check?
-- ldap3 pool?
-- ldap authorizations?
+- ldap
+  - [see also](https://github.com/rroemhild/flask-ldapconn)
+  - ldap3 pool?
+  - ldap authorizations?
+  - how to actually tests LDAP?
+    [rroemhild](https://github.com/rroemhild/docker-test-openldap) 2021?
 
 ## 33.2 on 2024-10-10
 
