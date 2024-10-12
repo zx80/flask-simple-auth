@@ -16,8 +16,8 @@ with Flask you will have to unlearn things as FlaskSimpleAuth framework extends
 and simplifies Flask on key points.
 
 This tutorial assumes a working knowledge of the HTTP protocol in a REST
-API context, advance programming in `Python`, and interacting from a terminal
-with a shell.
+API context, intermediate level programming in `Python`, and interacting from a
+terminal with a shell.
 It should work with Python 3.1x on Unix (Linux, MacOS) and possibly Windows with
 [WSL](https://en.wikipedia.org/wiki/Windows_Subsystem_for_Linux).
 It is advisable to use a version control tool such as `git` to commit the
