@@ -780,9 +780,9 @@ Arbitrary JSON parameters can be declared with special type `JsonData`:
 ```python
 # append to "app.py"
 @app.get("/len", authorize="OPEN")
-def get_len(v: fsa.JsonData):
+def get_len(p: fsa.JsonData):
     try:
-        return {"len": len(v)}
+        return {"len": len(p)}
     except TypeError:
         return {"len": "not available"}
 ```
@@ -794,6 +794,7 @@ curl -si -d 'p={"hi":"w!"}' http://localhost:5000/len  # 200: 1
 curl -si -d 'p=[1,2]'       http://localhost:5000/len  # 200: 2
 curl -si -d 'p="hi!"'       http://localhost:5000/len  # 200: 3
 curl -si -d 'p=3.14'        http://localhost:5000/len  # 200: not available
+curl -si -d 'p=null'        http://localhost:5000/len  # 200: not available
 curl -si -d 'p=not-json'    http://localhost:5000/len  # 400: invalid parameter
 curl -si                    http://localhost:5000/len  # 400: missing parameter
 ```
