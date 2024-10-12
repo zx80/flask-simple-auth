@@ -18,6 +18,8 @@ and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
   - ldap authorizations?
   - how to actually tests LDAP?
     [rroemhild](https://github.com/rroemhild/docker-test-openldap) 2021?
+- client caching should depend on the route…
+  use declarations? hints? hooks?
 
 ## ? on ?
 
