@@ -22,6 +22,8 @@ It should work with Python 3.1x on Unix (Linux, MacOS) and possibly Windows with
 [WSL](https://en.wikipedia.org/wiki/Windows_Subsystem_for_Linux).
 It is advisable to use a version control tool such as `git` to commit the
 tutorial state after each section.
+Feel free to report any issue with this tutorial by opening a ticket on the
+project GitHub.
 
 ## Application Setup
 
