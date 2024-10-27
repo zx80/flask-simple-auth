@@ -27,7 +27,7 @@ jobs:
         python-version: ${{ matrix.python-version }}
         allow-prereleases: true
     - name: Install Python Dependencies
-      run: make venv.dev
+      run: make dev
     # Checks
     - name: Check with pyright
       run: make check.pyright
