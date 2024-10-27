@@ -14,70 +14,63 @@ PYTHON	= python
 PIP		= venv/bin/pip
 
 .PHONY: check.mypy
-check.mypy: venv
+check.mypy: dev
 	source venv/bin/activate
 	mypy $(MODULE).py
 
 .PHONY: check.pyright
-check.pyright: venv
+check.pyright: dev
 	source venv/bin/activate
 	pyright $(MODULE).py
 
 .PHONY: check.black
-check.black: venv
+check.black: dev
 	source venv/bin/activate
 	black --check $(MODULE).py
 
 IGNORE  = E227,E402,E501,E721,F401,F811
 
 .PHONY: check.flake8
-check.flake8: venv
+check.flake8: dev
 	source venv/bin/activate
 	flake8 --ignore=E127,E129,W504,$(IGNORE) $(MODULE).py
 
 .PHONY: check.ruff
-check.ruff: venv
+check.ruff: dev
 	source venv/bin/activate
 	ruff check --ignore=$(IGNORE) $(MODULE).py
 
 .PHONY: check.pytest
-check.pytest: venv
+check.pytest: dev
 	source venv/bin/activate
 	$(MAKE) -C test check
 
 .PHONY: check.coverage
-check.coverage: venv
+check.coverage: dev
 	source venv/bin/activate
 	$(MAKE) -C test coverage
 
 # MD013: line length
 .PHONY: check.docs
-check.docs:
+check.docs: dev
 	source venv/bin/activate
 	pymarkdown -d MD013 scan *.md */*.md
 	sphinx-lint docs/
 
 # just run the demo
 .PHONY: check.demo
-check.demo: venv
+check.demo: dev
 	source venv/bin/activate
 	$(MAKE) -C demo check.pgall
 
 STYLE	= flake8
 
-.PHONY: check
-check: venv
-	source venv/bin/activate
-	type $(PYTHON)
-	$(MAKE) check.pyright
-	$(MAKE) check.ruff
-	$(MAKE) check.docs
-	$(MAKE) check.$(STYLE)
-	$(MAKE) check.pytest && \
-	$(MAKE) check.demo && \
-	$(MAKE) check.coverage
+.NOTPARALLEL: check.pytest check.coverage check.demo
 
-.PHONY: clean clean.venv
+.PHONY: check
+check: check.pyright check.ruff check.$(STYLE) check.docs check.pytest check.demo check.coverage
+
+.PHONY: clean
 clean:
 	$(RM) -r __pycache__ */__pycache__ dist build .mypy_cache .pytest_cache
 	$(RM) $(F.pdf)
@@ -85,9 +78,13 @@ clean:
 	$(MAKE) -C demo clean
 	$(MAKE) -C docs clean
 
+.PHONY: clean.venv
 clean.venv: clean
 	$(RM) -r venv *.egg-info
 	$(MAKE) -C demo clean.venv
+
+.PHONY: clean.dev
+clean.dev: clean.venv
 
 # for local testing
 venv:
@@ -95,16 +92,19 @@ venv:
 	$(PIP) install -U pip
 	$(PIP) install -e .[demo,password,jwt,cors,httpauth]
 
-.PHONY: venv.dev
-venv.dev: venv
+venv/.dev: venv
 	$(PIP) install -e .[dev,doc,tests,ldap]
 	$(PIP) install python-ldap
+	touch $@
+
+.PHONY: dev
+dev: venv/.dev
 
 $(MODULE).egg-info: venv
 	$(PIP) install -e .
 
 # generate source and built distribution
-dist: venv
+dist: dev
 	source venv/bin/activate
 	$(PYTHON) -m build
 

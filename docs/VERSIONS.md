@@ -23,6 +23,7 @@ and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 
 ## ? on ?
 
+- improve dev automations, including parallelizing tests.
 - improve tutorial.
 
 ## 33.2 on 2024-10-10

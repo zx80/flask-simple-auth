@@ -177,6 +177,7 @@ afterwards:
           fsa.err("invalid AD credentials", 401)
       return {"token": app.create_token(username)}, 201
   ```
+
 - use `FSA_AUTH_DEFAULT="token"` so that all other routes require the token.
 
 ### How-to use multi-factor authentication (MFA)?
