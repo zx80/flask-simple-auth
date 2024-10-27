@@ -2567,6 +2567,7 @@ class _CacheManager:
             log.info("CacheManager cache shorcut")
             if prefix:
                 cache = ctu.PrefixedCache(cache, prefix)
+            # FIXME should not add a stats cache if there is already one!
             self._cache = ctu.StatsCache(cache)
             self._cache_gen = ctu.PrefixedCache
         elif cache in ("ttl", "lru", "tlru", "lfu", "mru", "fifo", "rr", "dict"):
@@ -2580,7 +2581,7 @@ class _CacheManager:
             elif cache == "lfu":
                 rcache = ct.LFUCache(maxsize, **self._cache_opts)
             elif cache == "mru":  # pragma: no cover
-                rcache = ct.MRUCache(maxsize, **self._cache_opts)
+                rcache = ct.MRUCache(maxsize, **self._cache_opts)  # deprecated…
             elif cache == "fifo":
                 rcache = ct.FIFOCache(maxsize, **self._cache_opts)
             elif cache == "rr":
