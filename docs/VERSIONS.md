@@ -23,6 +23,7 @@ and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 
 ## ? on ?
 
+- add _Python 3.14_ to CI.
 - improve dev automations, including parallelizing tests.
 - improve tutorial.
 
