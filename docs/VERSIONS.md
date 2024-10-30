@@ -20,6 +20,7 @@ and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
     [rroemhild](https://github.com/rroemhild/docker-test-openldap) 2021?
 - client caching should depend on the route…
   use declarations? hints? hooks?
+- objs permissions defaults: should send _all_ path parameters?
 
 ## ? on ?
 
