@@ -21,6 +21,8 @@ and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 - client caching should depend on the route…
   use declarations? hints? hooks?
 - objs permissions defaults: should send _all_ path parameters?
+- fake provider for testing: limiting fake authn to a parameter is inconvenient.
+  or record "test" as a new authentication and provide an adhoc function?
 
 ## ? on ?
 
