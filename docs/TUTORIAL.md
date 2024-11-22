@@ -808,15 +808,15 @@ And automatically:
 def test_len(client):
     # working
     res = client.get("len", json={"p": {"hi":"w!"}})
-    assert res.status_code == 200 And res.json["len"] == 1
+    assert res.status_code == 200 and res.json["len"] == 1
     res = client.get("len", json={"p": ["foo", "bla"]})
-    assert res.status_code == 200 And res.json["len"] == 2
+    assert res.status_code == 200 and res.json["len"] == 2
     res = client.get("len", json={"p": "hi!"})
-    assert res.status_code == 200 And res.json["len"] == 3
+    assert res.status_code == 200 and res.json["len"] == 3
     res = client.get("len", data={"p": '"hi!"'})
-    assert res.status_code == 200 And res.json["len"] == 3
+    assert res.status_code == 200 and res.json["len"] == 3
     res = client.get("len", json={"p": null})
-    assert res.status_code == 200 And res.json["len"] == "not available"
+    assert res.status_code == 200 and res.json["len"] == "not available"
     # errors
     res = client.get("len")
     assert res.status_code == 400  # missing parameter
@@ -904,7 +904,7 @@ In order to achieve this behavior:
 FSA_AUTH_DEFAULT = "token"  # default authentication scheme
 ```
 
-And update route definitions to require some other scheme when needed with
+Then update route definitions to require some other scheme when needed with
 parameter `auth="param"`, `auth="basic"`, `auth="password"` for both, or
 `auth="none"` for open routes.
 
