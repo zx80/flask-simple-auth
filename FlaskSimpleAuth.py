@@ -1101,6 +1101,9 @@ class Directives:
     different part of an application.
     """
 
+    FSA_CACHED_OPTS: dict[str, Any] = {}
+    """Options for "cached" decorator."""
+
     # web-oriented settings
     FSA_401_REDIRECT: str|None = None
     """URL redirection target on 401.
@@ -2522,6 +2525,7 @@ class _CacheManager:
         self._cache: typing.MutableMapping[str, str]|_NoCache|None = None
         self._cache_gen: Callable|None = None
         self._cache_opts: dict[str, Any] = {}
+        self._cached_opts: dict[str, Any] = {}
         self._cached = False
         self._cachable: list[tuple[object, str, str]] = []
         self._cache_prefixes: set[str] = set()
@@ -2556,6 +2560,7 @@ class _CacheManager:
             return
 
         self._cache_opts.update(conf.get("FSA_CACHE_OPTS", Directives.FSA_CACHE_OPTS))
+        self._cached_opts.update(conf.get("FSA_CACHED_OPTS", Directives.FSA_CACHED_OPTS))
 
         # NOTE no try/except because the dependency is mandatory
         import cachetools as ct
@@ -2667,7 +2672,7 @@ class _CacheManager:
 
         def decorate(fun: Callable):
             import CacheToolsUtils as ctu
-            return ctu.cached(cache=self._cache_new(self._cache, prefix))(fun)
+            return ctu.cached(cache=self._cache_new(self._cache, prefix), **self._cached_opts)(fun)
 
         return decorate
 

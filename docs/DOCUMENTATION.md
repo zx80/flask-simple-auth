@@ -1114,6 +1114,8 @@ authorization (group and per-object permissions):
   distributed caches.  A good candidate could be `app.name + "."`.
   Default is *None*, meaning no prefix.
 
+- `FSA_CACHED_OPTS` additional options for `cached` decorator.
+
 - Method `clear_caches` allows to clear internal process caches.
   This is a mostly a bad idea, you should wait for the `ttl`.
 

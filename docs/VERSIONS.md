@@ -29,6 +29,7 @@ and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 - unsuccessful attempt at adding _Python 3.14_ to CI.
 - improve dev automations, including parallelizing tests.
 - improve tutorial.
+- add `FSA_CACHED_OPTS` directive.
 
 ## 33.2 on 2024-10-10
 

@@ -102,6 +102,7 @@ FSA_PASSWORD_RE = [ r"[A-Z]", r"[a-z]", r"[0-9]" ]  # list of re to match
 # FSA_CACHE_OPTS = {}       # initialization options
 # FSA_CACHE_SIZE = 262144   # a few MiB
 # FSA_CACHE_PREFIX = None   # if shared cache
+# FSA_CACHED_OPTS = {}      # init options for "cached" decorator
 
 #
 # MISCELLANEOUS
