@@ -542,12 +542,12 @@ def jsonify(a: Any) -> Response:
         return flask.jsonify(_json_prepare(a))
 
 
-class _JSONProvider(flask.json.provider.DefaultJSONProvider):
+class _JSONProvider(flask.json.provider.DefaultJSONProvider):  # type: ignore
     """FlaskSimpleAuth Internal JSON Provider."""
 
     def __init__(self, app):
         super().__init__(app)
-        self._typemap = {
+        self._typemap: dict[Any, Hooks.JSONConversionFun] = {
             # override defaults to avoid English-specific RFC822
             dt.date: str,
             dt.datetime: str,
@@ -558,7 +558,7 @@ class _JSONProvider(flask.json.provider.DefaultJSONProvider):
             uuid.UUID: str,
         }
 
-    def add_converter(self, t: type, h: Hooks.JSONConversionFun):
+    def add_converter(self, t: Any, h: Hooks.JSONConversionFun):
         self._typemap[t] = h
 
     def default(self, o):
@@ -2655,7 +2655,7 @@ class _CacheManager:
                 self._cache_opts.update(serde=ctu.JsonSerde())
             if prefix and "key_prefix" not in self._cache_opts:
                 self._cache_opts.update(key_prefix=prefix.encode("utf-8"))
-            self._cache = ctu.StatsMemCached(pmc.Client(**self._cache_opts))
+            self._cache = ctu.MemCached(pmc.Client(**self._cache_opts))
             self._cache_gen = ctu.PrefixedMemCached
         elif cache == "redis":
             try:
@@ -2741,7 +2741,7 @@ class _CacheManager:
         for obj, meth, prefix in self._cachable:
             if obj and hasattr(obj, meth) and getattr(obj, meth) is not None:
                 log.debug(f"cache: caching {meth[1:]}")
-                ctu.cacheMethods(cache=self._cache, obj=obj, gen=self._cache_new, **{meth: prefix})
+                ctu.cacheMethods(cache=self._cache, obj=obj, gen=self._cache_new, **{meth: prefix})  # type: ignore
             else:
                 log.info(f"cache: skipping {meth[1:]}")
 
@@ -4058,7 +4058,7 @@ class FlaskSimpleAuth:
         self._initialize()
         self._qm._before_exec_hooks.append(hook)
 
-    def add_json_converter(self, t: type, h: Hooks.JSONConversionFun) -> None:
+    def add_json_converter(self, t: Any, h: Hooks.JSONConversionFun) -> None:
         """Register a JSON serialization conversion hook for a type."""
         self._app.json.add_converter(t, h)
 

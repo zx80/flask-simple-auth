@@ -27,7 +27,8 @@ and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 
 ## 34.0 on ?
 
-- require _Flask 3_ (September 2023) to use JSON provider infrastructure.
+- require _Flask 3_ (September 2023) to use JSON provider infrastructure
+  and _CacheToolsUtils 10.0_.
 - add `FSA_JSON_CONVERTER` directive to manage per-type JSON serialization
 - add `add_json_converter` per-type hook registration.
 
