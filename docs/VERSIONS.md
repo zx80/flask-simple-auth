@@ -24,6 +24,7 @@ and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 - fake provider for testing: limiting fake authn to a parameter is inconvenient in practice.
   or record "test" as a new authentication and provide an adhoc function,
   eg to rely on ad-hoc unsigned tokens, for instance.
+- could JSON conversion apply `str` on anything by default?
 
 ## 34.0 on 2024-12-15
 
