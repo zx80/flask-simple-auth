@@ -25,7 +25,7 @@ and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
   or record "test" as a new authentication and provide an adhoc function,
   eg to rely on ad-hoc unsigned tokens, for instance.
 
-## 34.0 on ?
+## 34.0 on 2024-12-15
 
 - require _Flask 3_ (September 2023) to use JSON provider infrastructure
   and _CacheToolsUtils 10.0_.
