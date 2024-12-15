@@ -1066,6 +1066,13 @@ Some directives govern various details for this extension internal working.
   added for string or byte responses.
   Default is *None*, meaning no replacement.
 
+- `FSA_JSON_CONVERTER` allows to add new per-type JSON serialization functions,
+  as a directory.
+  Keys are types, value is a hook to process an object of set type and return
+  a JSON serializable something, eg a string.
+  The corresponding `add_json_converter` method allows to register new hooks.
+  Default is empty.
+
 - `FSA_JSON_STREAMING` allows to force `jsonify` to generate a string instead of
   a string generator when serializing a generator.
   Default _True_ is to stream the JSON output, which may interact badly with the

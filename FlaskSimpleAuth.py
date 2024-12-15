@@ -27,6 +27,7 @@ import inspect
 import base64
 import datetime as dt
 import json
+import uuid
 
 try:
     import re2 as re  # type: ignore
@@ -184,6 +185,14 @@ class Hooks:
     :param request: current request.
 
     Returns the authenticated user name, or *None*.
+    """
+
+    JSONConversionFun = Callable[[Any], Any]
+    """JSON conversion hook.
+
+    :param o: object of some type.
+
+    Returns a JSON serializable something from an object instance.
     """
 
 
@@ -518,7 +527,8 @@ _fsa_json_streaming = True
 def jsonify(a: Any) -> Response:
     """Jsonify something, including generators, dataclasses and pydantic stuff.
 
-    This is somehow an extension of Flask own jsonify.
+    This is somehow an extension of Flask own jsonify, although it takes only
+    one argument.
 
     NOTE on generators, the generator output is json-streamed instead of being
     treated as a string or bytes generator.
@@ -530,6 +540,30 @@ def jsonify(a: Any) -> Response:
         return Response(out, mimetype="application/json")
     else:
         return flask.jsonify(_json_prepare(a))
+
+
+class _JSONProvider(flask.json.provider.DefaultJSONProvider):
+    """FlaskSimpleAuth Internal JSON Provider."""
+
+    def __init__(self, app):
+        super().__init__(app)
+        self._typemap = {
+            # override defaults to avoid English-specific RFC822
+            dt.date: str,
+            dt.datetime: str,
+            # add missing types
+            dt.time: str,
+            dt.timedelta: str,
+            dt.timezone: str,
+            uuid.UUID: str,
+        }
+
+    def add_converter(self, t: type, h: Hooks.JSONConversionFun):
+        self._typemap[t] = h
+
+    def default(self, o):
+        encoder = self._typemap.get(type(o), None)
+        return encoder(o) if encoder else super().default(o)
 
 
 class Reference(ppp.Proxy):
@@ -594,6 +628,7 @@ class Flask(flask.Flask):
         self.add_headers = self._fsa.add_headers
         self.before_exec = self._fsa.before_exec
         self.authentication = self._fsa.authentication
+        self.add_json_converter = self._fsa.add_json_converter
         # forward methods
         self.check_password = self._fsa.check_password
         self.check_user_password = self._fsa.check_user_password
@@ -614,6 +649,8 @@ class Flask(flask.Flask):
         setattr(self, "post", self._fsa.post)
         setattr(self, "patch", self._fsa.patch)
         setattr(self, "delete", self._fsa.delete)
+        # json provider
+        self.json = self._fsa._app.json
 
     def make_response(self, rv) -> Response:
         """Create a Response.
@@ -1129,6 +1166,12 @@ class Directives:
     """Flask-CORS initialization options.
 
     See `Flask-CORS documentation <https://flask-cors.readthedocs.io/>`_ for details.
+    """
+
+    FSA_JSON_CONVERTER: dict[type, Hooks.JSONConversionFun] = {}
+    """JSON Converter Mapping.
+
+    Map types to JSON conversion functions.
     """
 
 
@@ -3742,6 +3785,7 @@ class FlaskSimpleAuth:
         self._qm = _RequestManager(self)
         self._rm = _ResponseManager(self)
         self._cm = _CacheManager(self)
+        self._app.json = _JSONProvider(app)
         # fsa-generated errors
         self._server_error: int = Directives.FSA_SERVER_ERROR
         self._not_found_error: int = Directives.FSA_NOT_FOUND_ERROR
@@ -3817,6 +3861,10 @@ class FlaskSimpleAuth:
         # override FSA internal error handling user errors
         self._keep_user_errors = conf.get("FSA_KEEP_USER_ERRORS", Directives.FSA_KEEP_USER_ERRORS)
 
+        # JSON serialization function helpers
+        for t, h in conf.get("FSA_JSON_CONVERTER", Directives.FSA_JSON_CONVERTER).items():
+            self.add_json_converter(t, h)
+
         #
         # initialize managers
         #
@@ -3833,7 +3881,7 @@ class FlaskSimpleAuth:
         self.blueprints = self._app.blueprints
         self.debug = False
         if hasattr(self._app, "_check_setup_finished"):
-            # Flask 2.2
+            # Flask 2.2 and later
             self._check_setup_finished = self._app._check_setup_finished
             self.before_request_funcs = self._app.before_request_funcs
             self.after_request_funcs = self._app.after_request_funcs
@@ -4009,6 +4057,10 @@ class FlaskSimpleAuth:
         """Register an after auth/just before exec hook."""
         self._initialize()
         self._qm._before_exec_hooks.append(hook)
+
+    def add_json_converter(self, t: type, h: Hooks.JSONConversionFun) -> None:
+        """Register a JSON serialization conversion hook for a type."""
+        self._app.json.add_converter(t, h)
 
     #
     # PASSWORD CHECKS
@@ -4258,8 +4310,6 @@ class FlaskSimpleAuth:
         del predefs
         assert predef in {"OPEN", "AUTH", "CLOSE"}
 
-        from uuid import UUID
-
         # add the expected type to path sections, if available
         # flask converters: string (default), int, float, path, uuid
         # NOTE it can be extended (`url_map`), but we are managing through annotations
@@ -4281,7 +4331,7 @@ class FlaskSimpleAuth:
                     if conv and namesig.annotation != inspect.Parameter.empty:
                         atype = namesig.annotation
                         if conv == "string" and atype not in (string, str) or \
-                           conv == "uuid" and atype != UUID or \
+                           conv == "uuid" and atype != uuid.UUID or \
                            conv == "path" and atype not in (path, str) or \
                            conv == "int" and atype != int or \
                            conv == "float" and atype != float:
@@ -4293,7 +4343,7 @@ class FlaskSimpleAuth:
                 if ":" not in spec and spec in sig.parameters:
                     t = _typeof(sig.parameters[spec])
                     # Flask supports 5 types, with string the default?
-                    if t in (int, float, UUID, path):
+                    if t in (int, float, uuid.UUID, path):
                         splits[i] = f"{t.__name__.lower()}:{spec}>{remainder}"  # type: ignore
                     else:
                         splits[i] = f"string:{spec}>{remainder}"

@@ -7,6 +7,7 @@ import io
 import re
 import importlib
 import typing
+import datetime as dt
 
 import pytest
 import App
@@ -2212,6 +2213,41 @@ def test_jsonify_with_generators():
         assert res.data == b"[2]\n"
         res = check(200, c.get("/json", data={"what": "gen"}))
         assert res.data == b"[0,1]\n"
+
+
+def test_jsonify_with_types():
+
+    class Pair:
+        def __init__(self, i, j):
+            self._i, self._j = i, j
+
+    app = fsa.Flask("json",
+        FSA_JSON_CONVERTER={
+            complex: lambda c: [c.real, c.imag],
+            Pair: lambda p: [p._i, p._j],
+        },
+        FSA_AUTH="none",
+    )
+
+    @app.get("/pair", authorize="OPEN")
+    def get_pair(i: int, j: int):
+        return fsa.jsonify(Pair(i, j)), 200
+
+    @app.get("/delay", authorize="OPEN")
+    def get_delay(d: dt.date):
+        return fsa.jsonify(d - dt.date.fromisoformat("2020-07-29"))
+
+    @app.get("/rotate", authorize="OPEN")
+    def get_rotate(c: complex):
+        return fsa.jsonify(c * 1j)
+
+    with app.test_client() as c:
+        res = check(200, c.get("/pair", json={"i": 18, "j": 42}))
+        assert res.json == [18, 42]
+        res = check(200, c.get("/delay", data={"d": "2024-12-15"}))
+        assert res.json.startswith("1600 days")
+        res = check(200, c.get("/rotate", json={"c": "1+1j"}))
+        assert res.json == [-1, 1]
 
 def test_pydantic_models():
     import pydantic

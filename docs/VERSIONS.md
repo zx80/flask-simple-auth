@@ -3,7 +3,7 @@
 Sources are available on [GitHub](https://github.com/zx80/flask-simple-auth)
 and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 
-## TODO v34?
+## TODO?
 
 - drop support for _Flask 2.x_?
 - remove old ANY/ALL/NONE authorizations.
@@ -21,8 +21,15 @@ and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 - client caching should depend on the route…
   use declarations? hints? hooks?
 - objs permissions defaults: should send _all_ path parameters?
-- fake provider for testing: limiting fake authn to a parameter is inconvenient.
-  or record "test" as a new authentication and provide an adhoc function?
+- fake provider for testing: limiting fake authn to a parameter is inconvenient in practice.
+  or record "test" as a new authentication and provide an adhoc function,
+  eg to rely on ad-hoc unsigned tokens, for instance.
+
+## 34.0 on ?
+
+- require _Flask 3_ (September 2023) to use JSON provider infrastructure.
+- add `FSA_JSON_CONVERTER` directive to manage per-type JSON serialization
+- add `add_json_converter` per-type hook registration.
 
 ## 33.3 on 2024-11-29
 
