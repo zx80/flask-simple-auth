@@ -524,6 +524,54 @@ def _json_stream(gen):
 _fsa_json_streaming = True
 
 
+class _JSONProvider(flask.json.provider.DefaultJSONProvider):  # type: ignore
+    """FlaskSimpleAuth Internal JSON Provider.
+
+    Convertion to str based on types for date, datetime, time, timedelta,
+    timezone and UUID.
+
+    :param allstr: whether convert unexpected types to ``str``.
+    """
+
+    def __init__(self, app, allstr: bool = False):
+        super().__init__(app)
+        self._typemap: dict[Any, Hooks.JSONConversionFun] = {
+            # override defaults to avoid English-specific RFC822
+            dt.date: str,
+            dt.datetime: str,
+            # add missing types
+            dt.time: str,
+            dt.timedelta: str,
+            dt.timezone: str,
+            uuid.UUID: str,
+        }
+        self._skip: tuple[type, ...] = tuple()
+        _ = allstr and self._set_allstr()
+
+    def set_allstr(self):
+        self._skip = (str, float, bool, int, list, tuple, dict, type(None))
+
+    def add_converter(self, t: Any, h: Hooks.JSONConversionFun):
+        self._typemap[t] = h
+
+    def default(self, o: Any):
+        """Extended JSON conversion for Flask."""
+        # special cases for data structures
+        if hasattr(o, "model_dump"):  # Pydantic BaseModel  # pragma: no cover
+            return o.model_dump()
+        elif hasattr(o, "__pydantic_fields__"):  # Pydantic dataclass
+            return dataclasses.asdict(o)
+        elif hasattr(o, "__dataclass_fields__"):  # standard dataclass  # pragma: no cover
+            return dataclasses.asdict(o)
+        else:
+            if encoder := self._typemap.get(type(o), None):
+                return encoder(o)
+            elif self._skip and not isinstance(o, self._skip):
+                return str(o)
+            else:  # FIXME # pragma: no cover
+                super().default(o)
+
+
 def jsonify(a: Any) -> Response:
     """Jsonify something, including generators, dataclasses and pydantic stuff.
 
@@ -540,30 +588,6 @@ def jsonify(a: Any) -> Response:
         return Response(out, mimetype="application/json")
     else:
         return flask.jsonify(_json_prepare(a))
-
-
-class _JSONProvider(flask.json.provider.DefaultJSONProvider):  # type: ignore
-    """FlaskSimpleAuth Internal JSON Provider."""
-
-    def __init__(self, app):
-        super().__init__(app)
-        self._typemap: dict[Any, Hooks.JSONConversionFun] = {
-            # override defaults to avoid English-specific RFC822
-            dt.date: str,
-            dt.datetime: str,
-            # add missing types
-            dt.time: str,
-            dt.timedelta: str,
-            dt.timezone: str,
-            uuid.UUID: str,
-        }
-
-    def add_converter(self, t: Any, h: Hooks.JSONConversionFun):
-        self._typemap[t] = h
-
-    def default(self, o):
-        encoder = self._typemap.get(type(o), None)
-        return encoder(o) if encoder else super().default(o)
 
 
 class Reference(ppp.Proxy):
@@ -1096,6 +1120,18 @@ class Directives:
     FlaskSimpleAuth's ``jsonify``.
     """
 
+    FSA_JSON_CONVERTER: dict[type, Hooks.JSONConversionFun] = {}
+    """JSON Converter Mapping.
+
+    Map types to JSON conversion functions.
+    """
+
+    FSA_JSON_ALLSTR: bool = False
+    """JSON Converter Casting.
+
+    Whether to cast all unexpected types with ``str``.
+    """
+
     FSA_REJECT_UNEXPECTED_PARAM: bool = True
     """Whether to reject unexpected parameters."""
 
@@ -1166,12 +1202,6 @@ class Directives:
     """Flask-CORS initialization options.
 
     See `Flask-CORS documentation <https://flask-cors.readthedocs.io/>`_ for details.
-    """
-
-    FSA_JSON_CONVERTER: dict[type, Hooks.JSONConversionFun] = {}
-    """JSON Converter Mapping.
-
-    Map types to JSON conversion functions.
     """
 
 
@@ -3785,6 +3815,7 @@ class FlaskSimpleAuth:
         self._qm = _RequestManager(self)
         self._rm = _ResponseManager(self)
         self._cm = _CacheManager(self)
+        # override default json provider
         self._app.json = _JSONProvider(app)
         # fsa-generated errors
         self._server_error: int = Directives.FSA_SERVER_ERROR
@@ -3861,7 +3892,9 @@ class FlaskSimpleAuth:
         # override FSA internal error handling user errors
         self._keep_user_errors = conf.get("FSA_KEEP_USER_ERRORS", Directives.FSA_KEEP_USER_ERRORS)
 
-        # JSON serialization function helpers
+        # JSON serialization helpers
+        if conf.get("FSA_JSON_ALLSTR", Directives.FSA_JSON_ALLSTR):
+            self._app.json.set_allstr()
         for t, h in conf.get("FSA_JSON_CONVERTER", Directives.FSA_JSON_CONVERTER).items():
             self.add_json_converter(t, h)
 

@@ -2221,7 +2221,14 @@ def test_jsonify_with_types():
         def __init__(self, i, j):
             self._i, self._j = i, j
 
+    class Triplet:
+        def __init__(self, i, j, k):
+            self._i, self._j, self._k = i, j, k
+        def __str__(self):
+            return f"/{self._i}-{self._j}-{self._k}/"
+
     app = fsa.Flask("json",
+        FSA_JSON_ALLSTR=True,
         FSA_JSON_CONVERTER={
             complex: lambda c: [c.real, c.imag],
             Pair: lambda p: [p._i, p._j],
@@ -2231,7 +2238,11 @@ def test_jsonify_with_types():
 
     @app.get("/pair", authorize="OPEN")
     def get_pair(i: int, j: int):
-        return fsa.jsonify(Pair(i, j)), 200
+        return fsa.jsonify(Pair(i, j))
+
+    @app.get("/triplet", authorize="OPEN")
+    def get_triplet(i: int, j: int, k: int):
+        return fsa.jsonify(Triplet(i, j, k))
 
     @app.get("/delay", authorize="OPEN")
     def get_delay(d: dt.date):
@@ -2241,13 +2252,21 @@ def test_jsonify_with_types():
     def get_rotate(c: complex):
         return fsa.jsonify(c * 1j)
 
+    @app.get("/raw", authorize="OPEN")
+    def get_raw(r: float):
+        return fsa.jsonify(r)
+
     with app.test_client() as c:
         res = check(200, c.get("/pair", json={"i": 18, "j": 42}))
         assert res.json == [18, 42]
+        res = check(200, c.get("/triplet", json={"i": 1, "j": 2, "k": 3}))
+        assert res.json == "/1-2-3/"
         res = check(200, c.get("/delay", data={"d": "2024-12-15"}))
         assert res.json.startswith("1600 days")
         res = check(200, c.get("/rotate", json={"c": "1+1j"}))
         assert res.json == [-1, 1]
+        res = check(200, c.get("raw", data={"r": 3.14}))
+        assert res.json == 3.14
 
 def test_pydantic_models():
     import pydantic

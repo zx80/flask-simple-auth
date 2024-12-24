@@ -1078,6 +1078,10 @@ Some directives govern various details for this extension internal working.
   Default _True_ is to stream the JSON output, which may interact badly with the
   database transactions in some cases depending on the driver and WSGI server.
 
+- `FSA_JSON_ALLSTR` whether to cast all unexpected values with `str` when
+  converting to JSON.
+  Default _False_ is to rely on converters and the default JSON provider.
+
 - `FSA_BEFORE_REQUEST` and `FSA_AFTER_REQUEST` allow to add a list of before
   and after request hooks from the configuration instead of the actual
   application code.
