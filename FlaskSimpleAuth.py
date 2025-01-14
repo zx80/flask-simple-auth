@@ -3774,9 +3774,12 @@ class _ResponseManager:
         """Add convenient FSA-related headers."""
         fsa = self._fsa
         res.headers["FSA-Request"] = f"{request.method} {request.path}"
-        res.headers["FSA-User"] = f"{fsa.current_user()} ({fsa._local.source})"
-        delay = dt.datetime.timestamp(dt.datetime.now()) - fsa._local.start
-        res.headers["FSA-Delay"] = f"{delay:.6f}"
+        # NOTE resilience seems necessary in some cases?
+        if hasattr(fsa._local, "source"):
+            res.headers["FSA-User"] = f"{fsa.current_user()} ({fsa._local.source})"
+        if hasattr(fsa._local, "start"):
+            delay = dt.datetime.timestamp(dt.datetime.now()) - fsa._local.start
+            res.headers["FSA-Delay"] = f"{delay:.6f}"
         return res
 
     def _show_response(self, res: Response) -> Response:
