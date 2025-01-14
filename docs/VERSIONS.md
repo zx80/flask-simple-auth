@@ -25,7 +25,7 @@ and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
   or record "test" as a new authentication and provide an adhoc function,
   eg to rely on ad-hoc unsigned tokens, for instance.
 
-## ? on ?
+## 34.2 on 2025-01-14
 
 - import `current_user` resilience to internal error conditions.
 
