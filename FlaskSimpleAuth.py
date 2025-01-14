@@ -4149,7 +4149,8 @@ class FlaskSimpleAuth:
 
         Returns `None` if no user has been authenticated.
         """
-        return self._local.user
+        # FIXME the hasattr test should not be necessary?
+        return self._local.user if hasattr(self._local, "user") else None
 
     def user_scope(self, scope) -> bool:
         """Is `scope` in the `current user` scopes."""
