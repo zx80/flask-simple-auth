@@ -3022,6 +3022,10 @@ class _ParameterHandler:
     """Internal handler for one parameter.
 
     Handle a request parameter depending on its type hint.
+
+    :param pm: parameter manager
+    :param hint: parameter description from inspect
+    :param where: parameter location for error messages
     """
 
     def __init__(self, pm, name: str, hint: inspect.Parameter, where: str):

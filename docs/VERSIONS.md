@@ -25,6 +25,10 @@ and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
   or record "test" as a new authentication and provide an adhoc function,
   eg to rely on ad-hoc unsigned tokens, for instance.
 
+## ? on ?
+
+- improve doc.
+
 ## 34.3 on 2025-01-14
 
 - improve post request handler resilience again.
