@@ -20,13 +20,13 @@ and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
   - ldap authorizations?
   - how to actually tests LDAP?
     [rroemhild](https://github.com/rroemhild/docker-test-openldap) 2021?
-- client caching should depend on the route…
+- client caching should/could depend on the route/method…
   use declarations? hints? hooks?
-- objs permissions defaults: should send _all_ path parameters?
+- objs permissions defaults: should send _all_ path parameters? allow list? use named parameters?
 - fake provider for testing: limiting fake authn to a parameter is inconvenient in practice.
   or record "test" as a new authentication and provide an adhoc function,
   eg to rely on ad-hoc unsigned tokens, for instance.
-- provide more parameters to special parameters hooks?
+- provide more parameters to special parameters hooks? guess based on type hints?
 
 ## ? on ?
 
