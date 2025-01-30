@@ -2809,6 +2809,10 @@ def test_optional_params():
                     assert int_eq(val, res.json["i"])
         assert cnt == 35
 
+#
+# NOTE ldap tests only focus on initializations, we do not have a server for testing
+#
+
 LDAP_URL = "ldaps://foo:bla@ldap.server:389/search?login?sub?(objectClass=*)"
 
 def ldap_tests(scheme: str, url: str):
