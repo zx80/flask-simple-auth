@@ -52,10 +52,6 @@ from flask import (
 
 from importlib.metadata import version as pkg_version
 
-if pkg_version("flask").startswith("2.2."):  # pragma: no cover
-    from flask import escape, Markup
-# 2.3 and 3.0: they are in markupsafe
-
 import logging
 log = logging.getLogger("fsa")
 
@@ -3923,7 +3919,7 @@ class FlaskSimpleAuth:
         self.blueprints = self._app.blueprints
         self.debug = False
         if hasattr(self._app, "_check_setup_finished"):
-            # Flask 2.2 and later
+            # Flask 2.2, 2.3, 3.0, 3.1…
             self._check_setup_finished = self._app._check_setup_finished
             self.before_request_funcs = self._app.before_request_funcs
             self.after_request_funcs = self._app.after_request_funcs
