@@ -1676,6 +1676,7 @@ class _LDAPAuth(_LDAPAuthBase):
             ldap.SCOPE_ONELEVEL if self._scope == "one" else  # type: ignore
             ldap.SCOPE_BASE  # type: ignore
         )
+        # FIXME the ldap connection is persistent? pooling? thread safety?
         self._conn = None
 
     def check(self, username: str, password: str):  # pragma: no cover
@@ -1745,6 +1746,7 @@ class _LDAP3Auth(_LDAPAuthBase):
             ldap3.LEVEL if self._scope == "one" else
             ldap3.BASE
         )
+        # FIXME the ldap connection is persistent? pooling? thread safety?
         self._server, self._conn = None, None
 
     def check(self, username: str, password: str):  # pragma: no cover
