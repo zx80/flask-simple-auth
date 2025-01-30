@@ -30,7 +30,7 @@ The following Flask application provides two routes:
   *store* number *sid* to add a quantity of product to the store inventory.
 
 ```python
-# file "app.py"
+# File "app.py"
 from FlaskSimpleAuth import Flask
 
 app = Flask("acme")
@@ -61,7 +61,7 @@ to check whether a user belongs to a group, and
 to tell whether a user can access a given store in a particular role:
 
 ```python
-# file "auth.py"
+# File "auth.py"
 def get_user_pass(user: str) -> str|None:
     return ...  # hashed password retrieved from somewhere
 
@@ -76,7 +76,7 @@ Here is an example of configuration for the above application:
 Users are identified either with a JWT token or with a basic authentification.
 
 ```python
-# file "acme.conf"
+# File "acme.conf"
 import os
 import auth
 

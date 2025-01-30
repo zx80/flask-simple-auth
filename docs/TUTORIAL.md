@@ -48,7 +48,7 @@ authorization requirements on the route.
 If not set, the route would be closed (aka 403).
 
 ```python
-# file "app.py"
+# File "app.py"
 # necessary for debug messages to show up…
 import logging
 logging.basicConfig()
@@ -71,7 +71,7 @@ def get_hello():
 Create the `acme.conf` configuration file:
 
 ```python
-# file "acme.conf"
+# File "acme.conf"
 FSA_AUTH = "none"    # allow non authenticated routes (aka OPEN authorization)
 FSA_MODE = "debug1"  # debug level 1, max is 4
 FSA_ADD_HEADERS = { "Application": "Acme" }
@@ -120,7 +120,7 @@ It is good practice to automate application tests, for instance with
 Create a `test.py` file with a test to cover this route:
 
 ```python
-# file "test.py"
+# File "test.py"
 import pytest
 from app import app
 
@@ -152,7 +152,7 @@ Create file `acme.py` to manage a simplistic in-memory database implemented
 as the `AcmeData` class:
 
 ```python
-# file "acme.py"
+# File "acme.py"
 import re
 import FlaskSimpleAuth as fsa
 
@@ -246,7 +246,7 @@ Create a `database.py` file which will hold our application primitive database
 interface:
 
 ```python
-# file "database.py"
+# File "database.py"
 import os
 import FlaskSimpleAuth as fsa
 import acme
@@ -265,7 +265,7 @@ def init_app(app: fsa.Flask):
 Create an `auth.py` file for the authentication and authorization callbacks:
 
 ```python
-# file "auth.py"
+# File "auth.py"
 import FlaskSimpleAuth as fsa
 
 # the database is needed!
