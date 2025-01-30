@@ -6,11 +6,13 @@ and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 ## TODO?
 
 - [passlib totp](https://passlib.readthedocs.io/en/stable/lib/passlib.totp.html)
-- [pyauth topt](https://pyauth.github.io/pyotp/)
+- [pyauth totp](https://pyauth.github.io/pyotp/)
 - deprecate/remove old ANY/ALL/NONE authorizations.
 - deprecate/remove authorize/auth decorator parameter names.
 - drop support for _Flask 2.x_?
 - authz/authn consistency? should "none" be required for "OPEN" routes?
+- several simultaneous password management schemes should be supported.
+  this is already the case with `passlib`.
 - use default authentication in demo and other live projects (kiva, pizza, ref).
 - oauth: issuer/scope? issuer/secret?
 - how to export and use the cache for user-related data?
