@@ -5,7 +5,8 @@ and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 
 ## TODO?
 
-- test passlib totp?
+- [passlib totp](https://passlib.readthedocs.io/en/stable/lib/passlib.totp.html)
+- [pyauth topt](https://pyauth.github.io/pyotp/)
 - deprecate/remove old ANY/ALL/NONE authorizations.
 - deprecate/remove authorize/auth decorator parameter names.
 - drop support for _Flask 2.x_?
