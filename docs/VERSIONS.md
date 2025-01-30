@@ -5,8 +5,9 @@ and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 
 ## TODO?
 
+- deprecate/remove old ANY/ALL/NONE authorizations.
+- deprecate/remove authorize/auth decorator parameter names.
 - drop support for _Flask 2.x_?
-- remove old ANY/ALL/NONE authorizations.
 - authz/authn consistency? should "none" be required for "OPEN" routes?
 - use default authentication in demo and other live projects (kiva, pizza, ref).
 - oauth: issuer/scope? issuer/secret?
@@ -29,6 +30,7 @@ and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 ## ? on ?
 
 - improve doc.
+- switch doc and code to prefer `authz` and `authn` over `authorize` and `auth`
 
 ## 34.3 on 2025-01-14
 

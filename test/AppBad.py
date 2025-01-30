@@ -11,7 +11,7 @@ def create_app(auth=None, **config):
     app.config.update(**config)
 
     # next definition may raise an Exception
-    @app.route("/misc", methods=["GET"], authorize="AUTH", auth=auth)
+    @app.route("/misc", methods=["GET"], authz="AUTH", authn=auth)
     def get_misc():
         return "may get there, depending", 200
 
@@ -27,11 +27,11 @@ def create_badapp_2(**config):
         log.warning(f"intentional get_user_pass failure on {login}")
         raise Exception(f"get_user_pass failed for {login}")
 
-    @app.get("/any", authorize="OPEN")
+    @app.get("/any", authz="OPEN")
     def get_any():
         return "any ok", 200
 
-    @app.get("/all", authorize="AUTH")
+    @app.get("/all", authz="AUTH")
     def get_all():
         return "should not get there!", 418
 
@@ -47,15 +47,15 @@ def create_badapp_3(**config):
         log.warning(f"intentional user_in_group failure on {login}/{group}")
         raise Exception(f"user_in_group failed for {login}/{group}")
 
-    @app.get("/any", authorize="ANY")
+    @app.get("/any", authz="ANY")
     def get_any():
         return "any is ok", 200
 
-    @app.get("/all", authorize="ALL")
+    @app.get("/all", authz="ALL")
     def get_all():
         return "all is ok", 200
 
-    @app.get("/fail", authorize="FAIL")
+    @app.get("/fail", authz="FAIL")
     def get_fail():
         return "should not get there!", 418
 
@@ -66,11 +66,11 @@ def create_badapp_4(**config):
     app = Flask("bad 4", FSA_AUTH="none")
     app.config.update(**config)
 
-    @app.get("/ok", authorize="OPEN")
+    @app.get("/ok", authz="OPEN")
     def get_ok():
         return "ok is ok!", 200
 
-    @app.get("/any", authorize="OPEN")
+    @app.get("/any", authz="OPEN")
     def get_any():
         raise Exception("intended exception on get_any!")
 
@@ -81,7 +81,7 @@ def create_badapp_5(**config):
     app = Flask("bad 5", FSA_AUTH="none")
     app.config.update(**config)
 
-    @app.get("/hello/<name>", authorize="OPEN")
+    @app.get("/hello/<name>", authz="OPEN")
     def get_hello_name(name: str = "Calvin"):
         return f"Bonjour {name} !", 200
 
@@ -92,7 +92,7 @@ def create_badapp_6(**config):
     app = Flask("bad 6", FSA_AUTH="none")
     app.config.update(**config)
 
-    @app.get("/hello/<missing>", authorize="OPEN")
+    @app.get("/hello/<missing>", authz="OPEN")
     def get_hello_missing():
          return "Bonsoir <missing> !", 200
 
@@ -103,7 +103,7 @@ def create_badapp_7(**config):
     app = Flask("bad 7", FSA_AUTH="none")
     app.config.update(**config)
 
-    @app.get("/hello/<int:bad>", authorize="OPEN")
+    @app.get("/hello/<int:bad>", authz="OPEN")
     def get_hello_missing(bad: float):
          return f"Salut {bad} !", 200
 
@@ -114,7 +114,7 @@ def create_badapp_8(**config):
     app = Flask("bad 8", FSA_AUTH="none")
     app.config.update(**config)
 
-    @app.get("/hello/<unknown:bad>", authorize="OPEN")
+    @app.get("/hello/<unknown:bad>", authz="OPEN")
     def get_hello_missing(bad: int):
          return f"Salut {bad} !", 200
 

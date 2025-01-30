@@ -8,7 +8,7 @@ import FlaskSimpleAuth as fsa
 
 app = fsa.Flask(__name__)
 
-@app.get("/things", authorize="OPEN")
+@app.get("/things", authz="OPEN")
 def get_things():
     return fsa.Response(
         "\n"

@@ -56,31 +56,31 @@ app.register_blueprint(subapp, url_prefix="/b1")
 #
 # ROUTES
 #
-@app.route("/login", authorize=ALL)
+@app.route("/login", authz=ALL)
 def login():
     cur = app.current_user()
     assert cur
     return jsonify(app.create_token(app.get_user())), 200
 
-@app.route("/admin", authorize=ADMIN)
+@app.route("/admin", authz=ADMIN)
 def admin_only():
     return "admin-only", 200
 
-@app.route("/write", authorize=WRITE)
+@app.route("/write", authz=WRITE)
 def write_only():
     return "write-only", 200
 
-@app.route("/read", authorize=READ)
+@app.route("/read", authz=READ)
 def read_only():
     return "read-only", 200
 
-@app.route("/any", authorize=ANY)
+@app.route("/any", authz=ANY)
 def any(app: CurrentApp, req: Request):
     assert app._fsa._am._get_httpd_auth(app, req) is None
     return "no-auth", 200
 
 # change password in self-care with set_login
-@app.route("/user/<user>", methods=["PATCH", "PUT"], authorize=[READ])
+@app.route("/user/<user>", methods=["PATCH", "PUT"], authz=[READ])
 def patch_user_str(user, oldpass, newpass):
     login = app.get_user()
     if login != user:
@@ -93,7 +93,7 @@ def patch_user_str(user, oldpass, newpass):
     return "", 204
 
 # possibly suicidal self-care
-@app.route("/user/<user>", methods=["DELETE"], authorize=[ALL])
+@app.route("/user/<user>", methods=["DELETE"], authz=[ALL])
 def delete_user_str(user):
     login = app.get_user()
     if not (login == user or user_in_group(login, ADMIN)):
@@ -104,7 +104,7 @@ def delete_user_str(user):
     return "", 204
 
 # self registration with listed mandatory parameters
-@app.route("/register", methods=["POST"], authorize=[ANY])
+@app.route("/register", methods=["POST"], authz=[ANY])
 def register(user, upass):
     if user in UP:
         return "cannot register existing user", 403
@@ -115,17 +115,17 @@ def register(user, upass):
     return "", 201
 
 # typed mandatory parameters
-@app.route("/add/<i>", methods=["GET"], authorize=[ANY])
+@app.route("/add/<i>", methods=["GET"], authz=[ANY])
 def get_add(i: int, a: float, b: float):
     return str(i * (a + b)), 200
 
 # another one: j and k and mandatory
-@app.route("/mul/<i>", methods=["GET"], authorize=[ANY])
+@app.route("/mul/<i>", methods=["GET"], authz=[ANY])
 def get_mul(i: int, j: int, k: int):
     return str(i * j * k), 200
 
 # another one: i and j are optional
-@app.route("/div", methods=["GET"], authorize=[ANY])
+@app.route("/div", methods=["GET"], authz=[ANY])
 def get_div(i: int = None, j: int = None):
     if i is None or j is None:
         return "0", 200
@@ -133,7 +133,7 @@ def get_div(i: int = None, j: int = None):
         return str(i // j), 200
 
 # another one: i is mandatory, j is optional
-@app.route("/sub", methods=["GET"], authorize=[ANY])
+@app.route("/sub", methods=["GET"], authz=[ANY])
 def get_sub(i: int, j: int = 0):
     return str(i - j), 200
 
@@ -144,7 +144,7 @@ else:
     IntOrNone = Union[int, None]
 
 # type tests
-@app.route("/type", methods=["GET"], authorize=[ANY])
+@app.route("/type", methods=["GET"], authz=[ANY])
 def get_type(f: Optional[float] = None, i: IntOrNone = None, b: Union[bool, None] = None, s: str = None):
     if f is not None:
         return f"float {f}", 200
@@ -158,12 +158,12 @@ def get_type(f: Optional[float] = None, i: IntOrNone = None, b: Union[bool, None
         return "", 200
 
 # accept any parameters…
-@app.route("/params", methods=["GET"], authorize=[ANY])
+@app.route("/params", methods=["GET"], authz=[ANY])
 def get_params(**kwargs):
     return ' '.join(sorted(kwargs)), 200
 
 # explicitly forbidden route
-@app.route("/nogo", methods=["GET"], authorize=NONE)
+@app.route("/nogo", methods=["GET"], authz=NONE)
 def get_nogo():
     return "", 200
 
@@ -181,12 +181,12 @@ def get_mis2():
     return "", 200
 
 # empty authorization
-@app.route("/empty", methods=["GET"], authorize=[])
+@app.route("/empty", methods=["GET"], authz=[])
 def get_mis3():
     return "", 200
 
 # convenient route all-in-one decorator
-@app.route("/one/<int:i>", methods=["GET"], authorize=[ANY])
+@app.route("/one/<int:i>", methods=["GET"], authz=[ANY])
 def get_one(i: int, msg: str, punct: str = "!"):
     return f"{i}: {msg} {punct}", 200
 
@@ -196,39 +196,39 @@ def get_two():
     return "2", 200
 
 # parameter type inference
-@app.route("/infer/<id>", methods=["GET"], authorize=[ANY])
+@app.route("/infer/<id>", methods=["GET"], authz=[ANY])
 def get_infer(id: float, i = 2, s = "hi"):
     return f"{id} {i*len(s)}", 200
 
 # try a date…
 import datetime as dt
-@app.route("/when", methods=["GET"], authorize=ALL)
+@app.route("/when", methods=["GET"], authz=ALL)
 def get_when(d: dt.date, t: dt.time = '23:34:45'):
     return f"in {d - dt.date.today()} {t}", 200
 
 import uuid
-@app.route("/superid/<uid>", methods=["GET"], authorize=ANY)
+@app.route("/superid/<uid>", methods=["GET"], authz=ANY)
 def get_superid_uid(uid: uuid.UUID, u: uuid.UUID = None):
     return f"uid = {uid}/{u}", 200
 
 # complex numbers as HTTP parameters should work out of the box
-@app.route("/cplx", methods=["GET"], authorize=ANY)
+@app.route("/cplx", methods=["GET"], authz=ANY)
 def get_cplx(c1: complex, c2: complex = 1+1j):
     return f"{c1+c2}", 200
 
 # unexpected types as path parameters are recast
-@app.route("/bool/<b>", methods=["GET"], authorize=ANY)
+@app.route("/bool/<b>", methods=["GET"], authz=ANY)
 def get_bool_b(b: bool):
     return str(b), 200
 
 # again with complex
-@app.route("/cplx/<c>", methods=["GET"], authorize=ANY)
+@app.route("/cplx/<c>", methods=["GET"], authz=ANY)
 def get_cplx_c(c: complex):
     return str(c + 1j), 200
 
 # requires Python 3.9
 # import zoneinfo as zi
-# @app.route("/zi/<zone>", methods=["GET"], authorize=ANY)
+# @app.route("/zi/<zone>", methods=["GET"], authz=ANY)
 # def get_zi_zone(zone: zi.ZoneInfo):
 #     return f"{zone}", 200
 
@@ -240,7 +240,7 @@ class Mail:
     def __str__(self):
         return self._address
 
-@app.route("/mail/<ad1>", methods=["GET"], authorize=ANY)
+@app.route("/mail/<ad1>", methods=["GET"], authz=ANY)
 def get_mail_address(ad1: Mail, ad2: Mail = "calvin@comics.net"):
     return f"{ad1} {ad2}", 200
 
@@ -258,7 +258,7 @@ class my_int:
 
 app.cast(my_int, my_int.str_to_my_int)
 
-@app.get("/myint/<i>", authorize=ANY)
+@app.get("/myint/<i>", authz=ANY)
 def get_myint_i(i: my_int):
     return str(i), 200
 
@@ -267,40 +267,40 @@ import Shared
 from Shared import something
 Shared.init_app(something="App")
 
-@app.route("/something", methods=["GET"], authorize=ANY)
+@app.route("/something", methods=["GET"], authz=ANY)
 def get_something():
     return str(something), 200
 
-@app.route("/path/<p>", methods=["GET"], authorize=ANY)
+@app.route("/path/<p>", methods=["GET"], authz=ANY)
 def get_path(p: path):
     return p, 200
 
-@app.route("/string/<s>", methods=["GET"], authorize=ANY)
+@app.route("/string/<s>", methods=["GET"], authz=ANY)
 def get_string(s: string):
     return s, 200
 
 # per-route authentication scheme
-@app.route("/auth/token", methods=["GET"], authorize=ALL, auth="token")
+@app.route("/auth/token", methods=["GET"], authz=ALL, authn="token")
 def get_auth_token():
     return f"token auth: {app.get_user()}", 200
 
-@app.route("/auth/basic", methods=["GET"], authorize=ALL, auth="basic")
+@app.route("/auth/basic", methods=["GET"], authz=ALL, authn="basic")
 def get_auth_basic():
     return f"basic auth: {app.get_user()}", 200
 
-@app.route("/auth/param", methods=["GET"], authorize=ALL, auth="param")
+@app.route("/auth/param", methods=["GET"], authz=ALL, authn="param")
 def get_auth_param():
     return f"param auth: {app.get_user()}", 200
 
-@app.route("/auth/fake", methods=["GET"], authorize=ALL, auth="fake")
+@app.route("/auth/fake", methods=["GET"], authz=ALL, authn="fake")
 def get_auth_fake():
     return f"fake auth: {app.get_user()}", 200
 
-@app.route("/auth/password", methods=["GET"], authorize=ALL, auth="password")
+@app.route("/auth/password", methods=["GET"], authz=ALL, authn="password")
 def get_auth_password():
     return f"password auth: {app.get_user()}", 200
 
-@app.route("/auth/ftp", methods=["GET"], authorize=ALL, auth=["fake", "token", "param"])
+@app.route("/auth/ftp", methods=["GET"], authz=ALL, authn=["fake", "token", "param"])
 def get_auth_ftp():
     return f"ftp auth: {app.get_user()}", 200
 
@@ -308,32 +308,32 @@ def get_auth_ftp():
 def get_403():
     return "missing authorize", 200
 
-@app.route("/required/true", authorize=ANY)
+@app.route("/required/true", authz=ANY)
 def get_required_true(s1, s2):
     return s1 + " " + s2, 200
 
-@app.route("/required/false", authorize=ANY)
+@app.route("/required/false", authz=ANY)
 def get_required_false(s1 = "hello", s2 = "world"):
     return s1 + " " + s2, 200
 
 # check Flask 2.0 compatibility
-@app.get("/f2/get", authorize=ANY)
+@app.get("/f2/get", authz=ANY)
 def get_f2():
     return "get ok", 200
 
-@app.post("/f2/post", authorize=ANY)
+@app.post("/f2/post", authz=ANY)
 def post_f2():
     return "post ok", 200
 
-@app.put("/f2/put", authorize=ANY)
+@app.put("/f2/put", authz=ANY)
 def put_f2():
     return "put ok", 200
 
-@app.delete("/f2/delete", authorize=ANY)
+@app.delete("/f2/delete", authz=ANY)
 def delete_f2():
     return "delete ok", 200
 
-@app.patch("/f2/patch", authorize=ANY)
+@app.patch("/f2/patch", authz=ANY)
 def patch_f2():
     return "patch ok", 200
 
@@ -344,29 +344,29 @@ class Len:
         return str(self._len)
 
 # test underscore params
-@app.get("/_/<_def>", authorize=ANY)
+@app.get("/_/<_def>", authz=ANY)
 def get___def(_def: str, _int: int, _: Len, _pass: bool = True):
     return f"{_def}/{_int}/{_}/{_pass}", 200
 
 # per-object permissions
-@app.get("/my/<login>", authorize=("users", "login"))
+@app.get("/my/<login>", authz=("users", "login"))
 def get_my_login(login: str):
     return f"login is {login} for {app.get_user()}", 200
 
 # raise instead of return
-@app.get("/oops", authorize=ANY)
+@app.get("/oops", authz=ANY)
 def get_oops():
     raise fsa.ErrorResponse("Ooops!", 518)
 
 # magic Json handling
 import json as js
 from FlaskSimpleAuth import JsonData
-@app.get("/json", authorize=ANY)
+@app.get("/json", authz=ANY)
 def get_json(j: JsonData):
     return f"{type(j).__name__}: {js.dumps(j)}", 200
 
 # magic parameters, user should be None as there is no authentication required
-@app.get("/request", authorize=ANY)
+@app.get("/request", authz=ANY)
 def get_request(req: Request, ses: Session, glo: Globals, env: Environ, user: CurrentUser):
     return req.base_url, 200
 
@@ -384,24 +384,24 @@ class Bla(str):
 app.special_parameter(Bla, lambda _: "BAD")
 app.special_parameter(Bla, lambda _: "bla")
 
-@app.get("/special", authorize=ANY)
+@app.get("/special", authz=ANY)
 def get_special(foo: Foo, bla: Bla):
     return f"{foo}-{bla}", 200
 
 # WWW-Authenticate priority
-@app.get("/perm/basic", authorize=ALL, auth="basic")
+@app.get("/perm/basic", authz=ALL, authn="basic")
 def get_perm_basic():
     return "basic", 200
 
-@app.get("/perm/token", authorize=ALL, auth="token")
+@app.get("/perm/token", authz=ALL, authn="token")
 def get_perm_token():
     return "token", 200
 
-@app.get("/perm/token-basic", authorize=ALL, auth=["token", "basic"])
+@app.get("/perm/token-basic", authz=ALL, authn=["token", "basic"])
 def get_perm_token_basic():
     return "token-basic", 200
 
-@app.get("/perm/basic-token", authorize=ALL, auth=["basic", "token"])
+@app.get("/perm/basic-token", authz=ALL, authn=["basic", "token"])
 def get_perm_basic_token():
     return "basic-token", 200
 
@@ -411,18 +411,18 @@ def early_return():
         code = int(fsa.request.path[14:])
         return "early return", code
 
-@app.get("/early-return/<code>", authorize=ANY)
+@app.get("/early-return/<code>", authz=ANY)
 def get_early_return(code: int):
     return "should not get there", 500
 
-@app.get("/shadow/<stuff>", authorize=ANY)
+@app.get("/shadow/<stuff>", authz=ANY)
 def get_shadow(stuff: str, lapp: CurrentApp, blup: str = "Yukon"):
     return f"{lapp.name}: {stuff} {blup}", 200
 
-@app.get("/cookie/foo", authorize=ANY)
+@app.get("/cookie/foo", authz=ANY)
 def get_cookie_foo(foo: Cookie, bla: Cookie = None, bar: Cookie = "foobla"):
     return f"cookie foo: {foo}, bla: {bla}, bar: {bar}", 200
 
-@app.get("/headers", authorize=ANY)
+@app.get("/headers", authz=ANY)
 def get_headers(user_agent: Header, hello: Header):
     return { "User-Agent": user_agent, "Hello": hello }, 200

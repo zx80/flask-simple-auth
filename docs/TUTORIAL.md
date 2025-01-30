@@ -43,8 +43,8 @@ pip install FlaskSimpleAuth[password]
 
 Using your favorite text editor, create in the `fsa-tuto` directory the `app.py`
 file with an open (unauthenticated) `GET /hello` route.
-The `authorize` route parameter is **mandatory** to declare authorization
-requirements on the route.
+The `authz` (or `authorize`) route parameter is **mandatory** to declare
+authorization requirements on the route.
 If not set, the route would be closed (aka 403).
 
 ```python
@@ -61,7 +61,7 @@ app.config.from_envvar("ACME_CONFIG")
 # TODO LATER MORE INITIALIZATIONS
 
 # GET /hello route, not authenticated
-@app.get("/hello", authorize="OPEN")
+@app.get("/hello", authz="OPEN")
 def get_hello():
     return { "msg": "hello", "version": fsa.__version__ }, 200
 
@@ -304,18 +304,18 @@ And add routes which can be accessed by _AUTH_-enticated users:
 ```python
 # append to "app.py" routes
 # all authenticated users can access this route
-@app.get("/hello-me", authorize="AUTH")
+@app.get("/hello-me", authz="AUTH")
 def get_hello_me(user: fsa.CurrentUser):
     return { "msg": "hello", "user": user }, 200
 
 # users can add stuff for themselves
-@app.post("/stuff", authorize="AUTH")
+@app.post("/stuff", authz="AUTH")
 def post_stuff(stuff: str, price: float, user: fsa.CurrentUser):
     db.add_stuff(stuff, user, price)
     return f"stuff added: {stuff}", 201
 
 # and consult them
-@app.get("/stuff", authorize="AUTH")
+@app.get("/stuff", authz="AUTH")
 def get_stuff(user: fsa.CurrentUser):
     return fsa.jsonify(db.get_user_stuff(user)), 200
 ```
@@ -463,12 +463,12 @@ user authenticated by a password scheme:
 
 ```python
 # append to "app.py"
-@app.get("/token", authorize="AUTH", auth=["basic", "param"])
+@app.get("/token", authz="AUTH", authn=["token", "basic", "param"])
 def get_token(user: fsa.CurrentUser):
     return { "token": app.create_token(user) }, 200
 
 # web application like to POST with authentication parameters to get a token
-@app.post("/token", authorize="AUTH", auth="param")
+@app.post("/token", authz="AUTH", authn="param")
 def post_token(user: fsa.CurrentUser):
     return { "token": app.create_token(user) }, 201
 ```
@@ -549,7 +549,7 @@ with three mandatory parameters: `login`, `password` and `email`:
 
 ```python
 # append to "app.py"
-@app.post("/user", authorize="admin")
+@app.post("/user", authz="admin")
 def post_user(login: str, password: str, email: str):
     db.add_user(login, app.hash_password(password), email, False)
     return f"user added: {login}", 201
@@ -621,7 +621,7 @@ value in domain *stuff*:
 
 ```python
 # append to "app.py"
-@app.patch("/stuff/<sid>", authorize=("stuff", "sid", "owner"))
+@app.patch("/stuff/<sid>", authz=("stuff", "sid", "owner"))
 def patch_stuff_sid(sid: str, price: float):
     db.change_stuff(sid, price)
     return f"stuff changed: {sid}", 200
@@ -692,7 +692,7 @@ class Days:
     name: str
     days: int
 
-@app.get("/days", authorize="OPEN")
+@app.get("/days", authz="OPEN")
 def get_days(who: Someone):
     age = datetime.datetime.now().date() - who.born
     return fsa.jsonify(Days(name=who.name, days=age.days))
@@ -745,7 +745,7 @@ list of integers:
 # append to "app.py"
 import sympy
 
-@app.get("/primes", authorize="OPEN")
+@app.get("/primes", authz="OPEN")
 def get_primes(li: list[int]):
     return fsa.jsonify(filter(sympy.isprime, li))
 ```
@@ -781,7 +781,7 @@ Arbitrary JSON parameters can be declared with special type `JsonData`:
 
 ```python
 # append to "app.py"
-@app.get("/len", authorize="OPEN")
+@app.get("/len", authz="OPEN")
 def get_len(p: fsa.JsonData):
     try:
         return {"len": len(p)}
@@ -905,8 +905,8 @@ FSA_AUTH_DEFAULT = "token"  # default authentication scheme
 ```
 
 Then update route definitions to require some other scheme when needed with
-parameter `auth="param"`, `auth="basic"`, `auth="password"` for both, or
-`auth="none"` for open routes.
+parameter `authn="param"`, `authn="basic"`, `authn="password"` for both, or
+`authn="none"` for open routes.
 
 Finally, as the debugging level is not useful anymore, it can be
 reduced by updating `FSA_MODE` setting:

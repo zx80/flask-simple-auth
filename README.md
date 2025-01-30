@@ -36,12 +36,12 @@ from FlaskSimpleAuth import Flask
 app = Flask("acme")
 app.config.from_envvar("ACME_CONFIG")
 
-@app.get("/store", authorize="employee")
+@app.get("/store", authz="employee")
 def get_store(pattern: str = "%"):
     # return the list of stores matching optional parameter pattern
     return ..., 200
 
-@app.post("/store/<sid>/product", authorize=("store", "sid", "manager"))
+@app.post("/store/<sid>/product", authz=("store", "sid", "manager"))
 def post_store_sid_product(sid: int, product: str, quantity: int):
     # product is added in quantity to store sid
     return ..., 201
@@ -49,8 +49,8 @@ def post_store_sid_product(sid: int, product: str, quantity: int):
 
 In this code, there is *no* clue about how users are authenticated, as this is
 set from the configuration.
-Only authorizations are declared on the route with the mandatory ``authorize``
-parameter.
+Only authorizations are declared on the route with the mandatory ``authz``
+(or `authorize`) parameter.
 How these are checked is also set from the configuration.
 HTTP or JSON parameters are automatically converted to the expected type,
 with features on par with [FastAPI](https://fastapi.tiangolo.com/).

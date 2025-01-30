@@ -52,14 +52,14 @@ def user_is_enabled(login: str) -> bool:
 
 # from a REST perspective, it should really be GET…
 # however OAuth web-oriented view prescribes POST on "username" and "password"
-@app.post("/token", authorize="AUTH", auth="param")
+@app.post("/token", authz="AUTH", authn="param")
 def post_token(user: User):
     return {"access_token": app.create_token(user.username), "token_type": "bearer"}, 200
 
-@app.get("/users/me", authorize="ENABLED")
+@app.get("/users/me", authz="ENABLED")
 def read_users_me(user: User):
     return json(user), 200
 
-@app.get("/users/me/items", authorize="ENABLED")
+@app.get("/users/me/items", authz="ENABLED")
 def get_users_me_items(user: User):
     return [{"item_id": "Foo", "owner": user.username}], 200

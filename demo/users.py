@@ -11,13 +11,13 @@ users = Blueprint("users", __name__)
 
 
 # GET /users: get all users data
-@users.get("/users", authorize="ADMIN")
+@users.get("/users", authz="ADMIN")
 def get_users():
     return json(db.get_user_all()), 200
 
 
 # GET /users/<login>: get this user data
-@users.get("/users/<login>", authorize=("users", "login"))
+@users.get("/users/<login>", authz=("users", "login"))
 def get_users_login(login: str):
     res = db.get_user_data(login=login)
     _ = res or error(f"no such login: {login}", 404)
@@ -25,7 +25,7 @@ def get_users_login(login: str):
 
 
 # POST /users (login, pass, admin): add a new user
-@users.post("/users", authorize="ADMIN")
+@users.post("/users", authz="ADMIN")
 def post_users(login: str, email: str, _pass: str, admin: bool = False):
     res = db.add_user(login=login, email=email, upass=app.hash_password(_pass), admin=admin)
     app.password_uncache(login)  # needed?
@@ -34,7 +34,7 @@ def post_users(login: str, email: str, _pass: str, admin: bool = False):
 
 
 # PATCH /users/<login> (pass?, email? admin?): update user data
-@users.patch("/users/<login>", authorize="ADMIN")
+@users.patch("/users/<login>", authz="ADMIN")
 def patch_users_login(login: str, email: str|None = None,
                       _pass: str|None = None, admin: bool|None = None):
     old = db.get_user_data(login=login)
@@ -55,7 +55,7 @@ def patch_users_login(login: str, email: str|None = None,
 
 
 # DELETE /users/<login>: delete this user
-@users.delete("/users/<login>", authorize=("users", "login"))
+@users.delete("/users/<login>", authz=("users", "login"))
 def delete_users_login(login: str):
     data = db.get_user_data(login=login)
     _ = data or error(f"no such login: {login}", 404)

@@ -43,7 +43,7 @@ app.config.update(
 #
 # ROUTES
 #
-@fsa.route("/stuff", methods=["GET"], authorize="ALL")
+@fsa.route("/stuff", methods=["GET"], authz="ALL")
 def get_stuff():
     return "stuff", 200
 
@@ -62,6 +62,6 @@ import Shared
 from Shared import something
 Shared.init_app(something="AppExt")
 
-@fsa.route("/something", methods=["GET"], authorize="ALL")
+@fsa.route("/something", methods=["GET"], authz="ALL")
 def get_something():
     return str(something), 200

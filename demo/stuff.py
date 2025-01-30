@@ -9,21 +9,21 @@ stuff = Blueprint("stuff", __name__)
 
 
 # GET /stuff: get all stuff
-@stuff.get("/stuff", authorize="AUTH")
+@stuff.get("/stuff", authz="AUTH")
 def get_stuff(pattern: str|None = None):
     res = db.get_stuff_like(pattern=pattern) if pattern else db.get_stuff_all()
     return json(res), 200
 
 
 # POST /stuff: add new stuff
-@stuff.post("/stuff", authorize="AUTH")
+@stuff.post("/stuff", authz="AUTH")
 def post_stuff(sname: str):
     res = db.add_stuff(sname=sname)
     return json(res), 201
 
 
 # GET /stuff/<sid>: get this stuff
-@stuff.get("/stuff/<sid>", authorize="AUTH")
+@stuff.get("/stuff/<sid>", authz="AUTH")
 def get_stuff_sid(sid: int):
     res = db.get_stuff_sid(sid=sid)
     _ = res or error(f"no such sid: {sid}", 404)
@@ -31,14 +31,14 @@ def get_stuff_sid(sid: int):
 
 
 # DELETE /stuff/<sid>: delete this stuff
-@stuff.delete("/stuff/<sid>", authorize="AUTH")
+@stuff.delete("/stuff/<sid>", authz="AUTH")
 def delete_stuff_sid(sid: int):
     db.del_stuff_sid(sid=sid)
     return "", 204
 
 
 # PATCH /stuff/<sid>: update this stuff
-@stuff.patch("/stuff/<sid>", authorize="AUTH")
+@stuff.patch("/stuff/<sid>", authz="AUTH")
 def patch_stuff_sid(sid: int, sname: str):
     res = db.upd_stuff_sid(sid=sid, sname=sname)
     _ = res or error(f"no such sid: {sid}", 404)

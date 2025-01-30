@@ -20,29 +20,29 @@ def check_todos_access(login: str, tid: str, mode=None):
     return True if tid in TODOS else None
 
 
-@app.get("/todos/<tid>", authorize=("todos",))
+@app.get("/todos/<tid>", authz=("todos",))
 def get_todos_tid(tid: str):
     return TODOS[tid], 200
 
 
-@app.put("/todos/<tid>", authorize=("todos",))
+@app.put("/todos/<tid>", authz=("todos",))
 def put_todos_tid(tid: str, task: str):
     TODOS[tid] = {"task": task}
     return "", 204
 
 
-@app.delete("/todos/<tid>", authorize=("todos",))
+@app.delete("/todos/<tid>", authz=("todos",))
 def delete_todos_tid(tid: str):
     del TODOS[tid]
     return "", 204
 
 
-@app.get("/todos", authorize="OPEN")
+@app.get("/todos", authz="OPEN")
 def get_todos():
     return TODOS, 200
 
 
-@app.post("/todos", authorize="OPEN")
+@app.post("/todos", authz="OPEN")
 def post_todos(task: str):
     # FIXME complexity!
     i = int(max(TODOS.keys()).lstrip("todo")) + 1

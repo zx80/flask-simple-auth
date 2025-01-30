@@ -2936,7 +2936,7 @@ class _AuthorizationManager:
 
     # just to record that no authorization check was needed
     def _no_authz(self, path, *groups):
-        """Decorator for skipping authorizations (authorize="AUTH")."""
+        """Decorator for skipping authorizations (authz="AUTH")."""
 
         def decorate(fun: Callable):
 
@@ -4241,7 +4241,7 @@ class FlaskSimpleAuth:
             return self._Res(f"internal error caught at {level} on {path}", self._server_error)
 
     # FIXME endpoint?
-    def add_url_rule(self, rule, endpoint=None, view_func=None, authorize="CLOSE", auth=None, realm=None, **options):
+    def add_url_rule(self, rule, endpoint=None, view_func=None, authz="CLOSE", authn=None, realm=None, **options):
         """Route decorator helper method.
 
         - ``authz`` or ``authorize``: authorization constraints.
@@ -4250,66 +4250,66 @@ class FlaskSimpleAuth:
         """
 
         # handle authz/authorize and authn/auth
-        if "authz" in options:
-            if authorize is None or authorize != "CLOSE":
+        if "authorize" in options:
+            if authz is None or authz != "CLOSE":
                 raise self._Bad("cannot use both authz and authorize on a route")
-            authorize = options["authz"]
-            del options["authz"]
+            authz = options["authorize"]
+            del options["authorize"]
 
-        if "authn" in options:
-            if auth is not None:
+        if "auth" in options:
+            if authn is not None:
                 raise self._Bad("cannot use both authn and auth on a route")
-            auth = options["authn"]
-            del options["authn"]
+            authn = options["auth"]
+            del options["auth"]
 
         # lazy initialization
         self._initialize()
 
-        # ensure that authorize is a list
-        if type(authorize) in (int, str, tuple):
-            authorize = [authorize]
+        # ensure that authz is a list
+        if type(authz) in (int, str, tuple):
+            authz = [authz]
 
         # ensure that auth is registered as used
-        if isinstance(auth, str):
-            auth = [auth]
-        if auth is None:
+        if isinstance(authn, str):
+            authn = [authn]
+        if authn is None:
             pass
-        elif isinstance(auth, list):
-            auth = self._am._password_auth(auth)
+        elif isinstance(authn, list):
+            authn = self._am._password_auth(authn)
             # this also checks that list items are str
-            for a in auth:
+            for a in authn:
                 if a not in self._am._auth:
                     raise self._Bad(f"auth is not enabled: {a}")
         else:
-            raise self._Bad(f"unexpected auth type, should be str or list: {_type(auth)}")
+            raise self._Bad(f"unexpected authn type, should be str or list: {_type(authn)}")
 
         # FIXME should be in a non existing ready-to-run hook
         if self._cm and not self._cm._cached:
             self._cm._set_caches()
 
         # normalize None to CLOSE
-        authorize = list(map(lambda a: "CLOSE" if a is None else a, authorize))
+        authz = list(map(lambda a: "CLOSE" if a is None else a, authz))
 
         # ensure non emptyness
-        if len(authorize) == 0:
-            authorize = ["CLOSE"]
+        if len(authz) == 0:
+            authz = ["CLOSE"]
 
         # special handling of "oauth" rule-specific authentication
-        if auth and isinstance(auth, list) and "oauth" in auth:
-            if len(auth) != 1:
+        if authn and isinstance(authn, list) and "oauth" in authn:
+            if len(authn) != 1:
                 raise self._Bad(f"oauth authentication cannot be mixed with other schemes on {rule}")
-            assert auth == ["oauth"]
+            assert authn == ["oauth"]
             if not self._am._tm._issuer:
                 raise self._Bad(f"oauth token authorizations require FSA_TOKEN_ISSUER on {rule}")
 
         # separate predefs, groups and perms
-        predefs = list(filter(lambda a: a in _PREDEFS, authorize))
-        groups = list(filter(lambda a: type(a) in (int, str) and a not in _PREDEFS, authorize))
-        perms = list(filter(lambda a: isinstance(a, tuple), authorize))
+        predefs = list(filter(lambda a: a in _PREDEFS, authz))
+        groups = list(filter(lambda a: type(a) in (int, str) and a not in _PREDEFS, authz))
+        perms = list(filter(lambda a: isinstance(a, tuple), authz))
 
-        # authorize are either in groups or in perms
-        if len(authorize) != len(groups) + len(perms) + len(predefs):
-            bads = list(filter(lambda a: a not in groups and a not in perms and a not in _PREDEFS, authorize))
+        # authz are either in groups or in perms
+        if len(authz) != len(groups) + len(perms) + len(predefs):
+            bads = list(filter(lambda a: a not in groups and a not in perms and a not in _PREDEFS, authz))
             raise self._Bad(f"unexpected authorizations on {rule}: {bads}")
 
         if _is_close(predefs):
@@ -4329,8 +4329,8 @@ class FlaskSimpleAuth:
             if "none" not in self._am._auth:
                 predef = "AUTH"
                 log.warning(f"OPEN authorization but none authentication is not allowed on {path}")
-            if auth:  # explicit authentication list
-                if "none" not in auth:
+            if authn:  # explicit authentication list
+                if "none" not in authn:
                     predef = "AUTH"
                     log.warning(f"OPEN authorization but none authentication is not set on {path}")
             elif self._am._default_auth and "none" not in self._am._default_auth:  # implicit
@@ -4340,7 +4340,7 @@ class FlaskSimpleAuth:
             predef = "AUTH"
             # change to CLOSE if no authentication is enabled
             if (self._am._auth == ["none"] or
-                auth and auth == ["none"] or
+                authn and authn == ["none"] or
                 self._am._default_auth and self._am._default_auth == ["none"]):
                 log.warning(f"AUTH authorization but only none authentication on {path}")
                 predef = "CLOSE"
@@ -4427,7 +4427,7 @@ class FlaskSimpleAuth:
 
         if groups:
             assert need_authenticate
-            if isinstance(auth, list) and "oauth" in auth:
+            if isinstance(authn, list) and "oauth" in authn:
                 fun = self._zm._oauth_authz(newpath, *groups)(fun)
             else:
                 fun = self._zm._group_authz(newpath, *groups)(fun)
@@ -4443,7 +4443,7 @@ class FlaskSimpleAuth:
 
         if need_authenticate:
             assert perms or groups or predef == "AUTH"
-            fun = self._am._authenticate(newpath, auth=auth, realm=realm)(fun)  # type: ignore
+            fun = self._am._authenticate(newpath, auth=authn, realm=realm)(fun)  # type: ignore
         else:  # "OPEN" case deserves a warning
             log.warning(f"no authenticate on {','.join(options.get('methods', []))} {newpath}")
 
@@ -4465,12 +4465,12 @@ class FlaskSimpleAuth:
         Parameters:
 
         - ``rule``: the path, possibly including path parameters.
-        - ``authorize``: mandatory permissions required, eg groups or object perms.
-        - ``auth``: authentication scheme(s) allowed on this route.
+        - ``authz``: mandatory permissions required, eg groups or object perms.
+        - ``authn``: authentication scheme(s) allowed on this route.
         - ``realm``: authentication realm on this particular route.
         """
-        if "authorize" not in options:
-            log.warning(f'missing authorize on route "{rule}" makes it 403 Forbidden')
+        if "authz" not in options and "authorize" not in options:
+            log.warning(f'missing authz on route "{rule}" makes it 403 Forbidden')
 
         def decorate(fun: Callable):
             return self.add_url_rule(rule, view_func=fun, **options)

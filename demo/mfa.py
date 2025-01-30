@@ -19,13 +19,13 @@ from FlaskSimpleAuth import jsonify, current_app as app
 mfa = fsa.Blueprint("mfa", __name__)
 
 
-@mfa.get("/login1", authorize="AUTH", auth="basic")
+@mfa.get("/login1", authz="AUTH", authn="basic")
 def get_login1(user: fsa.CurrentUser):
     token = app.create_token(user, realm="mfa", delay=1.0)
     return jsonify(token), 200
 
 
-@mfa.get("/login2", authorize="AUTH", auth="token", realm="mfa")
+@mfa.get("/login2", authz="AUTH", authn="token", realm="mfa")
 def get_login2(code: str, user: fsa.CurrentUser):
     if code != f"{user}-code":
         return f"invalid 2nd auth for {user}", 401
@@ -34,6 +34,6 @@ def get_login2(code: str, user: fsa.CurrentUser):
         return jsonify(app.create_token(user, realm=app.name)), 200
 
 
-@mfa.get("/test", authorize="AUTH")
+@mfa.get("/test", authz="AUTH")
 def get_test(user: fsa.CurrentUser):
     return f"MFA succeeded for {user}", 200

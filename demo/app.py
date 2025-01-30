@@ -24,25 +24,25 @@ auth.init_app(app)
 
 
 # GET /version: show running FlaskSimpleAuth version
-@app.get("/version", authorize="OPEN")
+@app.get("/version", authz="OPEN")
 def get_version():
     return json(fsa.__version__), 200
 
 
 # GET /now: show current time from database
-@app.get("/now", authorize="OPEN")
+@app.get("/now", authz="OPEN")
 def get_now():
     return json(db.now()), 200
 
 
 # GET /who: show authenticated user if available
-@app.get("/who", authorize="OPEN")
+@app.get("/who", authz="OPEN")
 def get_who():
     return json(app.get_user(required=False)), 200
 
 
 # POST /upload (file): upload a file!
-@app.post("/upload", authorize="OPEN")
+@app.post("/upload", authz="OPEN")
 def post_upload(file: fsa.FileStorage):
     filename = str(uuid.uuid4()) + ".tmp"
     file.save(app.config["APP_UPLOAD_DIR"] + "/" + filename)

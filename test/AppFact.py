@@ -28,41 +28,41 @@ def create_app(**config):
     # shared stuff
     Shared.init_app(something="AppFact")
 
-    @app.get("/mul", authorize=ALL)
+    @app.get("/mul", authz=ALL)
     def get_mul(i: int, j: int):
         return str(i * j), 200
 
-    @app.get("/add", authorize=ALL)
+    @app.get("/add", authz=ALL)
     def get_add(i: int, j: int):
         return str(i + j), 200
 
-    @app.get("/div", authorize=ALL)
+    @app.get("/div", authz=ALL)
     def get_div(i: int, j: int):
         return str(i // j), 200
 
-    @app.get("/sub", authorize=ALL)
+    @app.get("/sub", authz=ALL)
     def get_sub(i: int, j: int):
         return str(i - j), 200
 
-    @app.get("/something", authorize=ALL)
+    @app.get("/something", authz=ALL)
     def get_something():
         return str(something), 200
 
-    @app.get("/admin", authorize=ADMIN)
+    @app.get("/admin", authz=ADMIN)
     def get_admin():
         return "admin!", 200
 
-    @app.get("/self/<login>", authorize=("users", "login"))
+    @app.get("/self/<login>", authz=("users", "login"))
     def get_self_login(login: str):
         return f"hello: {login}", 200
 
-    @app.get("/hits", authorize=ADMIN)
+    @app.get("/hits", authz=ADMIN)
     def get_hits():
         return json((len(app._fsa._cm._cache), app._fsa._cm._cache.hits())), 200
 
     # OAuth 2.0
     if app._fsa._am._tm and app._fsa._am._tm._token == "jwt":
-        @app.get("/perm/jwt-authz", authorize="character", auth="oauth")
+        @app.get("/perm/jwt-authz", authz="character", authn="oauth")
         def get_perm_jwt_authz():
             return f"jwt-authz: {app.get_user()}", 200
 

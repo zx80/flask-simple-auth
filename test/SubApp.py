@@ -4,11 +4,11 @@ from Shared import something
 
 subapp = Blueprint("subapp", __name__)
 
-@subapp.route("/words/<word>", methods=["GET"], authorize=ALL)
+@subapp.route("/words/<word>", methods=["GET"], authz=ALL)
 def get_words_word(word: str, n: int = 1):
     return str('_'.join([word] * n)), 200
 
-@subapp.route("/something", methods=["GET"], authorize=ALL)
+@subapp.route("/something", methods=["GET"], authz=ALL)
 def get_something():
     return str(something), 200
 

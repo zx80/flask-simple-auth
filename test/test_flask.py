@@ -1060,10 +1060,10 @@ def test_default_auth():
         assert "int" in str(e)
     # working case
     app = fsa.Flask("no-auth", FSA_AUTH=["token", "fake"], FSA_AUTH_DEFAULT="token")
-    @app.get("/login", authorize="AUTH", auth="fake")
+    @app.get("/login", authz="AUTH", authn="fake")
     def get_login(user: fsa.CurrentUser):
         return {"token": app.create_token(user)}
-    @app.get("/hello", authorize="AUTH")  # MUST be token!
+    @app.get("/hello", authz="AUTH")  # MUST be token!
     def get_hello(user: fsa.CurrentUser):
         return {"msg": f"hello {user}"}
     with app.test_client() as api:
@@ -1173,7 +1173,7 @@ def test_bad_app():
             return None
         pytest.fail("bad app creation must fail")
     except ConfigError as e:
-        assert "unexpected auth type" in str(e)
+        assert "unexpected authn type" in str(e)
     app = create_app("basic")
     # incompatible route parameters
     try:
@@ -1207,14 +1207,14 @@ def test_bad_app():
     except ConfigError as e:
         assert "header value" in str(e)
     try:
-        @app.get("/bad-param-col", authorize="ANY")
+        @app.get("/bad-param-col", authz="ANY")
         def get_bad_param_col(_x: int, x: int):
             return _x + x, 200
         pytest.fail("bad app creation must fail")
     except ConfigError as e:
         assert "collision" in str(e)
     try:
-        @app.get("/bad-param-pos", authorize="ANY")
+        @app.get("/bad-param-pos", authz="ANY")
         def get_bad_param_pos(*args):
             return len(args)
     except ConfigError as e:
@@ -1326,7 +1326,7 @@ def test_bads():
         assert "unknown" in str(e)
     # unexpected parameter
     app = fsa.Flask("unexpected param", FSA_AUTH="none", FSA_MODE="debug2")
-    @app.get("/youpi", authorize="OPEN")
+    @app.get("/youpi", authz="OPEN")
     def get_youpi(i: int):
         return str(i), 200
     client = app.test_client()
@@ -1373,49 +1373,49 @@ def test_object_perms_errors():
     app.object_perms("known", is_okay)
     # declaration time errors
     try:
-        @app.get("/bad-perm-1", authorize=tuple())
+        @app.get("/bad-perm-1", authz=tuple())
         def get_bad_perm_1(uid: int):
             return "should not get there", 200
         pytest.fail("should detect too short tuple")
     except ConfigError as e:
         assert "3 data" in str(e)
     try:
-        @app.get("/bad-perm-2/<uid>", authorize=("unknown",))
+        @app.get("/bad-perm-2/<uid>", authz=("unknown",))
         def get_bad_perm_2_uid(uid: int):
             return "should not get there", 200
         pytest.fail("should detect unregistered permission domain")
     except ConfigError as e:
         assert "missing object permission" in str(e)
     try:
-        @app.get("/bad-perm-3", authorize=("known", 3))
+        @app.get("/bad-perm-3", authz=("known", 3))
         def get_bad_perm_3(uid: int):
             return "should not get there", 200
         pytest.fail("should detect bad variable name")
     except ConfigError as e:
         assert "unexpected identifier name type" in str(e)
     try:
-        @app.get("/bad-perm-4/<uid>", authorize=("known", "uid", 3.14159))
+        @app.get("/bad-perm-4/<uid>", authz=("known", "uid", 3.14159))
         def get_bad_perm_4_uid(uid: int):
             return "should not get there", 200
         pytest.fail("should detect bad mode type")
     except ConfigError as e:
         assert "unexpected mode type" in str(e)
     try:
-        @app.get("/bad-perm-5", authorize=("known", "uid"))
+        @app.get("/bad-perm-5", authz=("known", "uid"))
         def get_bad_perm_3(oid: int):
             return "should not get there", 200
         pytest.fail("should detect missing variable")
     except ConfigError as e:
         assert "missing function parameter uid" in str(e)
     try:
-        @app.get("/bad-perm-6", authorize=("known", "uid"))
+        @app.get("/bad-perm-6", authz=("known", "uid"))
         def get_bad_perm_3():
             return "should not get there", 200
         pytest.fail("should detect missing variable")
     except ConfigError as e:
         assert "permissions require some parameters" in str(e)
     # run time errors
-    @app.get("/oops/<err>", authorize=("known", "err"))
+    @app.get("/oops/<err>", authz=("known", "err"))
     def get_oops_err(err: str):
         return "should not get there", 500
     c = app.test_client()
@@ -1430,28 +1430,28 @@ def test_authorize_errors():
     import AppFact as af
     app = af.create_app()
     try:
-        @app.get("/bad-authorize", authorize=[3.14159])
+        @app.get("/bad-authorize", authz=[3.14159])
         def get_bad_authorize():
             return "should not get there", 200
         pytest.fail("should detect bad authorize type")
     except ConfigError as e:
         assert "unexpected authorization" in str(e)
     try:
-        @app.get("/bad-mix-1", authorize=["ANY", "ALL"])
+        @app.get("/bad-mix-1", authz=["ANY", "ALL"])
         def get_bad_mix_1():
             return "should not get there", 200
         pytest.fail("should detect ANY/ALL mix")
     except ConfigError as e:
         assert "OPEN/AUTH" in str(e)
     try:
-        @app.get("/bad-mix-2", authorize=["ANY", "OTHER"])
+        @app.get("/bad-mix-2", authz=["ANY", "OTHER"])
         def get_bad_mix_2():
             return "should not get there", 200
         pytest.fail("should detect ANY/other mix")
     except ConfigError as e:
         assert "other" in str(e)
     try:
-        @app.get("/bad-mix-3", authorize=["ANY", ("foo", "id")])
+        @app.get("/bad-mix-3", authz=["ANY", ("foo", "id")])
         def get_bad_mix_2():
             return "should not get there", 200
         pytest.fail("should detect ANY/other mix")
@@ -1459,7 +1459,7 @@ def test_authorize_errors():
         assert "object" in str(e)
     try:
         app.add_group("foo", "bla")
-        @app.get("/bad-group", authorize="no-such-group")
+        @app.get("/bad-group", authz="no-such-group")
         def get_bad_group():
             return "should not get there", 200
         pytest.fail("should detect unregistered group")
@@ -1469,7 +1469,7 @@ def test_authorize_errors():
         app.add_scope("foo", "bla")
         app._fsa._am._tm._token = "jwt"
         app._fsa._am._tm._issuer = "calvin"
-        @app.get("/bad-scope", authorize="no-such-scope", auth="oauth")
+        @app.get("/bad-scope", authz="no-such-scope", authn="oauth")
         def get_bad_scope():
             return "should not get there", 200
         pytest.fail("should detect unregistered scope")
@@ -1486,10 +1486,10 @@ def test_group_errors():
        else:
            return True
     app = af.create_app(FSA_AUTH=["fake", "oauth"], FSA_USER_IN_GROUP=bad_uig)
-    @app.get("/ex", authorize="ex")
+    @app.get("/ex", authz="ex")
     def get_ex():
         return "should not get here", 200
-    @app.get("/float", authorize="float")
+    @app.get("/float", authz="float")
     def get_float():
         return "should not get here", 200
     c = app.test_client()
@@ -1512,7 +1512,7 @@ def test_scope_errors():
         assert "oauth" in str(e) and "ISSUER" in str(e)
     try:
         app = af.create_app(FSA_AUTH="oauth", FSA_TOKEN_TYPE="fsa", FSA_TOKEN_ISSUER="god")
-        @app.get("/foo/bla", authorize=["read"], auth=["oauth"])
+        @app.get("/foo/bla", authz=["read"], authn=["oauth"])
         def get_foo_bla():
             return "", 200
         pytest.fail("should be rejected")
@@ -1792,12 +1792,12 @@ def test_jwt_authorization():
         FSA_REALM="comics",
         FSA_TOKEN_ISSUER="god")
     # oauth in list auth
-    @app.get("/some/stuff", authorize=["read"], auth=["oauth"])
+    @app.get("/some/stuff", authz=["read"], authn=["oauth"])
     def get_some_stuff():
         return "", 200
     # config errors
     try:
-        @app.get("/some/path", authorize=["read", "write"], auth=["oauth", "basic"])
+        @app.get("/some/path", authz=["read", "write"], authn=["oauth", "basic"])
         def get_some_path():
             return "", 200
         pytest.fail("route should be rejected")
@@ -1805,7 +1805,7 @@ def test_jwt_authorization():
         assert "mixed" in str(e)
     app._fsa._am._tm._issuer = None
     try:
-        @app.patch("/any/stuff", authorize=["write"], auth="oauth")
+        @app.patch("/any/stuff", authz=["write"], authn="oauth")
         def patch_any_stuff():
             return "", 204
         pytest.fail("route should be rejected")
@@ -1832,7 +1832,7 @@ def test_error_response():
         return Response(f"OOPS: {m}", c, content_type="text/plain")
     # override with the function
     app.error_response(oops)
-    @app.get("/oops", authorize="ANY")
+    @app.get("/oops", authz="ANY")
     def get_oops():
         raise ErrorResponse("oops!", 499)
     client = app.test_client()
@@ -1840,7 +1840,7 @@ def test_error_response():
     assert b"OOPS: oops!" == res.data
     # again, with FSA_ERROR_RESPONSE "plain"
     app = af.create_app(FSA_ERROR_RESPONSE="plain")
-    @app.get("/aaps", authorize="ANY")
+    @app.get("/aaps", authz="ANY")
     def get_aaps():
         raise ErrorResponse("aaps!", 499)
     client = app.test_client()
@@ -1849,7 +1849,7 @@ def test_error_response():
     assert res.headers["Content-Type"] == "text/plain"
     # again, with FSA_ERROR_RESPONSE "json"
     app = af.create_app(FSA_ERROR_RESPONSE="json")
-    @app.get("/iips", authorize="ANY")
+    @app.get("/iips", authz="ANY")
     def get_iips():
         raise ErrorResponse("iips!", 499)
     client = app.test_client()
@@ -1858,7 +1858,7 @@ def test_error_response():
     assert b'"iips!"' == res.data
     # again, with FSA_ERROR_RESPONSE "json:*"
     app = af.create_app(FSA_ERROR_RESPONSE="json:BLA")
-    @app.get("/uups", authorize="ANY")
+    @app.get("/uups", authz="ANY")
     def get_uups():
         raise ErrorResponse("uups!", 499)
     client = app.test_client()
@@ -1867,7 +1867,7 @@ def test_error_response():
     assert b'{"BLA": "uups!"}' == res.data
     # again, with FSA_ERROR_RESPONSE callable
     app = af.create_app(FSA_ERROR_RESPONSE=oops)
-    @app.get("/eeps", authorize="ANY")
+    @app.get("/eeps", authz="ANY")
     def get_uups():
         raise ErrorResponse("eeps!", 499)
     client = app.test_client()
@@ -1907,7 +1907,7 @@ def test_error_response():
                     FSA_AUTH="none",
                     FSA_LOGGING_LEVEL=logging.INFO,
                     FSA_ERROR_RESPONSE="json:bad")
-    @app.get("/implemented", authorize="OPEN")
+    @app.get("/implemented", authz="OPEN")
     def get_implemented():
         raise ErrorResponse("oops", 418)
     with app.test_client() as client:
@@ -1925,7 +1925,7 @@ def test_add_headers():
     import AppFact as af
     app = af.create_app(FSA_MODE="debug",
                         FSA_ADD_HEADERS={"Service": "FSA", "Headers": lambda r, _: len(r.headers)})
-    @app.get("/heads", authorize="ANY")
+    @app.get("/heads", authz="ANY")
     def get_heads():
         return "", 200
     app.add_headers(Now="Maintenant")
@@ -1942,7 +1942,7 @@ def test_request_hooks():
         return res
     import AppFact as af
     app = af.create_app(FSA_BEFORE_REQUEST=[], FSA_AFTER_REQUEST=[after_cool])
-    @app.get("/cool", authorize="ANY")
+    @app.get("/cool", authz="ANY")
     def get_cool():
         return "this is cool!", 200
     client = app.test_client()
@@ -1955,7 +1955,7 @@ def test_request_hooks():
     assert res.data == b"Ooops!"
 
 def hello(app: fsa.Flask):
-    @app.get("/hello", authorize="ANY")
+    @app.get("/hello", authz="ANY")
     def get_hello(name: str):
         return f"Hello {name}!", 200
     with app.test_client() as c:
@@ -2022,7 +2022,7 @@ def test_user_errors():
     class Oops(Exception):
         pass
     app = fsa.Flask("user-errors", FSA_AUTH="none", FSA_KEEP_USER_ERRORS=True)
-    @app.get("/oops", authorize="OPEN")
+    @app.get("/oops", authz="OPEN")
     def get_oops():
         raise Oops("internal error in get_oops!")
     client = app.test_client()
@@ -2056,20 +2056,20 @@ def test_param_params():
         return USERS[login] if login in USERS else None
 
     # note: "login" and "password" parameters must be ignored
-    @app.post("/log0", authorize="ALL")
+    @app.post("/log0", authz="ALL")
     def post_log0():
         return f"current user is {app.get_user()}", 200
 
     # note: "login" and "password" parameters must be ignored
-    @app.post("/log1", authorize="ALL")
+    @app.post("/log1", authz="ALL")
     def post_log1(hello: str):
         return f"current user is {app.get_user()}", 200
 
-    @app.post("/log2", authorize="ALL")
+    @app.post("/log2", authz="ALL")
     def post_log2(login: fsa.CurrentUser, password: str = "world!"):
         return f"login={login} hello={password}", 200
 
-    @app.post("/log3", authorize="ALL")
+    @app.post("/log3", authz="ALL")
     def post_log5(login: str, password: str):
         return f"login={login} password={password}", 200
 
@@ -2093,24 +2093,24 @@ def test_file_storage():
 
     app = fsa.Flask("file-storage", FSA_AUTH="none", FSA_MODE="debug4")
 
-    @app.post("/upload", authorize="OPEN")
+    @app.post("/upload", authz="OPEN")
     def post_upload(file: fsa.FileStorage):
         assert isinstance(file, fsa.FileStorage)
         return f"file={file.filename}", 201
 
-    @app.post("/uploads", authorize="OPEN")
+    @app.post("/uploads", authz="OPEN")
     def post_uploads(**kwargs):
         return " ".join(sorted(kwargs.keys())), 201
 
-    @app.post("/mix", authorize="OPEN")
+    @app.post("/mix", authz="OPEN")
     def post_mix(data: int, file: fsa.FileStorage):
         return f"data={data} file={file.filename}", 201
 
-    @app.post("/empty", authorize="OPEN")
+    @app.post("/empty", authz="OPEN")
     def post_empty():
         return "nothing", 200
 
-    @app.post("/optional", authorize="OPEN")
+    @app.post("/optional", authz="OPEN")
     def post_optional(file: fsa.FileStorage|None = None):
         return file.filename if file else "no file"
 
@@ -2156,7 +2156,7 @@ def test_param_types():
     app = fsa.Flask("param-types", FSA_AUTH="none", FSA_MODE="debug")
 
     try:
-        @app.post("/list-str", authorize="OPEN")
+        @app.post("/list-str", authz="OPEN")
         def post_list_str(ls: typing.List[str]):
             return json(len(ls)), 201
         pytest.fail("should raise a config error")
@@ -2164,7 +2164,7 @@ def test_param_types():
         assert "not callable" in str(e)
 
     try:
-        @app.post("/list", authorize="OPEN")
+        @app.post("/list", authz="OPEN")
         def post_list(l: typing.List):
             return json(len(l)), 201
         pytest.fail("should raise a config error")
@@ -2172,7 +2172,7 @@ def test_param_types():
         assert "is not callable" in str(e)
 
     try:
-        @app.get("/nope", authorize="OPEN")
+        @app.get("/nope", authz="OPEN")
         def get_nope(i: int = "one"):
             return "no"
         pytest.fail("should raise a config error")
@@ -2180,7 +2180,7 @@ def test_param_types():
         assert "cannot cast" in str(e)
 
     try:
-        @app.get("/nope", authorize="OPEN")
+        @app.get("/nope", authz="OPEN")
         def get_nope(b=False):
             return "no"
         pytest.fail("should raise a config error")
@@ -2192,7 +2192,7 @@ def test_jsonify_with_generators():
         for i in range(i):
             yield i
     app = fsa.Flask("json-gen", FSA_AUTH="none")
-    @app.get("/json", authorize="OPEN")
+    @app.get("/json", authz="OPEN")
     def get_json(what: str):
         l = [0, 1, 2]
         res = (l if what == "list" else
@@ -2236,23 +2236,23 @@ def test_jsonify_with_types():
         FSA_AUTH="none",
     )
 
-    @app.get("/pair", authorize="OPEN")
+    @app.get("/pair", authz="OPEN")
     def get_pair(i: int, j: int):
         return fsa.jsonify(Pair(i, j))
 
-    @app.get("/triplet", authorize="OPEN")
+    @app.get("/triplet", authz="OPEN")
     def get_triplet(i: int, j: int, k: int):
         return fsa.jsonify(Triplet(i, j, k))
 
-    @app.get("/delay", authorize="OPEN")
+    @app.get("/delay", authz="OPEN")
     def get_delay(d: dt.date):
         return fsa.jsonify(d - dt.date.fromisoformat("2020-07-29"))
 
-    @app.get("/rotate", authorize="OPEN")
+    @app.get("/rotate", authz="OPEN")
     def get_rotate(c: complex):
         return fsa.jsonify(c * 1j)
 
-    @app.get("/raw", authorize="OPEN")
+    @app.get("/raw", authz="OPEN")
     def get_raw(r: float):
         return fsa.jsonify(r)
 
@@ -2281,10 +2281,10 @@ def test_pydantic_models():
     FOO_OK = {"f0": "ok", "f1": [1, 2], "f2": ["hello", 1.0]}
     FOO_KO = {"f0": "ok", "f1": [1, 2]}  # missing f2
     # foo test route
-    @app.post("/foo", authorize="OPEN")
+    @app.post("/foo", authz="OPEN")
     def post_foo(f: Foo):
          return {"f": str(f)}, 201
-    @app.get("/foo", authorize="OPEN")
+    @app.get("/foo", authz="OPEN")
     def get_foo():
         return fsa.jsonify(Foo(**FOO_OK)), 200
     # pydantic dataclass
@@ -2295,7 +2295,7 @@ def test_pydantic_models():
     BLA_OK = {"b0": ["hello", "world"], "b1": 5432}
     BLA_KO = {"b0": [], "b1": "forty-two"}  # bad b1
     # bla test route
-    @app.post("/bla", authorize="OPEN")
+    @app.post("/bla", authz="OPEN")
     def post_bla(b: Bla):
         return fsa.jsonify(b), 201
     # standard dataclass
@@ -2310,7 +2310,7 @@ def test_pydantic_models():
     DIM_OK2 = {"d0": ("Calvin", 6), "d1": 5432}
     DIM_KO = {"d0": {"Calvin": 6}, "d1": 1234}  # bad d0, not detected
     # dim test route
-    @app.post("/dim", authorize="OPEN")
+    @app.post("/dim", authz="OPEN")
     def post_dim(d: Dim):
         return fsa.jsonify(d), 201
     # pydantic special parameter
@@ -2319,7 +2319,7 @@ def test_pydantic_models():
         f: float = 0.0
     DOOM = {"i": 1, "f": 1.0}
     app.special_parameter(Doom, lambda _: Doom(**DOOM))
-    @app.get("/doom", authorize="OPEN")
+    @app.get("/doom", authz="OPEN")
     def get_doom(d: Doom):
         return fsa.jsonify(d), 200
     # tests
@@ -2378,10 +2378,10 @@ def test_multi_400():
     app.special_parameter(ParamAny, lambda _: throwAny())
     app.special_parameter(Param400, lambda _: throw400())
     # missing stuff
-    @app.get("/400", authorize="OPEN")
+    @app.get("/400", authz="OPEN")
     def get_400(i: int, j: int, f: fsa.FileStorage, p: Param400):
         return "oops 400", 200
-    @app.get("/oops", authorize="OPEN")
+    @app.get("/oops", authz="OPEN")
     def get_oops(q: ParamAny):
         return "oops any", 200
 
@@ -2407,7 +2407,7 @@ def test_before_exec():
             return Response("susie triggers a teapot", 418)
         log.debug(f"before_exec: {login} by {auth}")
         return
-    @app.get("/be", authorize="ALL")
+    @app.get("/be", authz="ALL")
     def get_be():
         return f"get_be for {app.get_user()}", 200
     with app.test_client() as c:
@@ -2426,7 +2426,7 @@ def test_custom_authentication():
         if "Code" not in req.headers:
             raise fsa.ErrorResponse("Missing Code authentication header", 401, headers={"Oops": "missing Code"})
         return req.headers["Code"]
-    @app.get("/hello", authorize="ALL")
+    @app.get("/hello", authz="ALL")
     def get_hello(user: fsa.CurrentUser):
         return fsa.jsonify(user), 200
     # tests
@@ -2441,19 +2441,19 @@ def test_default_type():
     app = fsa.Flask("default-type",
                     FSA_AUTH="none",
                     FSA_DEFAULT_CONTENT_TYPE="application/xml")
-    @app.get("/hello", authorize="OPEN")
+    @app.get("/hello", authz="OPEN")
     def get_hello():
         return fsa.jsonify("hello"), 200
-    @app.get("/bonjour", authorize="OPEN")
+    @app.get("/bonjour", authz="OPEN")
     def get_bonjour():
         return "<x>bonjour</x>", 200
-    @app.get("/guttentag", authorize="OPEN")
+    @app.get("/guttentag", authz="OPEN")
     def get_guttentag():
         return "<X>Gutten Tag</X>"
-    @app.get("/ola", authorize="OPEN")
+    @app.get("/ola", authz="OPEN")
     def get_ola():
         return None
-    @app.get("/ciao", authorize="OPEN")
+    @app.get("/ciao", authz="OPEN")
     def get_ciao():
         return (None, 204)
     with app.test_client() as c:
@@ -2477,10 +2477,10 @@ def test_group_check():
     @app.group_check("bla")
     def group_bla_check(login):
         return login in ("calvin", "hobbes")
-    @app.get("/foo", authorize="foo")
+    @app.get("/foo", authz="foo")
     def get_foo():
         return "", 200
-    @app.get("/bla", authorize="bla")
+    @app.get("/bla", authz="bla")
     def get_bla():
         return "", 200
     with app.test_client() as c:
@@ -2491,7 +2491,7 @@ def test_group_check():
     # no way to check for group membership
     app = fsa.Flask("gc2", FSA_AUTH="fake", FSA_AUTHZ_GROUPS=["foo"])
     try:
-        @app.get("/foo", authorize="foo")
+        @app.get("/foo", authz="foo")
         def get_foo():
             return "should not get there", 200
         pytest.fail("should not get there")
@@ -2506,52 +2506,52 @@ def test_generics():
     app = fsa.Flask("generics", FSA_AUTH="none")
 
     # simple generics
-    @app.get("/l", authorize="ANY")
+    @app.get("/l", authz="ANY")
     def get_l(l: list):
         return f"len: {len(l)}", 200
-    @app.get("/ls", authorize="ANY")
+    @app.get("/ls", authz="ANY")
     def get_ls(l: list[str]):
         return f"len: {len(l)}", 200
-    @app.get("/li", authorize="ANY")
+    @app.get("/li", authz="ANY")
     def get_li(l: list[int]):
         return f"len: {len(l)}", 200
-    @app.get("/lf", authorize="ANY")
+    @app.get("/lf", authz="ANY")
     def get_lf(l: list[float]):
         return f"len: {len(l)}", 200
-    @app.get("/ln", authorize="ANY")
+    @app.get("/ln", authz="ANY")
     def get_none(l: list[None]):
         return f"len: {len(l)}", 200
-    @app.get("/lS", authorize="ANY")
+    @app.get("/lS", authz="ANY")
     def get_lS(l: list[Stuff]):
         assert isinstance(l, list) and all(isinstance(i, Stuff) for i in l)
         return f"len: {len(l)}", 200
 
     # optionals
-    @app.get("/l0s", authorize="ANY")
+    @app.get("/l0s", authz="ANY")
     def get_l0s(l: list[str]|None = None):
         return "none" if l is None else "list"
-    @app.get("/l0s2", authorize="ANY")
+    @app.get("/l0s2", authz="ANY")
     def get_l0s2(l: typing.Optional[list[str]] = None):
         return "none" if l is None else "list"
-    @app.get("/l0s3", authorize="ANY")
+    @app.get("/l0s3", authz="ANY")
     def get_l0s3(l: typing.Union[list[str], None] = None):
         return "none" if l is None else "list"
 
     # dicts
-    @app.get("/dsi", authorize="ANY")
+    @app.get("/dsi", authz="ANY")
     def get_dsi(d: dict[str, int]):
         return f"len: {len(d)}", 200
-    @app.get("/dsl", authorize="ANY")
+    @app.get("/dsl", authz="ANY")
     def get_dsl(d: dict[str, list[int]]):
         return f"len: {len(d)}", 200
 
     # union
-    @app.get("/lsi", authorize="ANY")
+    @app.get("/lsi", authz="ANY")
     def get_lsi(l: list[str]|list[int]):
         return f"len: {len(l)}", 200
 
     import datetime as dt
-    @app.get("/lD", authorize="ANY")
+    @app.get("/lD", authz="ANY")
     def get_lD(l: list[dt.date]):
         return f"len: {len(l)}", 200
 
@@ -2642,14 +2642,14 @@ def test_generics():
     # failures
     app = fsa.Flask("generics", FSA_AUTH="none")
     try:
-        @app.get("/nope", authorize="ANY")
+        @app.get("/nope", authz="ANY")
         def get_nope(l: tuple[str, int]):
             return "no"
         pytest.fail("should not get there")
     except ConfigError as e:
         assert "unsupported generic type" in str(e)
     try:
-        @app.get("/nope", authorize="ANY")
+        @app.get("/nope", authz="ANY")
         def get_nope(l: dict[int, int]):
             return "no"
         pytest.fail("should not get there")
@@ -2657,7 +2657,7 @@ def test_generics():
         assert "unsupported generic type" in str(e)
     # TODO should be made to work?
     try:
-        @app.get("/nope", authorize="ANY")
+        @app.get("/nope", authz="ANY")
         def get_nope(l: dict[str, Stuff]):
             return "no"
         pytest.fail("should not get there")
@@ -2665,14 +2665,14 @@ def test_generics():
         assert "unsupported generic type" in str(e)
     # bad default
     try:
-        @app.get("/nope", authorize="ANY")
+        @app.get("/nope", authz="ANY")
         def get_nope(l: list[str] = {}):
             return "no"
         pytest.fail("should not get there")
     except ConfigError as e:
         assert "bad check" in str(e)
     try:
-        @app.get("/nope", authorize="ANY")
+        @app.get("/nope", authz="ANY")
         def get_nope(l: list[int] = ["one", "two"]):
             return "no"
         pytest.fail("should not get there")
@@ -2686,7 +2686,7 @@ def test_streaming():
 
         app = fsa.Flask("stream", FSA_AUTH="none", FSA_JSON_STREAMING=streaming)
 
-        @app.get("/stream", authorize="OPEN")
+        @app.get("/stream", authz="OPEN")
         def get_stream(n: int = 3):
             return fsa.jsonify(range(n))
 
@@ -2705,7 +2705,7 @@ def test_mixing():
     # test *non* mixing of http & json
 
     app = fsa.Flask("mixing", FSA_AUTH="none")
-    @app.get("/mixing", authorize="OPEN")
+    @app.get("/mixing", authz="OPEN")
     def get_mixing(a: int, b: int):
         return fsa.jsonify(a + b)
 
@@ -2731,7 +2731,7 @@ def run_authorize(predefs, code):
 
         app = fsa.Flask("auth", FSA_AUTH=["token", "basic", "none"])
 
-        @app.get("/route", authorize=a)
+        @app.get("/route", authz=a)
         def get_route():
             return "", 200
 
@@ -2752,43 +2752,43 @@ def test_open_auth():
     # OPEN -> AUTH if none is not allowed, for coverage
     # auth list
     app = fsa.Flask("open", FSA_AUTH=["token", "basic"])
-    @app.get("/open", authorize="OPEN")
+    @app.get("/open", authz="OPEN")
     def get_open():
         return {"msg": "open!"}
     # implicit and explicit auth
     app = fsa.Flask("open",
                     FSA_AUTH=["token", "basic", "none"],
                     FSA_AUTH_DEFAULT=["token", "basic"])
-    @app.get("/open-1", authorize="OPEN")
+    @app.get("/open-1", authz="OPEN")
     def get_open_1():
         return {"msg": "open 1!"}
-    @app.get("/open-2", authorize="OPEN", auth=["token", "basic"])
+    @app.get("/open-2", authz="OPEN", authn=["token", "basic"])
     def get_open_2():
         return {"msg": "open 2!"}
 
 def test_auth_close():
     # AUTH -> CLOSE if only none is allowed, for coverage
     app = fsa.Flask("auth", FSA_AUTH="none")
-    @app.get("/auth", authorize="AUTH")
+    @app.get("/auth", authz="AUTH")
     def get_auth():
         return {"msg": "auth!"}
 
 def test_optional_params():
     app = fsa.Flask("opt", FSA_AUTH="none", FSA_MODE="debug4")
     # optional simple parameters
-    @app.get("/i0", authorize="OPEN")
+    @app.get("/i0", authz="OPEN")
     def get_i0(i: int|None):
         return { "i": i }
-    @app.get("/i1", authorize="OPEN")
+    @app.get("/i1", authz="OPEN")
     def get_i1(i: None|int):
         return { "i": i }
-    @app.get("/i2", authorize="OPEN")
+    @app.get("/i2", authz="OPEN")
     def get_i2(i: typing.Optional[int]):
         return { "i": i }
-    @app.get("/i3", authorize="OPEN")
+    @app.get("/i3", authz="OPEN")
     def get_i3(i: typing.Union[int, None]):
         return { "i": i }
-    @app.get("/i4", authorize="OPEN")
+    @app.get("/i4", authz="OPEN")
     def get_i4(i: typing.Union[None, int]):
         return { "i": i }
     def int_eq(i, j):

@@ -106,24 +106,25 @@ app.config.from_envvar("ACME_CONFIG")
 
 Once initialized, `app` behaves as a standard Flask object with many additions.
 The main change is the `route` decorator, an extended version of Flask's own
-with an `authorize` parameter and transparent management of request parameters.
+with an `authz` (or `authorize`) parameter and transparent management of request
+parameters.
 Per-method shortcut decorators `post`, `get`, `put`, `patch` and `delete`
 which support the same extensions.
 The security first principle means that if the parameter is missing the route
 is closed with a *403*.
 
 ```python
-@app.get("/store", authorize="OPEN")
+@app.get("/store", authz="OPEN")
 def get_store(filter: str = None):
     # return store contents, possibly filtered
     ...
 
-@app.post("/store", authorize="contributor")
+@app.post("/store", authz="contributor")
 def post_store(data: str):
     # append new data to store, return id
     ...
 
-@app.get("/store/<id>", authorize="OPEN")
+@app.get("/store/<id>", authz="OPEN")
 def get_store_id(id: int):
     # return data corresponding to id
     ...
@@ -199,7 +200,7 @@ Note that it does not always make much sense to mix some schemes, e.g.
 not be merged.  Also, only one HTTPAuth-based scheme can be active at a time.
 
 Authentication is *always* performed on demand, either to check for a route
-authorization declared with `authorize` or when calling `get_user`.
+authorization declared with `authz` or when calling `get_user`.
 
 The authentication scheme attempted on a route can be altered with the `auth`
 (or `authn`) parameter added to the `route` decorator.
@@ -218,7 +219,7 @@ The available schemes are:
 - `none`
 
   No authentication.
-  This is **necessary** for opening routes (`authorize="OPEN"`).
+  This is **necessary** for opening routes (`authz="OPEN"`).
 
 - `httpd`
 
@@ -362,7 +363,7 @@ The available schemes are:
   Another benefit of token is that it avoids sending passwords over and over.
   The rational option is to use a password scheme to retrieve a token and then to
   use it till it expires. This can be enforced by setting `FSA_AUTH` to `token`
-  and to only add `auth="basic"` on the login route used to retrieve a token.
+  and to only add `authn="basic"` on the login route used to retrieve a token.
 
   Token expiration can be understood as a kind of automatic logout, which suggests
   to choose the delay with some care depending on the use case.
@@ -412,7 +413,7 @@ in the application initialization. This hook:
 def code_authentication(app: Flask, req: Request) -> str|None:
     ...
 
-@app.get("/code-authentication", authorize="AUTH", auth="code")
+@app.get("/code-authentication", authz="AUTH", authn="code")
 def get_code_authentication(user: CurrentUser):
     return f"Hello code-authenticated {user}!", 200
 ```
@@ -424,7 +425,7 @@ By default, authentication is performed when required on a route by trying
 all enabled schemes in turn.
 This can be changed by setting `FSA_AUTH_DEFAULT` to a subset of `FSA_AUTH`,
 in which case other schemes will only be tried if set explicitely on a route
-with `auth=…`.
+with `authn=…`.
 
 ### Password Management
 
@@ -516,7 +517,7 @@ An opened route for user registration with mandatory parameters
 could look like that:
 
 ```python
-@app.post("/register", authorize="OPEN")
+@app.post("/register", authz="OPEN")
 def post_register(user: str, password: str):
     if user_already_exists(user):
         return f"cannot create {user}", 409
@@ -530,7 +531,7 @@ by a password method:
 
 ```python
 # token creation route for all registered users
-@app.get("/login", authorize="AUTH")
+@app.get("/login", authz="AUTH")
 def get_login():
     return jsonify(app.create_token()), 200
 ```
@@ -598,7 +599,7 @@ Performance implications of authenticating with an LDAP service are unclear.
 
 ## Authorization
 
-Authorizations are declared with the `authorize` (or `authz`) parameter to the
+Authorizations are declared with the `authz` (or `authorize`) parameter to the
 `route` decorator or its per-method shortcuts.
 The modules supports three permission models:
 
@@ -628,36 +629,37 @@ be reached so that changes take effect, or the cache must be cleared
 manually, which may impair application performance.
 
 ```python
-@app.get("/admin-only", authorize="ADMIN")
+@app.get("/admin-only", authz="ADMIN")
 def get_admin_only():
     # only authenticated "ADMIN" users can get here!
 ```
 
-There are three special values that can be passed to the `authorize` decorator:
+There are three special values that can be passed to the `authz` decorator
+parameter:
 
-- `OPEN` declares that no authentication is needed on that route,
+- `"OPEN"` declares that no authentication is needed on that route,
   i.e. anyone can get in, the route is open.
   This _requires_ that authentication `none` is allowed by `FSA_AUTH`
   configuration, otherwise it is treated as `AUTH`.
   Moreover, if `FSA_AUTH_DEFAULT` is set to an authentication scheme, it is
-  _necessary_ to add `auth="none"` to the route definition to open it.
-- `AUTH` declares that all authenticated user can access this route,
+  _necessary_ to add `authn="none"` to the route definition to open it.
+- `"AUTH"` declares that all _authenticated_ users can access this route,
   without group checks.
   This _requires_ that some authentication scheme is allowed, otherwise it is
   treated as `CLOSE`.
-- `CLOSE` returns a *403* on all access. It can be used to close a route
-  temporarily. This is the default if `authorize` is not set.
+- `"CLOSE"` returns a *403* on all access. It can be used to close a route
+  temporarily. This is the default if `authz` is not set.
 
 ```python
-@app.get("/closed", authorize="CLOSE")
+@app.get("/closed", authz="CLOSE")
 def get_closed():
     # nobody can get here
 
-@app.get("/authenticated", authorize="AUTH")
+@app.get("/authenticated", authz="AUTH")
 def get_authenticated():
     # AUTH-enticated users can get here
 
-@app.get("/opened", authorize="OPEN")
+@app.get("/opened", authz="OPEN")
 def get_opened():
     # anyone can get here, no authentication is required
 ```
@@ -672,7 +674,7 @@ If done so, unregistered groups are rejected and result in a configuration error
 ```python
 app.add_group("student", "professor")
 
-@app.get("/students", authorize="admin")  # ERROR, unregistered group
+@app.get("/students", authz="admin")  # ERROR, unregistered group
 def get_students():
     ...
 ```
@@ -681,8 +683,8 @@ def get_students():
 
 OAuth authorizations are similar to group authorizations.
 They are attached to the current authentification performed through a token,
-on routes explicitely marked with `auth="oauth"`.
-In that case, the `authorize` values are interpreted as *scopes* that must be
+on routes explicitely marked with `authn="oauth"`.
+In that case, the `authz` values are interpreted as *scopes* that must be
 provided by the token.
 
 In order to simplify security implications, *scopes* and *groups*
@@ -692,7 +694,7 @@ Another current limitation is that only one *issuer* is allowed.
 
 ```python
 # /data is only accessible through a trusted JWT token with "read" scope
-@app.get("/data", authorize="read", auth="oauth"):
+@app.get("/data", authz="read", authn="oauth"):
 def get_data(user: CurrentUser):
     return access_some_data(user), 200
 ```
@@ -716,7 +718,7 @@ Non trivial application have access permissions which depend on the data
 stored by the application. For instance, a user may alter a data because
 they *own* it, or access a data because they are *friends* of the owner.
 
-In order to implement this model, the `authorize` decorator parameter can
+In order to implement this model, the `authz` decorator parameter can
 hold `(domain, variable, mode)` tuples which designate a permission domain
 (eg a table or object or concept name in the application), the name of
 a variable in the request (path or HTTP or JSON parameters) which identifies
@@ -724,7 +726,7 @@ an object of the domain, and the operation or level of access necessary for
 this route:
 
 ```python
-@app.get("/message/<mid>", authorize=("msg", "mid", "read"))
+@app.get("/message/<mid>", authz=("msg", "mid", "read"))
 def get_message_mid(mid: int):
     ...
 ```
@@ -750,8 +752,8 @@ If `variable` is not supplied, the *first* parameter of the route function
 is taken:
 
 ```python
-# same as authorize=("msg", "mid", None)
-@app.patch("/message/<mid>", authorize=("msg",))
+# same as authz=("msg", "mid", None)
+@app.patch("/message/<mid>", authz=("msg",))
 def patch_message_mid(mid: int):
     ...
 ```
@@ -778,7 +780,7 @@ parameters by relying on function type annotations.
 Parameters are considered mandatory unless a default value is provided.
 
 ```python
-@app.get("/something/<id>", authorize=...)
+@app.get("/something/<id>", authz=...)
 def get_something_id(id: int, when: date, what: str = "nothing"):
     # `id` is an integer path-parameter
     # `when` is a mandatory date HTTP or JSON parameter
@@ -801,7 +803,7 @@ If one parameter is a dict of keyword arguments, all remaining request
 parameters are added to it, as shown below:
 
 ```python
-@app.put("/awesome", authorize="AUTH")
+@app.put("/awesome", authz="AUTH")
 def put_awesome(**kwargs):
     ...
 ```
@@ -820,7 +822,7 @@ class Search:
     words: list[str]
     limit: int
 
-@app.get("/search", authorize="OPEN")
+@app.get("/search", authz="OPEN")
 def get_search(q: Search):
     ...
 ```
@@ -830,7 +832,7 @@ Generic types can be used, although with restrictions: only combinations of
 Using custom classes may or may not work, consider using data classes instead.
 
 ```python
-@app.get("/question", authorize="OPEN")
+@app.get("/question", authz="OPEN")
 def get_question(q: list[str]):
     ...
 ```
@@ -847,7 +849,7 @@ class EmailAddr:
     def __init__(self, addr: str):
         self._addr = addr
 
-@app.get("/mail/<addr>", authorize="AUTH")
+@app.get("/mail/<addr>", authz="AUTH")
 def get_mail_addr(addr: EmailAddr):
     ...
 ```
@@ -862,7 +864,7 @@ class nat(int):  # this demonstrate Python simplicity
             raise ValueError(f"nat value must be positive: {val}")
         return super().__new__(cls, val)
 
-@app.get("/pos", authorize="OPEN")
+@app.get("/pos", authz="OPEN")
 def get_pos(i: nat, j: nat):
     # i and j are positive integers
     ...
@@ -882,7 +884,7 @@ def strToHouse(s: str) -> House:
 
 # or: app.cast(House, strToHouse)
 
-@app.get("/house/<h>", authorize="OPEN")
+@app.get("/house/<h>", authz="OPEN")
 def get_house_h(h: House)
     ...
 ```
@@ -924,7 +926,7 @@ class User:
 
 app.special_parameter(User, lambda _: User(app.current_user()))
 
-@app.get("/hello", authorize="AUTH")
+@app.get("/hello", authz="AUTH")
 def get_hello(user: User):
     return f"Hello {user.firstname} {user.lastname}!", 200
 ```
@@ -937,7 +939,7 @@ translating HTTP parameters.  This allows to use python keywords as parameter
 names, such as `pass` or `def`.
 
 ```python
-@app.put("/user/<pass>", authorize="AUTH")
+@app.put("/user/<pass>", authz="AUTH")
 def put_user_pass(_pass: str, _def: str, _import: str):
     ...
 ```
@@ -1020,7 +1022,7 @@ def check_foo_param(foo):
     if this_foo_is_confidential(foo, app.current_user()):
         raise ErrorResponse(f"no way foo: {foo}", 403)
 
-@app.get("/foo/<fid>", authorize="AUTH")
+@app.get("/foo/<fid>", authz="AUTH")
 def get_foo_fid(fid: int):
     check_foo_param(fid)
     ...

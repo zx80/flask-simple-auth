@@ -23,13 +23,13 @@ def tup2dict(u):
     return {"aid": u[0], "login": u[1], "email": u[2], "upass": u[3], "admin": u[4]}
 
 # GET /auth: get all auth data
-@authb.get("/auth", authorize="ADMIN")
+@authb.get("/auth", authz="ADMIN")
 def get_auth():
     return json(map(tup2dict, db.get_auth_all())), 200
 
 
 # GET /auth/<login>: get this user data
-@authb.get("/auth/<login>", authorize="ADMIN")
+@authb.get("/auth/<login>", authz="ADMIN")
 def get_auth_login(login: str):
     res = db.get_auth_login(login=login)
     _ = res or error(f"no such login: {login}", 404)
@@ -37,7 +37,7 @@ def get_auth_login(login: str):
 
 
 # POST /auth (login, email, pass, admin): add a new user
-@authb.post("/auth", authorize="ADMIN")
+@authb.post("/auth", authz="ADMIN")
 def post_auth(user: User):
     user.upass = app.hash_password(user.upass)  # hash clear text password!
     aid = db.add_auth(a=user)
@@ -47,7 +47,7 @@ def post_auth(user: User):
 
 
 # PUT /auth/<aid> (user): update user data
-@authb.put("/auth/<aid>", authorize="ADMIN")
+@authb.put("/auth/<aid>", authz="ADMIN")
 def put_auth_aid(aid: int, user: User):
     _ = aid == user.aid or error("inconsistent aid", 400)
     user.upass = app.hash_password(user.upass)  # hash clear text password!
@@ -62,7 +62,7 @@ def put_auth_aid(aid: int, user: User):
 
 
 # DELETE /auth/<login>: delete this user
-@authb.delete("/auth/<login>", authorize="ADMIN")
+@authb.delete("/auth/<login>", authz="ADMIN")
 def delete_auth_login(login: str):
     data = db.get_user_data(login=login)
     _ = data or error(f"no such login: {login}", 404)
