@@ -30,7 +30,7 @@ and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
   eg to rely on ad-hoc unsigned tokens, for instance.
 - provide more parameters to special parameters hooks? guess based on type hints?
 
-## ? on ?
+## 35.0 on ?
 
 - improve doc.
 - switch doc and code to prefer `authz` and `authn` over `authorize` and `auth`.
