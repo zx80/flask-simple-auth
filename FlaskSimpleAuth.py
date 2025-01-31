@@ -3390,7 +3390,7 @@ class _ParameterManager:
 
         return decorate
 
-    def _parameters(self, path):
+    def _parameters(self, path: str, is_open: bool):
         """Decorator to handle request parameters."""
 
         def decorate(fun: Callable):
@@ -3416,6 +3416,9 @@ class _ParameterManager:
                     handler = _ParameterHandler(self, name, param, where)
                     handlers[name] = handler
                     names[handler._rname] = name
+                # reject CurrentUser special parameter under authz="OPEN"
+                if is_open and _typeof(param) == CurrentUser:
+                    raise self._Bad(f"cannot get {name} current user on open (non authenticated) route {path}", where)
 
             # debug helpers
             def getNames(pl):
@@ -4358,6 +4361,7 @@ class FlaskSimpleAuth:
         # NOTE it can be extended (`url_map`), but we are managing through annotations
         sig = inspect.signature(view_func)  # type: ignore
 
+        # path parameters
         splits = rule.split("<")
         for i, s in enumerate(splits):
             if i > 0:
@@ -4423,7 +4427,7 @@ class FlaskSimpleAuth:
             fun = self._zm._perm_authz(newpath, first, *perms)(fun)
 
         if need_parameters:
-            fun = self._pm._parameters(newpath)(fun)
+            fun = self._pm._parameters(newpath, predef == "OPEN")(fun)
         else:
             fun = self._pm._noparams(newpath)(fun)
 

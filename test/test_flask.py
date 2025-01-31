@@ -2644,14 +2644,14 @@ def test_generics():
     try:
         @app.get("/nope", authz="ANY")
         def get_nope(l: tuple[str, int]):
-            return "no"
+            ...
         pytest.fail("should not get there")
     except ConfigError as e:
         assert "unsupported generic type" in str(e)
     try:
         @app.get("/nope", authz="ANY")
         def get_nope(l: dict[int, int]):
-            return "no"
+            ...
         pytest.fail("should not get there")
     except ConfigError as e:
         assert "unsupported generic type" in str(e)
@@ -2659,7 +2659,7 @@ def test_generics():
     try:
         @app.get("/nope", authz="ANY")
         def get_nope(l: dict[str, Stuff]):
-            return "no"
+            ...
         pytest.fail("should not get there")
     except ConfigError as e:
         assert "unsupported generic type" in str(e)
@@ -2667,17 +2667,25 @@ def test_generics():
     try:
         @app.get("/nope", authz="ANY")
         def get_nope(l: list[str] = {}):
-            return "no"
+            ...
         pytest.fail("should not get there")
     except ConfigError as e:
         assert "bad check" in str(e)
     try:
         @app.get("/nope", authz="ANY")
         def get_nope(l: list[int] = ["one", "two"]):
-            return "no"
+            ...
         pytest.fail("should not get there")
     except ConfigError as e:
         assert "bad check" in str(e)
+    # open/current user
+    try:
+        @app.get("/nope", authz="OPEN")
+        def get_nope(user: fsa.CurrentUser):
+            ...
+        pytest.fail("should not get there")
+    except ConfigError as e:
+        assert "open" in str(e)
 
 
 def test_streaming():

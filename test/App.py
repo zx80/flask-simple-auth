@@ -171,7 +171,7 @@ import flask
 
 # missing authorization check with parameters
 @flask.Flask.route(app, "/mis1", methods=["GET"])
-@app._fsa._pm._parameters("/mis1")
+@app._fsa._pm._parameters("/mis1", False)
 def get_mis1(i: int = 0):
     return "", 200
 
@@ -365,9 +365,9 @@ from FlaskSimpleAuth import JsonData
 def get_json(j: JsonData):
     return f"{type(j).__name__}: {js.dumps(j)}", 200
 
-# magic parameters, user should be None as there is no authentication required
+# magic parameters
 @app.get("/request", authz=ANY)
-def get_request(req: Request, ses: Session, glo: Globals, env: Environ, user: CurrentUser):
+def get_request(req: Request, ses: Session, glo: Globals, env: Environ):
     return req.base_url, 200
 
 # new magic parameters
