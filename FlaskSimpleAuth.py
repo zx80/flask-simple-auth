@@ -4242,6 +4242,10 @@ class FlaskSimpleAuth:
     def add_url_rule(self, rule, endpoint=None, view_func=None, authz="CLOSE", authn=None, realm=None, **options):
         """Route decorator helper method.
 
+        This is the main function which takes a route function and adds all
+        the necessary wrappers to manage authentication, authorization and
+        parameters, before registering the endpoint to Flask WSGI dispatcher.
+
         - ``authz`` or ``authorize``: authorization constraints.
         - ``authn`` or ``auth``: authentication constraints.
         - ``realm``: realm for this route, supercedes global settings.
@@ -4267,7 +4271,7 @@ class FlaskSimpleAuth:
         if type(authz) in (int, str, tuple):
             authz = [authz]
 
-        # ensure that auth is registered as used
+        # ensure that authn is registered as used
         if isinstance(authn, str):
             authn = [authn]
         if authn is None:
