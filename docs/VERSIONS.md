@@ -29,6 +29,7 @@ and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
   or record "test" as a new authentication and provide an adhoc function,
   eg to rely on ad-hoc unsigned tokens, for instance.
 - provide more parameters to special parameters hooks? guess based on type hints?
+- detect contradictory `CurrentUser` access on `OPEN` route.
 
 ## ? on ?
 
