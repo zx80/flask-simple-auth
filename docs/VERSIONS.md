@@ -7,7 +7,6 @@ and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 
 - [passlib totp](https://passlib.readthedocs.io/en/stable/lib/passlib.totp.html)
 - [pyauth totp](https://pyauth.github.io/pyotp/)
-- deprecate/remove old ANY/ALL/NONE authorizations.
 - deprecate/remove authorize/auth decorator parameter names.
 - authz/authn consistency? should "none" be required for "OPEN" routes?
 - several simultaneous password management schemes should be supported.
@@ -35,6 +34,7 @@ and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 - improve doc.
 - switch doc and code to prefer `authz` and `authn` over `authorize` and `auth`.
 - reject `CurrentUser` access on `OPEN` route.
+- deprecate old ANY/ALL/NONE authorizations.
 
 ## 34.3 on 2025-01-14
 

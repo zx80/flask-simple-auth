@@ -336,7 +336,7 @@ class Header(str):
 #
 # SPECIAL PREDEFINED GROUP NAMES
 #
-ANY, ALL, NONE = "OPEN", "AUTH", "CLOSE"  # compatibility
+ANY, ALL, NONE = "OPEN", "AUTH", "CLOSE"  # deprecated
 
 _OPEN = {"OPEN", "ANY", "NOAUTH"}
 """Open route, no authentication."""
@@ -4242,7 +4242,7 @@ class FlaskSimpleAuth:
             return self._Res(f"internal error caught at {level} on {path}", self._server_error)
 
     # FIXME endpoint?
-    def add_url_rule(self, rule, endpoint=None, view_func=None, authz="CLOSE", authn=None, realm=None, **options):
+    def add_url_rule(self, rule, endpoint=None, view_func=None, authz=None, authn=None, realm=None, **options):
         """Route decorator helper method.
 
         This is the main function which takes a route function and adds all
@@ -4256,7 +4256,7 @@ class FlaskSimpleAuth:
 
         # handle authz/authorize and authn/auth
         if "authorize" in options:
-            if authz is None or authz != "CLOSE":
+            if authz is not None:
                 raise self._Bad("cannot use both authz and authorize on a route")
             authz = options["authorize"]
             del options["authorize"]
@@ -4271,7 +4271,9 @@ class FlaskSimpleAuth:
         self._initialize()
 
         # ensure that authz is a list
-        if type(authz) in (int, str, tuple):
+        if authz is None:
+            authz = ["CLOSE"]
+        elif type(authz) in (int, str, tuple):
             authz = [authz]
 
         # ensure that authn is registered as used

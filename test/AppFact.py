@@ -1,6 +1,6 @@
 # test factory pattern
 
-from FlaskSimpleAuth import Flask, ALL, jsonify as json
+from FlaskSimpleAuth import Flask, jsonify as json
 
 from Auth import get_user_pass, user_in_group, ADMIN, UP
 from SubApp import subapp
@@ -28,23 +28,23 @@ def create_app(**config):
     # shared stuff
     Shared.init_app(something="AppFact")
 
-    @app.get("/mul", authz=ALL)
+    @app.get("/mul", authz="AUTH")
     def get_mul(i: int, j: int):
         return str(i * j), 200
 
-    @app.get("/add", authz=ALL)
+    @app.get("/add", authz="AUTH")
     def get_add(i: int, j: int):
         return str(i + j), 200
 
-    @app.get("/div", authz=ALL)
+    @app.get("/div", authz="AUTH")
     def get_div(i: int, j: int):
         return str(i // j), 200
 
-    @app.get("/sub", authz=ALL)
+    @app.get("/sub", authz="AUTH")
     def get_sub(i: int, j: int):
         return str(i - j), 200
 
-    @app.get("/something", authz=ALL)
+    @app.get("/something", authz="AUTH")
     def get_something():
         return str(something), 200
 
