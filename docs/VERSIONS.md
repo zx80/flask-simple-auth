@@ -3,31 +3,39 @@
 Sources are available on [GitHub](https://github.com/zx80/flask-simple-auth)
 and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 
-## TODO?
+## BACKLOG
 
-- [passlib totp](https://passlib.readthedocs.io/en/stable/lib/passlib.totp.html)
-- [pyauth totp](https://pyauth.github.io/pyotp/)
-- deprecate/remove authorize/auth decorator parameter names.
-- authz/authn consistency? should "none" be required for "OPEN" routes?
-- several simultaneous password management schemes should be supported.
+### Authentication and Authorization
+
+- several _simultaneous_ password management schemes should be supported.
   this is already the case with `passlib`.
 - use default authentication in demo and other live projects (kiva, pizza, ref).
 - oauth: issuer/scope? issuer/secret?
-- how to export and use the cache for user-related data?
-- what about secured caching, eg an expensive password check?
 - ldap
   - [see also](https://github.com/rroemhild/flask-ldapconn)
   - ldap3 pool?
   - ldap authorizations?
   - how to actually tests LDAP?
     [rroemhild](https://github.com/rroemhild/docker-test-openldap) 2021?
-- client caching should/could depend on the route/method…
-  use declarations? hints? hooks?
-- objs permissions defaults: should send _all_ path parameters? allow list? use named parameters?
 - fake provider for testing: limiting fake authn to a parameter is inconvenient in practice.
   or record "test" as a new authentication and provide an adhoc function,
   eg to rely on ad-hoc unsigned tokens, for instance.
+- deprecate/remove authorize/auth decorator parameter names.
+
+### Caching
+
+- how to export and use the cache for user-related data?
+- client caching should/could depend on the route/method…
+  use declarations? hints? hooks?
+- what about secured caching, eg an expensive password check?
+
+## TODO
+
+- objs permissions defaults: should send _all_ path parameters? allow list? use named parameters?
+- authz/authn consistency? should "none" be required for "OPEN" routes?
 - provide more parameters to special parameters hooks? guess based on type hints?
+- [passlib totp](https://passlib.readthedocs.io/en/stable/lib/passlib.totp.html)
+- [pyauth totp](https://pyauth.github.io/pyotp/)
 
 ## 35.0 on ?
 
