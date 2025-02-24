@@ -39,6 +39,7 @@ and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 ### Misc
 
 - provide more parameters to special parameters hooks? guess based on type hints?
+- bad/malformed requests should generate _400_ instead of _500_ in some cases?
 
 ## 35.0 on ?
 
