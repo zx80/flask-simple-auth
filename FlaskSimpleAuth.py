@@ -80,7 +80,7 @@ class Hooks:
 
     :param login: user name to retrieve password for.
 
-    Returns the string, of None if no password or user.
+    Returns the string, or None if no password for user.
     """
 
     GroupCheckFun = Callable[[str], bool]
@@ -2002,6 +2002,27 @@ class _PasswordManager:
                         return False
 
             self._pass_provider = ScryptPassProvider(**options)
+
+        elif scheme == "otp":
+
+            if options is None:
+                options = {}
+
+            import pyotp
+
+            class PyOTPProvider:
+
+                def __init__(self, **options):
+                    self._options = options
+
+                def hash(self, password: str) -> str:
+                    return password
+
+                def verify(self, password: str, ref: str) -> bool:
+                    totp = pyotp.TOTP(ref, **self._options)
+                    return totp.verify(password)
+
+            self._pass_provider = PyOTPProvider(**options)
 
         else:
 

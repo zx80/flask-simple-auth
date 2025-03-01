@@ -2958,3 +2958,34 @@ def test_deprecation():
         pytest.fail("config error must be raised")
     except ConfigError as ce:
         assert "deprecated" in str(ce)
+
+@pytest.mark.skipif(not has_package("pyotp"), reason="pyotp is not available")
+def test_otp():
+
+    import pyotp
+
+    OTP_SECRETS: dict[str, str] = {
+        "susie": "XXFMZAQR5IFQLAWW3O2NY5EXI3GEYKOR",
+        "calvin": "6BJ6OS5EMTPEKJ4QBMLIWIGNUNRNNS55",
+        "hobbes": "UG76RUVSRZ4SP6JKSYWPJDVPJPD6RLFS",
+    }
+
+    app = fsa.Flask("otp",
+        FSA_AUTH="password",
+        FSA_PASSWORD_SCHEME="fsa:otp",
+        FSA_GET_USER_PASS=OTP_SECRETS.get,
+    )
+
+    @app.get("/otp", authz="AUTH")
+    def get_otp(user: fsa.CurrentUser):
+        return {"login": user}
+
+    # no hashing for OTP
+    assert app.hash_password("foo") == "foo"
+
+    with app.test_client() as c:
+        for u, s in OTP_SECRETS.items():
+            check(401, c.get("/otp", headers=basic_auth(u, "badpass")))
+            totp = pyotp.TOTP(s)
+            res = check(200, c.get("/otp", headers=basic_auth(u, totp.now())))
+            assert res.is_json and res.json["login"] == u

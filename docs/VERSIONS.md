@@ -7,7 +7,7 @@ and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 
 ### Authentication
 
-- several _simultaneous_ password management schemes should be supported.
+- several _simultaneous_ password management schemes should really be supported.
   this is already the case with `passlib`.
 - use default authentication in demo and other live projects (kiva, pizza, ref).
 - ldap
@@ -19,7 +19,6 @@ and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
   or record "test" as a new authentication and provide an adhoc function,
   eg to rely on ad-hoc unsigned tokens, for instance.
 - [passlib totp](https://passlib.readthedocs.io/en/stable/lib/passlib.totp.html)
-- [pyauth totp](https://pyauth.github.io/pyotp/)
 
 ## Authorization
 
@@ -44,14 +43,16 @@ and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 
 ## 35.0 on ?
 
-- improve doc.
-- switch doc and code to prefer `authz` and `authn` over `authorize` and `auth`.
-- reject `CurrentUser` access on `OPEN` route.
+- add password scheme `fsa:otp` to support time-based OTP with
+  [pyauth totp](https://pyauth.github.io/pyotp/).
 - allow special parameters hooks to require special parameter parameters.
 - add `FSA_ALLOW_DEPRECATION` configuration directive to control whether deprecated
   features are allowed.
 - deprecate old ANY/ALL/NONE authorizations.
 - deprecate authorize/auth decorator parameters in favor of authz/authn.
+- switch doc and code to prefer `authz` and `authn` over `authorize` and `auth`.
+- reject `CurrentUser` access on `OPEN` route.
+- improve doc.
 
 ## 34.3 on 2025-01-14
 

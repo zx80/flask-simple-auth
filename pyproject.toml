@@ -51,13 +51,13 @@ doc = [ "sphinx", "sphinx_rtd_theme", "sphinx-autoapi", "sphinx-lint", "myst_par
 tests = [ "requests", "pydantic>=2.0" ]
 demo = [ "anodb", "psycopg", "psycopg2", "pymemcache", "redis", "types-redis", "types-cachetools" ]
 # password management
-# out: passlib (unmaintained)
 password = [
   "bcrypt",
   "argon2-cffi",
   "scrypt",
+  "pyopt",
   "passlib",
-  "crypt_r; python_version >= '3.13'",
+  "crypt_r; python_version >= '3.13'",  # crypt replacement
 ]
 # python-ldap requires python3-dev libldap-dev libsasl2-dev gcc
 ldap = [ "ldap3" ]

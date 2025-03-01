@@ -5,7 +5,7 @@ a declarative security layer to routes with authentification, authorization and
 parameter management.
 
 ![Status](https://github.com/zx80/flask-simple-auth/actions/workflows/fsa.yml/badge.svg?branch=main&style=flat)
-![Tests](https://img.shields.io/badge/tests-103%20✓-success)
+![Tests](https://img.shields.io/badge/tests-104%20✓-success)
 ![Coverage](https://img.shields.io/badge/coverage-100%25-success)
 ![Issues](https://img.shields.io/github/issues/zx80/flask-simple-auth?style=flat)
 ![Python](https://img.shields.io/badge/python-3-informational)

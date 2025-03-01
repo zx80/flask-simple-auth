@@ -79,6 +79,7 @@ Depending on options, the following modules should be installed:
   [redis](https://pypi.org/project/redis/) for external back-ends.
 - [bcrypt](https://pypi.org/project/bcrypt/) for password hashing (default algorithm),
   [argon2-cffi](https://pypi.org/project/argon2-cffi/) for password hashing,
+  [pyotp](https://pyauth.github.io/pyotp/) for time-base one-time passwords,
   [passlib](https://pypi.org/project/passlib/) for other password management,
   [PyJWT](https://pypi.org/project/PyJWT/) for JSON Web Token (JWT),
   [cryptography](https://pypi.org/project/cryptography/) for pubkey-signed JWT.
@@ -445,8 +446,8 @@ Because this function is cached by default, the cache expiration must be reached
 so that changes take effect, or the cache must be cleared manually, which may
 impair application performance.
 
-The following configuration directives are available to configure `passlib`
-password checks:
+The following configuration directives are available to configure internal
+or `passlib` password checks:
 
 - `FSA_PASSWORD_SCHEME` password provider and scheme to use for passwords.
   There are four providers: `fsa` (internal), `passlib`, `ldap` and `ldap3`.
@@ -456,8 +457,9 @@ password checks:
   Set to _None_ to disable internal password checking.
 
   The internal `fsa` provider supports `bcrypt` and `scrypt` (with a dependency
-  to their eponymous package), `argon2` (with `argon2-cffi`), `plaintext` (do
-  not use) and `a85` and `b64` obfuscated plaintext (do not use either).
+  to their eponymous package), `argon2` (with `argon2-cffi`), `otp` (time OTP),
+  `plaintext` (do not use) and `a85` and `b64` obfuscated plaintext (do not use
+  either).
 
   Further documentations:
 
@@ -465,6 +467,7 @@ password checks:
   - [argon2](https://argon2-cffi.readthedocs.io/en/stable/) for `argon2` options.
   - [scrypt](https://github.com/holgern/py-scrypt) for `scrypt` options,
     to which `saltlength` is added by the interface.
+  - [pyotp](https://pyauth.github.io/pyotp/) for TOTP options,
   - [passlib](https://passlib.readthedocs.io/en/stable/lib/passlib.hash.html)
     for available options, including the bad *plaintext*.
 
@@ -473,7 +476,7 @@ password checks:
 
 - `FSA_PASSWORD_OPTS` relevant options depending on the underlying scheme,
   (eg `passlib.CryptContext` for provider `passlib`).
-  Default is ident *2y* with *4* rounds.
+  Default is ident *2y* with *4* rounds for _bcrypt_.
 
 Beware that modern password checking is often pretty expensive in order to
 thwart password cracking if the hashed passwords are leaked, so that you
@@ -494,6 +497,7 @@ is bad practice anyway. It is just provided here for completeness.
 Function `hash_password(pass)` computes the password salted digest compatible
 with the current configuration, and may be used by the application for setting
 or resetting passwords.
+For `plaintext` and `otp`, the function returns an unhashed password.
 
 This function checks the password quality by relying on:
 - `FSA_PASSWORD_LENGTH` minimal password length, *0* to disable.
