@@ -107,7 +107,7 @@ app.config.from_envvar("ACME_CONFIG")
 
 Once initialized, `app` behaves as a standard Flask object with many additions.
 The main change is the `route` decorator, an extended version of Flask's own
-with an `authz` (or `authorize`) parameter and transparent management of request
+with an `authz` parameter and transparent management of request
 parameters.
 Per-method shortcut decorators `post`, `get`, `put`, `patch` and `delete`
 which support the same extensions.
@@ -203,8 +203,8 @@ not be merged.  Also, only one HTTPAuth-based scheme can be active at a time.
 Authentication is *always* performed on demand, either to check for a route
 authorization declared with `authz` or when calling `get_user`.
 
-The authentication scheme attempted on a route can be altered with the `auth`
-(or `authn`) parameter added to the `route` decorator.
+The authentication scheme attempted on a route can be altered with the `authn`
+parameter added to the `route` decorator.
 This may be used to restrict or change the authentication scheme on a route.
 Some combinations may or may not work depending on module internals, so this is
 only for special cases.
@@ -603,7 +603,7 @@ Performance implications of authenticating with an LDAP service are unclear.
 
 ## Authorization
 
-Authorizations are declared with the `authz` (or `authorize`) parameter to the
+Authorizations are declared with the `authz` parameter to the
 `route` decorator or its per-method shortcuts.
 The modules supports three permission models:
 

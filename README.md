@@ -50,7 +50,7 @@ def post_store_sid_product(sid: int, product: str, quantity: int):
 In this code, there is *no* clue about how users are authenticated, as this is
 set from the configuration.
 Only authorizations are declared on the route with the mandatory ``authz``
-(or `authorize`) parameter.
+parameter.
 How these are checked is also set from the configuration.
 HTTP or JSON parameters are automatically converted to the expected type,
 with features on par with [FastAPI](https://fastapi.tiangolo.com/).
