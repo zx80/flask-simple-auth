@@ -38,7 +38,9 @@ and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 ### Misc
 
 - bad/malformed requests should generate _400_ instead of _500_ in some cases?
-- deprecate/remove authorize/auth decorator parameter names.
+- remove deprecated authorize/auth decorator parameter names.
+- remove deprecated ALL/ANY/NONE special groups.
+- fix SpecialParameterFun type declaration
 
 ## 35.0 on ?
 

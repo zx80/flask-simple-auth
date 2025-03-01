@@ -141,6 +141,7 @@ class Hooks:
     """Generate a "special" parameter, with the parameter name.
 
     :param name: parameter name (usually not needed).
+    :param ...: optional special parameters.
 
     Returns an object which will be the parameter value.
     """
