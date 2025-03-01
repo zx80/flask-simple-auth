@@ -2008,7 +2008,7 @@ class _PasswordManager:
             if options is None:
                 options = {}
 
-            import pyotp
+            import pyotp  # type: ignore
 
             class PyOTPProvider:
 
