@@ -2415,6 +2415,15 @@ def test_special_parameters():
     except ConfigError as c:
         assert "special parameter" in str(c)
 
+    try:
+        # not default values on specials
+        @app.special_parameter("oops")
+        def oops(p: str, user: fsa.CurrentUser = "calvin"):
+            ...
+        pytest.fail("must raise exception")
+    except ConfigError as c:
+        assert "default value" in str(c)
+
     # working cases
     class Foo:
         pass
@@ -2427,9 +2436,15 @@ def test_special_parameters():
     def get_foo(f: Foo):
         return fsa.jsonify(f)
 
+    @app.get("/bla", authz="OPEN")
+    def get_bla(f: Foo, s: str):
+        return {"f": f, "s": s}
+
     with app.test_client() as c:
         res = check(200, c.get("/foo"))
         assert res.is_json and res.json == True
+        res = check(200, c.get("/bla", data={"s": "susie"}))
+        assert res.is_json and res.json == {"f": True, "s": "susie"}
 
 def test_multi_400():
     app = fsa.Flask("400", FSA_AUTH="none")

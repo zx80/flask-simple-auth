@@ -41,6 +41,12 @@ and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 - remove deprecated ALL/ANY/NONE special groups.
 - fix SpecialParameterFun type declaration
 
+## 35.1 on 2025-03-01
+
+- fix issue when executing special parameter with special parameters
+  under a route with other type of parameters…
+- reject special parameters with a default value.
+
 ## 35.0 on 2025-03-01
 
 - add password scheme `fsa:otp` to support time-based OTP with

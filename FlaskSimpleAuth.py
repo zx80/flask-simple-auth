@@ -3210,6 +3210,9 @@ class _ParameterHandler:
         if self._has_default:  # check default value consistency
             # FIXME should also check list items if appropriate?
 
+            if is_special:
+                raise self._pm._Bad(f"special parameter {name} cannot have a default value", where)
+
             if self._default_value is None:
                 if not self._type_is_optional:
                     log.warning(f"parameter {name} is not optional but defaults to None")
@@ -3508,15 +3511,16 @@ class _ParameterManager:
             def wrapper(*args, **kwargs):
                 # NOTE *args and **kwargs are more or less empty before being filled in from HTTP
 
-                if is_special:
-                    assert len(args) == 1, "expecting target parameter name as first parameter"
-
                 fsa = self._fsa
                 am = fsa._am
                 local = fsa._local
                 assert am  # mypy…
 
-                params = self._params()  # HTTP or JSON params
+                if is_special:
+                    assert len(args) == 1, "expecting target parameter name as first parameter"
+                    params = []
+                else:
+                    params = self._params()  # HTTP or JSON params
 
                 # detect all possible 400 errors before returning
                 error_400: list[str] = []
@@ -3546,7 +3550,9 @@ class _ParameterManager:
                                          self._fsa._server_error)
 
                 # possibly add others, without shadowing already provided ones
-                if has_kwargs:  # handle **kwargs
+                if is_special:
+                    pass
+                elif has_kwargs:  # handle **kwargs
                     for rname in params:
                         if rname not in kwargs and rname not in am._auth_params:
                             kwargs[rname] = params[rname]  # cold copy
