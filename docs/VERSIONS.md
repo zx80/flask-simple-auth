@@ -20,7 +20,7 @@ and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
   eg to rely on ad-hoc unsigned tokens, for instance.
 - [passlib totp](https://passlib.readthedocs.io/en/stable/lib/passlib.totp.html)
 
-## Authorization
+### Authorization
 
 - objs permissions defaults: should send _all_ path parameters? allow list? use named parameters?
 - oauth: issuer/scope? issuer/secret?
