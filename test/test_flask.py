@@ -1174,7 +1174,7 @@ def test_bad_app():
         pytest.fail("bad app creation must fail")
     except ConfigError as e:
         assert "unexpected authn type" in str(e)
-    app = create_app("basic")
+    app = create_app("basic", FSA_ALLOW_DEPRECATION=True)
     # incompatible route parameters
     try:
         @app.get("/bad-param-1", authorize="AUTH", authz="OPEN")
@@ -2805,7 +2805,7 @@ def run_authorize(predefs, code):
 
     for a in predefs:
 
-        app = fsa.Flask("auth", FSA_AUTH=["token", "basic", "none"])
+        app = fsa.Flask("auth", FSA_AUTH=["token", "basic", "none"], FSA_ALLOW_DEPRECATION=True)
 
         @app.get("/route", authz=a)
         def get_route():
@@ -2908,3 +2908,53 @@ def test_ldap():
 @pytest.mark.skipif(not has_package("ldap3"), reason="ldap3 is not available")
 def test_ldap3():
     ldap_tests("ldap3", LDAP_URL)
+
+def test_deprecation():
+    # allowed
+    app = fsa.Flask("deprecation", FSA_AUTH="password", FSA_ALLOW_DEPRECATION=True)
+    @app.get("/all", authorize="ALL")
+    def get_all():
+        ...
+    @app.get("/none", authorize="NONE")
+    def get_none():
+        ...
+    @app.get("/any", authorize="ANY", auth="none")
+    def get_any():
+        ...
+    # blocked
+    app = fsa.Flask("deprecation", FSA_AUTH="password", FSA_ALLOW_DEPRECATION=False)
+    try:
+        @app.get("/authorize", authorize="OPEN", authn="none")
+        def get_authorize():
+            ...
+        pytest.fail("config error must be raised")
+    except ConfigError as ce:
+        assert "deprecated" in str(ce)
+    try:
+        @app.get("/auth", authz="OPEN", auth="none")
+        def get_auth():
+            ...
+        pytest.fail("config error must be raised")
+    except ConfigError as ce:
+        assert "deprecated" in str(ce)
+    try:
+        @app.get("/all", authz="ALL", auth="none")
+        def get_all():
+            ...
+        pytest.fail("config error must be raised")
+    except ConfigError as ce:
+        assert "deprecated" in str(ce)
+    try:
+        @app.get("/any", authz="ANY")
+        def get_any():
+            ...
+        pytest.fail("config error must be raised")
+    except ConfigError as ce:
+        assert "deprecated" in str(ce)
+    try:
+        @app.get("/none", authz="NONE")
+        def get_none():
+            ...
+        pytest.fail("config error must be raised")
+    except ConfigError as ce:
+        assert "deprecated" in str(ce)

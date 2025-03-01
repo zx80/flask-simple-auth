@@ -11,6 +11,7 @@ Here is a sample configuration file for FlaskSimpleAuth applications:
 #
 FSA_MODE = "dev"                    # prod (default), dev (recommended), debug1-4
 # FSA_LOGGING_LEVEL = logging.INFO  # logging verbosity, set to logging.DEBUG for debug
+# FSA_ALLOW_DEPRECATION = False     # whether to allow deprecated features
 # FSA_SECURE = True                 # require TLS
 # FSA_CORS = False                  # CORS handling
 # FSA_CORS_OPTS = {}                # CORS initialization parameters

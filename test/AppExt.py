@@ -30,6 +30,7 @@ class Special(str):
 #
 app.config.update(
     FSA_MODE = "debug3",
+    FSA_ALLOW_DEPRECATION = True,  # for "ALL" below
     FSA_AUTH = "fake",
     FSA_TOKEN_CARRIER = "cookie",
     FSA_GET_USER_PASS = get_user_pass,

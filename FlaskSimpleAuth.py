@@ -336,7 +336,7 @@ class Header(str):
 #
 # SPECIAL PREDEFINED GROUP NAMES
 #
-ANY, ALL, NONE = "OPEN", "AUTH", "CLOSE"  # deprecated
+ANY, ALL, NONE = "ANY", "ALL", "NONE"  # deprecated constants and values…
 
 _OPEN = {"OPEN", "ANY", "NOAUTH"}
 """Open route, no authentication."""
@@ -349,6 +349,9 @@ _CLOSE = {"CLOSE", "NONE", "NOBODY"}
 
 _PREDEFS = _OPEN | _AUTH | _CLOSE
 """All predefined pseudo-group names."""
+
+_DEPRECATED_GROUPS = {"ANY", "ALL", "NONE"}
+"""Deprecated pseudo-group names."""
 
 
 def _is_predef(la: list[Any], s: set[str]):
@@ -705,7 +708,7 @@ class Directives:
     default value.
     """
 
-    # debugging
+    # debugging and deprecation
     FSA_MODE: str = "prod"
     """Execution mode.
 
@@ -718,6 +721,14 @@ class Directives:
     """Module internal logging level.
 
     Upgrade to ``logging.DEBUG`` for maximal verbosity.
+    """
+
+    FSA_ALLOW_DEPRECATION: bool = False
+    """Whether to allow deprecated features.
+
+    Default is *False*, meaning deprecated features are coldly rejected.
+    On *True*, a warning is generated when the feature is encountered.
+    This setting may or may not apply to anything depending on the version.
     """
 
     # general settings
@@ -4290,21 +4301,33 @@ class FlaskSimpleAuth:
         the necessary wrappers to manage authentication, authorization and
         parameters, before registering the endpoint to Flask WSGI dispatcher.
 
-        - ``authz`` or ``authorize``: authorization constraints.
-        - ``authn`` or ``auth``: authentication constraints.
+        - ``authz``: authorization constraints.
+        - ``authn``: authentication constraints.
         - ``realm``: realm for this route, supercedes global settings.
+
+        NOTE ``authorize`` and ``auth`` are deprecated versions of ``authz`` and ``authn``.
         """
 
         # handle authz/authorize and authn/auth
+        deprecation = self._app.config.get("FSA_ALLOW_DEPRECATION", Directives.FSA_ALLOW_DEPRECATION)
+
         if "authorize" in options:
+            if deprecation:
+                log.warning(f"deprecated use of 'authorize' on {rule}")
+            else:
+                raise self._Bad(f"cannot use deprecated 'authorize', use 'authz' on {rule}")
             if authz is not None:
-                raise self._Bad("cannot use both authz and authorize on a route")
+                raise self._Bad(f"cannot use both 'authz' and 'authorize' on {rule}")
             authz = options["authorize"]
             del options["authorize"]
 
         if "auth" in options:
+            if deprecation:
+                log.warning(f"deprecated use of 'auth' on route {rule}")
+            else:
+                raise self._Bad(f"cannot use deprecated 'auth', use 'authn' on {rule}")
             if authn is not None:
-                raise self._Bad("cannot use both authn and auth on a route")
+                raise self._Bad(f"cannot use both 'authn' and 'auth' on {rule}")
             authn = options["auth"]
             del options["auth"]
 
@@ -4349,6 +4372,14 @@ class FlaskSimpleAuth:
             assert authn == ["oauth"]
             if not self._am._tm._issuer:
                 raise self._Bad(f"oauth token authorizations require FSA_TOKEN_ISSUER on {rule}")
+
+        # pseudo-group deprecation
+        deprecated_groups = list(filter(lambda a: a in _DEPRECATED_GROUPS, authz))
+        if deprecated_groups:
+            if deprecation:
+                log.warning(f"use of deprecated pseudo-group {deprecated_groups} on {rule}")
+            else:
+                raise self._Bad(f"cannot use deprecated pseudo-group {deprecated_groups} on {rule}")
 
         # separate predefs, groups and perms
         predefs = list(filter(lambda a: a in _PREDEFS, authz))

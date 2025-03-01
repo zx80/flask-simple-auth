@@ -20,7 +20,7 @@ def create_app(auth=None, **config):
 # failing pass
 def create_badapp_2(**config):
     app = Flask("bad 2")
-    app.config.update(**config, FSA_AUTH="param")
+    app.config.update(**config, FSA_AUTH="param", FSA_ALLOW_DEPRECATION=True)
 
     @app.get_user_pass
     def get_user_bad_pass(login: str):
@@ -40,7 +40,7 @@ def create_badapp_2(**config):
 # failing group
 def create_badapp_3(**config):
     app = Flask("bad 3")
-    app.config.update(**config, FSA_AUTH="fake")
+    app.config.update(**config, FSA_AUTH="fake", FSA_ALLOW_DEPRECATION=True)
 
     @app.user_in_group
     def user_in_bad_group(login: str, group: str):

@@ -23,7 +23,8 @@ app = Flask(
     debug=True,
     FSA_AUTH=["token", "param", "basic", "fake", "none"],
     FSA_MODE="debug2",
-    FSA_LOGGING_LEVEL=logging.DEBUG
+    FSA_LOGGING_LEVEL=logging.DEBUG,
+    FSA_ALLOW_DEPRECATION=True,
 )
 
 #

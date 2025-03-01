@@ -18,8 +18,7 @@ def get_scare():
 
 
 # GET /scare/token: return a token for current user
-# NOTE use old authorize and auth parameters for coverage
-@scare.get("/scare/token", authorize="AUTH", auth="basic")
+@scare.get("/scare/token", authz="AUTH", authn="basic")
 def get_scare_token():
     return json(app.create_token()), 200
 

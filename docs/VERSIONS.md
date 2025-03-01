@@ -18,7 +18,6 @@ and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 - fake provider for testing: limiting fake authn to a parameter is inconvenient in practice.
   or record "test" as a new authentication and provide an adhoc function,
   eg to rely on ad-hoc unsigned tokens, for instance.
-- deprecate/remove authorize/auth decorator parameter names.
 - [passlib totp](https://passlib.readthedocs.io/en/stable/lib/passlib.totp.html)
 - [pyauth totp](https://pyauth.github.io/pyotp/)
 
@@ -28,7 +27,6 @@ and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 - oauth: issuer/scope? issuer/secret?
 - ldap authz?
 - authz/authn consistency? should "none" be required for "OPEN" routes?
-- deprecate authorization/auth decorator parameters in favor of authz/authn.
 
 ### Caching
 
@@ -40,14 +38,18 @@ and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 ### Misc
 
 - bad/malformed requests should generate _400_ instead of _500_ in some cases?
+- deprecate/remove authorize/auth decorator parameter names.
 
 ## 35.0 on ?
 
 - improve doc.
 - switch doc and code to prefer `authz` and `authn` over `authorize` and `auth`.
 - reject `CurrentUser` access on `OPEN` route.
-- deprecate old ANY/ALL/NONE authorizations.
 - allow special parameters hooks to require special parameter parameters.
+- add `FSA_ALLOW_DEPRECATION` configuration directive to control whether deprecated
+  features are allowed.
+- deprecate old ANY/ALL/NONE authorizations.
+- deprecate authorize/auth decorator parameters in favor of authz/authn.
 
 ## 34.3 on 2025-01-14
 
