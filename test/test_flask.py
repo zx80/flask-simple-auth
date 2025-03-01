@@ -2263,6 +2263,11 @@ def test_jsonify_with_types():
     def get_raw(r: float):
         return fsa.jsonify(r)
 
+    # should just skip
+    @app.get("/skip", authz="OPEN")
+    def get_skip():
+        return fsa.jsonify(Response('["hello", "world!"]', 200, mimetype="application/json"))
+
     with app.test_client() as c:
         res = check(200, c.get("/pair", json={"i": 18, "j": 42}))
         assert res.json == [18, 42]
@@ -2272,8 +2277,10 @@ def test_jsonify_with_types():
         assert res.json.startswith("1600 days")
         res = check(200, c.get("/rotate", json={"c": "1+1j"}))
         assert res.json == [-1, 1]
-        res = check(200, c.get("raw", data={"r": 3.14}))
+        res = check(200, c.get("/raw", data={"r": 3.14}))
         assert res.json == 3.14
+        res = check(200, c.get("/skip"))
+        assert res.json == ["hello", "world!"]
 
 def test_pydantic_models():
     import pydantic
@@ -2369,6 +2376,60 @@ def test_pydantic_models():
         # Doom
         r = check(200, c.get("/doom"))
         assert r.json == DOOM
+
+def test_special_parameters():
+    app = fsa.Flask("specials", FSA_AUTH="none")
+
+    # trigger configuration errors
+    try:
+        # p must be str
+        @app.special_parameter("foo")
+        def foo(p: int):
+            ...
+        pytest.fail("must raise exception")
+    except ConfigError as c:
+        assert "str" in str(c)
+
+    try:
+        # first parameter must be a scalar
+        @app.special_parameter("kind")
+        def kind(*args):
+            ...
+        pytest.fail("must raise exception")
+    except ConfigError as c:
+        assert "kind" in str(c)
+
+    try:
+        # there must be a first parameter
+        app.special_parameter("bla", lambda: None)
+        pytest.fail("must raise exception")
+    except ConfigError as c:
+        assert "first" in str(c)
+
+    try:
+        # second parameter must be special
+        @app.special_parameter("fun")
+        def fun(p: str, x: str):
+            ...
+        pytest.fail("must raise exception")
+    except ConfigError as c:
+        assert "special parameter" in str(c)
+
+    # working cases
+    class Foo:
+        pass
+
+    @app.special_parameter(Foo)
+    def foo(p: str, a: fsa.CurrentApp):
+        return isinstance(a, fsa.Flask) and a.name == "specials"
+
+    @app.get("/foo", authz="OPEN")
+    def get_foo(f: Foo):
+        return fsa.jsonify(f)
+
+    with app.test_client() as c:
+        res = check(200, c.get("/foo"))
+        assert res.is_json and res.json == True
 
 def test_multi_400():
     app = fsa.Flask("400", FSA_AUTH="none")

@@ -916,6 +916,7 @@ app.special_parameter(Request, lambda _: request)
 app.special_parameter(FileStorage, lambda p: request.files[p])
 ```
 
+Special parameter hooks can require other special parameters as parameters.
 An example use-case is to make user-related data easily available
 through such a special type:
 
@@ -924,7 +925,9 @@ class User:
     def __init__(self, login: str):
         self.firstname, self.lastname = db.get_user_data(login=login)
 
-app.special_parameter(User, lambda _: User(app.current_user()))
+@app.special_parameter(User)
+def gen_user(_: str, user: CurrentUser):
+    return User(user)
 
 @app.get("/hello", authz="AUTH")
 def get_hello(user: User):

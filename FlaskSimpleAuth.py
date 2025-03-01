@@ -577,7 +577,9 @@ def jsonify(a: Any) -> Response:
     NOTE on generators, the generator output is json-streamed instead of being
     treated as a string or bytes generator.
     """
-    if inspect.isgenerator(a) or type(a) in (map, filter, range):
+    if isinstance(a, Response):
+        return a
+    elif inspect.isgenerator(a) or type(a) in (map, filter, range):
         out = _json_stream(a)
         if not _fsa_json_streaming:  # switch to string
             out = "".join(out)
@@ -2353,7 +2355,7 @@ class _AuthenticationManager:
 
     def authentication(self, auth: str, hook: Hooks.AuthenticationFun|None = None):
         """Add new authentication hook, can be used as a decorator."""
-        return self._store(self._authentication, "authentication", auth, hook)
+        return self._store(self._authentication, "authentication", auth, None, hook)
 
     def _set_www_authenticate(self, res: Response) -> Response:
         """Set WWW-Authenticate response header depending on current scheme."""
@@ -2818,7 +2820,7 @@ class _AuthorizationManager:
     def group_check(self, group: str|int, checker: Hooks.GroupCheckFun|None = None):
         """Add a check hook for a group."""
         self._groups.add(group)
-        return self._store(self._group_checks, "group authz checker", group, checker)
+        return self._store(self._group_checks, "group authz checker", group, None, checker)
 
     def _check_groups(self, login: str, group: str|int) -> bool|None:
         """Return whether login belongs to group, or *None* if no group check hook."""
@@ -2838,7 +2840,7 @@ class _AuthorizationManager:
 
     def object_perms(self, domain: str, checker: Hooks.ObjectPermsFun|None = None):
         """Add an object permission helper for a given domain."""
-        return self._store(self._object_perms, "object permission checker", domain, checker)
+        return self._store(self._object_perms, "object permission checker", domain, None, checker)
 
     def _check_object_perms(self, domain: str, user: str, oid, mode: str|None) -> bool|None:
         """Can user access object oid in domain for mode, cached."""
@@ -3024,9 +3026,10 @@ class _ParameterHandler:
     :param pm: parameter manager
     :param hint: parameter description from inspect
     :param where: parameter location for error messages
+    :param is_special: function is a special parameter hook
     """
 
-    def __init__(self, pm, name: str, hint: inspect.Parameter, where: str):
+    def __init__(self, pm, name: str, hint: inspect.Parameter, where: str, is_special: bool):
 
         assert hint.kind not in (inspect.Parameter.VAR_KEYWORD, inspect.Parameter.VAR_POSITIONAL)
 
@@ -3035,6 +3038,9 @@ class _ParameterHandler:
         # python and request names
         self._name = name
         self._rname = name[1:] if len(name) > 1 and name[0] == "_" else name
+
+        # special parameter, otherwise standard route function?
+        self._is_special = is_special
 
         # expected type
         self._type = _typeof(hint)
@@ -3154,6 +3160,11 @@ class _ParameterHandler:
             self._convert_json = lambda x: x
             self._caster = self._pm._casts.get(self._type, self._type)
             self._checker = None
+
+        # special parameter functions can only have special parameters beyond
+        # the first parameter which holds the parameter name
+        if is_special and self._extract is None:
+            raise self._pm._Bad(f"parameter {name} in special parameter is not a special parameter", where)
 
         for caster in (self._caster, self._type_list_item_caster):
             if caster and (not callable(caster) or caster.__module__ == "typing"):
@@ -3339,11 +3350,13 @@ class _ParameterManager:
 
     def cast(self, t, cast: Hooks.CastFun|None = None):
         """Add a cast function associated to a type."""
-        return self._store(self._casts, "type casting", t, cast)
+        return self._store(self._casts, "type casting", t, None, cast)
 
     def special_parameter(self, t, sp: Hooks.SpecialParameterFun|None = None):
         """Add a special parameter type."""
-        return self._store(self._special_parameters, "special parameter", t, sp)
+        return self._store(self._special_parameters, "special parameter", t,
+                           # wrapper to handle special parameters…
+                           lambda f: self._parameters("*", False, True)(f), sp)
 
     def _params(self):
         """Get request parameters wherever they are."""
@@ -3390,8 +3403,15 @@ class _ParameterManager:
 
         return decorate
 
-    def _parameters(self, path: str, is_open: bool):
-        """Decorator to handle request parameters."""
+    def _parameters(self, path: str, is_open: bool, is_special: bool = False):
+        """Decorator to handle route/special function parameters.
+
+        :param path: route path
+        :param is_open: whether route is open, i.e. not authenticated
+        :param is_special: whether decorated function is a special parameter hook
+        """
+
+        assert not is_special or path == "*" and not is_open
 
         def decorate(fun: Callable):
 
@@ -3405,7 +3425,16 @@ class _ParameterManager:
             where = f"{fun.__name__}() at {fun.__code__.co_filename}:{fun.__code__.co_firstlineno}"
 
             # build helpers
+            nparam = 0
             for name, param in sigs.parameters.items():
+                nparam += 1
+                if is_special and nparam == 1:
+                    # check first parameter kind and type in passing for special parameter function
+                    if param.kind != inspect.Parameter.POSITIONAL_OR_KEYWORD:
+                        raise self._Bad("invalid first parameter kind for special parameter function", where)
+                    if param.annotation not in (str, inspect._empty):
+                        raise self._Bad("first parameter of special parameter function must be str", where)
+                    continue
                 if name in handlers or name in names:
                     raise self._Bad(f"parameter name collision on {name}", where)
                 elif param.kind == inspect.Parameter.VAR_KEYWORD:
@@ -3413,12 +3442,20 @@ class _ParameterManager:
                 elif param.kind == inspect.Parameter.VAR_POSITIONAL:
                     raise self._Bad(f"unsupported positional parameter: {name}", where)
                 else:
-                    handler = _ParameterHandler(self, name, param, where)
+                    handler = _ParameterHandler(self, name, param, where, is_special)
                     handlers[name] = handler
                     names[handler._rname] = name
                 # reject CurrentUser special parameter under authz="OPEN"
                 if is_open and _typeof(param) == CurrentUser:
                     raise self._Bad(f"cannot get {name} current user on open (non authenticated) route {path}", where)
+
+            if is_special:
+                # sanity checks in passing
+                assert not has_kwargs
+                if nparam == 0:
+                    raise self._Bad("special parameter function must have a str first parameter", where)
+                if nparam == 1:  # shortcut, no wrapping needed
+                    return fun
 
             # debug helpers
             def getNames(pl):
@@ -3437,6 +3474,9 @@ class _ParameterManager:
             @functools.wraps(fun)
             def wrapper(*args, **kwargs):
                 # NOTE *args and **kwargs are more or less empty before being filled in from HTTP
+
+                if is_special:
+                    assert len(args) == 1, "expecting target parameter name as first parameter"
 
                 fsa = self._fsa
                 am = fsa._am
@@ -3966,7 +4006,8 @@ class FlaskSimpleAuth:
         log.critical(msg)
         return ConfigError(msg)
 
-    def _store(self, store: dict[Any, Any], what: str, key: Any, val: Callable|None = None):
+    def _store(self, store: dict[Any, Any], what: str, key: Any,
+               wrapper: Callable|None, val: Callable|None = None):
         """Add a function associated to something in a dict.
 
         This can be used as a decorator if the last parameter is None.
@@ -3976,12 +4017,12 @@ class FlaskSimpleAuth:
         if val:  # direct
             if key in store:
                 log.warning(f"overriding {what} function for {key}")
-            store[key] = val
-        else:
+            store[key] = wrapper(val) if wrapper else val
+        else:  # decorator use
 
             def decorate(fun: Callable):
                 assert fun is not None
-                self._store(store, what, key, fun)
+                self._store(store, what, key, wrapper, fun)
                 return fun
 
             return decorate
@@ -4092,7 +4133,7 @@ class FlaskSimpleAuth:
                 raise self._Bad(f"header name must be a string: {_type(k)}")
             if not (isinstance(v, str) or callable(v)):
                 raise self._Bad(f"header value must be a string or a callable: {_type(v)}")
-            self._store(self._rm._headers, "header", k, v)  # type: ignore
+            self._store(self._rm._headers, "header", k, None, v)  # type: ignore
 
     def before_exec(self, hook: Hooks.BeforeExecFun) -> None:
         """Register an after auth/just before exec hook."""
