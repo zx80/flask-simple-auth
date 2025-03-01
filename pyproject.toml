@@ -55,7 +55,7 @@ password = [
   "bcrypt",
   "argon2-cffi",
   "scrypt",
-  "pyopt",
+  "pyotp",
   "passlib",
   "crypt_r; python_version >= '3.13'",  # crypt replacement
 ]
