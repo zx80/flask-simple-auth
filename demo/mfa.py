@@ -20,21 +20,24 @@ from database import db
 
 mfa = fsa.Blueprint("mfa", __name__)
 
+DIGITS = int(os.environ.get("OTP_DIGITS", 6))
+
 # 1st stage, authenticated with a password
 @mfa.get("/login", authz="AUTH", authn="basic")
 def get_login(user: fsa.CurrentUser):
     # MFA CODE: # create a 6 digit temporary random code
-    # NOTE 4 bytes ~ 4 10⁹ is okay for 6 digits with minimal bias
-    code = int.from_bytes(os.urandom(4)) % 1000000
-    assert 0 <= code < 1000000
+    # NOTE extract one digit per bytes
+    rnd = int.from_bytes(os.urandom(DIGITS)) % 10 ** DIGITS
+    assert 0 <= rnd < 10 ** DIGITS
+    code = str(rnd + 10 ** (DIGITS+1))[1:]
     # store the code, including a timestamp to check for expiration
-    done = db.set_user_code(login=user, code=f"{code:06}")
+    done = db.set_user_code(login=user, code=code)
     # NOTE may be rejected, eg reset time is too short (5 seconds)
     done or fsa.err("cannot set user code", 400)
     # TODO send to code to the user (SMS, email, app…)
     #      for testing purpose, the code is stored in a tmp file
     with open(f"./{user}_code.txt", "w") as file:
-        file.write(f"{code:06}")
+        file.write(code)
     # MFA TOTP: there is nothing to send beyond the temporary token
     return jsonify(app.create_token(user, realm="mfa", delay=1.0)), 200
 
@@ -56,7 +59,7 @@ def post_totp(otp: str, user: fsa.CurrentUser):
     secret, last_otp = db.get_user_otp_data(login=user)
     if otp == last_otp:
         fsa.err(f"rejected OTP replay attack on {user}", 401)
-    if not pyotp.TOTP(secret).verify(otp, valid_window=1):
+    if not pyotp.TOTP(secret, digits=DIGITS).verify(otp, valid_window=1):
         fsa.err(f"invalid OTP code for {user}", 401)
     # YES! keep for replay guard and generate 2nd stage token
     db.set_user_otp_last(login=user, last_otp=otp)

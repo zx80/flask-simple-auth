@@ -419,7 +419,8 @@ def test_mfa_otp(client):
     check(401, client.post("/mfa/totp", data={"AUTH": "mfa:foo:20500729123456:deadbeef"}))
     check(400, client.post("/mfa/totp", data={"AUTH": token1}))
     check(401, client.post("/mfa/totp", data={"AUTH": token1, "otp": "abcdef"}))
-    code = pyotp.TOTP(BLA_SECRET).now()
+    DIGITS = int(os.environ.get("OTP_DIGITS", 6))
+    code = pyotp.TOTP(BLA_SECRET, digits=DIGITS).now()
     res = check(200, client.post("/mfa/totp", data={"AUTH": token1, "otp": code}))
     token2 = res.json
     assert isinstance(token2, str) and token2.startswith("demo:bla:")
