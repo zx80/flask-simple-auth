@@ -4,15 +4,14 @@
 # NOTE these could be simplified with FlaskTester
 #
 
-import pytest
-from app import app
-
+import os
+import re
 import base64
 import json
 import jwt
-import re
-
 import logging
+import pytest
+from app import app
 
 # logging.basicConfig()  # done in app
 log = logging.getLogger("test")
@@ -71,12 +70,10 @@ def client():
     with app.test_client() as c:
         yield c
 
-
 # check that a request returned the expected result
 def check(status, res):
     assert res.status_code == status
     return res
-
 
 # GET /now
 def test_now(client):
@@ -87,7 +84,6 @@ def test_now(client):
     check(405, client.patch("/now"))
     check(405, client.delete("/now"))
     check(405, client.trace("/now"))
-
 
 # GET /who
 def test_who(client):
@@ -101,12 +97,10 @@ def test_who(client):
     check(405, client.delete("/who"))
     check(405, client.trace("/who"))
 
-
 # GET /version
 def test_version(client):
     res = check(200, client.get("/version"))
     assert b"." in res.data
-
 
 # GET /stuff helper
 def get_stuff_id(client, stuff):
@@ -116,7 +110,6 @@ def get_stuff_id(client, stuff):
         if t[1] == stuff:
             return t[0]
     return None
-
 
 # GET POST DELETE PATCH /stuff
 def test_stuff(client):
@@ -144,7 +137,6 @@ def test_stuff(client):
     assert b"Hello" in res.data and b"World" in res.data and b"Calvin" not in res.data
     res = check(200, client.get("/stuff", data={"pattern": "H%"}, headers=FOO_BASIC))
     assert b"Hello" in res.data and b"World" not in res.data
-
 
 # GET, POST, PATCH, DELETE /scare (self-care)
 def test_scare(client):
@@ -226,7 +218,6 @@ def test_scare(client):
     check(401, client.get("/scare", headers=TMP_BASIC_3))
     check(401, client.get("/scare", headers=TMP_BASIC_4))
 
-
 # GET POST PATCH DELETE /users
 def test_users(client):
     res = check(200, client.get("/users", headers=FOO_BASIC))
@@ -279,7 +270,6 @@ def test_users(client):
     check(204, client.delete("/users/tmp", headers=FOO_BASIC))
     check(404, client.get("/users/tmp", headers=FOO_BASIC))
 
-
 def test_auth(client):
     import model
     res = check(200, client.get("/auth", headers=FOO_BASIC))
@@ -307,7 +297,6 @@ def test_auth(client):
     # more errors
     check(405, client.patch("/auth/foo", headers=FOO_BASIC))
     check(401, client.get("/auth/foo", headers=TMP_BASIC))
-
 
 def test_types(client):
     # scalars
@@ -352,7 +341,6 @@ def test_types(client):
     res = check(200, client.get("/types/ls", json={"ls": ["hello", "world"]})).json
     assert res["len"] == 2 and res["all"] == "hello/world"
 
-
 def test_jwt_oauth(client):
     if not app._fsa._am._tm._token == "jwt":
         pytest.skip("test needs jwt tokens")
@@ -383,13 +371,16 @@ def test_jwt_oauth(client):
     # final request detroys test user "calvin"
     check(204, client.delete("/oauth", headers=CALVIN_RWD))
 
-
 def test_upload(client):
     import io
-    res = check(201, client.post("/upload", data={"file": (io.BytesIO(b"Hello World!\n"), "hello.txt")}, headers=FOO_BASIC))
+    res = check(201,
+        client.post("/upload",
+                    data={"file": (io.BytesIO(b"Hello World!\n"), "hello.txt")},
+                    headers=FOO_BASIC)
+    )
     assert re.search(r" [0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}\.tmp", str(res.data))
 
-
+@pytest.mark.skipif(os.environ["DATABASE"] != "postgres", reason="test requires postgres")
 def test_mfa_code(client):
     if not app._fsa._am._tm._token == "fsa":
         pytest.skip("test needs fsa tokens")
@@ -412,7 +403,7 @@ def test_mfa_code(client):
     check(401, client.get("/mfa/test", data={"AUTH": token1}))
     check(200, client.get("/mfa/test", data={"AUTH": token2}))
 
-
+@pytest.mark.skipif(os.environ["DATABASE"] != "postgres", reason="test requires postgres")
 def test_mfa_otp(client):
     if not app._fsa._am._tm._token == "fsa":
         pytest.skip("test needs fsa tokens")

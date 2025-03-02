@@ -47,6 +47,9 @@ stuff.db: users.sql
 	sqlite3 $@ < data.sql
 	sqlite3 $@ < users.sql
 
+.PHONY: stuff.db2
+stuff.db2: stuff.db
+
 stuff.pg: users.sql
 	createdb stuff
 	psql stuff < create-pg.sql
@@ -99,23 +102,13 @@ run: app.pid
 log: run
 	tail -f app.log
 
-run.db:
-	$(MAKE) DB=db run
+run.%:
+	DB=$(subst run.,,$@)
+	$(MAKE) DB=$$DB run
 
-run.pg:
-	$(MAKE) DB=pg run
-
-run.pg2:
-	$(MAKE) DB=pg2 run
-
-log.db:
-	$(MAKE) DB=db log
-
-log.pg:
-	$(MAKE) DB=pg log
-
-log.pg2:
-	$(MAKE) DB=pg2 log
+log.%:
+	DB=$(subst log.,,$@)
+	$(MAKE) DB=$$DB log
 
 #
 # TESTS
@@ -149,33 +142,43 @@ check.flake8:
 check.ruff:
 	ruff check --ignore=E402 $(F.py)
 
-.PHONY: check.pg
-check.pg:
-	$(MAKE) DB=pg check
-
-.PHONY: check.pg2
-check.pg2:
-	$(MAKE) DB=pg2 check
-
-.PHONY: check.db
-check.db:
-	$(MAKE) DB=db check
+check.%:
+	DB=$(subst check.,,$@)
+	if [[ $$DB == db* ]] ; then
+	  export DATABASE="sqlite"
+	else
+	  export DATABASE="postgres"
+	fi
+	$(MAKE) DB=$$DB check.pytest
 
 .PHONY: check.pgall
 check.pgall:
 	$(MAKE) check.pg
 	$(MAKE) check.pg2
 
+.PHONY: check.dball
+check.dball:
+	$(MAKE) check.db
+	$(MAKE) check.db2
+
 .PHONY: check.all
 check.all:
-	$(MAKE) check.db
+	$(MAKE) check.dball
 	$(MAKE) check.pgall
 
 # coverage with tests of github actions
 COVER_DATA  = ../test/.coverage
 
-.PHONY: check.coverage
-check.coverage: stuff.$(DB)
+.PHONY: check.coverage.db
+check.coverage.db: stuff.$(DB)
 	export FLASK_APP=app.py FLASK_DEBUG=1 APP_CONFIG=app-$(DB).conf
 	coverage run -a --data-file=$(COVER_DATA) -m $(PYTEST) $(PYTOPT) test_demo.py
 
+.PHONY: check.coverage
+check.coverage:
+	export DATABASE="sqlite"
+	$(MAKE) DB=db check.coverage.db
+	$(MAKE) DB=db2 check.coverage.db
+	export DATABASE="postgres"
+	$(MAKE) DB=pg check.coverage.db
+	$(MAKE) DB=pg2 check.coverage.db
