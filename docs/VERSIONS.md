@@ -40,6 +40,7 @@ and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 - remove deprecated authorize/auth decorator parameter names.
 - remove deprecated ALL/ANY/NONE special groups.
 - fix SpecialParameterFun type declaration
+- fix realm persistance for `create_token`?
 
 ## 35.1 on 2025-03-01
 
