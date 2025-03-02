@@ -42,6 +42,10 @@ and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 - fix SpecialParameterFun type declaration
 - fix realm persistance for `create_token`?
 
+## ? on ?
+
+- improve MFA demo with actual random code and time-based OTP.
+
 ## 35.1 on 2025-03-01
 
 - fix issue when executing special parameter with special parameters

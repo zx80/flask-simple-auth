@@ -29,7 +29,7 @@ def get_login(user: fsa.CurrentUser):
     code = int.from_bytes(os.urandom(4)) % 1000000
     # store the code, including a timestamp to check for expiration
     done = db.set_user_code(login=user, code=f"{code:06}")
-    # NOTE may be rejected, eg reset time is too short
+    # NOTE may be rejected, eg reset time is too short (5 seconds)
     done or fsa.err("cannot set user code", 400)
     # TODO send to code to the user (SMS, email, app…)
     # for testing purpose, we store the code in a tmp file

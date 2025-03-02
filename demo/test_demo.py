@@ -347,9 +347,9 @@ def test_types(client):
     assert b"Calvin" in res.data
     res = check(400, client.post("/types/pers", json={"pers": ERROR}))
     assert b"cast error" in res.data
-    res = check(400, client.get("/types/ls", json={"l": ["hello", 2]}))
+    res = check(400, client.get("/types/ls", json={"ls": ["hello", 2]}))
     assert b"expecting list" in res.data
-    res = check(200, client.get("/types/ls", json={"l": ["hello", "world"]})).json
+    res = check(200, client.get("/types/ls", json={"ls": ["hello", "world"]})).json
     assert res["len"] == 2 and res["all"] == "hello/world"
 
 
