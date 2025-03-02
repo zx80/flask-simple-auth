@@ -488,6 +488,9 @@ Please consider using tokens to reduce the authentication load on each request.
 Beware that time-based OTP should **never** be used as a sole authentication
 but only as part of a wider MFA setup, and that it requires additional
 [configuration efforts](https://datatracker.ietf.org/doc/html/rfc6238#section-5).
+From this perpective, the implementation provided is simply a proof of concept.
+See `demo/mfa.py` for a more realistic implementation of MFA with temporary
+random codes sent to the user or time-based OTP such as on RFC6238.
 
 For `digest` authentication, the password must be either in *plaintext* or a
 simple MD5 hash ([RFC 2617](https://www.rfc-editor.org/rfc/rfc2617.txt)).
