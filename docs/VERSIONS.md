@@ -45,6 +45,7 @@ and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 ## ? on ?
 
 - improve MFA demo with actual random code and time-based OTP.
+- improve documentation.
 
 ## 35.1 on 2025-03-01
 
