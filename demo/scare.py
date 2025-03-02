@@ -31,10 +31,10 @@ def get_scare_token2(code: str, user: fsa.CurrentUser):
     return json(app.create_token(user)), 200
 
 
-# POST /scare (login, pass): register a new user, or 500 if already exists
+# POST /scare (login, pass, secret): register a new user, or 500 if already exists
 @scare.post("/scare", authz="OPEN")
-def post_scare(login: str, email: str, _pass: str):
-    res = db.add_user(login=login, email=email, upass=app.hash_password(_pass), admin=False)
+def post_scare(login: str, email: str, _pass: str, secret: str):
+    res = db.add_user(login=login, email=email, upass=app.hash_password(_pass), admin=False, secret=secret)
     app.password_uncache(login)  # needed, because previous failures are cached…
     return json(res), 201
 

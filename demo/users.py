@@ -26,17 +26,18 @@ def get_users_login(login: str):
 
 # POST /users (login, pass, admin): add a new user
 @users.post("/users", authz="ADMIN")
-def post_users(login: str, email: str, _pass: str, admin: bool = False):
-    res = db.add_user(login=login, email=email, upass=app.hash_password(_pass), admin=admin)
+def post_users(login: str, email: str, _pass: str, secret: str, admin: bool = False):
+    res = db.add_user(login=login, email=email, upass=app.hash_password(_pass), admin=admin, secret=secret)
     app.password_uncache(login)  # needed?
     app.password_uncache(email)  # needed?
     return json(res), 201
 
 
-# PATCH /users/<login> (pass?, email? admin?): update user data
+# PATCH /users/<login> (pass?, email? admin?, secret?): update user data
 @users.patch("/users/<login>", authz="ADMIN")
 def patch_users_login(login: str, email: str|None = None,
-                      _pass: str|None = None, admin: bool|None = None):
+                      _pass: str|None = None, admin: bool|None = None,
+                      secret: str|None = None):
     old = db.get_user_data(login=login)
     assert old is not None
     # FIXME patching on /users/<email> will fail
@@ -51,6 +52,8 @@ def patch_users_login(login: str, email: str|None = None,
         db.upd_user_admin(login=login, admin=admin)
         app.group_uncache(login, "ADMIN")
         app.group_uncache(old[1], "ADMIN")
+    if secret is not None:
+        db.upd_user_secret(login=login, secret=secret)
     return "", 204
 
 

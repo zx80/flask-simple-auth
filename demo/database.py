@@ -10,8 +10,9 @@ from FlaskSimpleAuth import Reference, Flask, Response  # type: ignore
 db: Any = Reference()
 
 
-# always close current transaction
+# NOTE this is simplistic!
 def db_commit(res: Response):
+    """Close current transation."""
     if res.status_code < 400:
         db.commit()
     else:
@@ -19,7 +20,7 @@ def db_commit(res: Response):
     return res
 
 
-# module initialization
 def init_app(app: Flask):
+    """Database stuff initialization."""
     db.set_fun(lambda i: DB(**app.config["DATABASE"]))
     app.after_request(db_commit)

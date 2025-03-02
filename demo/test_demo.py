@@ -42,7 +42,10 @@ def gen_jwt(sub: str, aud: str, iss: str, delay: int, scope: str, secret: str):
 
 # 2 predefined admins
 FOO_BASIC = basic("foo", "bla")
+FOO_SECRET = "FOOSECRETFOOSECRET"
 BLA_BASIC = basic("bla", "foo")
+BLA_SECRET = "BLASECRETBLASECRET"
+TMP_SECRET = "TMPSECRETTMPSECRET"
 
 # temporary users for testing
 TMP_BASIC = basic("tmp", "tmp")
@@ -167,7 +170,7 @@ def test_scare(client):
         201,
         client.post(
             "/scare",
-            data={"login": "tmp", "email": "tmp@somewhere.org", "pass": "tmp"},
+            data={"login": "tmp", "email": "tmp@somewhere.org", "pass": "tmp", "secret": TMP_SECRET},
             headers=FOO_BASIC,
         ),
     )
@@ -241,6 +244,7 @@ def test_users(client):
                 "email": "tmp@somewhere.org",
                 "pass": "tmp",
                 "admin": False,
+                "secret": TMP_SECRET,
             },
             headers=FOO_BASIC,
         ),
@@ -283,12 +287,12 @@ def test_auth(client):
     foo_aid = check(200, client.get("/auth/foo", headers=FOO_BASIC)).json["aid"]
     assert isinstance(foo_aid, int)
     # new tmp user
-    tmp = model.User(login="tmp", upass="tmp", email="tmp@somewhere.fr", admin=True)
+    tmp = model.User(login="tmp", upass="tmp", email="tmp@somewhere.fr", admin=True, secret=TMP_SECRET)
     assert tmp.aid is None
     res_aid = check(201, client.post("/auth", json={"user": tmp}, headers=FOO_BASIC)).json
     tmp.aid = res_aid["aid"]
     tmp_get = check(200, client.get("/auth/tmp", headers=TMP_BASIC)).json
-    assert isinstance(tmp_get, dict) and len(tmp_get) == 5
+    assert isinstance(tmp_get, dict) and len(tmp_get) == 6
     tmp2 = model.User(**tmp_get)
     tmp.upass = tmp2.upass  # override non encoded password field
     assert tmp == tmp2
@@ -361,6 +365,7 @@ def test_jwt_oauth(client):
                 "email": "calvin@comics.net",
                 "pass": "hobbes",
                 "admin": False,
+                "secret": "HOBBESSECRET2345"
             },
             headers=FOO_BASIC,
         ),
@@ -385,22 +390,48 @@ def test_upload(client):
     assert re.search(r" [0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}\.tmp", str(res.data))
 
 
-def test_mfa(client):
+def test_mfa_code(client):
     if not app._fsa._am._tm._token == "fsa":
         pytest.skip("test needs fsa tokens")
-    check(401, client.get("/mfa/login1"))
+    check(401, client.get("/mfa/login"))
     # FIRST PASS
-    res = check(200, client.get("/mfa/login1", headers=FOO_BASIC))
-    token1 = json.loads(res.data)
-    assert token1.startswith("mfa:foo:")
+    res = check(200, client.get("/mfa/login", headers=FOO_BASIC))
+    token1 = res.json
+    assert isinstance(token1, str) and token1.startswith("mfa:foo:")
     # SECOND PASS (FSA token with "param" carrier)
-    check(401, client.get("/mfa/login2"))
-    check(401, client.get("/mfa/login2", headers=FOO_BASIC))
-    check(401, client.get("/mfa/login2", data={"AUTH": "mfa:foo:20500729123456:deadbeef"}))
-    check(400, client.get("/mfa/login2", data={"AUTH": token1}))
-    check(401, client.get("/mfa/login2", data={"AUTH": token1, "code": "bla-code"}))
-    res = check(200, client.get("/mfa/login2", data={"AUTH": token1, "code": "foo-code"}))
-    token2 = json.loads(res.data)
-    assert token2.startswith("demo:foo:")
+    check(401, client.post("/mfa/code"))
+    check(401, client.post("/mfa/code", headers=FOO_BASIC))
+    check(401, client.post("/mfa/code", data={"AUTH": "mfa:foo:20500729123456:deadbeef"}))
+    check(400, client.post("/mfa/code", data={"AUTH": token1}))
+    check(401, client.post("/mfa/code", data={"AUTH": token1, "code": "bla-code"}))
+    code = open("./foo_code.txt").read()
+    res = check(200, client.post("/mfa/code", data={"AUTH": token1, "code": code}))
+    token2 = res.json
+    assert isinstance(token2, str) and token2.startswith("demo:foo:")
+    check(401, client.get("/mfa/test", data={"AUTH": "mfa:foo:20500729123456:deadbeef"}))
     check(401, client.get("/mfa/test", data={"AUTH": token1}))
-    res = check(200, client.get("/mfa/test", data={"AUTH": token2}))
+    check(200, client.get("/mfa/test", data={"AUTH": token2}))
+
+
+def test_mfa_otp(client):
+    if not app._fsa._am._tm._token == "fsa":
+        pytest.skip("test needs fsa tokens")
+    import pyotp
+    check(401, client.get("/mfa/login"))
+    # FIRST PASS
+    res = check(200, client.get("/mfa/login", headers=BLA_BASIC))
+    token1 = res.json
+    assert isinstance(token1, str) and token1.startswith("mfa:bla:")
+    # SECOND PASS (FSA token with "param" carrier)
+    check(401, client.post("/mfa/totp"))
+    check(401, client.post("/mfa/totp", headers=BLA_BASIC))
+    check(401, client.post("/mfa/totp", data={"AUTH": "mfa:foo:20500729123456:deadbeef"}))
+    check(400, client.post("/mfa/totp", data={"AUTH": token1}))
+    check(401, client.post("/mfa/totp", data={"AUTH": token1, "otp": "abcdef"}))
+    code = pyotp.TOTP(BLA_SECRET).now()
+    res = check(200, client.post("/mfa/totp", data={"AUTH": token1, "otp": code}))
+    token2 = res.json
+    assert isinstance(token2, str) and token2.startswith("demo:bla:")
+    check(401, client.get("/mfa/test", data={"AUTH": "mfa:bla:20500729123456:deadbeef"}))
+    check(401, client.get("/mfa/test", data={"AUTH": token1}))
+    check(200, client.get("/mfa/test", data={"AUTH": token2}))

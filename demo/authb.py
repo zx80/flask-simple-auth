@@ -19,8 +19,8 @@ authb = Blueprint("auth", __name__)
 # - the generated dict is consistent with the User class.
 #
 def tup2dict(u):
-    assert isinstance(u, (list, tuple)) and len(u) == 5  # sanity check
-    return {"aid": u[0], "login": u[1], "email": u[2], "upass": u[3], "admin": u[4]}
+    assert isinstance(u, (list, tuple)) and len(u) == 6  # sanity check
+    return {"aid": u[0], "login": u[1], "email": u[2], "upass": u[3], "admin": u[4], "secret": u[5]}
 
 # GET /auth: get all auth data
 @authb.get("/auth", authz="ADMIN")

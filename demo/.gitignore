@@ -6,3 +6,4 @@ users.sql
 __pycache__
 .mypy_cache
 venv
+*_code.txt

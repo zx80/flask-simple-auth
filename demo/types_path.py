@@ -54,12 +54,12 @@ def post_pers(pers: Personnage):
 
 class ListOfStr(list):
     """A list of strings."""
-    def __init__(self, l: list[str]):
-        if not isinstance(l, list) or not all(isinstance(i, str) for i in l):
+    def __init__(self, ls: list[str]):
+        if not isinstance(ls, list) or not all(isinstance(i, str) for i in ls):
             raise ValueError("expecting list[str]")
-        super().__init__(l)
+        super().__init__(ls)
 
 
 @types.get("/ls", authz="OPEN")
-def post_ls(l: ListOfStr):
-    return {"len": len(l), "all": "/".join(l)}, 200
+def post_ls(ls: ListOfStr):
+    return {"len": len(ls), "all": "/".join(ls)}, 200

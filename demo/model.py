@@ -7,4 +7,5 @@ class User:
     email: str
     upass: str
     admin: bool
+    secret: str
     aid: int|None = None  # empty on POST

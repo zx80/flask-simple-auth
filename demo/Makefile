@@ -15,7 +15,7 @@ DB	= db
 clean: stop
 	$(RM) *.tmp
 	$(RM) -r __pycache__ .mypy_cache
-	$(RM) stuff.db stuff.pg app.pid app.log users.sql
+	$(RM) stuff.db stuff.pg app.pid app.log users.sql *_code.txt
 	pkill flask || true
 	dropdb stuff || true
 
@@ -37,7 +37,7 @@ venv:
 # DATABASE
 #
 
-CREDS	= foo:bla bla:foo
+CREDS	= foo:bla:FOOSECRETFOOSECRET bla:foo:BLASECRETBLASECRET
 
 users.sql:
 	./pass.py $(CREDS) > $@
@@ -144,6 +144,10 @@ check.pyright:
 .PHONY: check.flake8
 check.flake8:
 	flake8 --ignore=E227,E302,E305,E402,E501 $(F.py)
+
+.PHONY: check.ruff
+check.ruff:
+	ruff check --ignore=E402 $(F.py)
 
 .PHONY: check.pg
 check.pg:
