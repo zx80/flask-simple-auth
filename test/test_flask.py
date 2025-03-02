@@ -257,6 +257,7 @@ def test_register(client):
     pop_auth(app._fsa)
 
 def test_fsa_token():
+    # hmmm… these tests are not very clean
     tm = app._fsa._am._tm
     tsave, hsave = tm._token, tm._algo
     tm._token, tm._algo = "fsa", "blake2s"
@@ -267,8 +268,13 @@ def test_fsa_token():
     assert tm._get_any_token_auth(foo_token) == "foo"
     tm._issuer = None
     calvin_token = app.create_token("calvin")
-    assert calvin_token[:12] == "Test:calvin:"
+    assert calvin_token.startswith("Test:calvin:")
     assert tm._get_any_token_auth(calvin_token) == "calvin"
+    # realm parameter
+    test2_token = app.create_token("susie", realm="test2")
+    assert test2_token.startswith("test2:susie:")
+    test_token = app.create_token("hobbes")
+    assert test_token.startswith("Test:hobbes:")
     # malformed token
     try:
         user = tm._get_any_token_auth("not an FSA token")
