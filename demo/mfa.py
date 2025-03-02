@@ -26,7 +26,7 @@ DIGITS = int(os.environ.get("OTP_DIGITS", 6))
 # 1st stage, authenticated with a password
 @mfa.get("/login", authz="AUTH", authn="basic")
 def get_login(user: fsa.CurrentUser):
-    # MFA CODE: # create a 6 digit temporary random code
+    # MFA CODE: create a <DIGITS> digits temporary random code
     # NOTE one digit per bytes keeps modulo bias very low
     # NOTE do NOT to use a simple pseudo-random generator for security
     rnd = int.from_bytes(os.urandom(DIGITS)) % 10 ** DIGITS
@@ -41,7 +41,7 @@ def get_login(user: fsa.CurrentUser):
     #      for testing purpose, the code is stored in a tmp file
     with open(f"./{user}_code.txt", "w") as file:
         file.write(code)
-    # MFA TOTP: there is nothing to send beyond the temporary token
+    # MFA TOTP: nothing to do or send beyond the temporary token
     return jsonify(app.create_token(user, realm="mfa", delay=1.0)), 200
 
 # 2nd stage with temporary code, authenticated with mfa token
@@ -51,20 +51,20 @@ def post_code(code: str, user: fsa.CurrentUser):
     refcode = db.get_user_code(login=user)
     if refcode is None or code != refcode:
         fsa.err(f"invalid temporary code for {user}", 401)
-    # YES! cleanup code and generate 2nd stage token
+    # YES! cleanup used code and generate 2nd stage token
     db.reset_user_code(login=user)
     return jsonify(app.create_token(user, realm=app.name)), 200
 
 # 2nd stage with TOTP, authenticated with mfa token
 @mfa.post("/totp", authz="AUTH", authn="token", realm="mfa")
 def post_totp(otp: str, user: fsa.CurrentUser):
-    import pyotp
     secret, last_otp = db.get_user_otp_data(login=user)
     if otp == last_otp:
         fsa.err(f"rejected OTP replay attack on {user}", 401)
+    import pyotp
     if not pyotp.TOTP(secret, digits=DIGITS).verify(otp, valid_window=1):
         fsa.err(f"invalid OTP code for {user}", 401)
-    # YES! keep for replay guard and generate 2nd stage token
+    # YES! keep otp for replay guard and generate 2nd stage token
     db.set_user_otp_last(login=user, last_otp=otp)
     return jsonify(app.create_token(user, realm=app.name)), 200
 
