@@ -20,16 +20,19 @@ from database import db
 
 mfa = fsa.Blueprint("mfa", __name__)
 
+# code number of digits
 DIGITS = int(os.environ.get("OTP_DIGITS", 6))
 
 # 1st stage, authenticated with a password
 @mfa.get("/login", authz="AUTH", authn="basic")
 def get_login(user: fsa.CurrentUser):
     # MFA CODE: # create a 6 digit temporary random code
-    # NOTE extract one digit per bytes
+    # NOTE one digit per bytes keeps modulo bias very low
+    # NOTE do NOT to use a simple pseudo-random generator for security
     rnd = int.from_bytes(os.urandom(DIGITS)) % 10 ** DIGITS
     assert 0 <= rnd < 10 ** DIGITS
-    code = str(rnd + 10 ** (DIGITS+1))[1:]
+    code = str(rnd + 10 ** DIGITS)[1:]
+    assert len(code) == DIGITS
     # store the code, including a timestamp to check for expiration
     done = db.set_user_code(login=user, code=code)
     # NOTE may be rejected, eg reset time is too short (5 seconds)
