@@ -28,7 +28,7 @@ from Flask configuration and the extended `route` decorator.
   [Flask-AppBuilder](#flask-appbuilder),
   [Flask-Login](#flask-login) and
   [others](#others).
-- [License](#license), [Versions](#versions), [TODO](#todo).
+- [License](#license), [Versions](#versions).
 
 ## Motivation
 
@@ -1293,54 +1293,3 @@ Install [package](https://pypi.org/project/FlaskSimpleAuth/) from
 [PyPI](https://pypi.org/).
 
 See [all versions](VERSIONS.md).
-
-## TODO
-
-Todo or not todo…
-
-### Authn/Authz
-
-- demo LDAP auth? One class plus a new `check_password`?
-- add `any` token scheme?
-- use `authlib`?
-- test `FSA_HTTP_AUTH_OPTS`?
-- password re could use a dict for providing an explanation?
-- how to have several issuers and their signatures schemes?
-- add `issuer` route parameter? see `realm`.
-- declare scopes *per domain*?
-
-### Params
-
-- `FSA_PARAM_STYLE` *any/http/json* to restrict/force parameters?
-  being lazy is not too bad?
-- check for bad char in parameter names
-- allow handling files in kwargs
-- add a filter on returned value? `make_response`?
-
-### Features
-
-- how to add a timeout? or manage an outside one?
-- `logging` default behavior is a *pain* and the maintainer is self satisfied.
-  how to ensure that logging is initialized?
-- the doc and implementation should clarify exception handling,
-  and possible overrides.
-- add ability to catch and process any user error.
-  what about Flask?
-- json mode: generate json in more cases? automatically?
-- declare some exceptions to be turned into 400 instead of 500?
-  currently this can be done below, eg anodb, maybe this is enough?
-
-### Software Engineering
-
-- reduce sloc?
-- check for more directive types (dynamically)?
-- add app.log?
-- take advantage of `TypedDict`?
-
-### Documentation
-
-- more recipes?
-- include demo? point to demo?
-- comparisons with other frameworks
-- use `FlaskTester` in tutorial?
-- add `POST /token` to tutorial?

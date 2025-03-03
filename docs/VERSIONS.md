@@ -3,47 +3,10 @@
 Sources are available on [GitHub](https://github.com/zx80/flask-simple-auth)
 and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 
-## BACKLOG
-
-### Authentication
-
-- several _simultaneous_ password management schemes should really be supported.
-  this is already the case with `passlib`.
-- use default authentication in demo and other live projects (kiva, pizza, ref).
-- ldap
-  - [see also](https://github.com/rroemhild/flask-ldapconn)
-  - ldap3 pool?
-  - how to actually tests LDAP?
-    [rroemhild](https://github.com/rroemhild/docker-test-openldap) 2021?
-- fake provider for testing: limiting fake authn to a parameter is inconvenient in practice.
-  or record "test" as a new authentication and provide an adhoc function,
-  eg to rely on ad-hoc unsigned tokens, for instance.
-- [passlib totp](https://passlib.readthedocs.io/en/stable/lib/passlib.totp.html)
-
-### Authorization
-
-- oauth: issuer/scope? issuer/secret?
-- ldap authz?
-- authz/authn consistency? should "none" be required for "OPEN" routes?
-
-### Caching
-
-- how to export and use the cache for user-related data?
-- client caching should/could depend on the route/method…
-  use declarations? hints? hooks?
-- what about secured caching, eg an expensive password check?
-
-### Misc
-
-- bad/malformed requests should generate _400_ instead of _500_ in some cases?
-- remove deprecated authorize/auth decorator parameter names.
-- remove deprecated ALL/ANY/NONE special groups.
-- fix `SpecialParameterFun` type declaration.
-
 ## ? on ?
 
 - improve MFA demo with actual random code and time-based OTP.
-- improve documentation.
+- improve documentation, including separating the backlog.
 - extend OTP validation window to 1.
 - allow a list of parameters to object perms.
 
