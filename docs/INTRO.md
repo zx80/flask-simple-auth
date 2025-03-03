@@ -16,7 +16,7 @@ There is no clue in the source about what kind of authentication is used,
 which is the point: authentication is managed in the configuration,
 not in the application code.
 The authorization rule is declared explicitely on each function with the
-mandatory `authorize` parameter.
+mandatory `authz` parameter.
 Path and HTTP/JSON parameters are type checked and converted automatically
 based on type annotations.
 Basically, you just have to implement a type-annotated Python function and
@@ -27,7 +27,7 @@ from FlaskSimpleAuth import Flask
 app = Flask("acme")
 app.config.from_envvar("ACME_CONFIG")
 
-@app.patch("/users/<id>", authorize="admin")
+@app.patch("/users/<id>", authz="admin")
 def patch_users_id(id: int, password: str, email: Email = None):
     # Admins can patch user *id* with a mandatory *password* and
     # an optional *email* parameter. Type conversions are performed
@@ -46,7 +46,7 @@ FSA_AUTH = "httpd"     # inherit web-serveur authentication
 # checking whether a user belongs to a group, if these features are used.
 ```
 
-If the `authorize` argument is not supplied, the security first approach
+If the `authz` argument is not supplied, the security first approach
 results in the route to be forbidden (*403*).
 Various aspects of the implemented schemes can be configured with other
 directives, with reasonable defaults provided so that not much is really

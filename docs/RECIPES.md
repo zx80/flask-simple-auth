@@ -27,20 +27,20 @@ HTTP Basic authentication is a login and password authentication encoded in
 *base64* into an `Authorization` HTTP header.
 
 - set `FSA_AUTH` to `basic` or to contain `basic`, or have a route with
-  a `auth="basic"` parameter.
+  a `authn="basic"` parameter.
 - register a `get_user_pass` hook.
-- simple authentication routes are triggered with `authorize="AUTH"`
+- simple authentication routes are triggered with `authz="AUTH"`
 
 ### How-to configure parameter authentication?
 
 This is login and password authentication passed as HTTP or JSON parameters.
 
 - set `FSA_AUTH` to `param` or to contain `param`, or have a route with
-  a `auth="param"` parameter.
+  a `authn="param"` parameter.
 - the name of the expected two parameters are set with `FSA_PARAM_USER` and
   `FSA_PARAM_PASS`.
 - register a `get_user_pass` hook.
-- simple authentication routes are triggered with `authorize="AUTH"`
+- simple authentication routes are triggered with `authz="AUTH"`
 
 ### How-to configure token authentication?
 
@@ -82,7 +82,7 @@ You must build the object yourself, based on the string user name.
   ```python
   app.special_parameter(UserObject, lambda _: get_user_object())
 
-  @app.route("/...", authorize="AUTH")
+  @app.route("/...", authz="AUTH")
   def route_dotdotdot(user: UserObject)
       ...
   ```
@@ -125,7 +125,7 @@ You need to create a callback to handle your scheme:
   ```
 
 - use this new authentication method in `FSA_AUTH` or maybe on some route with
-  an `auth="xyz"` parameter.
+  an `authn="xyz"` parameter.
 
 ### How-to test authentication and authorizations without any password?
 
@@ -171,7 +171,7 @@ afterwards:
 
   ```python
   # this route is open in the sense that it takes charge of checking credentials
-  @app.post("/token-ad", authorize="OPEN", auth="none")
+  @app.post("/token-ad", authz="OPEN", authn="none")
   def get_token_ad(username: str, password: str):
       if not check_login_password_with_AD_server(username, password):
           fsa.err("invalid AD credentials", 401)
@@ -184,26 +184,29 @@ afterwards:
 
 The idea is to rely on an intermediate *token* with a temporary *realm* to validate
 that an authenfication method has succeeded, and that another must still be checked.
+Here is a _simplistic_ outline:
 
-- create a route with the *first* auth method, eg a login/password basic authentication.
+- create a route with the *first* authentication method, eg a login/password
+  basic authentication.
 
   ```python
-  @app.get("/login1", authorize="AUTH", auth="basic")
-  def get_login1(user: fsa.CurrentUser):
+  @app.get("/login", authz="AUTH", authn="basic")
+  def get_login(user: fsa.CurrentUser):
       # trigger sending an email or SMS for a code
-      send_temporary_code_to_user(user)
-      # 10 minutes token provided with this basic authentication
-      return app.create_token(user, realm="login1", delay=10.0), 200
+      generate_and_send_temporary_code_to_user(user)
+      # return a 10 minutes token
+      return app.create_token(user, realm="app-mfa", delay=10.0), 200
   ```
 
 - create a route protected by the previous token, and check the email or SMS
   code provided by the user at this stage.
 
   ```python
-  @app.get("/login2", authorize="AUTH", auth="token", realm="login1")
-  def get_login2(user: fsa.CurrentUser, code: str):
+  @app.post("/code", authz="AUTH", authn="token", realm="app-mfa")
+  def post_code(user: fsa.CurrentUser, code: str):
       if not check_code_validity(user, code):
           return "invalid validation code", 401
+      # TODO invalidate code to thwart replay attacks
       # else return the final token
       return app.create_token(user), 200
   ```
@@ -211,13 +214,17 @@ that an authenfication method has succeeded, and that another must still be chec
 - only allow token authentication on other routes, eg with
   `FSA_AUTH_DEFAULT = "token"`.
 
-See [MFA demo](https://github.com/zx80/flask-simple-auth/blob/main/demo/mfa.py).
+See [MFA demo](https://github.com/zx80/flask-simple-auth/blob/main/demo/mfa.py)
+with both random temporary codes and time-based OTP.
+
+Beware that the security of MFA schemes requires additional configurations
+against replay or enumeration attacks.
 
 ### How to ensure that no route is without authentication?
 
 With belt and suspenders:
 
-- do not use `authorize="OPEN"` on _any_ route.
+- do not use `authz="OPEN"` on _any_ route.
 - use an explicit `FSA_AUTH` list setting **without** `none`.
 - use `FSA_AUTH_DEFAULT="token"`.
 
@@ -231,22 +238,22 @@ section in the documentation.
 
 ### How-to (temporarily) close a route?
 
-Use `authorize="CLOSE"` as a route parameter to trigger a 403 forbidden response.
+Use `authz="CLOSE"` as a route parameter to trigger a 403 forbidden response.
 
-This can be added in a list of authorizations (`authorize=[…, "CLOSE"]`)
+This can be added in a list of authorizations (`authz=[…, "CLOSE"]`)
 and will supersede all other settings for this route.
 
 ### How-to open a route?
 
-Use `authorize="OPEN"` as a route parameter, **and** allow authentication `none`
+Use `authz="OPEN"` as a route parameter, **and** allow authentication `none`
 by adding it to `FSA_AUTH`.
-Depending on `FSA_AUTH_DEFAULT`, you may have to add `auth="none"` on the route
+Depending on `FSA_AUTH_DEFAULT`, you may have to add `authn="none"` on the route
 so that this (non) authentication is allowed.
 Anyone can execute such routes, without authentication.
 
 ### How-to just authenticate a route?
 
-Use `authorize="AUTH"` as a route parameter.
+Use `authz="AUTH"` as a route parameter.
 All authenticated users can execute the route.
 
 ### How-to use simple group authorizations?
@@ -270,7 +277,7 @@ For that, you must:
 - declare that the group authorization is required on a route definition:
 
   ```python
-  @app.route("/admin", authorize="admin")
+  @app.route("/admin", authz="admin")
   def ...
   ```
 
@@ -301,12 +308,12 @@ or the sender of this particular message.
 
   Registering can also be done with `object_perms` used as a decorator or
   through the `FSA_OBJECT_PERMS` directive.
-- a function must require these permission by setting `authorize` to a tuple,
+- a function must require these permission by setting `authz` to a tuple,
   with the domain, the name of the variable which identifies the object, and
   the role.
 
   ```python
-  @app.patch("/stuff/<id>", authorize=("stuff", "id", "update"))
+  @app.patch("/stuff/<id>", authz=("stuff", "id", "update"))
   def patch_stuff_id(id: int, ...):
       return ...
   ```
@@ -336,7 +343,7 @@ and route outputs:
       firstname: str
       lastname: str
 
-  @app.post("/users", authorize="ADMIN")
+  @app.post("/users", authz="ADMIN")
   def post_users(user: User):
       # user.login, user.firtname, user.lastname…
       return "", 201
@@ -345,7 +352,7 @@ and route outputs:
 - responses must be processed through FlaskSimpleAuth's `jsonify`:
 
   ```python
-  @app.get("/users/<uid>", authorize="ADMIN")
+  @app.get("/users/<uid>", authz="ADMIN")
   def get_users_uid(uid: int):
       user: User = whatever(uid)
       return fsa.jsonify(user), 200
@@ -359,7 +366,7 @@ Just use them! They are converted from/to JSON, but for `list[*]` with HTTP
 parameters are expected to be repeated parameters.
 
 ```python
-@app.get("/generic", authorize="OPEN")
+@app.get("/generic", authz="OPEN")
 def get_generic(data: dict[str, list[int]]):
     # data["foo"][0]
     return {k: len(v) for k, v in data.items()}
