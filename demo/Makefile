@@ -182,7 +182,7 @@ check.coverage:
 	$(MAKE) DB=db check.coverage.db
 	$(MAKE) DB=db2 check.coverage.db
 	export DATABASE="postgres"
-	export OTP_DIGIT=7
+	export OTP_DIGITS=7
 	$(MAKE) DB=pg check.coverage.db
-	export OTP_DIGIT=9
+	export OTP_DIGITS=9
 	$(MAKE) DB=pg2 check.coverage.db
