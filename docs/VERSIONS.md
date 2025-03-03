@@ -3,12 +3,12 @@
 Sources are available on [GitHub](https://github.com/zx80/flask-simple-auth)
 and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 
-## ? on ?
+## 35.2 on 2025-03-03
 
+- allow a list of parameters to object perms.
 - improve MFA demo with actual random code and time-based OTP.
 - improve documentation, including separating the backlog.
 - extend OTP validation window to 1.
-- allow a list of parameters to object perms.
 
 ## 35.1 on 2025-03-01
 
