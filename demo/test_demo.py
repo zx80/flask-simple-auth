@@ -395,13 +395,17 @@ def test_mfa_code(client):
     check(401, client.post("/mfa/code", data={"AUTH": "mfa:foo:20500729123456:deadbeef"}))
     check(400, client.post("/mfa/code", data={"AUTH": token1}))
     check(401, client.post("/mfa/code", data={"AUTH": token1, "code": "bla-code"}))
+    # working temporary code
     code = open("./foo_code.txt").read()
     res = check(200, client.post("/mfa/code", data={"AUTH": token1, "code": code}))
     token2 = res.json
     assert isinstance(token2, str) and token2.startswith("demo:foo:")
+    check(200, client.get("/mfa/test", data={"AUTH": token2}))
+    # code replay attack
+    check(401, client.post("/mfa/code", data={"AUTH": token1, "code": code}))
+    # bad tokens
     check(401, client.get("/mfa/test", data={"AUTH": "mfa:foo:20500729123456:deadbeef"}))
     check(401, client.get("/mfa/test", data={"AUTH": token1}))
-    check(200, client.get("/mfa/test", data={"AUTH": token2}))
 
 @pytest.mark.skipif(os.environ["DATABASE"] != "postgres", reason="test requires postgres")
 def test_mfa_otp(client):
@@ -421,9 +425,13 @@ def test_mfa_otp(client):
     check(401, client.post("/mfa/totp", data={"AUTH": token1, "otp": "abcdef"}))
     DIGITS = int(os.environ.get("OTP_DIGITS", 6))
     code = pyotp.TOTP(BLA_SECRET, digits=DIGITS).now()
+    # working OTP
     res = check(200, client.post("/mfa/totp", data={"AUTH": token1, "otp": code}))
     token2 = res.json
     assert isinstance(token2, str) and token2.startswith("demo:bla:")
+    check(200, client.get("/mfa/test", data={"AUTH": token2}))
+    # OTP replay attack
+    check(401, client.post("/mfa/totp", data={"AUTH": token1, "otp": code}))
+    # bad tokens
     check(401, client.get("/mfa/test", data={"AUTH": "mfa:bla:20500729123456:deadbeef"}))
     check(401, client.get("/mfa/test", data={"AUTH": token1}))
-    check(200, client.get("/mfa/test", data={"AUTH": token2}))

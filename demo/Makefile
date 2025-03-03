@@ -153,7 +153,9 @@ check.%:
 
 .PHONY: check.pgall
 check.pgall:
+	export OTP_DIGITS=8
 	$(MAKE) check.pg
+	export OTP_DIGITS=6
 	$(MAKE) check.pg2
 
 .PHONY: check.dball
@@ -180,5 +182,7 @@ check.coverage:
 	$(MAKE) DB=db check.coverage.db
 	$(MAKE) DB=db2 check.coverage.db
 	export DATABASE="postgres"
+	export OTP_DIGIT=7
 	$(MAKE) DB=pg check.coverage.db
+	export OTP_DIGIT=9
 	$(MAKE) DB=pg2 check.coverage.db
