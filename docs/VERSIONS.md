@@ -22,7 +22,6 @@ and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 
 ### Authorization
 
-- objs permissions defaults: should send _all_ path parameters? allow list? use named parameters?
 - oauth: issuer/scope? issuer/secret?
 - ldap authz?
 - authz/authn consistency? should "none" be required for "OPEN" routes?
@@ -39,13 +38,14 @@ and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 - bad/malformed requests should generate _400_ instead of _500_ in some cases?
 - remove deprecated authorize/auth decorator parameter names.
 - remove deprecated ALL/ANY/NONE special groups.
-- fix SpecialParameterFun type declaration
+- fix `SpecialParameterFun` type declaration.
 
 ## ? on ?
 
 - improve MFA demo with actual random code and time-based OTP.
 - improve documentation.
 - extend OTP validation window to 1.
+- allow a list of parameters to object perms.
 
 ## 35.1 on 2025-03-01
 

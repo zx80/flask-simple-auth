@@ -730,11 +730,11 @@ stored by the application. For instance, a user may alter a data because
 they *own* it, or access a data because they are *friends* of the owner.
 
 In order to implement this model, the `authz` decorator parameter can
-hold `(domain, variable, mode)` tuples which designate a permission domain
-(eg a table or object or concept name in the application), the name of
-a variable in the request (path or HTTP or JSON parameters) which identifies
-an object of the domain, and the operation or level of access necessary for
-this route:
+hold `(domain, variables, mode)` tuples which designate a permission domain
+(eg a table or object or concept name in the application), the :-separated
+names of variables in the request (path or HTTP or JSON parameters) which
+identify an object of the domain, and the operation or level of access
+necessary for this route:
 
 ```python
 @app.get("/message/<mid>", authz=("msg", "mid", "read"))
@@ -759,7 +759,7 @@ If it returns *False*, a *403 Forbidden* response is generated.
 If it returns *True*, the route function is called to generate the response.
 
 If `mode` is not supplied, *None* is passed to the check function.
-If `variable` is not supplied, the *first* parameter of the route function
+If `variables` is not supplied, the *first* parameter of the route function
 is taken:
 
 ```python

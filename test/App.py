@@ -37,11 +37,15 @@ app.config.update(
 )
 
 # object permissions: dad (admin) or self
-def check_users_perms(login: str, val: str, mode):
+def check_users_perms(login: str, val: str, _):
     return login in (val, "dad") if val in UP else None
 
 app.add_group(ADMIN, WRITE, READ)
 app.object_perms("users", check_users_perms)
+
+@app.object_perms("fun")
+def check_fun_perms(login: str, id1: int, id2: int, _):
+    return id1 == id2
 
 # add and remove a password quality fun
 @app.password_quality
@@ -405,6 +409,11 @@ def get_perm_token_basic():
 @app.get("/perm/basic-token", authz="AUTH", authn=["basic", "token"])
 def get_perm_basic_token():
     return "basic-token", 200
+
+# test multiple-variable object permissions
+@app.get("/perm/fun/<i>/<j>", authz=("fun", "i:j"), authn="fake")
+def get_perm_fun_i_j(i: int, j: int, user: CurrentUser):
+    return f"{user} i==j", 200
 
 @app.before_request
 def early_return():

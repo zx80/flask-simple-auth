@@ -1367,6 +1367,10 @@ def test_object_perms(client):
     check(200, client.get("/my/hobbes", data={"LOGIN": "hobbes"}))
     # no-such-user
     check(404, client.get("/my/no-such-user", data={"LOGIN": "calvin"}))
+    # multi-parameter object perms
+    res = check(200, client.get("/perm/fun/4/4", data={"LOGIN": "calvin"}))
+    assert "calvin i==j" in res.text
+    check(403, client.get("/perm/fun/3/4", data={"LOGIN": "calvin"}))
 
 def test_object_perms_errors():
     import AppFact as af
@@ -1388,45 +1392,59 @@ def test_object_perms_errors():
     try:
         @app.get("/bad-perm-1", authz=tuple())
         def get_bad_perm_1(uid: int):
-            return "should not get there", 200
+            ...
         pytest.fail("should detect too short tuple")
     except ConfigError as e:
         assert "3 data" in str(e)
     try:
         @app.get("/bad-perm-2/<uid>", authz=("unknown",))
         def get_bad_perm_2_uid(uid: int):
-            return "should not get there", 200
+            ...
         pytest.fail("should detect unregistered permission domain")
     except ConfigError as e:
         assert "missing object permission" in str(e)
     try:
         @app.get("/bad-perm-3", authz=("known", 3))
         def get_bad_perm_3(uid: int):
-            return "should not get there", 200
+            ...
         pytest.fail("should detect bad variable name")
     except ConfigError as e:
         assert "unexpected identifier name type" in str(e)
     try:
         @app.get("/bad-perm-4/<uid>", authz=("known", "uid", 3.14159))
         def get_bad_perm_4_uid(uid: int):
-            return "should not get there", 200
+            ...
         pytest.fail("should detect bad mode type")
     except ConfigError as e:
         assert "unexpected mode type" in str(e)
     try:
         @app.get("/bad-perm-5", authz=("known", "uid"))
-        def get_bad_perm_3(oid: int):
-            return "should not get there", 200
+        def get_bad_perm_5(oid: int):
+            ...
         pytest.fail("should detect missing variable")
     except ConfigError as e:
         assert "missing function parameter uid" in str(e)
     try:
         @app.get("/bad-perm-6", authz=("known", "uid"))
-        def get_bad_perm_3():
-            return "should not get there", 200
+        def get_bad_perm_6():
+            ...
         pytest.fail("should detect missing variable")
     except ConfigError as e:
         assert "permissions require some parameters" in str(e)
+    try:
+        @app.get("/bad-perm-7/<à>", authz=("known", "à"))
+        def get_bad_perm_7(à: int):
+            ...
+        pytest.fail("should reject non-ASCII variable name")
+    except ConfigError as e:
+        assert "à" in str(e)
+    try:
+        @app.get("/bad-perm-8/<a>/<ê>", authz=("known", "a:ê"))
+        def get_bad_perm_7(a: int, ê: int):
+            ...
+        pytest.fail("should reject non-ASCII variable name")
+    except ConfigError as e:
+        assert "ê" in str(e)
     # run time errors
     @app.get("/oops/<err>", authz=("known", "err"))
     def get_oops_err(err: str):

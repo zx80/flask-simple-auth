@@ -2210,7 +2210,10 @@ class _PasswordManager:
 
 
 class _AuthenticationManager:
-    """Internal authentication management."""
+    """Internal authentication management.
+
+    This class holds all authentication methods and related decorator.
+    """
 
     def __init__(self, fsa):
         assert isinstance(fsa, FlaskSimpleAuth)  # FIXME forward declaration…
@@ -2816,7 +2819,11 @@ class _CacheManager:
 
 
 class _AuthorizationManager:
-    """Internal authorization management."""
+    """Internal authorization management.
+
+    This class holds special group, oauth and object authorization methods
+    and related decorators.
+    """
 
     def __init__(self, fsa):
         assert isinstance(fsa, FlaskSimpleAuth)  # forward declaration needed…
@@ -2875,17 +2882,17 @@ class _AuthorizationManager:
         """Add an object permission helper for a given domain."""
         return self._store(self._object_perms, "object permission checker", domain, None, checker)
 
-    def _check_object_perms(self, domain: str, user: str, oid, mode: str|None) -> bool|None:
-        """Can user access object oid in domain for mode, cached."""
+    def _check_object_perms(self, domain: str, user: str, *args) -> bool|None:
+        """Can user access object in domain for, cached."""
         assert domain in self._object_perms
-        return self._object_perms[domain](user, oid, mode)
+        return self._object_perms[domain](user, *args)
 
-    def object_perms_uncache(self, domain: str, user: str, oid, mode: str|None) -> bool:
+    def object_perms_uncache(self, domain: str, user: str, *args) -> bool:
         """Remove object perm entry from cache."""
         if not self._fsa._cm._cache_gen:  # pragma: no cover
             log.debug("cache is not activated, cannot uncache object perms, skipping…")
             return False
-        return self._check_object_perms.cache_del(domain, user, oid, mode)  # type: ignore
+        return self._check_object_perms.cache_del(domain, user, *args)  # type: ignore
 
     def _oauth_authz(self, path, *scopes):
         """Decorator to authorize OAuth scopes (token-provided authz)."""
@@ -2986,30 +2993,40 @@ class _AuthorizationManager:
         """Decorator for per-object permissions."""
         # check perms wrt to recorded per-object checks
 
-        # normalize tuples length to 3
-        perms = tuple(map(lambda a: (a + (first, None)) if len(a) == 1 else
-                                    (a + (None,)) if len(a) == 2 else
-                                    a, perms))
+        # normalize tuples length to 3 and split names
+        perms = list(map(lambda a: (a + (first, None)) if len(a) == 1 else
+                                   (a + (None,)) if len(a) == 2 else
+                                   a, perms))
 
         # perm checks
         for perm in perms:
             if not len(perm) == 3:
                 raise self._Bad(f"per-object permission tuples must have 3 data {perm} on {path}")
-            domain, name, mode = perm
+            domain, names, mode = perm
             if domain not in self._object_perms:
                 raise self._Bad(f"missing object permission checker for {perm} on {path}")
-            if not isinstance(name, str):
-                raise self._Bad(f"unexpected identifier name type ({_type(name)}) for {perm} on {path}")
+            if not isinstance(names, str):
+                raise self._Bad(f"unexpected identifier name type ({_type(names)}) for {perm} on {path}")
             if mode is not None and type(mode) not in (int, str):
                 raise self._Bad(f"unexpected mode type ({_type(mode)}) for {perm} on {path}")
+
+        # split names
+        perms = [(u, names.split(":"), m) for u, names, m in perms]
+
+        # check names in passing
+        for u, names, m in perms:
+            for name in names:
+                if not re.match(r"[_A-Za-z][_A-Za-z0-9]*$", name):
+                    raise self._Bad(f"unexpected identifier name {name} for {perm} on {path}")
 
         def decorate(fun: Callable):
 
             # check perms wrt fun signature
-            for domain, name, mode in perms:
-                if name not in fun.__code__.co_varnames:
-                    raise self._Bad(f"missing function parameter {name} for {perms} on {path}")
-                # FIXME should parameter type be restricted to int or str?
+            for domain, names, mode in perms:
+                for name in names:
+                    if name not in fun.__code__.co_varnames:
+                        raise self._Bad(f"missing function parameter {name} for {perms} on {path}")
+                    # FIXME should parameter type be restricted to int or str?
 
             @functools.wraps(fun)
             def wrapper(*args, **kwargs):
@@ -3020,11 +3037,11 @@ class _AuthorizationManager:
                 # track that some autorization check was performed
                 local.need_authorization = False
 
-                for domain, name, mode in perms:
-                    val = kwargs[name]
+                for domain, names, mode in perms:
+                    vals = [kwargs[name] for name in names]
 
                     try:
-                        ok = self._check_object_perms(domain, local.user, val, mode)
+                        ok = self._check_object_perms(domain, local.user, *vals, mode)
                     except ErrorResponse as e:
                         return self._Res(e.message, e.status, e.headers, e.content_type)
                     except Exception as e:
@@ -3034,13 +3051,13 @@ class _AuthorizationManager:
                         return self._Res("internal error in permission check", fsa._server_error)
 
                     if ok is None:
-                        log.warning(f"none object permission on {domain} {val} {mode}")
+                        log.warning(f"none object permission on {domain} {vals} {mode}")
                         return self._Res("object not found", fsa._not_found_error)
                     elif not isinstance(ok, bool):  # paranoid?
                         log.error(f"type error on on {request.method} {request.path} permission {perms} check: {_type(ok)}")
                         return self._Res("internal error with permission check", fsa._server_error)
                     elif not ok:
-                        return self._Res(f"permission denied on {domain}:{val} ({mode})", 403)
+                        return self._Res(f"permission denied on {domain}:{vals} ({mode})", 403)
                     # else: all is well, check next!
 
                 # then call the initial function
