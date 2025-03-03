@@ -69,19 +69,17 @@ There are several equivalent options:
 
 You must build the object yourself, based on the string user name.
 
-- with a function of your making:
+- with a function of your making associated to the target type:
 
   ```python
-  def get_user_object():
-      return UserObject(app.current_user())
+  @app.special_parameter(UserObject)
+  def get_user_object(_: str, user: CurrentUser) -> UserObject:
+      return UserObject(login=user)
   ```
 
-- for convenience, this function can be registered as a special parameter
-  associated to the type:
+- the simply associate the type to a route parameter:
 
   ```python
-  app.special_parameter(UserObject, lambda _: get_user_object())
-
   @app.route("/...", authz="AUTH")
   def route_dotdotdot(user: UserObject)
       ...
