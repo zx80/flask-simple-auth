@@ -43,7 +43,7 @@ pip install FlaskSimpleAuth[password]
 
 Using your favorite text editor, create in the `fsa-tuto` directory the `app.py`
 file with an open (unauthenticated) `GET /hello` route.
-The `authz` (or `authorize`) route parameter is **mandatory** to declare
+The `authz` route parameter is **mandatory** to declare
 authorization requirements on the route.
 If not set, the route would be closed (aka 403).
 
@@ -615,7 +615,7 @@ Then register it in the auth initializations, associated to domain *stuff*:
     app.object_perms("stuff", stuff_permissions)
 ```
 
-Then implement the route, with the `authorize` tuple telling that the *user*
+Then implement the route, with the `authz` tuple telling that the *user*
 must have *owner* access permission to the object identified by variable `sid`
 value in domain *stuff*:
 
