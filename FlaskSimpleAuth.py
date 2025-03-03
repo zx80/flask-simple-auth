@@ -102,11 +102,11 @@ class Hooks:
     This is a fallback for the previous per-group method.
     """
 
-    ObjectPermsFun = Callable[[str, Any, str|None], bool|None]
-    """Check object access in domain, for parameter, in mode.
+    ObjectPermsFun = Callable[[str, *Any, str|None], bool|None]
+    """Check object access in domain, for parameters, in mode.
 
     :param login: user name.
-    :param oid: object identifier, must a key.
+    :param ids: object identifiers.
     :param mode: optional operation the user wants to perform on the object.
 
     Returns whether permission is granted.

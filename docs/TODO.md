@@ -78,4 +78,3 @@ Backlog of features that may or may not come.
 - remove deprecated authorize/auth decorator parameter names.
 - remove deprecated ALL/ANY/NONE special groups.
 - fix `SpecialParameterFun` type declaration.
-- fix `ObjectPermsFun` type declaration.
