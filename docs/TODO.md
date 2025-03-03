@@ -70,7 +70,6 @@ Backlog of features that may or may not come.
 - include demo? point to demo?
 - comparisons with other frameworks
 - use `FlaskTester` in tutorial?
-- add `POST /token` to tutorial?
 
 ## Misc
 
