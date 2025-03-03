@@ -3011,21 +3011,21 @@ class _AuthorizationManager:
                 raise self._Bad(f"unexpected mode type ({_type(mode)}) for {perm} on {path}")
 
         # split names
-        perms = [(u, names.split(":"), m) for u, names, m in perms]
+        perms = [(d, names.split(":"), m) for d, names, m in perms]
 
         # check names in passing
-        for u, names, m in perms:
+        for domain, names, _ in perms:
             for name in names:
                 if not re.match(r"[_A-Za-z][_A-Za-z0-9]*$", name):
-                    raise self._Bad(f"unexpected identifier name {name} for {perm} on {path}")
+                    raise self._Bad(f"unexpected permission identifier name {name} for {domain} permission on {path}")
 
         def decorate(fun: Callable):
 
             # check perms wrt fun signature
-            for domain, names, mode in perms:
+            for domain, names, _ in perms:
                 for name in names:
                     if name not in fun.__code__.co_varnames:
-                        raise self._Bad(f"missing function parameter {name} for {perms} on {path}")
+                        raise self._Bad(f"missing function parameter {name} for {domain} permission on {path}")
                     # FIXME should parameter type be restricted to int or str?
 
             @functools.wraps(fun)
