@@ -18,6 +18,7 @@ jobs:
         - version: "3.13"
           env: PYTHON_GIL=1
         - version: "3.13t"
+          freethreaded: true
           env: PYTHON_GIL=0
         # FIXME "3.14" https://github.com/pydantic/pydantic-core/issues/1504
     steps:
