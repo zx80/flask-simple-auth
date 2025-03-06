@@ -45,7 +45,7 @@ jobs:
         python-version: ${{ matrix.python.version }}
         allow-prereleases: true
     - name: Install Python Dependencies
-      run: make DEPS=${{ maxtrix.python.deps }} dev
+      run: make DEPS=${{ matrix.python.deps }} dev
     # Checks
     - name: Check with pyright
       run: make check.pyright
