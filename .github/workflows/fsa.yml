@@ -11,7 +11,7 @@ jobs:
       fail-fast: false
       matrix:
         # FIXME "3.14" https://github.com/pydantic/pydantic-core/issues/1504
-        python-version: [ "3.10", "3.11", "3.12", "3.13", "pypy3.10" ]
+        python-version: [ "3.10", "3.11", "3.12", "3.13", "3.13t", "pypy3.10" ]
     steps:
     # General Setup
     - name: Install Packages
@@ -23,7 +23,8 @@ jobs:
     - name: Set up Memcached
       uses: niden/actions-memcached@v7
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@main
+      # uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
         allow-prereleases: true
