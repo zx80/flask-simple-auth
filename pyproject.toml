@@ -53,7 +53,7 @@ demo = [ "anodb", "psycopg", "psycopg2", "pymemcache", "redis", "types-redis", "
 # password management
 password = [
   "bcrypt",
-  "argon2-cffi; python_version != '3.13t'",
+  "argon2-cffi",
   "scrypt",
   "pyotp",
   "passlib",

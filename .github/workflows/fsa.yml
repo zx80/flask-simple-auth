@@ -12,6 +12,9 @@ jobs:
       matrix:
         # FIXME "3.14" https://github.com/pydantic/pydantic-core/issues/1504
         python-version: [ "3.10", "3.11", "3.12", "3.13", "3.13t", "pypy3.10" ]
+    env:
+      # for 3.13t to force argon2 cffi installation
+      PYTHON_GIL: 0
     steps:
     # General Setup
     - name: Install Packages
