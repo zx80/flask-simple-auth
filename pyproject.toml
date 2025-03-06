@@ -53,13 +53,14 @@ demo = [ "anodb", "psycopg", "psycopg2", "pymemcache", "redis", "types-redis", "
 # password management
 password = [
   "bcrypt",
-  "argon2-cffi; python_version != '3.13t'",
-  "argon2-cffi-bindings; python_version != '3.13t'",
+  "argon2-cffi",  # FIXME 2025-03-06 KO in 3.13t
   "scrypt",
   "pyotp",
   "passlib",
   "crypt_r; python_version >= '3.13'",  # crypt replacement
 ]
+# shorter version for 3.13t (argon2 cffi does not compile)
+passwrd = ["bcrypt", "pyotp", "passlib", "crypt_r; python_version >= '3.13'"]
 # python-ldap requires python3-dev libldap-dev libsasl2-dev gcc
 ldap = [ "ldap3" ]
 # cache options

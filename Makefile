@@ -86,11 +86,13 @@ clean.venv: clean
 .PHONY: clean.dev
 clean.dev: clean.venv
 
+DEPS    = demo,password,jwt,cors,httpauth
+
 # for local testing
 venv:
 	$(PYTHON) -m venv venv
 	$(PIP) install -U pip
-	$(PIP) install -e .[demo,password,jwt,cors,httpauth]
+	$(PIP) install -e .[$(DEPS)]
 
 venv/.dev: venv
 	$(PIP) install -e .[dev,doc,tests,ldap]
