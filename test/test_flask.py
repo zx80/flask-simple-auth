@@ -1574,7 +1574,7 @@ def run_some_checks(c, n=10):
     if size > 0 and n > 5:  # hmmm…
         assert hits > (n-4) / n
 
-@pytest.mark.skipif(not has_service(port=11211) or not has_module("memcached"),
+@pytest.mark.skipif(not has_service(port=11211) or not has_package("memcached"),
                     reason="memcached service module are required")
 def test_memcached_cache(client):
     import AppFact as af
@@ -1584,7 +1584,7 @@ def test_memcached_cache(client):
             FSA_CACHE_OPTS={"server": "localhost:11211"}).test_client() as c:
             run_some_checks(c)
 
-@pytest.mark.skipif(not has_service(port=6379) or not has_module("redis"),
+@pytest.mark.skipif(not has_service(port=6379) or not has_package("redis"),
                     reason="redis service and module are required")
 def test_redis_cache():
     import AppFact as af
