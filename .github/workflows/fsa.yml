@@ -37,8 +37,8 @@ jobs:
     - name: Activate Postgres
       run: |
         sudo systemctl start postgresql.service
-        sudo createuser $USER
-        sudo createdb -O $USER $USER
+        sudo -u postgres createuser $USER
+        sudo -u postgres createdb -O $USER $USER
     - name: Git Checkout
       uses: actions/checkout@v4
     - name: Set up Redis
