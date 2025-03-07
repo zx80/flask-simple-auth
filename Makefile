@@ -86,6 +86,7 @@ clean.venv: clean
 .PHONY: clean.dev
 clean.dev: clean.venv
 
+# tmp parameter to work around 3.13t issues
 DEPS    = demo,password,jwt,cors,httpauth
 
 # for local testing
@@ -102,11 +103,18 @@ venv/.dev: venv
 .PHONY: dev
 dev: venv/.dev
 
+venv/.pub: dev
+	$(PIP) install -e .[pub]
+	touch $@
+
+.PHONY: pub
+pub: venv/.pub
+
 $(MODULE).egg-info: venv
 	$(PIP) install -e .
 
 # generate source and built distribution
-dist: dev
+dist: pub
 	source venv/bin/activate
 	$(PYTHON) -m build
 

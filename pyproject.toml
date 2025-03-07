@@ -38,18 +38,19 @@ package = "https://pypi.org/project/FlaskSimpleAuth/"
 [project.optional-dependencies]
 # various dev tools
 dev = [
-  "types-flask", "types-requests",
   "mypy", "pyright",
+  "types-flask", "types-requests", "type-cachetools", "type-redis",
   "flake8", "black", "ruff",
   "pytest", "coverage",
-  "pymarkdownlnt!=0.9.5",
-  "build", "twine", "wheel",
+  "pymarkdownlnt!=0.9.5"
 ]
+# pypi publication deps
+pub = [ "build", "twine", "wheel" ]
 # documentation generation
 doc = [ "sphinx", "sphinx_rtd_theme", "sphinx-autoapi", "sphinx-lint", "myst_parser" ]
 # NOTE also: password jwt cors httpauth
 tests = [ "requests", "pydantic>=2.0" ]
-demo = [ "anodb", "psycopg", "psycopg2", "pymemcache", "redis", "types-redis", "types-cachetools" ]
+demo = [ "anodb", "psycopg", "psycopg2", "types-cachetools" ]
 # password management
 password = [
   "bcrypt",
@@ -64,7 +65,7 @@ passwrd = ["bcrypt", "pyotp", "passlib", "crypt_r; python_version >= '3.13'"]
 # python-ldap requires python3-dev libldap-dev libsasl2-dev gcc
 ldap = [ "ldap3" ]
 # cache options
-redis = [ "redis" ]
+redis = [ "redis" ]  # types-redis
 memcached = [ "pymemcache" ]
 # JWT support FIXME 2025-03-06 cryptography KO in 3.13t (https://github.com/pyca/cryptography/issues/12489)
 jwt = [ "pyjwt", "cryptography" ]
