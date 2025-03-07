@@ -1574,7 +1574,7 @@ def run_some_checks(c, n=10):
     if size > 0 and n > 5:  # hmmm…
         assert hits > (n-4) / n
 
-@pytest.mark.skipif(not has_service(port=11211) or not has_package("memcached"),
+@pytest.mark.skipif(not has_service(port=11211) or not has_package("pymemcache"),
                     reason="memcached service module are required")
 def test_memcached_cache(client):
     import AppFact as af
