@@ -5,7 +5,7 @@
 # - returns an intermediate short-lived (1 minute) token in realm "mfa"
 #
 # POST /code?code=... (intermediate token authn)
-# POST /totp?otp=... (intermediate token authn)
+# POST /totp?totp=... (intermediate token authn)
 # - the route requires the mfa-token returned by the previous route
 # - returns a valid application token if the 2nd authentication (code/otp) is ok
 #
