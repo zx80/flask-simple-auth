@@ -87,7 +87,7 @@ clean.venv: clean
 clean.dev: clean.venv
 
 # tmp parameter to work around 3.13t issues
-DEPS    = demo,password,jwt,cors,httpauth
+DEPS    = dev,demo,password,jwt,cors,httpauth
 
 # for local testing
 venv:

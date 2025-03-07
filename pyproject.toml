@@ -39,7 +39,7 @@ package = "https://pypi.org/project/FlaskSimpleAuth/"
 # various dev tools
 dev = [
   "mypy", "pyright",
-  "types-flask", "types-requests", "type-cachetools", "type-redis",
+  "types-flask", "types-requests", "types-cachetools", "types-redis",
   "flake8", "black", "ruff",
   "pytest", "coverage",
   "pymarkdownlnt!=0.9.5"
