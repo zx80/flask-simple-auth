@@ -86,7 +86,7 @@ clean.venv: clean
 .PHONY: clean.dev
 clean.dev: clean.venv
 
-# tmp parameter to work around 3.13t issues
+# FIXME tmp parameter to work around 3.13t issues
 DEPS    = dev,demo,password,jwt,cors,httpauth,redis,memcached
 
 # for local testing
