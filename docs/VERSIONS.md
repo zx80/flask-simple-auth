@@ -5,6 +5,8 @@ and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 
 ## ? on ?
 
+- wip testing with _Python 3.13t_ and _PyPy 3.11_.
+
 
 ## 35.2 on 2025-03-03
 
