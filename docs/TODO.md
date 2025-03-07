@@ -78,3 +78,5 @@ Backlog of features that may or may not come.
 - remove deprecated ALL/ANY/NONE special groups.
 - fix `SpecialParameterFun` type declaration.
 - fix `ObjectPermsFun` type declaration.
+- remove free-threaded Python dependency workaround in GitHub CI
+  `cryptography` does not work yet (as of 2025-03-07)
