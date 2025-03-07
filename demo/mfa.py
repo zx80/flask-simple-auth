@@ -28,7 +28,7 @@ DIGITS = int(os.environ.get("OTP_DIGITS", 6))
 def get_login(user: fsa.CurrentUser):
     # MFA CODE: create a <DIGITS> digits temporary random code
     # NOTE one digit per bytes keeps modulo bias very low
-    # NOTE do NOT to use a simple pseudo-random generator for security
+    # NOTE do NOT use a pseudo-random generator for security purpose!
     rnd = int.from_bytes(os.urandom(DIGITS)) % 10 ** DIGITS
     assert 0 <= rnd < 10 ** DIGITS
     code = str(rnd + 10 ** DIGITS)[1:]
