@@ -51,7 +51,7 @@ stuff.db: users.sql
 stuff.db2: stuff.db
 
 stuff.pg: users.sql
-	createdb stuff
+	createdb stuff || exit 1
 	psql stuff < create-pg.sql
 	psql stuff < data.sql
 	psql stuff < users.sql
