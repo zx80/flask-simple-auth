@@ -3,6 +3,10 @@
 Sources are available on [GitHub](https://github.com/zx80/flask-simple-auth)
 and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 
+## ? on ?
+
+- activate _Pypy 3.11_ GitHub CI.
+
 ## 35.2 on 2025-03-03
 
 - allow a list of parameters to object perms.
