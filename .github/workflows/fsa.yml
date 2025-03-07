@@ -12,21 +12,21 @@ jobs:
       matrix:
         python:
         - version: "pypy3.10"
-          deps: demo,password,jwt,cors,httpauth
+          deps: demo,password,jwt,cors,httpauth,redis,memcached
         - version: "3.10"
-          deps: demo,password,jwt,cors,httpauth
+          deps: demo,password,jwt,cors,httpauth,redis,memcached
         - version: "3.11"
-          deps: demo,password,jwt,cors,httpauth
+          deps: demo,password,jwt,cors,httpauth,redis,memcached
         - version: "3.12"
-          deps: demo,password,jwt,cors,httpauth
+          deps: demo,password,jwt,cors,httpauth,redis,memcached
         - version: "3.13"
-          deps: demo,password,jwt,cors,httpauth
+          deps: demo,password,jwt,cors,httpauth,redis,memcached
         - version: "3.13t"
           env: PYTHON_GIL=0
-          deps: demo,passwrd,cors,httpauth
+          deps: demo,passwrd,cors,httpauth,redis,memcached
         - version: "3.13t"
           env: PYTHON_GIL=1
-          deps: demo,passwrd,cors,httpauth
+          deps: demo,passwrd,cors,httpauth,redis,memcached
         # FIXME "3.14" https://github.com/pydantic/pydantic-core/issues/1504
     steps:
     # General Setup
