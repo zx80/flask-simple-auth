@@ -41,7 +41,21 @@ Backlog of features that may or may not come.
 
 - how to export and use the cache for user-related data?
 - client caching should/could depend on the route/method…
-  use declarations? hints? hooks?
+  use declarations? hints? hooks? contraints on cached routes?
+
+  ```python
+  FSA_ROUTE_CACHE = lambda m, p, f: ...
+  FSA_ROUTE_CACHED_DEFAULT = False
+
+  @app.get("/foo", cached=True)
+  def get_foo():
+      ...
+
+  @app.get("/bla")  # not cached
+  def get_bla():
+      ...
+  ```
+
 - what about secured caching, eg an expensive password check?
 
 ## Other Features
