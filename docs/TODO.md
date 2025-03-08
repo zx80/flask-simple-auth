@@ -40,19 +40,24 @@ Backlog of features that may or may not come.
 ## Caching
 
 - how to export and use the cache for user-related data?
-- client caching should/could depend on the route/method…
+- client caching should/could depend on the route.
+  the method can only be `GET`, from a REST perspective other
+  operations _cannot_ be cached. Function parameters must be serializable.
   use declarations? hints? hooks? contraints on cached routes?
+  cache accesses must occur _after_ permission checks.
 
   ```python
-  FSA_ROUTE_CACHE = lambda m, p, f: ...
+  FSA_ROUTE_CACHE = lambda p, f: ...
   FSA_ROUTE_CACHED_DEFAULT = False
 
   @app.get("/foo", cached=True)
-  def get_foo():
+  def get_foo(...):
       ...
 
-  @app.get("/bla")  # not cached
-  def get_bla():
+  # could be equivalent to:
+  @app.get("/bla")
+  @ctu.cached(cache=…)
+  def get_bla(...):
       ...
   ```
 
