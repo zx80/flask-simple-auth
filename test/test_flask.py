@@ -3035,6 +3035,10 @@ def test_otp():
 def test_path_check():
     app = fsa.Flask("path-check", FSA_AUTH="none", FSA_PATH_CHECK=fsa.checkPath)
 
+    @app.path_check
+    def my_path_check(m, p):
+        return fsa.checkPath(m, p)
+
     @app.get("/ok", authz="OPEN")
     def get_ok():
         return "", 200

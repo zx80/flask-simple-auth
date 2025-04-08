@@ -692,6 +692,7 @@ class Flask(flask.Flask):
         self.object_perms_uncache = self._fsa.object_perms_uncache
         self.user_token_uncache = self._fsa.user_token_uncache
         self.auth_uncache = self._fsa.auth_uncache
+        self.path_check = self._fsa.path_check
         # overwrite decorators ("route" done through add_url_rule above)
         setattr(self, "get", self._fsa.get)  # FIXME avoid mypy warnings
         setattr(self, "put", self._fsa.put)
