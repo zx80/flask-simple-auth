@@ -3030,3 +3030,27 @@ def test_otp():
             totp = pyotp.TOTP(s)
             res = check(200, c.get("/otp", headers=basic_auth(u, totp.now())))
             assert res.is_json and res.json["login"] == u
+
+
+def test_path_check():
+    app = fsa.Flask("path-check", FSA_AUTH="none", FSA_PATH_CHECK=fsa.checkPath)
+
+    @app.get("/ok", authz="OPEN")
+    def get_ok():
+        return "", 200
+
+    try:
+        @app.get("/BAD", authz="OPEN")
+        def get_BAD():
+            ...
+        pytest.fail("must reject uppercase path")
+    except ConfigError as e:
+        assert "path" in str(e)
+
+    try:
+        @app.get("/get-something", authz="OPEN")
+        def get_get():
+            ...
+        pytest.fail("must reject method in path")
+    except ConfigError as e:
+        assert "method" in str(e)

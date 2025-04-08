@@ -192,6 +192,16 @@ class Hooks:
     Returns a JSON serializable something from an object instance.
     """
 
+    PathCheckFun = Callable[[str, str], str|None]
+    """Path checking hook.
+
+    :param method: method used on path.
+    :param path: path to be checked.
+
+    Allow to check path rules.
+    Returns an error message or *None* if all is well.
+    """
+
 
 @dataclasses.dataclass
 class ErrorResponse(BaseException):
@@ -590,6 +600,19 @@ def jsonify(a: Any) -> Response:
         return Response(out, mimetype="application/json")
     else:
         return flask.jsonify(_json_prepare(a))
+
+
+def checkPath(method: str, path: str) -> str|None:
+    """Convenient function to use as a path checking hook.
+
+    The path must only contain lower-case ascii characters possibly interspersed
+    with dashes `-`, and not contain method names.
+    """
+
+    if not re.match(r"(/[a-z]+(-[a-z]+)*|/<[^>]+>)+", path):
+        return f"invalid path section: {path}"
+    if re.search(r"\b(get|post|put|patch|delete)\b", path, re.I):
+        return f"path contains a method name: {path}"
 
 
 class Reference(ppp.Proxy):
@@ -1113,6 +1136,9 @@ class Directives:
 
     Declaring scopes allows to detect scope name typos at configuration time.
     """
+
+    FSA_PATH_CHECK: Hooks.PathCheckFun|None = None
+    """Check rules on path."""
 
     # parameter and return handing
     FSA_DEFAULT_CONTENT_TYPE: str|None = None
@@ -3919,6 +3945,8 @@ class FlaskSimpleAuth:
         self._qm = _RequestManager(self)
         self._rm = _ResponseManager(self)
         self._cm = _CacheManager(self)
+        # path checking
+        self._path_check: Hooks.PathCheckFun|None = None
         # override default json provider
         self._app.json = _JSONProvider(app)
         # fsa-generated errors
@@ -4011,6 +4039,9 @@ class FlaskSimpleAuth:
         self._qm._initialize()
         self._rm._initialize()
         self._cm._initialize()  # keep last
+
+        # Path Check
+        self._path_check = conf.get("FSA_PATH_CHECK", None)
 
         #
         # blueprint hacks
@@ -4126,6 +4157,14 @@ class FlaskSimpleAuth:
             log.warning("overriding already defined password_check hook")
         self._am._pm._pass_check = pwc
         return pwc
+
+    def path_check(self, pc: Hooks.PathCheckFun) -> Hooks.PathCheckFun:
+        """Set `path_check` hook."""
+        self._initialize()
+        if self._path_check:
+            log.warning("overriding already defined path_check hook")
+        self._path_check = pc
+        return pc
 
     def error_response(self, erh: Hooks.ErrorResponseFun) -> Hooks.ErrorResponseFun:
         """Set `error_response` hook."""
@@ -4378,6 +4417,13 @@ class FlaskSimpleAuth:
 
         # lazy initialization
         self._initialize()
+
+        # check that path matches project rules
+        if self._path_check:
+            method = options.get("methods", ["GET"])[0]
+            bad_path = self._path_check(method, rule)
+            if bad_path:
+                raise self._Bad(f"bad path on {method} {path}: {bad_path}")
 
         # ensure that authz is a list
         if authz is None:
