@@ -26,12 +26,14 @@ jobs:
           deps: demo,password,jwt,cors,httpauth,redis,memcached
         # 2025-03-07 KO (pydantic-core depends on pyo3, wait for pydantic 2.11)
         # - version: "3.13t"
-        #   env: PYTHON_GIL=0
+        #   gil: 0
         #   deps: demo,passwrd,cors,httpauth,redis,memcached
         # - version: "3.13t"
-        #   env: PYTHON_GIL=1
+        #   gil: 1
         #   deps: demo,passwrd,cors,httpauth,redis,memcached
         # FIXME "3.14" https://github.com/pydantic/pydantic-core/issues/1504
+    env:
+      PYTHON_GIL: ${{ matrix.python.gil }}
     steps:
     # General Setup
     - name: Install Packages
