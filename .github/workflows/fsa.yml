@@ -31,9 +31,9 @@ jobs:
         # - version: "3.13t"
         #   gil: 1
         #   deps: demo,passwrd,cors,httpauth,redis,memcached
-        # FIXME "3.14" https://github.com/pydantic/pydantic-core/issues/1504
-        - version: "3.14"
-          deps: demo,password,jwt,cors,httpauth,redis,memcached
+        # FIXME 2025-04-08 "3.14" https://github.com/pydantic/pydantic-core/issues/1504
+        # - version: "3.14"
+        #   deps: demo,password,jwt,cors,httpauth,redis,memcached
     env:
       PYTHON_GIL: ${{ matrix.python.gil }}
     steps:
