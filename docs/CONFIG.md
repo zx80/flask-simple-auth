@@ -113,4 +113,5 @@ FSA_PASSWORD_RE = [ r"[A-Z]", r"[a-z]", r"[0-9]" ]  # list of re to match
 # FSA_BEFORE_EXEC = []      # executed just before the route function execution
 # FSA_AFTER_REQUEST = []    # fsa-managed after-request hooks
 # FSA_ADD_HEADERS = {}      # add custom headers
+# FSA_PATH_CHECK = None     # custom function to enforce path rules
 ```
