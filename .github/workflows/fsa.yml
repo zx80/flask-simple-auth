@@ -25,12 +25,12 @@ jobs:
         - version: "3.13"
           deps: demo,password,jwt,cors,httpauth,redis,memcached
         # 2025-03-07 KO (pydantic-core depends on pyo3, wait for pydantic 2.11)
-        # - version: "3.13t"
-        #   gil: 0
-        #   deps: demo,passwrd,cors,httpauth,redis,memcached
-        # - version: "3.13t"
-        #   gil: 1
-        #   deps: demo,passwrd,cors,httpauth,redis,memcached
+        - version: "3.13t"
+          gil: 0
+          deps: demo,passwrd,cors,httpauth,redis,memcached
+        - version: "3.13t"
+          gil: 1
+          deps: demo,passwrd,cors,httpauth,redis,memcached
         # FIXME 2025-04-08 "3.14" https://github.com/pydantic/pydantic-core/issues/1504
         # - version: "3.14"
         #   deps: demo,password,jwt,cors,httpauth,redis,memcached

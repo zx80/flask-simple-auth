@@ -97,6 +97,5 @@ Backlog of features that may or may not come.
 - remove deprecated ALL/ANY/NONE special groups.
 - fix `SpecialParameterFun` type declaration.
 - fix `ObjectPermsFun` type declaration.
-- add _PyPy 3.11_ when `pyo3` (`pydantic-core` dependency) is okay.
 - remove free-threaded Python dependency workaround in GitHub CI
   `cryptography` does not work yet (as of 2025-03-07)
