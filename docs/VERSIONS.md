@@ -3,11 +3,11 @@
 Sources are available on [GitHub](https://github.com/zx80/flask-simple-auth)
 and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 
-## ? on ?
+## 35.3 on 2025-04-08
 
-- wip testing with _Python 3.13t_ and _PyPy 3.11_.
 - add `FSA_PATH_CHECK` directive and `path_check` hook to add a
   path checking function to enforce project rules on path.
+- enable _PyPy 3.11_ CI.
 
 ## 35.2 on 2025-03-03
 
