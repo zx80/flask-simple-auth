@@ -8,7 +8,7 @@ version = "35.3"
 authors = [ { name = "Fabien Coelho", email = "flask.auth@coelho.net" } ]
 description = "Simple authentication, authorization and parameters for Flask, emphasizing configurability"
 readme = "README.md"
-license = { text = "CC0" }
+license = "CC0-1.0"
 # Flask 2.3 requires Python 3.9 (3.8?) and is compatible with 3.12
 # I'm tired of verbose type hints such as Optional[foo]
 requires-python = ">=3.10"
@@ -22,7 +22,6 @@ dependencies = [
 classifiers = [
   "Development Status :: 5 - Production/Stable",
   "Intended Audience :: Developers",
-  "License :: CC0 1.0 Universal (CC0 1.0) Public Domain Dedication",
   "Programming Language :: Python",
   "Environment :: Web Environment",
   "Framework :: Flask",
