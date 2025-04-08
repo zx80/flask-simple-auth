@@ -1111,9 +1111,15 @@ Some directives govern various details for this extension internal working.
   preprocessing and just before the actual execution of the route function.
   The hooks are passed the request, the login and the authentication scheme.
   It may return a response to shortcut the route function.
-  Such functions can also be register with the `before_exec`
+  Such functions can also be registered with the `before_exec`
   function/decorator.
   Defaults are empty.
+
+- `FSA_PATH_CHECK` allows to add a hook to check the route path and possibly
+  enforce rules.
+  Such functions can also be registered with the `path_check`
+  function/decorator.
+  Default is _None_, i.e. no checks are performed.
 
 Some control is available about internal caching features used for user
 authentication (user password access and token validations) and
