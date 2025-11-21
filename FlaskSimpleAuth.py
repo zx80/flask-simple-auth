@@ -2711,7 +2711,7 @@ class _CacheManager:
             # FIXME should not add a stats cache if there is already one!
             self._cache = ctu.StatsCache(cache)
             self._cache_gen = ctu.PrefixedCache
-        elif cache in ("ttl", "lru", "tlru", "lfu", "mru", "fifo", "rr", "dict"):
+        elif cache in ("ttl", "lru", "tlru", "lfu", "fifo", "rr", "dict"):
             maxsize = conf.get("FSA_CACHE_SIZE", Directives.FSA_CACHE_SIZE)
             # build actual storage tier
             if cache == "ttl":
@@ -2721,8 +2721,6 @@ class _CacheManager:
                 rcache = ct.LRUCache(maxsize, **self._cache_opts)
             elif cache == "lfu":
                 rcache = ct.LFUCache(maxsize, **self._cache_opts)
-            elif cache == "mru":  # pragma: no cover
-                rcache = ct.MRUCache(maxsize, **self._cache_opts)  # deprecated…
             elif cache == "fifo":
                 rcache = ct.FIFOCache(maxsize, **self._cache_opts)
             elif cache == "rr":

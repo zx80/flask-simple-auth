@@ -1597,7 +1597,6 @@ def test_redis_cache():
 def test_caches():
     import AppFact as af
     import CacheToolsUtils as ctu
-    # mru: deprecated
     for cache in ["ttl", "lru", "lfu", "fifo", "rr", "dict", "none"]:
         for prefix in [cache + ".", None]:
             log.debug(f"testing cache type {cache}")

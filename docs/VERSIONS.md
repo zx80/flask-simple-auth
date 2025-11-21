@@ -3,6 +3,10 @@
 Sources are available on [GitHub](https://github.com/zx80/flask-simple-auth)
 and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 
+## ? on ?
+
+- remove `mru` cache setting.
+
 ## 35.3 on 2025-04-08
 
 - add `FSA_PATH_CHECK` directive and `path_check` hook to add a
