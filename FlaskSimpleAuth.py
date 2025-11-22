@@ -613,6 +613,7 @@ def checkPath(method: str, path: str) -> str|None:
         return f"invalid path section: {path}"
     if re.search(r"\b(get|post|put|patch|delete)\b", path, re.I):
         return f"path contains a method name: {path}"
+    return None  # ok, no error reported
 
 
 class Reference(ppp.Proxy):
