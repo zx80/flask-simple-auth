@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "FlaskSimpleAuth"
-version = "35.3"
+version = "35.4"
 authors = [ { name = "Fabien Coelho", email = "flask.auth@coelho.net" } ]
 description = "Simple authentication, authorization and parameters for Flask, emphasizing configurability"
 readme = "README.md"
@@ -56,7 +56,7 @@ password = [
   # FIXME argon2 works with 3.13 but *not* 3.13t
   "argon2-cffi",
   # "argon2-cffi; python_version != '3.13'",
-  # "argon2; python_version == '3.13'", 
+  # "argon2; python_version == '3.13'",
   "scrypt",
   "pyotp",
   "passlib",

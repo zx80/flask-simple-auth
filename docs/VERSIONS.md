@@ -3,9 +3,11 @@
 Sources are available on [GitHub](https://github.com/zx80/flask-simple-auth)
 and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 
-## ? on ?
+## 35.4 on 2025-11-22
 
 - remove `mru` cache setting.
+- minor cleanup.
+- enable _Python 3.14t_ CI and other tweakings.
 
 ## 35.3 on 2025-04-08
 
