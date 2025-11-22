@@ -518,14 +518,14 @@ def test_fsa_password_scrypt_scheme():
 
 @pytest.mark.skipif(not has_package("passlib"), reason="passlib is not available")
 def test_passlib_password_scheme():
-    for scheme in ("passlib:plaintext", "passlib:bcrypt"):
+    for scheme in ("passlib:plaintext", "passlib:argon2"):
         app = fsa.Flask(scheme, FSA_AUTH="password", FSA_PASSWORD_SCHEME=scheme)
         check_various_passwords(app)
 
 @pytest.mark.skipif(not has_package("passlib"), reason="passlib is not available")
 def test_passlib_password_scheme_list():
-    app = fsa.Flask("passlib", FSA_AUTH="password", FSA_PASSWORD_SCHEME=["bcrypt", "plaintext"])
-    # bcrypt
+    app = fsa.Flask("passlib", FSA_AUTH="password", FSA_PASSWORD_SCHEME=["argon2", "plaintext"])
+    # argon2
     ref = app.hash_password("hello")
     assert len(ref) > 10
     assert app.check_password("hello", ref)

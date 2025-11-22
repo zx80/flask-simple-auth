@@ -53,20 +53,24 @@ demo = [ "anodb", "psycopg", "psycopg2", "types-cachetools" ]
 # password management
 password = [
   "bcrypt",
-  "argon2-cffi",  # FIXME 2025-03-06 KO in 3.13t
+  # FIXME argon2 works with 3.13 but *not* 3.13t
+  "argon2-cffi",
+  # "argon2-cffi; python_version != '3.13'",
+  # "argon2; python_version == '3.13'", 
   "scrypt",
   "pyotp",
   "passlib",
-  "crypt_r; python_version >= '3.13'",  # crypt replacement
+  "crypt_r; python_version >= '3.13'",  # crypt replacement for passlib
 ]
-# shorter version for 3.13t (argon2 cffi does not compile)
-passwrd = ["bcrypt", "pyotp", "passlib", "crypt_r; python_version >= '3.13'"]
 # python-ldap requires python3-dev libldap-dev libsasl2-dev gcc
 ldap = [ "ldap3" ]
 # cache options
 redis = [ "redis" ]  # types-redis
 memcached = [ "pymemcache" ]
-# JWT support FIXME 2025-03-06 cryptography KO in 3.13t (https://github.com/pyca/cryptography/issues/12489)
+# FIXME 2025-11-22 CFFI issues when installing on 3.13t
+# on cryptography:
+# CFFI does not support the free-threaded build of CPython 3.13.
+# Upgrade to free-threaded 3.14 or newer to use CFFI with the free-threaded build.
 jwt = [ "pyjwt", "cryptography" ]
 # external web utils
 cors = [ "flask_cors" ]
