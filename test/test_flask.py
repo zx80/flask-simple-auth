@@ -3038,8 +3038,16 @@ def test_path_check():
     def my_path_check(m, p):
         return fsa.checkPath(m, p)
 
+    @app.get("/", authz="OPEN")
+    def get_root():
+        return "", 200
+
     @app.get("/ok", authz="OPEN")
     def get_ok():
+        return "", 200
+
+    @app.get("/ok2/<foo_bla>", authz="OPEN")
+    def get_ok2_foo_bla(foo_bla: int):
         return "", 200
 
     try:
@@ -3047,6 +3055,14 @@ def test_path_check():
         def get_BAD():
             ...
         pytest.fail("must reject uppercase path")
+    except ConfigError as e:
+        assert "path" in str(e)
+
+    try:
+        @app.get("/foo_bla", authz="OPEN")
+        def get_foo_bla():
+            ...
+        pytest.fail("must reject _ in path")
     except ConfigError as e:
         assert "path" in str(e)
 

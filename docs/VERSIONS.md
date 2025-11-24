@@ -3,6 +3,11 @@
 Sources are available on [GitHub](https://github.com/zx80/flask-simple-auth)
 and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 
+## 35.5 on ?
+
+- improve default check path function, allow numbers and simple `/` path,
+  allow `_` for variables.
+
 ## 35.4 on 2025-11-22
 
 - remove `mru` cache setting.

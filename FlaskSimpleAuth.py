@@ -609,7 +609,7 @@ def checkPath(method: str, path: str) -> str|None:
     with dashes `-`, and not contain method names.
     """
 
-    if not re.match(r"(/[a-z]+(-[a-z]+)*|/<[^>]+>)+", path):
+    if not re.match(r"^((/[a-z][a-z0-9]+(-[a-z0-9]+)*|/<[a-z][_a-z0-9]+>)+|/)$", path):
         return f"invalid path section: {path}"
     if re.search(r"\b(get|post|put|patch|delete)\b", path, re.I):
         return f"path contains a method name: {path}"
