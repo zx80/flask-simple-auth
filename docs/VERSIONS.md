@@ -3,7 +3,7 @@
 Sources are available on [GitHub](https://github.com/zx80/flask-simple-auth)
 and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 
-## 35.5 on ?
+## 35.5 on 2025-11-27
 
 - improve default check path function, allow numbers and simple `/` path,
   allow `_` for variables.
