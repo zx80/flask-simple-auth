@@ -602,6 +602,12 @@ def jsonify(a: Any) -> Response:
         return flask.jsonify(_json_prepare(a))
 
 
+# default matching and non matching regular expresion for path
+_PATH_RE = r"^((/[a-z][a-z0-9]+(-[a-z0-9]+)*|/<[a-z][_a-z0-9]+>)+|/)$"
+# avoid confusing method names in path
+_NOPATH_RE = r"\b(get|post|put|patch|delete)\b"
+
+
 def checkPath(method: str, path: str) -> str|None:
     """Convenient function to use as a path checking hook.
 
@@ -609,9 +615,9 @@ def checkPath(method: str, path: str) -> str|None:
     with dashes `-`, and not contain method names.
     """
 
-    if not re.match(r"^((/[a-z][a-z0-9]+(-[a-z0-9]+)*|/<[a-z][_a-z0-9]+>)+|/)$", path):
+    if not re.match(_PATH_RE, path):
         return f"invalid path section: {path}"
-    if re.search(r"\b(get|post|put|patch|delete)\b", path, re.I):
+    if re.search(_NOPATH_RE, path):
         return f"path contains a method name: {path}"
     return None  # ok, no error reported
 
