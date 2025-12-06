@@ -36,6 +36,7 @@ package = "https://pypi.org/project/FlaskSimpleAuth/"
 
 [project.optional-dependencies]
 # various dev tools
+# 2025-12-05: mypy broken on librt with pypy
 dev = [
   "mypy", "pyright",
   "types-flask", "types-requests", "types-cachetools", "types-redis",
