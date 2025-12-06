@@ -430,9 +430,10 @@ def test_password_check(client):
         elif pwd == "none":
             return False
         elif pwd == "Error":
-             raise ErrorResponse("test_check_pass error", 400)
+            import FlaskSimpleAuth
+            FlaskSimpleAuth.checkVal(False, "test_check_pass error", 400)
         else:
-             raise Exception("oops!")
+            raise Exception("oops!")
     pm._pass_check = test_check_pass
     assert app.check_user_password("calvin", "hobbes")
     assert app.check_user_password("susie", "magic")
@@ -1866,7 +1867,7 @@ def test_error_response():
     app.error_response(oops)
     @app.get("/oops", authz="OPEN")
     def get_oops():
-        raise ErrorResponse("oops!", 499)
+        fsa.err("oops!", 499)
     client = app.test_client()
     res = check(499, client.get("/oops"))
     assert b"OOPS: oops!" == res.data

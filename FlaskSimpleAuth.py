@@ -224,6 +224,12 @@ def err(*args, **kwargs):
     raise ErrorResponse(*args, **kwargs)
 
 
+def checkVal(value: None|bool|int|float|str|list|dict, *args, **kwargs):
+    """Shortcut function to check a value for thruth and report an error response if not."""
+    if not value:
+        raise ErrorResponse(*args, **kwargs)
+
+
 class ConfigError(BaseException):
     """FSA User Configuration Error.
 
