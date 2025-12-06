@@ -3,9 +3,15 @@
 Sources are available on [GitHub](https://github.com/zx80/flask-simple-auth)
 and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 
+## ... on ...
+
+- TODO reinstate `pypy` GitHub checks
+
 ## 35.6 on 2025-12-06
 
 - add convenient `checkVal` function.
+- comment out `pypy` GitHub checks because mypy's `librt` _0.7.0_ is broken there,
+  see [report](https://github.com/mypyc/librt/issues/21).
 
 ## 35.5 on 2025-11-27
 
