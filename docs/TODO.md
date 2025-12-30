@@ -75,6 +75,8 @@ Backlog of features that may or may not come.
 - declare some exceptions to be turned into 400 instead of 500?
   currently this can be done below, eg anodb, maybe this is enough?
 - json mode: generate json in more cases? automatically?
+- allow to use `ensure_ascii=False` from jsonify?
+  must ensure UTF8 encoding at the HTTP level and in headers.
 
 ## Software Engineering
 
