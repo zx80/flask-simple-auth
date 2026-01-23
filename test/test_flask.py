@@ -2188,6 +2188,38 @@ def test_file_storage():
 def test_param_types():
     app = fsa.Flask("param-types", FSA_AUTH="none", FSA_MODE="debug")
 
+    @app.get("/pt", authz="OPEN")
+    def get_pt(i: int|None = None, s: str|None = None, b: bool|None = None, f: float|None = None):
+        return {"i": i, "s": s, "b": b, "f": f}, 200
+
+    client = app.test_client()
+
+    res = check(200, client.get("/pt", json={"i": 42}))
+    assert res.json["i"] == 42
+
+    res = check(200, client.get("/pt", json={"s": "Susie"}))
+    assert res.json["s"] == "Susie"
+
+    res = check(200, client.get("/pt", json={"f": 3.1415927}))
+    assert res.json["f"] == 3.1415927
+
+    res = check(200, client.get("/pt", json={"b": True}))
+    assert res.json["b"] == True
+
+    check(400, client.get("/pt", json={"i": "forty-two"}))
+    check(400, client.get("/pt", json={"i": 3.1415927}))
+    check(400, client.get("/pt", json={"i": 42.0}))
+    check(400, client.get("/pt", json={"f": "forty-two"}))
+    check(400, client.get("/pt", json={"b": 42}))
+
+    # non strict typing…
+    check(200, client.get("/pt", json={"b": "not-a-bool"}))
+    check(200, client.get("/pt", json={"i": "42"}))
+    check(200, client.get("/pt", json={"s": 42}))
+
+def test_param_type_errors():
+    app = fsa.Flask("param-types-errors", FSA_AUTH="none", FSA_MODE="debug")
+
     try:
         @app.post("/list-str", authz="OPEN")
         def post_list_str(ls: typing.List[str]):
