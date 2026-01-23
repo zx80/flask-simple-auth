@@ -36,6 +36,7 @@ Backlog of features that may or may not come.
   being lazy is not too bad?
 - allow handling files in kwargs?
 - add a filter on returned value? `make_response`? after request?
+- fix str type for anything on parameters with json…
 
 ## Caching
 
