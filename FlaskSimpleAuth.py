@@ -3292,7 +3292,7 @@ class _ParameterHandler:
                     except Exception as e:  # pragma: no cover
                         raise self._pm._Bad(f"parameter {name} error while checking default value: {e}")
 
-    def __call__(self, req, params, kwargs, e400):
+    def __call__(self, req, params, kwargs: dict[str, Any], e400):
         """Extract value for parameters."""
 
         # special parameters are handled directly
