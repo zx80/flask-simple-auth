@@ -3,10 +3,13 @@
 Sources are available on [GitHub](https://github.com/zx80/flask-simple-auth)
 and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 
-## 36.0 on _later_
+## _later_
 
-- make parameter type checking less permissive when using JSON on simple types
 - TODO reinstate `pypy` GitHub checks
+
+## 36.0 on 2026-01-25
+
+- make parameter type checking less permissive when using JSON on simple types.
 
 ## 35.6 on 2025-12-06
 
