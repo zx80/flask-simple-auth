@@ -801,7 +801,7 @@ def get_something_id(id: int, when: date, what: str = "nothing"):
 
 Request parameter string values are actually *converted* to the target type,
 and generate a *400* if the configuration fails.
-For `int`, base syntax is accepted for HTTP/JSON parameters, i.e. `0x11`,
+For `int`, base syntax is accepted for HTTP parameters, i.e. `0x11`,
 `0o21`, `0b10001` and `17` all mean decimal *17*.
 For `bool`, *False* is an empty string, `0`, `False` or `F`, otherwise
 the value is *True*.
@@ -809,6 +809,22 @@ Type `path` is a special `str` type which allows to trigger accepting
 any path on a route.
 Type `JsonData` is a special type to convert, if necessary, a string value
 to JSON, expecting a list or a dictionary.
+
+For JSON parameters, simple types (`bool int float null`) are **not** converted
+thus the provided values must match the expected type:
+`"5432"` (a string containing an integer) is not accepted as an integer, but `5432` is.
+
+Null-able values must be declared with `...|None` or `Union[..., None]`:
+
+```python
+@app.get("/nullable", authz="AUTH")
+def get_nullable(i: int|None = None):
+    return {"i": i, "null": i is None}, 200
+```
+
+Default values are checked for type compatibility and raise `ConfigError`
+when not matching, thus `...|None` type declaration is mandatory if the default
+value is _None_.
 
 If one parameter is a dict of keyword arguments, all remaining request
 parameters are added to it, as shown below:
@@ -854,10 +870,12 @@ parameters, **not** one parameter with a list value.
 Custom classes can be used as parameter types, provided that the constructor
 accepts a string (for HTTP parameters) or whatever value provided (for JSON)
 to build the expected type.
+It is the responsability of the conversion function or constructor to check this cleanly. 
 
 ```python
 class EmailAddr:
     def __init__(self, addr: str):
+        assert "@" in addr
         self._addr = addr
 
 @app.get("/mail/<addr>", authz="AUTH")

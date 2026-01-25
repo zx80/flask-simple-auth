@@ -131,7 +131,7 @@ def get_mul(i: int, j: int, k: int):
 
 # another one: i and j are optional
 @app.route("/div", methods=["GET"], authz=["OPEN"])
-def get_div(i: int = None, j: int = None):
+def get_div(i: int|None = None, j: int|None = None):
     if i is None or j is None:
         return "0", 200
     else:
@@ -150,7 +150,7 @@ else:
 
 # type tests
 @app.route("/type", methods=["GET"], authz=["OPEN"])
-def get_type(f: Optional[float] = None, i: IntOrNone = None, b: Union[bool, None] = None, s: str = None):
+def get_type(f: Optional[float] = None, i: IntOrNone = None, b: Union[bool, None] = None, s: str|None = None):
     if f is not None:
         return f"float {f}", 200
     elif i is not None:
@@ -160,7 +160,7 @@ def get_type(f: Optional[float] = None, i: IntOrNone = None, b: Union[bool, None
     elif s is not None:
         return f"str {s}", 200
     else:
-        return "", 200
+        return "none", 200
 
 # accept any parameters…
 @app.route("/params", methods=["GET"], authz=["OPEN"])

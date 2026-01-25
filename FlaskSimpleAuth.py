@@ -433,13 +433,18 @@ def _valid_type(t) -> bool:
         return False
 
 
+def _check_int(v) -> bool:
+    """Check whether v is really an int."""
+    return isinstance(v, int) and not isinstance(v, bool)
+
+
 # TODO caster?
 def _check_type(t, v) -> bool:
     """Dynamically and recursively check whether v is compatible with t."""
     if t is None or t == types.NoneType:
         return v is None
     elif t == int:  # beware that bool is also an int
-        return isinstance(v, int) and not isinstance(v, bool)
+        return _check_int(v)
     elif t in (bool, float, str):  # simple types
         return isinstance(v, t)
     elif isinstance(t, types.GenericAlias):  # generic types
@@ -476,7 +481,7 @@ def _is_list_of(t) -> Any:
 
 
 def _is_generic_type(p: inspect.Parameter) -> bool:
-    """Tell whether parameter is a generic type."""
+    """Tell whether parameter is a generic type (eg list[int])."""
     a = p.annotation
     if a is inspect._empty:
         return False
@@ -3110,6 +3115,7 @@ class _ParameterHandler:
     """Internal handler for one parameter.
 
     Handle a request parameter depending on its type hint.
+    The ``__call__`` method performs the actual parameter extraction and conversions.
 
     :param pm: parameter manager
     :param hint: parameter description from inspect
@@ -3132,9 +3138,11 @@ class _ParameterHandler:
 
         # expected type
         self._type = _typeof(hint)
+        # special JSON type
         self._type_is_json = self._type == JsonData
         self._type_is_optional = self._type_is_json or _is_optional(hint.annotation)
         self._type_is_generic = _is_generic_type(hint)
+        # for lists
         self._type_list_item = _is_list_of(self._type)
         self._type_is_list = self._type_list_item is not None
         self._type_list_item_caster = self._pm._casts.get(self._type_list_item, self._type_list_item)
@@ -3142,13 +3150,14 @@ class _ParameterHandler:
         if self._type_is_json:  # anything converted from JSON, really
             self._type_isinstance = None
         else:
+            # if the type bears an isinstance call, and a this type checker
             try:
                 isinstance("", self._type)
                 self._type_isinstance = lambda v: self._type_is_optional and v is None or isinstance(v, self._type)
             except Exception:  # FIXME TypeError instead?
                 self._type_isinstance = None
 
-        # typing
+        # typing extraction and conversions
         self._extract: Hooks.SpecialParameterFun|None
         self._convert_para: Callable[[str], Any]|None
         self._convert_json: Callable[[Any], Any]|None
@@ -3158,15 +3167,18 @@ class _ParameterHandler:
         # build extract/convert/check functions as necessary
         if self._type in self._pm._special_parameters:
 
-            # directly get the parameter from wherever
+            # directly get the parameter from wherever using the handler
             self._extract = self._pm._special_parameters[self._type]
             self._convert_para = None
             self._convert_json = None
-            self._caster = self._type if issubclass(self._type, str) else None
+            # add a cast for str strict subtypes only
+            # FIXME why?
+            self._caster = self._type if issubclass(self._type, str) and self._type is not str else None
             self._checker = None
 
         elif self._type_is_json:
 
+            # JSON is converted from the string value or whatever
             self._extract = None
             self._convert_para = json.loads
             self._convert_json = lambda v: v
@@ -3201,7 +3213,7 @@ class _ParameterHandler:
             self._checker = lambda v: _check_type(self._type, v)
 
         elif self._type_is_generic:
-            # only handle generics on simple types
+            # only handle generics on simple types (eg list[int])?
 
             # check that a is a simple generic consistent with _check_type
             if not _valid_type(self._type):
@@ -3218,13 +3230,19 @@ class _ParameterHandler:
               issubclass(self._type, self._pm._pydantic_base_model) or
               hasattr(self._type, "__dataclass_fields__")):
 
+            # pydantic/dataclass are only built from a dict
+
             def is_dict(val):
                 if not isinstance(val, dict):
                     raise self._pm._Err(f"unexpected value {val} for dict", 400)
                 return val
 
+            def para_to_class(s: str):
+                val = json.loads(s)
+                return is_dict(val)
+
             self._extract = None
-            self._convert_para = json.loads
+            self._convert_para = para_to_class
             self._convert_json = is_dict
             self._caster = lambda v: self._type(**v)  # type: ignore
             self._checker = None
@@ -3244,10 +3262,34 @@ class _ParameterHandler:
         else:  # default
 
             self._extract = None
-            self._convert_para = lambda x: x
-            self._convert_json = lambda x: x
-            self._caster = self._pm._casts.get(self._type, self._type)
-            self._checker = None
+
+            if self._type in (bool, int, float, str):
+                # simple types are casted from parameters, but taken as-is from json
+                # NOTE we really need to check only for json values
+                cast = self._pm._casts.get(self._type, self._type)
+                if self._type_is_optional:
+                    self._convert_para = lambda s: None if s == "null" else cast(s)
+                else:
+                    self._convert_para = cast
+                self._convert_json = lambda x: x
+                self._caster = None
+                if self._type_is_optional:
+                    if self._type is int:
+                        self._checker = lambda v: v is None or _check_int(v)
+                    else:
+                        self._checker = lambda v: v is None or isinstance(v, self._type)
+                else:
+                    if self._type is int:
+                        self._checker = _check_int
+                    else:
+                        self._checker = lambda v: isinstance(v, self._type)
+            else:
+                # other are "casted", possibly involving a converter, eg for a date
+                # NOTE it is the caster responsability to deal with unexpected input types
+                self._convert_para = lambda x: x
+                self._convert_json = lambda x: x
+                self._caster = self._pm._casts.get(self._type, self._type)
+                self._checker = None
 
         # special parameter functions can only have special parameters beyond
         # the first parameter which holds the parameter name
@@ -3280,7 +3322,8 @@ class _ParameterHandler:
                     except Exception as e:
                         raise self._pm._Bad(f"parameter {name} cannot cast default value: {e}")
                 if not isinstance(val, self._type):
-                    raise self._pm._Bad(f"parameter {name} bad type for default value ({val}: {self._type})")
+                    raise self._pm._Bad(f"parameter {name} bad type for default value"
+                                        f" ({val}: {self._type.__name__})")
 
             if self._checker:
                 if self._type_is_optional and self._default_value is None:
@@ -3322,7 +3365,12 @@ class _ParameterHandler:
 
         # get parameter raw value
         if self._name in kwargs:  # path parameter
-            val = kwargs[self._name]
+            try:
+                assert self._convert_para is not None  # pyright hint
+                val = self._convert_para(kwargs[self._name])
+            except Exception as e:  # pragma: no cover TODO
+                e400(f"path parameter \"{self._rname}\" conversion error: {e}")
+                return None
         else:  # rname in params: request parameter
             assert self._convert_json and self._convert_para  # mypy
             if self._type_is_list and not req.is_json:
@@ -3335,10 +3383,10 @@ class _ParameterHandler:
                     e400(f"parameter \"{self._rname}\" conversion error: {e}")
                     return None
 
-        # cast? also for path parameters??
+        # possible casts if required
         if self._caster:
             try:
-                if self._type_is_optional and val is None:
+                if self._type_is_optional and val is None:  # pragma: no cover  TODO
                     pass
                 elif self._type_isinstance:
                     if not self._type_isinstance(val):
@@ -3376,26 +3424,51 @@ class _ParameterManager:
         self._store = fsa._store
 
         # parameter management
-        def bool_cast(s):
+        def bool_strict_cast(s):
             if isinstance(s, bool):  # pragma: no cover
                 return s
-            if isinstance(s, str):
-                return s.lower() not in ("", "0", "false", "f")
+            elif isinstance(s, str):
+                ls = s.lower()
+                if ls == "true":
+                    return True
+                elif ls == "false":
+                    return False
+                raise self._Err(f"cannot cast to bool: {s}", 400)  # pragma: no cover
             raise self._Err(f"cannot cast to bool: {_type(s)}", 400)  # pragma: no cover
 
-        def int_cast(s):
+        def int_strict_cast(s):
             if isinstance(s, bool):  # pragma: no cover
                 raise self._Err("will not cast bool to int", 400)
-            if isinstance(s, int):  # pragma: no cover
+            elif isinstance(s, int):  # pragma: no cover
                 return s
-            if isinstance(s, str):
+            elif isinstance(s, str):
                 return int(s, base=0)
             raise self._Err(f"cannot cast to int: {_type(s)}", 400)  # pragma: no cover
 
+        # def bool_loose_cast(s):
+        #     if isinstance(s, bool):  # pragma: no cover
+        #         return s
+        #     elif isinstance(s, str):
+        #         return s.lower() not in ("", "0", "false", "f")
+        #     raise self._Err(f"cannot cast to bool: {_type(s)}", 400)  # pragma: no cover
+
+        # def int_loose_cast(s):
+        #     if s is None:
+        #         return 0
+        #     elif isinstance(s, [bool, int]):
+        #         return int(s)
+        #     elif isinstance(s, float):  # pragma: no cover
+        #         if s % 1 == 0.0:
+        #             return int(s)
+        #         raise self._Err(f"cannot cast float to int: {s}", 400)  # pragma: no cover
+        #     elif isinstance(s, str):
+        #         return int(s, base=0)
+        #     raise self._Err(f"cannot cast to int: {_type(s)}", 400)  # pragma: no cover
+
         # predefined cases, extend with cast
         self._casts: dict[type, Hooks.CastFun] = {
-            bool: bool_cast,
-            int: int_cast,
+            bool: bool_strict_cast,
+            int: int_strict_cast,
             inspect._empty: str,
             path: str,
             string: str,

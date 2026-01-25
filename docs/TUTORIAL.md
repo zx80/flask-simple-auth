@@ -111,7 +111,7 @@ Connection: close
 
 {
   "msg": "hello",
-  "version": "35.6"
+  "version": "36.0"
 }
 ```
 

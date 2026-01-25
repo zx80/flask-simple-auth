@@ -641,21 +641,22 @@ def test_typed_params(client):
     app._fsa._pm._reject_param = False
     res = check(200, client.get("/mul/2", data={"j":"3", "k":"4", "unused":"x"}))
     assert int(res.data) == 24
-    res = check(200, client.get("/mul/2", json={"j":5, "k":"4", "unused":"y"}))
+    res = check(200, client.get("/mul/2", json={"j":5, "k":4, "unused":"y"}))
     assert int(res.data) == 40
     # unused params are rejected
     app._fsa._pm._reject_param = True
-    res = check(400, client.get("/mul/2", data={"j":"3", "k":"4", "unused":"x"}))
-    res = check(400, client.get("/mul/2", json={"j":5, "k":"4", "unused":"y"}))
+    check(400, client.get("/mul/2", data={"j":"3", "k":"4", "unused":"x"}))
+    check(400, client.get("/mul/2", json={"j":5, "k":4, "unused":"y"}))
     # type errors
     check(400, client.get("/mul/1", data={"j":"3"}))
     check(400, client.get("/mul/1", data={"k":"4"}))
     check(400, client.get("/mul/2", data={"j":"three", "k":"four"}))
     check(400, client.get("/mul/2", json={"j":"three", "k":"four"}))
+    check(400, client.get("/mul/2", json={"j":"3", "k":"4"}))
     # optional
     res = check(200, client.get("/div", data={"i":"10", "j":"3"}))
     assert int(res.data) == 3
-    res = check(200, client.get("/div", json={"i":100, "j":"4"}))
+    res = check(200, client.get("/div", json={"i":100, "j":4}))
     assert int(res.data) == 25
     res = check(200, client.get("/div", data={"i":"10"}))
     assert int(res.data) == 0
@@ -672,16 +673,14 @@ def test_typed_params(client):
 def test_types(client):
     res = check(200, client.get("/type", data={"f": "1.0"}))
     assert res.data == b"float 1.0"
-    res = check(200, client.get("/type", json={"f": "2.0"}))
-    assert res.data == b"float 2.0"
+    check(400, client.get("/type", json={"f": "2.0"}))
     res = check(200, client.get("/type", json={"f": 2.0}))
     assert res.data == b"float 2.0"
     res = check(200, client.get("/type", data={"i": "0b11"}))
     assert res.data == b"int 3"
     res = check(200, client.get("/type", data={"i": "0x11"}))
     assert res.data == b"int 17"
-    res = check(200, client.get("/type", json={"i": "0x11"}))
-    assert res.data == b"int 17"
+    check(400, client.get("/type", json={"i": "0x11"}))
     res = check(200, client.get("/type", json={"i": 0x11}))
     assert res.data == b"int 17"
     # note: 011 is not accepted as octal
@@ -689,28 +688,25 @@ def test_types(client):
     assert res.data == b"int 9"
     res = check(200, client.get("/type", data={"i": "11"}))
     assert res.data == b"int 11"
-    res = check(200, client.get("/type", json={"i": "11"}))
-    assert res.data == b"int 11"
+    check(400, client.get("/type", json={"i": "11"}))
     res = check(200, client.get("/type", json={"i": 11}))
     assert res.data == b"int 11"
-    res = check(200, client.get("/type", data={"b": "0"}))
+    check(400, client.get("/type", data={"b": "0"}))
+    res = check(200, client.get("/type", data={"b": "false"}))
     assert res.data == b"bool False"
-    res = check(200, client.get("/type", data={"b": ""}))
-    assert res.data == b"bool False"
+    check(400, client.get("/type", data={"b": ""}))
     res = check(200, client.get("/type", data={"b": "False"}))
     assert res.data == b"bool False"
     res = check(200, client.get("/type", data={"b": "fALSE"}))
     assert res.data == b"bool False"
-    res = check(200, client.get("/type", data={"b": "F"}))
-    assert res.data == b"bool False"
-    res = check(200, client.get("/type", data={"b": "1"}))
-    assert res.data == b"bool True"
-    res = check(200, client.get("/type", data={"b": "foofoo"}))
-    assert res.data == b"bool True"
+    check(400, client.get("/type", data={"b": "F"}))
+    check(400, client.get("/type", data={"b": "1"}))
+    check(400, client.get("/type", data={"b": "foofoo"}))
     res = check(200, client.get("/type", data={"b": "True"}))
     assert res.data == b"bool True"
-    res = check(200, client.get("/type", json={"b": "True"}))
-    assert res.data == b"bool True"
+    check(400, client.get("/type", json={"b": "True"}))
+    res = check(200, client.get("/type", json={"b": None}))
+    assert res.data == b"none"
     res = check(200, client.get("/type", json={"b": True}))
     assert res.data == b"bool True"
     res = check(200, client.get("/type", json={"b": False}))
@@ -782,14 +778,13 @@ def test_complex(client):
     check(400, client.get("/cplx/zero"))
 
 def test_bool(client):
-    res = check(200, client.get("/bool/1"))
+    check(400, client.get("/bool/1"))
+    res = check(200, client.get("/bool/true"))
     assert res.data == b"True"
-    res = check(200, client.get("/bool/f"))
+    res = check(200, client.get("/bool/FALSE"))
     assert res.data == b"False"
-    res = check(200, client.get("/bool/0"))
-    assert res.data == b"False"
-    res = check(200, client.get("/bool/hello"))
-    assert res.data == b"True"
+    check(400, client.get("/bool/0"))
+    check(400, client.get("/bool/hello"))
     check(404, client.get("/bool/"))
 
 def test_custom(client):
@@ -2189,8 +2184,13 @@ def test_param_types():
     app = fsa.Flask("param-types", FSA_AUTH="none", FSA_MODE="debug")
 
     @app.get("/pt", authz="OPEN")
-    def get_pt(i: int|None = None, s: str|None = None, b: bool|None = None, f: float|None = None):
-        return {"i": i, "s": s, "b": b, "f": f}, 200
+    def get_pt(i: int|None = None, s: str|None = None, b: bool|None = None,
+               f: float|None = None, d: dt.datetime|None = None):
+        return {"i": i, "s": s, "b": b, "f": f, "d": d}, 200
+
+    @app.get("/date/<d>", authz="OPEN")
+    def get_date(d: dt.date):
+        return {"d": d}, 200
 
     client = app.test_client()
 
@@ -2206,16 +2206,31 @@ def test_param_types():
     res = check(200, client.get("/pt", json={"b": True}))
     assert res.json["b"] == True
 
+    res = check(200, client.get("/date/2020-07-29"))
+    assert res.json["d"] == "2020-07-29"
+    check(400, client.get("/date/not-a-date"))
+
+    check(200, client.get("/pt", json={"d": "2020-07-29"}))
+
     check(400, client.get("/pt", json={"i": "forty-two"}))
     check(400, client.get("/pt", json={"i": 3.1415927}))
     check(400, client.get("/pt", json={"i": 42.0}))
     check(400, client.get("/pt", json={"f": "forty-two"}))
     check(400, client.get("/pt", json={"b": 42}))
 
-    # non strict typing…
-    check(200, client.get("/pt", json={"b": "not-a-bool"}))
-    check(200, client.get("/pt", json={"i": "42"}))
-    check(200, client.get("/pt", json={"s": 42}))
+    # strict typing with json
+    check(400, client.get("/pt", json={"b": "not-a-bool"}))
+    check(400, client.get("/pt", json={"b": "true"}))
+    check(400, client.get("/pt", json={"i": "42"}))
+    check(400, client.get("/pt", json={"s": 42}))
+    check(400, client.get("/pt", json={"d": "not-a-date"}))
+
+    # less so with data
+    check(400, client.get("/pt", data={"b": "not-a-bool"}))
+    check(200, client.get("/pt", data={"b": "true"}))
+    check(200, client.get("/pt", data={"i": "42"}))
+    check(200, client.get("/pt", data={"s": 42}))
+    check(400, client.get("/pt", data={"d": "not-a-date"}))
 
 def test_param_type_errors():
     app = fsa.Flask("param-types-errors", FSA_AUTH="none", FSA_MODE="debug")
@@ -2242,7 +2257,7 @@ def test_param_type_errors():
             return "no"
         pytest.fail("should raise a config error")
     except ConfigError as e:
-        assert "cannot cast" in str(e)
+        assert "bad type for default value" in str(e)
 
     try:
         @app.get("/nope", authz="OPEN")
@@ -2251,6 +2266,14 @@ def test_param_type_errors():
         pytest.fail("should raise a config error")
     except ConfigError as e:
         assert "bad type" in str(e)
+
+    try:
+        @app.get("/nope", authz="OPEN")
+        def get_nope(d: dt.date = "not-a-date"):
+            return "no"
+        pytest.fail("should raise a config error")
+    except ConfigError as e:
+        assert "cannot cast default value" in str(e)
 
 def test_jsonify_with_generators():
     def gen(i: int):
@@ -2406,7 +2429,7 @@ def test_pydantic_models():
         r = check(400, c.post("/foo", data={"f": json.dumps(FOO_KO)}))
         assert b"cast error" in r.data
         r = check(400, c.post("/foo", data={"f": 1234}))
-        assert b"cast error on 1234" in r.data
+        assert b"unexpected value 1234 for dict" in r.data
         r = check(200, c.get("/foo"))
         assert r.json == FOO_OK
         # Bla
@@ -2869,9 +2892,13 @@ def test_mixing():
         res = c.get("/mixing", json={"a": 37, "b": 5})
         assert res.status_code == 200
         assert res.json == 42
-        # mixing, why not?
-        res = c.get("/mixing?a=35", json={"b": 7})
-        assert res.status_code == 200
+        # mixing, why not? why yes?
+        # TODO should probably be fully rejected?
+        # NOTE the 35 is a string is not converted because we have some JSON
+        # to accept that, we need to know the parameter value origin (json vs param)
+        check(400, c.get("/mixing?a=35", json={"b": 7}))
+        # NOTE this one should work
+        res = check(200, c.get("/mixing?a=35", data={"b": 7}))
         assert res.json == 42
 
 def run_authorize(predefs, code):
@@ -2923,6 +2950,7 @@ def test_auth_close():
         return {"msg": "auth!"}
 
 def test_optional_params():
+    """Test optional int parameters."""
     app = fsa.Flask("opt", FSA_AUTH="none", FSA_MODE="debug4")
     # optional simple parameters
     @app.get("/i0", authz="OPEN")
@@ -2940,23 +2968,27 @@ def test_optional_params():
     @app.get("/i4", authz="OPEN")
     def get_i4(i: typing.Union[None, int]):
         return { "i": i }
-    def int_eq(i, j):
+
+    # check value equality
+    def val_eq(i, j):
         return (i is None and j is None) or (isinstance(i, int) and isinstance(j, int) and i == j)
+
+    # combinatorial checks over path, param, values…
     with app.test_client() as api:
-        cnt = 0
         for path in ["/i0", "/i1", "/i2", "/i3", "/i4"]:
-            for val in [42, 0, 1, None]:
-                for par in ["json", "data"]:
-                    if par == "data" and val is None:
-                        # there is no representation of None as a raw string.
-                        continue
-                    cnt += 1
+            for par in ["json", "data"]:
+                # successes
+                for val in [42, 0, 1, -5432, None]:
+                    param = {par: {"i": "null" if par == "data" and val is None else val}}
+                    log.debug(f"ok path={path} par={par} val={val}")
+                    res = check(200, api.get(path, **param))
+                    assert res.is_json and "i" in res.json and val_eq(val, res.json["i"])
+                # errors
+                # NOTE data={"i": [42]} works
+                for val in ["forty-two", "42.0", 3.1415927, True, False, [], {"x": 42} ]:
+                    log.debug(f"KO path={path} par={par} val={val}")
                     param = {par: {"i": val}}
-                    log.debug(f"param = {param}")
-                    res = api.get(path, **param)
-                    assert res.status_code == 200 and res.is_json and "i" in res.json
-                    assert int_eq(val, res.json["i"])
-        assert cnt == 35
+                    check(400, api.get(path, **param))
 
 #
 # NOTE ldap tests only focus on initializations, we do not have a server for testing
