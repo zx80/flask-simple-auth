@@ -380,7 +380,7 @@ def test_upload(client):
     )
     assert re.search(r" [0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}\.tmp", str(res.data))
 
-@pytest.mark.skipif(os.environ["DATABASE"] != "postgres", reason="test requires postgres")
+@pytest.mark.skipif(os.environ.get("DATABASE", "") != "postgres", reason="test requires postgres")
 def test_mfa_code(client):
     if not app._fsa._am._tm._token == "fsa":
         pytest.skip("test needs fsa tokens")
@@ -407,7 +407,7 @@ def test_mfa_code(client):
     check(401, client.get("/mfa/test", data={"AUTH": "mfa:foo:20500729123456:deadbeef"}))
     check(401, client.get("/mfa/test", data={"AUTH": token1}))
 
-@pytest.mark.skipif(os.environ["DATABASE"] != "postgres", reason="test requires postgres")
+@pytest.mark.skipif(os.environ.get("DATABASE", "") != "postgres", reason="test requires postgres")
 def test_mfa_otp(client):
     if not app._fsa._am._tm._token == "fsa":
         pytest.skip("test needs fsa tokens")
