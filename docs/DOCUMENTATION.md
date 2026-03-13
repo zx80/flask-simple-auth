@@ -1090,8 +1090,8 @@ Some directives govern various details for this extension internal working.
 - `FSA_ADD_HEADERS` allows to add headers to the generated response,
   as a dictionary.
   Keys are header names and values are either strings, which are used as is,
-  or functions which are called with the response as a parameter to generate
-  a value. *None* returned values are silently ignored.
+  or functions which are called with the response and header name as parameters
+  to generate a value. *None* returned values are silently ignored.
   The corresponding `add_headers` method allows to add headers as keyword
   arguments.
   Default is empty.
