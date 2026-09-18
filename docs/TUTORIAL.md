@@ -420,10 +420,10 @@ def test_param_authn(client):
     # authentication parameters
     acme_auth_params = {"username": "acme", "password": os.environ["ACME_PASS"]}
     # passed as HTTP parameters
-    res = client.get("/hello-me", data=acme_auth_param)
+    res = client.get("/hello-me", data=acme_auth_params)
     assert res.status_code == 200 and res.json["user"] == "acme"
     # or as JSON parameters
-    res = client.get("/hello-me", json=acme_auth_param)
+    res = client.get("/hello-me", json=acme_auth_params)
     assert res.status_code == 200 and res.json["user"] == "acme"
 ```
 
@@ -807,20 +807,20 @@ And automatically:
 # append to "test.py"
 def test_len(client):
     # working
-    res = client.get("len", json={"p": {"hi":"w!"}})
+    res = client.get("/len", json={"p": {"hi":"w!"}})
     assert res.status_code == 200 and res.json["len"] == 1
-    res = client.get("len", json={"p": ["foo", "bla"]})
+    res = client.get("/len", json={"p": ["foo", "bla"]})
     assert res.status_code == 200 and res.json["len"] == 2
-    res = client.get("len", json={"p": "hi!"})
+    res = client.get("/len", json={"p": "hi!"})
     assert res.status_code == 200 and res.json["len"] == 3
-    res = client.get("len", data={"p": '"hi!"'})
+    res = client.get("/len", data={"p": '"hi!"'})
     assert res.status_code == 200 and res.json["len"] == 3
-    res = client.get("len", json={"p": null})
+    res = client.get("/len", json={"p": None})
     assert res.status_code == 200 and res.json["len"] == "not available"
     # errors
-    res = client.get("len")
+    res = client.get("/len")
     assert res.status_code == 400  # missing parameter
-    res = client.get("len", data={"p": "bad-json"})
+    res = client.get("/len", data={"p": "bad-json"})
     assert res.status_code == 400  # invalid parameter value
 ```
 
