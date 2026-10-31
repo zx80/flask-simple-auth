@@ -4452,9 +4452,9 @@ class FlaskSimpleAuth:
     #
     def _safe_call(self, path, level, fun, *args, **kwargs) -> Response:
         """Call a route function ensuring a response whatever."""
-        try:  # the actual call
+        try:  # the actual call to the lower level function
             return fun(*args, **kwargs)
-        except ErrorResponse as e:  # something went wrong
+        except ErrorResponse as e:  # something went wrong and was reported as such
             return self._Res(e.message, e.status, e.headers, e.content_type)
         except Exception as e:  # something went *really* wrong
             log.error(f"internal error on {request.method} {request.path}: {e}")
