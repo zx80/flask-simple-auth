@@ -6,6 +6,8 @@ and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 ## _later_
 
 - TODO reinstate `pypy` GitHub checks
+- check missing endpoint leading `/`
+- fix typos in tutorial
 
 ## 36.0 on 2026-01-25
 

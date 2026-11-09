@@ -3138,3 +3138,11 @@ def test_path_check():
         pytest.fail("must reject method in path")
     except ConfigError as e:
         assert "method" in str(e)
+
+    try:
+        @app.get("missing-slash", authz="OPEN")
+        def get_missing_slash():
+            ...
+        pytest.fail("must reject bad endpoint")
+    except ConfigError as e:
+        assert "bad path" in str(e)
