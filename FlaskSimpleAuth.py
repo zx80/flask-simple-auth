@@ -12,11 +12,13 @@ This code is public domain.
 """
 
 # TODO refactoring
+# TODO consider 3.15 frozendict on Directives initialization?
 # - clarify manager public/private interfaces
 
 import os
 import sys
-from typing import Callable, Any
+from typing import Any
+from collections.abc import Callable
 import typing
 import types
 from enum import IntEnum
@@ -35,7 +37,7 @@ except ModuleNotFoundError:
     import re  # type: ignore
 
 import flask
-import werkzeug.exceptions as exceptions
+from werkzeug.exceptions import HTTPException
 from werkzeug.datastructures import FileStorage, CombinedMultiDict
 
 import ProxyPatternPool as ppp  # type: ignore
@@ -237,6 +239,13 @@ class ConfigError(BaseException):
     """
     pass
 
+class ServiceError(BaseException):
+    """FSA External Service Error.
+
+    This error is raised on (internal) errors detected while invoking some external stuff.
+    """
+    pass
+
 
 class _Mode(IntEnum):
     """FSA running modes."""
@@ -372,7 +381,7 @@ _DEPRECATED_GROUPS = {"ANY", "ALL", "NONE"}
 
 
 def _is_predef(la: list[Any], s: set[str]):
-    return any(map(lambda i: i in s, la))
+    return any(i in s for i in la)
 
 
 def _is_open(la: list[Any]):
@@ -459,7 +468,7 @@ def _check_type(t, v) -> bool:
                 _check_type(key_type, key) and _check_type(val_type, val) for key, val in v.items())
         # TODO set? tuple?
         else:  # pragma: no cover
-            raise ValueError(f"unsupported generic type: {t.__name__}")
+            raise TypeError(f"unsupported generic type: {t.__name__}")
     elif isinstance(t, types.UnionType):  # |
         return any(_check_type(a, v) for a in t.__args__)
     elif hasattr(t, "__origin__") and t.__origin__ is typing.Union:  # Union  # pragma: no cover
@@ -516,9 +525,7 @@ def _json_prepare(a: Any):
     # special cases for data structures
     if hasattr(a, "model_dump"):  # Pydantic BaseModel
         return a.model_dump()
-    elif hasattr(a, "__pydantic_fields__"):  # Pydantic dataclass
-        return dataclasses.asdict(a)
-    elif hasattr(a, "__dataclass_fields__"):  # standard dataclass
+    elif hasattr(a, "__pydantic_fields__") or hasattr(a, "__dataclass_fields__"):  # Pydantic or standard dataclass
         return dataclasses.asdict(a)
     else:  # do nothing, rely on flask's jsonify
         return a
@@ -566,7 +573,7 @@ class _JSONProvider(flask.json.provider.DefaultJSONProvider):  # type: ignore
             dt.timezone: str,
             uuid.UUID: str,
         }
-        self._skip: tuple[type, ...] = tuple()
+        self._skip: tuple[type, ...] = ()
         _ = allstr and self._set_allstr()
 
     def set_allstr(self):
@@ -580,9 +587,7 @@ class _JSONProvider(flask.json.provider.DefaultJSONProvider):  # type: ignore
         # special cases for data structures
         if hasattr(o, "model_dump"):  # Pydantic BaseModel  # pragma: no cover
             return o.model_dump()
-        elif hasattr(o, "__pydantic_fields__"):  # Pydantic dataclass
-            return dataclasses.asdict(o)
-        elif hasattr(o, "__dataclass_fields__"):  # standard dataclass  # pragma: no cover
+        elif hasattr(o, "__pydantic_fields__") or hasattr(o, "__dataclass_fields__"):  # Pydantic or standard dataclass
             return dataclasses.asdict(o)
         else:
             if encoder := self._typemap.get(type(o), None):
@@ -677,7 +682,7 @@ class Flask(flask.Flask):
         # FSA extension initialization
         self._fsa = FlaskSimpleAuth(self, debug=debug, **fsaconf)
         # overwritten late because called by upper Flask initialization for "static"
-        setattr(self, "add_url_rule", self._fsa.add_url_rule)
+        self.add_url_rule = self._fsa.add_url_rule  # type: ignore
         # forward hooks
         self.error_response = self._fsa.error_response
         self.get_user_pass = self._fsa.get_user_pass
@@ -712,11 +717,11 @@ class Flask(flask.Flask):
         self.auth_uncache = self._fsa.auth_uncache
         self.path_check = self._fsa.path_check
         # overwrite decorators ("route" done through add_url_rule above)
-        setattr(self, "get", self._fsa.get)  # FIXME avoid mypy warnings
-        setattr(self, "put", self._fsa.put)
-        setattr(self, "post", self._fsa.post)
-        setattr(self, "patch", self._fsa.patch)
-        setattr(self, "delete", self._fsa.delete)
+        self.get = self._fsa.get  # type: ignore
+        self.put = self._fsa.put  # type: ignore
+        self.post = self._fsa.post  # type: ignore
+        self.patch = self._fsa.patch  # type: ignore
+        self.delete = self._fsa.delete  # type: ignore
         # json provider
         self.json = self._fsa._app.json
 
@@ -1412,7 +1417,7 @@ class _TokenManager:
             if local.user and self._can_create_token():
                 if self._name in request.cookies and self._renewal:
                     # renew token when closing expiration
-                    user, exp, _ = self._get_any_token_auth_exp(request.cookies[self._name], local.token_realm)
+                    _, exp, _ = self._get_any_token_auth_exp(request.cookies[self._name], local.token_realm)
                     limit = dt.datetime.now(dt.timezone.utc) + \
                         self._renewal * dt.timedelta(minutes=self._delay)
                     set_cookie = exp < limit
@@ -1632,8 +1637,7 @@ class _TokenManager:
             # else we ignore… maybe it will be resolved later
         elif self._carrier == "cookie":
             assert self._name
-            token = (request.cookies[self._name] if self._name in request.cookies else
-                     None)
+            token = request.cookies.get(self._name, None)
         elif self._carrier == "param":
             token = self._fsa._pm._params().get(self._name, None)
         else:
@@ -1713,7 +1717,7 @@ class _LDAPAuthBase:
         return url
 
     def check(self, username: str, password: str) -> bool:  # pragma: no cover
-        raise Exception("not implemented yet")
+        raise NotImplementedError("not implemented yet")
 
 
 class _LDAPAuth(_LDAPAuthBase):
@@ -1815,12 +1819,12 @@ class _LDAP3Auth(_LDAPAuthBase):
                     self._conn = self._ldap3.Connection(self._server, **self._conn_opts)
                 if self._use_tls:
                     if not self._conn.start_tls():
-                        raise Exception(f"cannot start tls: {self._conn.result['message']}")
+                        raise ServiceError(f"cannot start tls: {self._conn.result['message']}")
                 else:
                     if not self._conn.open():
-                        raise Exception(f"cannot open: {self._conn.result['message']}")
+                        raise ServiceError(f"cannot open: {self._conn.result['message']}")
                 if not self._conn.bind():
-                    raise Exception(f"cannot bind: {self._conn.result['message']}")
+                    raise ServiceError(f"cannot bind: {self._conn.result['message']}")
             if self._base:
                 if not self._conn.bind():
                     log.error(f"cannot bind: {self._conn.result['message']}")
@@ -1828,7 +1832,7 @@ class _LDAP3Auth(_LDAPAuthBase):
                 if self._filter:
                     search = f"(&{self._filter}{search})"
                 if not self._conn.search(self._base, search, self._scope_val, **self._search_opts):  # type: ignore
-                    raise Exception(f"cannot search: {self._conn.result['message']}")
+                    raise ServiceError(f"cannot search: {self._conn.result['message']}")
                 if not self._conn.response or len(self._conn.response) != 1:
                     log.debug(f"ldap search: {self._conn.result}")
                     return False
@@ -1910,7 +1914,7 @@ class _PasswordManager:
         try:
             self._pass_provider = CryptContext(schemes=schemes, **options)
         except Exception as e:
-            log.error(f"error while initializing passlib {schemes}: {str(e)}")
+            log.error(f"error while initializing passlib {schemes}: {e!s}")
             raise self._Bad(f"unsupported passlib scheme: {schemes}", str(e))
 
     def __fsa_init(self, scheme: str, options: dict[str, Any]|None):
@@ -2177,8 +2181,8 @@ class _PasswordManager:
         if self._pass_check:
             try:
                 return self._pass_check(user, pwd)
-            except ErrorResponse as e:
-                raise e
+            except ErrorResponse:  # pass through
+                raise
             except Exception as e:
                 log.info(f"AUTH (hook) failed: {e}")
                 if self._Exc(e):  # pragma: no cover
@@ -2213,8 +2217,8 @@ class _PasswordManager:
         if self._get_user_pass:
             try:
                 ref = self._get_user_pass(user)
-            except ErrorResponse as e:
-                raise e
+            except ErrorResponse:  # pass through
+                raise
             except Exception as e:
                 log.error(f"get_user_pass failed: {e}")
                 raise self._Err("internal error in get_user_pass", self._fsa._server_error, e)
@@ -2589,7 +2593,7 @@ class _AuthenticationManager:
                     return user
         except ErrorResponse as e:  # pragma: no cover
             log.debug(f"AUTH (http-*): bad authentication {e}")
-            raise e
+            raise
         log.debug("AUTH (http-*): bad authentication")  # pragma: no cover
         raise self._Err("failed HTTP authentication", 401)  # pragma: no cover
 
@@ -2746,7 +2750,7 @@ class _CacheManager:
             elif cache == "tlru":
                 rcache = ct.TLRUCache(maxsize, **self._cache_opts)
             elif cache == "dict":
-                rcache = dict()
+                rcache = {}
             else:  # pragma: no cover
                 raise self._Bad(f"unexpected simple cache type: {cache}")
             if prefix:
@@ -2877,8 +2881,8 @@ class _AuthorizationManager:
         self._Exc = fsa._Exc
         self._store = fsa._store
         # authorization stuff
-        self._group_checks: dict[int|str, Hooks.GroupCheckFun] = dict()
-        self._object_perms: dict[Any, Hooks.ObjectPermsFun] = dict()
+        self._group_checks: dict[int|str, Hooks.GroupCheckFun] = {}
+        self._object_perms: dict[Any, Hooks.ObjectPermsFun] = {}
         self._user_in_group: Hooks.UserInGroupFun|None = None
         self._groups: set[str|int] = set()
         self._scopes: set[str] = set()
@@ -3037,9 +3041,12 @@ class _AuthorizationManager:
         # check perms wrt to recorded per-object checks
 
         # normalize tuples length to 3 and split names
-        perms = list(map(lambda a: (a + (first, None)) if len(a) == 1 else
-                                   (a + (None,)) if len(a) == 2 else
-                                   a, perms))
+        perms = [
+            (a + (first, None)) if len(a) == 1 else
+            (a + (None,)) if len(a) == 2 else
+            a
+            for a in perms
+        ]
 
         # perm checks
         for perm in perms:
@@ -3397,10 +3404,9 @@ class _ParameterHandler:
             except Exception as e:
                 e400(f"parameter \"{self._rname}\" cast error on {val}: {e}")
                 return None
-        elif self._type_isinstance:
-            if not self._type_isinstance(val):
-                e400(f"parameter \"{self._rname}\" type error on {val} for {self._type}")
-                return None
+        elif self._type_isinstance and not self._type_isinstance(val):
+            e400(f"parameter \"{self._rname}\" type error on {val} for {self._type}")
+            return None
 
         # check value if needed, exceptions are sent upwards
         if self._checker and not self._checker(val):
@@ -3558,7 +3564,7 @@ class _ParameterManager:
                     if params:
                         sparams = set(params.keys())
                         if not sparams.issubset(am._auth_params):
-                            bads = ' '.join(sorted(list(sparams - am._auth_params)))
+                            bads = ' '.join(sorted(sparams - am._auth_params))
                             return f"unexpected {local.params} parameters: {bads}", 400
 
                 return fsa._safe_call(path, "no params", fun, *args, **kwargs)
@@ -3623,7 +3629,7 @@ class _ParameterManager:
 
             # debug helpers
             def getNames(pl):
-                return sorted(map(lambda n: handlers[n]._rname, pl))
+                return sorted(handlers[n]._rname for n in pl)
 
             mandatory = getNames(filter(lambda n: not handlers[n]._has_default, handlers.keys()))
             optional = getNames(filter(lambda n: handlers[n]._has_default, handlers.keys()))
@@ -3951,7 +3957,7 @@ class _ResponseManager:
         fsa = self._fsa
         if not hasattr(fsa._local, "routed"):  # pragma: no cover
             # may be triggered by an early return from a before_request hook?
-            log.warn(f"external response on {request.method} {request.path}")
+            log.warning(f"external response on {request.method} {request.path}")
             return res
         if fsa._local.routed and res.status_code < 400 and fsa._local.need_authorization:  # pragma: no cover
             # this case is really detected when building the app
@@ -4085,7 +4091,7 @@ class FlaskSimpleAuth:
         # set self._local internal holder
         local = conf.get("FSA_LOCAL", "thread")
         if local == "process":
-            class Local(object):  # type: ignore
+            class Local:
                 pass
         elif local == "thread":
             from threading import local as Local  # type: ignore
@@ -4105,7 +4111,7 @@ class FlaskSimpleAuth:
         # error response generation
         if conf.get("FSA_HANDLE_ALL_ERRORS", True):
             # take responsability for handling errors
-            self._app.register_error_handler(exceptions.HTTPException, lambda e: self._Res(e.description, e.code))
+            self._app.register_error_handler(HTTPException, lambda e: self._Res(e.description, e.code))
         # override FSA internal error handling user errors
         self._keep_user_errors = conf.get("FSA_KEEP_USER_ERRORS", Directives.FSA_KEEP_USER_ERRORS)
 
@@ -4162,7 +4168,7 @@ class FlaskSimpleAuth:
         # trace once with subtle tracking
         if exc and not hasattr(exc, "_fsa_traced"):
             log.error(exc, exc_info=True)
-            setattr(exc, "_fsa_traced", True)
+            exc._fsa_traced = True  # type: ignore
         return exc if self._keep_user_errors else None
 
     def _Err(self, msg: str, code: int, exc: Exception|None = None) -> BaseException:
@@ -4535,7 +4541,7 @@ class FlaskSimpleAuth:
             self._cm._set_caches()
 
         # normalize None to CLOSE
-        authz = list(map(lambda a: "CLOSE" if a is None else a, authz))
+        authz = ["CLOSE" if a is None else a for a in authz]
 
         # ensure non emptyness
         if len(authz) == 0:
