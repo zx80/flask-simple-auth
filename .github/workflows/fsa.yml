@@ -38,6 +38,14 @@ jobs:
         - version: "3.14t"
           gil: 1
           deps: demo,password,jwt,cors,httpauth,redis,memcached
+        - version: "3.15"
+          deps: demo,password,jwt,cors,httpauth,redis,memcached
+        - version: "3.15t"
+          gil: 0
+          deps: demo,password,jwt,cors,httpauth,redis,memcached
+        - version: "3.15t"
+          gil: 1
+          deps: demo,password,jwt,cors,httpauth,redis,memcached
     env:
       PYTHON_GIL: ${{ matrix.python.gil }}
     steps:
@@ -50,14 +58,14 @@ jobs:
         sudo -u postgres createuser -s $USER
         sudo -u postgres createdb -O $USER $USER
     - name: Git Checkout
-      uses: actions/checkout@v6
+      uses: actions/checkout@v7
     - name: Set up Redis
       uses: supercharge/redis-github-action@1.8.1
     - name: Set up Memcached
-      uses: niden/actions-memcached@v7
+      uses: niden/actions-memcached@v8
     - name: Set up Python ${{ matrix.python.version }}
       # uses: actions/setup-python@main
-      uses: actions/setup-python@v6
+      uses: actions/setup-python@v7
       with:
         python-version: ${{ matrix.python.version }}
         allow-prereleases: true
