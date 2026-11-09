@@ -6,6 +6,7 @@ and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 ## _later_
 
 - TODO reinstate `pypy` GitHub checks?
+- TODO retry _Python 3.15t_ tests at some point?
 
 ## ? on ?
 
