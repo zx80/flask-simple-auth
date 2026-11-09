@@ -5,10 +5,14 @@ and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 
 ## _later_
 
-- TODO reinstate `pypy` GitHub checks
-- check missing endpoint leading `/`
-- fix typos in tutorial
-- pleases pyright, ruff and flake8, or ignore some checks
+- TODO reinstate `pypy` GitHub checks?
+
+## ? on ?
+
+- check missing endpoint leading `/`.
+- fix typos in tutorial.
+- pleases pyright, ruff and flake8, or ignore some checks.
+- test with Python _3.15_, retire Python _3.10_.
 
 ## 36.0 on 2026-01-25
 

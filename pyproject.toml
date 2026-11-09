@@ -11,7 +11,7 @@ readme = "README.md"
 license = "CC0-1.0"
 # Flask 2.3 requires Python 3.9 (3.8?) and is compatible with 3.12
 # I'm tired of verbose type hints such as Optional[foo]
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 dependencies = [
   "flask >= 3.0",
   "ProxyPatternPool >= 1.0",
