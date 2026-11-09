@@ -16,16 +16,19 @@ PIP		= venv/bin/pip
 .PHONY: check.mypy
 check.mypy: dev
 	source venv/bin/activate
+	mypy --version
 	mypy $(MODULE).py
 
 .PHONY: check.pyright
 check.pyright: dev
 	source venv/bin/activate
+	pyright --version
 	pyright $(MODULE).py
 
 .PHONY: check.black
 check.black: dev
 	source venv/bin/activate
+	black --version
 	black --check $(MODULE).py
 
 IGNORE  = E227,E402,E501,E721,F401,F811
@@ -33,11 +36,13 @@ IGNORE  = E227,E402,E501,E721,F401,F811
 .PHONY: check.flake8
 check.flake8: dev
 	source venv/bin/activate
+	flake8 --version
 	flake8 --ignore=E127,E129,W504,$(IGNORE) $(MODULE).py
 
 .PHONY: check.ruff
 check.ruff: dev
 	source venv/bin/activate
+	ruff --version
 	ruff check --ignore=$(IGNORE) $(MODULE).py
 
 .PHONY: check.pytest
