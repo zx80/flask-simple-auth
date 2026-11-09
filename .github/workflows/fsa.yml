@@ -36,12 +36,15 @@ jobs:
           deps: demo,password,jwt,cors,httpauth,redis,memcached
         - version: "3.15"
           deps: demo,password,jwt,cors,httpauth,redis,memcached
-        - version: "3.15t"
-          gil: 0
-          deps: demo,password,jwt,cors,httpauth,redis,memcached
-        - version: "3.15t"
-          gil: 1
-          deps: demo,password,jwt,cors,httpauth,redis,memcached
+        # FIXME 2026-11-09
+        # bcrypt does not compile with 3.15t, yet another failure of a rust
+        # error: failed to run custom build command for `pyo3-ffi v0.26.0`
+        # - version: "3.15t"
+        #   gil: 0
+        #   deps: demo,password,jwt,cors,httpauth,redis,memcached
+        # - version: "3.15t"
+        #   gil: 1
+        #   deps: demo,password,jwt,cors,httpauth,redis,memcached
     env:
       PYTHON_GIL: ${{ matrix.python.gil }}
     steps:
