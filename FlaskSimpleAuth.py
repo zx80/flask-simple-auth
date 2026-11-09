@@ -239,6 +239,7 @@ class ConfigError(BaseException):
     """
     pass
 
+
 class ServiceError(BaseException):
     """FSA External Service Error.
 
