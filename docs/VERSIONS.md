@@ -8,8 +8,9 @@ and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 - TODO reinstate `pypy` GitHub checks?
 - TODO retry _Python 3.15t_ tests at some point?
 
-## ? on ?
+## 37.0 on ?
 
+- fix some tests
 - check missing endpoint leading `/`.
 - fix typos in tutorial.
 - pleases pyright, ruff and flake8, or ignore some checks.
