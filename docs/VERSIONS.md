@@ -10,7 +10,7 @@ and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 
 ## 37.0 on 2026-11-10
 
-- fix some tests
+- fix some tests.
 - check missing endpoint leading `/`.
 - fix typos in tutorial.
 - pleases pyright, ruff and flake8, or ignore some checks.
