@@ -1020,7 +1020,7 @@ class Directives:
 
     - ``fsa``: simple custom token
     - ``jwt``: JSON web token standard
-    - *None*: disable token authentication
+    - ``none`` or *None*: disable token authentication
     """
 
     FSA_TOKEN_ALGO: str = "blake2s"
@@ -1275,7 +1275,7 @@ class _TokenManager:
     # A token can be checked locally with a simple hash, without querying the
     # database and validating a possibly expensive salted password (+400 ms!).
     #
-    # FSA_TOKEN_TYPE: 'jwt', 'fsa', or None to disactivate
+    # FSA_TOKEN_TYPE: 'jwt', 'fsa', or 'none'/None to disactivate
     # - for 'fsa': format is <realm>:<user>:<validity-limit>:<signature>
     # FSA_TOKEN_CARRIER: 'param', 'header' or 'bearer'
     # FSA_TOKEN_NAME: name of parameter/cookie/scheme holding the token
@@ -1309,7 +1309,7 @@ class _TokenManager:
         self._delay: float = Directives.FSA_TOKEN_DELAY
         self._grace: float = Directives.FSA_TOKEN_GRACE
         self._renewal: float = Directives.FSA_TOKEN_RENEWAL
-        self._secret: str = "to be overriden"
+        self._secret: str = Directives.FSA_TOKEN_SECRET
         self._sign: str|None = None
         self._algo: str = Directives.FSA_TOKEN_ALGO
         self._siglen: int = Directives.FSA_TOKEN_LENGTH
@@ -1329,9 +1329,12 @@ class _TokenManager:
         conf = self._fsa._app.config
         # token type
         self._token = conf.get("FSA_TOKEN_TYPE", "fsa")
-        if not self._token:  # pragma: no cover
+        if self._token is not None and not isinstance(self._token, str):
+            raise self._Bad("unexpected FSA_TOKEN_TYPE type, must be string or None")
+        if not self._token or self._token == "none":
+            self._token = None
             return  # desactivated
-        if self._token not in ("fsa", "jwt"):
+        if self._token not in ("fsa", "jwt", "none"):
             raise self._Bad(f"unexpected FSA_TOKEN_TYPE: {self._token}")
         # token carrier
         self._carrier = conf.get("FSA_TOKEN_CARRIER", "bearer")
@@ -1365,9 +1368,12 @@ class _TokenManager:
         # token signature
         if "FSA_TOKEN_SECRET" in conf:
             self._secret = conf["FSA_TOKEN_SECRET"]
-            if self._secret and len(self._secret) < 16:
+            if not isinstance(self._secret, str):
+                raise self._Bad("invalid FSA_TOKEN_SECRET type, must be a string")
+            if len(self._secret) < 16:
                 log.warning("token secret is short")
         else:
+            # if not set, provide a random default value
             import random
             import string
 
@@ -2351,6 +2357,9 @@ class _AuthenticationManager:
         #
         self._pm._initialize()
         self._tm._initialize()
+        # sanity check
+        if ("token" in self._auth or "oauth" in self._auth) and self._tm._token is None:
+            raise self._Bad("token auth enabled but token manager is disabled")
         #
         # HTTP auth parameter names
         #

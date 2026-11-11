@@ -45,7 +45,7 @@ FSA_ERROR_RESPONSE = "json:error"  # plain (default), json, json:<property-name>
 #
 # token authentication
 #
-# FSA_TOKEN_TYPE = "fsa"        # token type is "fsa" or "jwt"
+# FSA_TOKEN_TYPE = "fsa"        # token type is "fsa", "jwt", or "none" to disable
 # FSA_TOKEN_ALGO = "blake2s"    # for signature, value depends on token type
 # FSA_TOKEN_CARRIER = "bearer"  # where to find the token: bearer, cookie, header, param
 # FSA_TOKEN_NAME = "Bearer"     # additional parameter for token carrier

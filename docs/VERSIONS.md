@@ -8,6 +8,10 @@ and packaged on [PyPI](https://pypi.org/project/FlaskSimpleAuth/).
 - TODO reinstate `pypy` GitHub checks?
 - TODO retry _Python 3.15t_ tests at some point?
 
+## ? on ?
+
+- improve token configuration checks, warnings and tests.
+
 ## 37.0 on 2026-11-10
 
 - fix some tests.

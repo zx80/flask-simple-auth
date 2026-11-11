@@ -298,8 +298,8 @@ The available schemes are:
   payload (*realm*, *user* and *limit*) and a secret hold by the server.
 
   There are two token types chosen with the `FSA_TOKEN_TYPE` configuration
-  directive: `fsa` is a simple compact readable custom format, and `jwt`
-  [RFC 7519](https://tools.ietf.org/html/rfc7519) standard based
+  directive: `fsa` is a simple compact readable custom format, and
+  `jwt` [RFC 7519](https://tools.ietf.org/html/rfc7519) standard based
   on [PyJWT](https://pypi.org/project/PyJWT/) implementation.
 
   The `fsa` token syntax is: `<realm>:<user>:<limit>:<signature>`,
@@ -313,7 +313,7 @@ The available schemes are:
 
   The following configuration directives are available:
 
-  - `FSA_TOKEN_TYPE` type of token, either *fsa*, *jwt* or `None` to disable.
+  - `FSA_TOKEN_TYPE` type of token, either *fsa*, *jwt*, *none* or `None` to disable.
     Default is *fsa*.
   - `FSA_TOKEN_CARRIER` how to transport the token: *bearer* (`Authorization`
     HTTP header), *param*, *cookie* or *header*.

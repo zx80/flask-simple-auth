@@ -1132,12 +1132,21 @@ def test_bad_app():
         pytest.fail("bad app creation must fail")
     except ConfigError as e:
         assert "bad" in str(e), "ok, bad app creation has failed"
-    # FIXME, None is ok?
-    # try:
-    #     app = create_app(FSA_AUTH="token", FSA_TOKEN_TYPE=None)
-    #    # pytest.fail("bad app creation must fail")
-    # except ConfigError as e:
-    #     assert True, "ok, bad app creation has failed"
+    try:
+        app = create_app(FSA_AUTH="token", FSA_TOKEN_TYPE=123)
+        pytest.fail("bad app creation must fail")
+    except ConfigError as e:
+        assert "FSA_TOKEN_TYPE" in str(e), "ok, bad app creation has failed"
+    try:
+        app = create_app(FSA_AUTH="token", FSA_TOKEN_TYPE="none")
+        pytest.fail("bad app creation must fail")
+    except ConfigError as e:
+        assert "token auth" in str(e), "ok, bad app creation has failed"
+    try:
+        app = create_app(FSA_AUTH="token", FSA_TOKEN_TYPE=None)
+        pytest.fail("bad app creation must fail")
+    except ConfigError as e:
+        assert "token auth" in str(e), "ok, bad app creation has failed"
     # bad token carrier
     try:
         app = create_app(FSA_AUTH="token", FSA_TOKEN_CARRIER="bad")
@@ -1155,6 +1164,12 @@ def test_bad_app():
         pytest.fail("bad app creation must fail")
     except ConfigError as e:
         assert "requires a name" in str(e), "ok, bad app creation has failed"
+    # bad token secret type
+    try:
+        app = create_app(FSA_AUTH="token", FSA_TOKEN_SECRET=1234567890)
+        pytest.fail("bad app creation must fail")
+    except ConfigError as e:
+        assert "FSA_TOKEN_SECRET" in str(e), "ok, bad app creation has failed"
     # bad jwt talgorithm
     try:
         app = create_app(FSA_AUTH="token", FSA_TOKEN_TYPE="jwt", FSA_TOKEN_ALGO="bad")
