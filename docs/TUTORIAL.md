@@ -29,16 +29,19 @@ project GitHub.
 
 Let us first create a minimal running REST application back end *without*
 authentication and authorizations.  
-Create and activate a Python virtual environment in a new directory, from a
-shell terminal:
+Create and activate a Python virtual environment in a new directory,
+possibly as a git working directory, from a shell terminal:
 
 ```shell
-python --version  # must show 3.1x
-mkdir fsa-tuto
-cd fsa-tuto
-python -m venv venv
+python --version                         # must show 3.1x
+mkdir fsa-tuto && cd fsa-tuto            # create tutorial directory
+python -m venv venv                      # create python virtual environment
 source venv/bin/activate
 pip install FlaskSimpleAuth[password]
+git init .                               # initialize as a git working directory
+echo "venv/" > .gitignore
+git add .gitignore
+git commit -m "initial empty setup"
 ```
 
 Using your favorite text editor, create in the `fsa-tuto` directory the `app.py`
