@@ -50,12 +50,15 @@ If not set, the route would be closed (aka 403).
 ```python
 # File "app.py"
 # necessary for debug messages to show up…
+import os
+
 import logging
 logging.basicConfig()
 
 # Flask initialization
 import FlaskSimpleAuth as fsa
 app = fsa.Flask("acme")
+assert "ACME_CONFIG" in os.environ, "ACME_CONFIG env var is required"
 app.config.from_envvar("ACME_CONFIG")
 
 # TODO LATER MORE INITIALIZATIONS
@@ -68,7 +71,7 @@ def get_hello():
 # TODO LATER MORE ROUTES
 ```
 
-Create the `acme.conf` configuration file:
+Also create the `acme.conf` configuration file:
 
 ```python
 # File "acme.conf"
@@ -77,7 +80,8 @@ FSA_MODE = "debug1"  # debug level 1, max is 4
 FSA_ADD_HEADERS = { "Application": "Acme" }
 ```
 
-Start the application in a terminal with the *flask* local test server.
+Start the application in a terminal with the *flask* local test server,
+with variable `ACME_CONFIG` pointing to the acme application configuration file.
 
 ```shell
 export ACME_CONFIG="acme.conf"  # where to find the configuration file
@@ -192,7 +196,7 @@ class AcmeData:
         self.stuff[stuff][1] = price
 ```
 
-This class can be tested with `test.py`:
+This class can be tested with `test.py` by appending a new test function:
 
 ```python
 # append to "test.py"
@@ -258,6 +262,7 @@ db = fsa.Reference()
 def init_app(app: fsa.Flask):
     # initialize proxy object
     db.set(acme.AcmeData())
+    assert "ACME_PASS" in os.environ, "ACME_PASS env var is required"
     # add user acme as an admin
     db.add_user("acme", app.hash_password(os.environ["ACME_PASS"]), "acme@acme.org", True)
 ```
@@ -358,6 +363,7 @@ def basic_auth(login: str, passwd: str) -> dict[str, str]:
     encoded = base64.b64encode(f"{login}:{passwd}".encode("UTF8"))
     return { "Authorization": f"Basic {encoded.decode('ascii')}" }
 
+assert "ACME_PASS" in os.environ, "ACME_PASS env var is required"
 ACME_BASIC = basic_auth("acme", os.environ["ACME_PASS"])
 
 MECA_PASS = "Mec0!"
