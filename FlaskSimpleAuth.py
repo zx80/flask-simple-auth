@@ -2075,7 +2075,7 @@ class _PasswordManager:
                     return password
 
                 def verify(self, password: str, ref: str) -> bool:
-                    totp = pyotp.TOTP(ref, **self._options)
+                    totp = pyotp.totp.TOTP(ref, **self._options)
                     return totp.verify(password, valid_window=1)
 
             self._pass_provider = PyOTPProvider(**options)
