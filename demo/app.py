@@ -7,7 +7,7 @@ logging.basicConfig()
 import FlaskSimpleAuth as fsa  # type: ignore
 json = fsa.jsonify
 app = fsa.Flask("demo")
-app.config.from_envvar("APP_CONFIG")
+app.config.from_envvar("DEMO_CONFIG")
 
 # database initialisation before auth so that all hooks are executed after
 import database
@@ -45,7 +45,7 @@ def get_who():
 @app.post("/upload", authz="OPEN")
 def post_upload(file: fsa.FileStorage):
     filename = str(uuid.uuid4()) + ".tmp"
-    file.save(app.config["APP_UPLOAD_DIR"] + "/" + filename)
+    file.save(app.config["DEMO_UPLOAD_DIR"] + "/" + filename)
     return f"{file.filename} ({file.mimetype}) saved as {filename}", 201
 
 

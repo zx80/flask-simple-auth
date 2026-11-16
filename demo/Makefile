@@ -70,7 +70,7 @@ APP	= app
 
 app.pid: stuff.$(DB)
 	[ "$(ENV)" ] && source $(VENV)/bin/activate
-	export APP_CONFIG=$(APP)-$(DB).conf
+	export DEMO_CONFIG=$(APP)-$(DB).conf
 	type flask || exit 1
 	flask --app=$(APP).py --debug run > app.log 2>&1 &
 	echo $$! > $@
@@ -123,7 +123,7 @@ check: check.pytest
 
 .PHONY: check.pytest
 check.pytest: stuff.$(DB)
-	export FLASK_APP=app.py FLASK_DEBUG=1 APP_CONFIG=app-$(DB).conf
+	export FLASK_APP=app.py FLASK_DEBUG=1 DEMO_CONFIG=app-$(DB).conf
 	$(PYTEST) $(PYTOPT) test_demo.py
 
 .PHONY: check.mypy
@@ -173,7 +173,7 @@ COVER_DATA  = ../test/.coverage
 
 .PHONY: check.coverage.db
 check.coverage.db: stuff.$(DB)
-	export FLASK_APP=app.py FLASK_DEBUG=1 APP_CONFIG=app-$(DB).conf
+	export FLASK_APP=app.py FLASK_DEBUG=1 DEMO_CONFIG=app-$(DB).conf
 	coverage run -a --data-file=$(COVER_DATA) -m $(PYTEST) $(PYTOPT) test_demo.py
 
 .PHONY: check.coverage
